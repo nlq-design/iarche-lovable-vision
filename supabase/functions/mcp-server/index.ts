@@ -1864,6 +1864,19 @@ mcpServer.registerTool(
       status: z.string().optional().describe("Statut (défaut: draft)"),
       published: z.boolean().optional().describe("Publié (défaut: false)"),
       slug: z.string().optional().describe("Slug personnalisé (auto-généré si absent)"),
+      // Champs événement (atelier-webinaire)
+      event_date: z.string().optional().describe("Date événement ISO 8601"),
+      event_location: z.string().optional().describe("Lieu de l'événement"),
+      heure_debut: z.string().optional().describe("Heure de début (HH:MM)"),
+      type_evenement: z.string().optional().describe("presentiel, webinaire, hybride"),
+      max_participants: z.number().optional().describe("Jauge max participants"),
+      intervenants: z.string().optional().describe("JSON string array [{nom, role, bio}]"),
+      programme_detaille: z.string().optional().describe("JSON string programme"),
+      prerequis: z.string().optional().describe("Prérequis pour l'atelier"),
+      registration_open: z.boolean().optional().describe("Inscriptions ouvertes"),
+      certificat_delivre: z.boolean().optional().describe("Certificat délivré"),
+      rappels_automatiques: z.boolean().optional().describe("Rappels auto activés"),
+      duree_heures: z.number().optional().describe("Durée en heures"),
     },
   },
   async (params) => {
@@ -1874,7 +1887,7 @@ mcpServer.registerTool(
       .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
-    const { data, error } = await supabaseAdmin.from("articles").insert({
+    const insertData: Record<string, unknown> = {
       title: params.title,
       slug,
       resource_type: params.resource_type,
@@ -1885,7 +1898,23 @@ mcpServer.registerTool(
       cover_image_url: params.cover_image_url || null,
       status: params.status || "draft",
       published: params.published || false,
-    }).select("id, title, slug, resource_type, status, created_at").single();
+    };
+    // Event fields
+    if (params.event_date) insertData.event_date = params.event_date;
+    if (params.event_location) insertData.event_location = params.event_location;
+    if (params.heure_debut) insertData.heure_debut = params.heure_debut;
+    if (params.type_evenement) insertData.type_evenement = params.type_evenement;
+    if (params.max_participants) insertData.max_participants = params.max_participants;
+    if (params.intervenants) insertData.intervenants = JSON.parse(params.intervenants);
+    if (params.programme_detaille) insertData.programme_detaille = JSON.parse(params.programme_detaille);
+    if (params.prerequis) insertData.prerequis = params.prerequis;
+    if (params.registration_open !== undefined) insertData.registration_open = params.registration_open;
+    if (params.certificat_delivre !== undefined) insertData.certificat_delivre = params.certificat_delivre;
+    if (params.rappels_automatiques !== undefined) insertData.rappels_automatiques = params.rappels_automatiques;
+    if (params.duree_heures) insertData.duree_heures = params.duree_heures;
+
+    const { data, error } = await supabaseAdmin.from("articles").insert(insertData)
+      .select("id, title, slug, resource_type, status, created_at").single();
 
     if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
     return { content: [{ type: "text" as const, text: JSON.stringify({ success: true, article: data }) }] };
@@ -1911,17 +1940,33 @@ mcpServer.registerTool(
       status: z.string().optional(),
       published: z.boolean().optional(),
       slug: z.string().optional(),
+      // Champs événement (atelier-webinaire)
+      event_date: z.string().optional().describe("Date événement ISO 8601"),
+      event_location: z.string().optional().describe("Lieu de l'événement"),
+      heure_debut: z.string().optional().describe("Heure de début (HH:MM)"),
+      type_evenement: z.string().optional().describe("presentiel, webinaire, hybride"),
+      max_participants: z.number().optional().describe("Jauge max participants"),
+      intervenants: z.string().optional().describe("JSON string array [{nom, role, bio}]"),
+      programme_detaille: z.string().optional().describe("JSON string programme"),
+      prerequis: z.string().optional(),
+      registration_open: z.boolean().optional(),
+      certificat_delivre: z.boolean().optional(),
+      rappels_automatiques: z.boolean().optional(),
+      duree_heures: z.number().optional(),
     },
   },
   async (params) => {
     const ctx = getAuthContext();
     if (!ctx) return authError();
 
-    const { article_id, ...fields } = params;
+    const { article_id, intervenants, programme_detaille, ...fields } = params;
     const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
     for (const [key, value] of Object.entries(fields)) {
       if (value !== undefined) updates[key] = value;
     }
+    // Parse JSON string fields
+    if (intervenants) updates.intervenants = JSON.parse(intervenants);
+    if (programme_detaille) updates.programme_detaille = JSON.parse(programme_detaille);
 
     const { data, error } = await supabaseAdmin
       .from("articles")
@@ -5028,6 +5073,76 @@ mcpServer.registerTool(
 );
 
 
+// ============================================================
+// TOOL: create_form
+// ============================================================
+mcpServer.registerTool(
+  "create_form",
+  {
+    title: "Create Form",
+    description: "Créer un nouveau formulaire ALMA. Le slug est auto-généré depuis le titre si non fourni.",
+    inputSchema: {
+      title: z.string().describe("Titre du formulaire"),
+      description: z.string().optional().describe("Description du formulaire"),
+      slug: z.string().optional().describe("Slug personnalisé (auto-généré si absent)"),
+      fields: z.string().optional().describe("JSON string des champs du formulaire"),
+      settings: z.string().optional().describe("JSON string des paramètres"),
+      is_active: z.boolean().optional().describe("Formulaire actif (défaut: true)"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+
+    const slug = params.slug || params.title.toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+    const insertData: Record<string, unknown> = {
+      title: params.title,
+      slug,
+      description: params.description || null,
+      is_active: params.is_active !== undefined ? params.is_active : true,
+    };
+    if (params.fields) insertData.fields = JSON.parse(params.fields);
+    if (params.settings) insertData.settings = JSON.parse(params.settings);
+
+    const { data, error } = await supabaseAdmin.from("forms").insert(insertData)
+      .select("id, title, slug, is_active, created_at").single();
+
+    if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ success: true, form: data }) }] };
+  }
+);
+
+// ============================================================
+// TOOL: get_forms
+// ============================================================
+mcpServer.registerTool(
+  "get_forms",
+  {
+    title: "Get Forms",
+    description: "Lister les formulaires ALMA avec leurs statistiques.",
+    inputSchema: {
+      is_active: z.boolean().optional().describe("Filtrer par statut actif/inactif"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+
+    let query = supabaseAdmin.from("forms")
+      .select("id, title, slug, description, is_active, submissions_count, views_count, created_at, updated_at")
+      .order("created_at", { ascending: false });
+    if (params.is_active !== undefined) query = query.eq("is_active", params.is_active);
+
+    const { data, error } = await query;
+    if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ forms: data, count: data?.length }) }] };
+  }
+);
+
+
 // === Tools exposés via tools/list (les autres restent appelables via callTool) ===
 const _EXPOSED_TOOLS = new Set([
   // CORE CRM
@@ -5060,6 +5175,8 @@ const _EXPOSED_TOOLS = new Set([
   // BOOKINGS & INSCRIPTIONS
   'get_bookings', 'create_booking',
   'get_atelier_inscriptions',
+  // FORMULAIRES
+  'get_forms', 'create_form',
   // TRANSCRIPTIONS
   'get_transcriptions', 'get_transcription_detail', 'list_transcriptions', 'get_transcription',
   // PREFERENCES
