@@ -15,14 +15,14 @@ interface Props {
 /** Determines if two fields should be grouped on the same row (Prénom + Nom pattern) */
 const isNamePair = (a: FormField, b: FormField): boolean => {
   const namePatterns = ['prenom', 'prénom', 'firstname', 'first_name', 'nom', 'lastname', 'last_name', 'name'];
-  const aKey = (a.name || a.label || '').toLowerCase();
-  const bKey = (b.name || b.label || '').toLowerCase();
+  const aKey = (a.label || a.id || '').toLowerCase();
+  const bKey = (b.label || b.id || '').toLowerCase();
   const aIsName = namePatterns.some(p => aKey.includes(p));
   const bIsName = namePatterns.some(p => bKey.includes(p));
   return aIsName && bIsName;
 };
 
-const fieldKey = (field: FormField) => field.name || field.id;
+const fieldKey = (field: FormField) => field.id;
 
 const EventLandingForm = ({ articleId }: Props) => {
   const [form, setForm] = useState<Form | null>(null);
