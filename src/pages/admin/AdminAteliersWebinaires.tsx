@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Plus, Edit, Trash2, Eye, History, HelpCircle, FileText, ClipboardCopy, ExternalLink } from 'lucide-react';
+import { Loader2, Plus, Edit, Trash2, Eye, History, HelpCircle, FileText, ClipboardCopy, ExternalLink, Lock } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { useCockpitGeneratedDocuments } from '@/hooks/cockpit/useCockpitGeneratedDocuments';
