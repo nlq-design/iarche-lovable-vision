@@ -488,9 +488,20 @@ const FormEditor = () => {
 
   const loadForm = async (formId: string) => {
     setLoading(true);
-    const data = await getFormById(formId);
+     const data = await getFormById(formId);
     if (data) {
-      setForm(data);
+      // Deep-merge with defaults to avoid undefined nested properties
+      const mergedSettings = {
+        ...DEFAULT_FORM_SETTINGS,
+        ...data.settings,
+        design: { ...DEFAULT_FORM_SETTINGS.design, ...(data.settings?.design || {}), colors: { ...DEFAULT_FORM_SETTINGS.design.colors, ...(data.settings?.design?.colors || {}) } },
+        thankYou: { ...DEFAULT_FORM_SETTINGS.thankYou, ...(data.settings?.thankYou || {}) },
+        notifications: { ...DEFAULT_FORM_SETTINGS.notifications, ...(data.settings?.notifications || {}) },
+        integrations: { ...DEFAULT_FORM_SETTINGS.integrations, ...(data.settings?.integrations || {}) },
+        rgpd: { ...DEFAULT_FORM_SETTINGS.rgpd, ...(data.settings?.rgpd || {}) },
+        behavior: { ...DEFAULT_FORM_SETTINGS.behavior, ...(data.settings?.behavior || {}) },
+      };
+      setForm({ ...data, settings: mergedSettings });
     } else {
       toast({ title: 'Erreur', description: 'Formulaire non trouvé', variant: 'destructive' });
       navigate('/admin/formulaires');
