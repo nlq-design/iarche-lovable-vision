@@ -17,9 +17,10 @@ export const formNotificationSchema = z.object({
   form_id: z.string().min(1).max(100),
   form_title: z.string().min(1).max(200),
   form_fields: z.array(z.object({
-    id: z.string(),
-    label: z.string(),
-    type: z.string(),
+    id: z.string().optional(),
+    name: z.string().optional(),
+    label: z.string().optional(),
+    type: z.string().optional(),
   })).optional(),
   response_data: z.record(z.any()),
   respondent_email: emailValidator.optional(),
