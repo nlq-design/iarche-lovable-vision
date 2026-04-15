@@ -1,52 +1,63 @@
 
 
-# Plan : Edition inline du programme avant figement
+# Plan : Edition inline transparente (WYSIWYG sans blocs)
 
-## Constat
+## Problème
 
-Le preview actuel (`AdminInvitationPreview.tsx`) affiche les sections en `dangerouslySetInnerHTML` — lecture seule. Aucune possibilité d'éditer le texte, les titres, ou la mise en forme. Une fois figé (`approved`), le contenu doit devenir non-modifiable.
+Le mode édition actuel utilise des composants Quill avec toolbar visible et des inputs avec bordures pointillées — cela casse l'architecture visuelle de consultation. L'utilisateur veut que le mode édition soit **visuellement identique** au mode consultation, avec chaque élément texte directement cliquable et modifiable in-place.
 
-## Solution
+## Approche
 
-Rendre chaque section éditable en mode brouillon via le composant `LazyQuill` (déjà dans le projet). Ajouter l'édition des titres de section et des métadonnées hero. Sauvegarder les modifications dans `content_json` en base.
+Remplacer **tous les Quill editors** par des `contentEditable` divs et **tous les inputs avec bordures** par des inputs transparents sans bordure. Le rendu en mode brouillon sera pixel-identical au mode figé, sauf que le texte est cliquable et modifiable. Une mini toolbar flottante apparaît uniquement à la sélection de texte pour le gras/italique/lien.
 
 ## Modifications sur `AdminInvitationPreview.tsx`
 
-### Mode brouillon (status != 'approved')
+### 1. Supprimer LazyQuill — utiliser `contentEditable`
 
-1. **Titres de section** : remplacer les `<h2>` par des `<input>` éditables inline, stylés identiquement
-2. **Contenu de section** : remplacer `dangerouslySetInnerHTML` par `<LazyQuill>` avec toolbar bold/italic/underline/lists/links
-3. **Métadonnées hero** : titre, date, lieu, type d'événement — tous éditables via inputs inline
-4. **Bouton "Enregistrer"** : sauvegarde le `content_json` modifié en base (update sur `generated_documents`)
-5. **Indicateur visuel** : bordure pointillée subtile autour des zones éditables + tooltip "Cliquez pour modifier"
+- Chaque section `.content` : un `<div contentEditable>` avec les mêmes classes prose que le mode figé
+- `onBlur` capture le `innerHTML` et met à jour `editSections`
+- `onInput` pour détecter les changements en temps réel (hasChanges)
 
-### Mode figé (status == 'approved')
+### 2. Inputs transparents partout
 
-- Tout revient en lecture seule (`dangerouslySetInnerHTML` comme aujourd'hui)
-- Aucun input, aucun Quill affiché
-- Le bouton "Enregistrer" disparaît
+- Titre hero, type événement, date, lieu : inputs **sans bordure** (pas de `border-dashed`), mêmes classes que les `<h1>`, `<Badge>`, `<span>` du mode figé
+- Titres de section : input sans bordure, mêmes classes que le `<h2>` figé
+- Footer texte : `contentEditable` sur le paragraphe
+- Section QR : titre "Inscription" et texte descriptif éditables
 
-### Toolbar Quill
+### 3. Toolbar flottante contextuelle
 
-Configuration minimale adaptée au format brochure :
-- Bold, Italic, Underline
-- Listes (puces, numérotées)
-- Titres (h3, h4)
-- Liens
-- Clean formatting
+- Un composant `FloatingToolbar` qui apparaît au-dessus de la sélection
+- Actions : Bold, Italic, Underline, Link (via `document.execCommand`)
+- Se masque quand la sélection disparaît
+- Ne s'affiche que si `!isApproved`
 
-### Sauvegarde
+### 4. Suppression complète des conditionnels `!isApproved ? (editor) : (display)`
 
-- Bouton "Enregistrer les modifications" dans la toolbar admin (à côté de "Figer")
-- Appel `supabase.update({ content_json })` sur `generated_documents`
-- Toast de confirmation
-- Auto-détection des changements (bouton grisé si rien n'a changé)
+- Un seul rendu pour les deux modes
+- En mode brouillon : `contentEditable={true}` + inputs éditables
+- En mode figé : `contentEditable={false}` + inputs `readOnly`
+- Zéro différence visuelle entre les deux états
 
-## Fichier impacté
+### 5. Éléments éditables
+
+| Élément | Méthode |
+|---------|---------|
+| Type événement (badge hero) | Input transparent dans le badge |
+| Titre événement (h1 hero) | Input transparent, mêmes classes h1 |
+| Date, Lieu (pills hero) | Inputs transparents dans les pills |
+| Titres de section | Input transparent, mêmes classes h2 |
+| Contenu de section | `contentEditable` div avec classes prose |
+| Titre "Inscription" QR | Input transparent |
+| Texte descriptif QR | `contentEditable` span |
+| Footer texte | `contentEditable` p |
+
+## Fichiers impactés
 
 | Fichier | Action |
 |---------|--------|
-| `src/pages/admin/AdminInvitationPreview.tsx` | Ajout état local éditable, LazyQuill conditionnel, sauvegarde, inputs hero |
+| `src/pages/admin/AdminInvitationPreview.tsx` | Refonte complète : suppression Quill, contentEditable partout, FloatingToolbar inline |
+| `src/components/admin/LazyQuill.tsx` | Aucune modification (reste pour d'autres usages) |
 
-Aucune migration. Aucun nouveau fichier. Le composant `LazyQuill` existe déjà dans `src/components/admin/LazyQuill.tsx`.
+Aucune migration DB. Aucune edge function.
 
