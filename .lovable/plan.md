@@ -1,77 +1,163 @@
 
+# Audit & cahier des charges mis à jour — éditeur du programme invitation
 
-# Audit & Cahier des charges : Module Programme Invitation
+## Reformulation correcte du besoin
+Vous ne demandez pas un simple éditeur de texte enrichi. Vous voulez une nouvelle architecture d’édition, calquée sur la consultation :
+- même rendu visuel en brouillon et en consultation ;
+- tout le texte éditable inline ;
+- les modules non textuels pilotables proprement ;
+- le programme détaillé géré comme un vrai tableau métier, pas comme du HTML bricolé.
 
-## Problemes identifies
+## Diagnostic corrigé
 
-### 1. Debordement de texte (critique)
-- Les `contentEditable` divs dans `AdminInvitationPreview.tsx` n'ont **aucune contrainte `overflow`** — le contenu HTML genere (tableaux larges, texte long sans retour a la ligne) depasse les cartes.
-- Classes manquantes : `overflow-hidden`, `overflow-x-auto` sur les conteneurs prose, `break-words` / `word-break: break-word` sur le texte.
-- Le probleme affecte potentiellement aussi `EventLanding.tsx` (memes classes prose, meme absence de contrainte overflow).
+### 1. Le vrai débordement n’est pas seulement “le texte collé”
+Le screenshot confirme un problème plus profond :
+- le titre du hero et plusieurs libellés sont en `<input>` mono-ligne ;
+- un `<input>` ne wrap pas, donc il coupe/déborde ;
+- la vue brouillon n’est donc pas une vraie réplique de la consultation.
 
-### 2. FloatingToolbar incomplete
-- Actuellement : Bold, Italic, Underline, Lists, Link — **aucun controle de taille de texte**.
-- Pas de heading (H2, H3, H4) pour structurer les programmes detailles.
-- Pas de separateur horizontal (`<hr>`) pour scinder les blocs.
-- Pas d'alignement texte (gauche, centre).
+### 2. La gestion des tailles est quasi introuvable
+La toolbar actuelle pose 3 problèmes :
+- elle n’apparaît qu’après sélection dans un `contentEditable` ;
+- elle ne s’applique pas aux champs en `<input>` ;
+- la taille repose sur `execCommand('fontSize')`, trop peu fiable pour un rendu premium.
 
-### 3. Parite brouillon / public non garantie
-- Admin utilise `max-w-4xl` + `px-6` — identique au public. OK.
-- Admin hero : `minHeight: 400px` vs public `360px` — **divergence**.
-- Admin footer : utilise `editMetadata.footerText` vs public hardcode `© 2026 IArche` — le footer edite n'est **pas lu par la page publique** (elle ignore `qrTitle`, `qrDescription`, `footerText`).
-- Public `EventLanding.tsx` ne lit pas les champs metadata `qrTitle`, `qrDescription`, `footerText` — ces modifications sont perdues a la publication.
+Résultat : techniquement il existe des actions, mais dans l’usage elles ne sont ni visibles ni pilotables.
 
-### 4. Inputs a largeur fixe dans le hero
-- Les inputs date/lieu ont `w-40` fixe — si le texte est plus long, il est tronque au lieu de s'adapter.
+### 3. Le “Programme détaillé” est mal modélisé
+Aujourd’hui, il est essentiellement stocké comme HTML dans `section.content`.
+Conséquences :
+- impossible d’ajouter une vraie ligne de tableau proprement ;
+- impossible de supprimer une ligne métier proprement ;
+- impossible de garantir une structure stable pour le PDF, le public et le brouillon.
 
----
+### 4. Les modules non textuels ne sont pas vraiment éditables
+Il manque une vraie gestion pour :
+- le lien du QR code ;
+- le mode du bloc CTA/inscription ;
+- le footer ;
+- les éléments structurés du hero ;
+- les lignes du tableau détaillé.
 
-## Plan d'implementation
+### 5. La parité brouillon / public n’est pas encore garantie
+Le risque d’overflow HTML existe aussi côté public sur les sections.
+Et surtout, l’architecture n’est pas unifiée :
+- l’admin affiche un bloc QR ;
+- le public affiche un formulaire.
+Ce n’est pas le même module, donc ce n’est pas la même consultation.
 
-### Etape 1 — Corriger les debordements (Admin + Public)
+## Architecture cible
+Passer d’une logique “HTML libre par section” à une logique “document modulaire”.
 
-**Fichiers** : `AdminInvitationPreview.tsx`, `EventLanding.tsx`
+Principe :
+- un seul renderer visuel ;
+- en brouillon, on active des affordances d’édition ;
+- en consultation, on désactive l’édition ;
+- la structure du document reste la même.
 
-- Ajouter `overflow-x-auto` sur les divs prose (pour les tableaux larges).
-- Ajouter `break-words` / `[overflow-wrap:break-word]` sur les conteneurs texte.
-- Forcer `[&_table]:table-fixed` ou `[&_table]:max-w-full` pour empecher les tableaux de deborder.
-- Inputs hero : remplacer `w-40` par `w-auto min-w-[2ch]` pour s'adapter au contenu.
+## Modèle cible dans `content_json`
+Sans migration SQL, étendre le JSON existant :
 
-### Etape 2 — Enrichir la FloatingToolbar
+- `sections[]` : prose libre, éditable inline
+- `metadata` :
+  - `eventTitle`
+  - `eventDate`
+  - `eventLocation`
+  - `eventType`
+  - `qrTitle`
+  - `qrDescription`
+  - `qrUrl`
+  - `footerText`
+  - presets de taille/hiérarchie si besoin
+- `modules.programme.rows[]` :
+  - `horaire`
+  - `theme`
+  - `intervenant`
+- `modules.cta` :
+  - mode `qr` / `form` / `qr+form`
 
-**Fichier** : `FloatingToolbar.tsx`
+## Plan d’implémentation
 
-Ajouter au menu contextuel :
-- **Tailles de titre** : H2, H3, H4, Paragraphe (via `document.execCommand('formatBlock', false, 'h2')`)
-- **Separateur** : insertion `<hr>` pour structurer les programmes
-- **Alignement** : gauche, centre (via `justifyLeft`, `justifyCenter`)
-- **Taille de police** : petit / normal / grand (via style inline `fontSize`)
-- Organiser en groupes separes par des dividers visuels
+### Étape 1 — Corriger la base d’édition
+- Remplacer les champs critiques en `<input>` mono-ligne par des zones éditables multi-lignes qui wrap comme la consultation.
+- Garder un rendu visuellement identique au document final.
+- Appliquer partout les contraintes anti-débordement : `min-w-0`, `break-words`, `whitespace-pre-wrap`, cellules de tableau robustes.
 
-### Etape 3 — Parite Admin/Public
+### Étape 2 — Rendre les tailles vraiment pilotables
+- Abandonner la logique cachée via `fontSize` legacy.
+- Ajouter des contrôles explicites et sémantiques au focus :
+  - Hero : taille du titre
+  - Titres de section : H2 / H3 / H4
+  - Corps : paragraphe / petit texte
+- Conserver gras / italique / souligné / listes / lien pour le texte libre.
 
-**Fichiers** : `AdminInvitationPreview.tsx`, `EventLanding.tsx`
+### Étape 3 — Refaire le module “Programme détaillé”
+- Sortir le tableau du HTML brut.
+- Introduire un état structuré `modules.programme.rows`.
+- En brouillon :
+  - bouton discret `+ Ajouter une ligne` sous le tableau ;
+  - suppression ligne par ligne au survol ou via action dédiée ;
+  - si une ligne est vidée complètement puis validée, elle est retirée.
+- En rendu :
+  - le tableau garde exactement le look consultation ;
+  - le HTML affiché est régénéré depuis les rows.
 
-- Harmoniser `minHeight` hero a `400px` sur les deux.
-- Faire lire par `EventLanding.tsx` les champs `qrTitle`, `qrDescription`, `footerText` depuis `content_json.metadata` — sinon les modifications admin sont ignorees.
-- Ajouter le type `qrTitle`, `qrDescription`, `footerText` a l'interface `InvitationMetadata` dans `EventLanding.tsx`.
+### Étape 4 — Cadrer les modules non textuels
+- Hero : titre, type, date, lieu éditables sans casser la maquette.
+- QR/CTA :
+  - rendre `qrTitle`, `qrDescription` et `qrUrl` éditables ;
+  - unifier le module entre admin et public ;
+  - ne plus hardcoder des comportements différents selon la page.
+- Footer : totalement éditable, même rendu dans les deux modes.
 
-### Etape 4 — Ajout de lignes dans les programmes
+### Étape 5 — Compatibilité avec l’existant
+Pour les invitations déjà générées :
+- si `modules.programme.rows` n’existe pas, hydrater depuis `article.programme_detaille` quand disponible ;
+- sinon parser le tableau HTML existant de la section `programme`.
+Ainsi, on ne casse pas l’historique.
 
-Deja fonctionnel via `contentEditable` + Enter. La toolbar enrichie (Etape 2) permettra en plus de :
-- Inserer des listes a puces/numerotees
-- Ajouter des sous-titres H3/H4
-- Inserer des separateurs `<hr>`
+### Étape 6 — Parité publique
+- `EventLanding.tsx` doit lire le même modèle de document.
+- Même structure de rendu.
+- Même protections anti-débordement.
+- Même module CTA/QR.
 
----
+## Critères d’acceptation
+- Un titre long revient à la ligne sans déborder.
+- L’utilisateur sait immédiatement où changer les tailles.
+- Il peut ajouter une ligne au programme détaillé sans toucher au HTML.
+- Il peut supprimer une ligne, et la ligne disparaît réellement du tableau.
+- Le lien du QR code est modifiable.
+- Le brouillon est la même architecture que la consultation.
+- Aucun mot long, tableau ou URL ne sort du cadre.
 
-## Fichiers impactes
+## Détails techniques
+- `src/pages/admin/AdminInvitationPreview.tsx`
+  - refonte de l’état d’édition ;
+  - remplacement des inputs mono-ligne critiques ;
+  - ajout du module structuré programme + CTA/QR ;
+  - fallback de compatibilité anciens documents.
+- `src/components/admin/FloatingToolbar.tsx`
+  - suppression de la dépendance au `fontSize` legacy ;
+  - ajout de presets sémantiques visibles au focus/sélection.
+- `src/pages/EventLanding.tsx`
+  - lecture du même modèle structuré ;
+  - parité de rendu ;
+  - protections anti-débordement.
+- Optionnel mais recommandé :
+  - `supabase/functions/generate-document/index.ts`
+  - faire générer dès l’origine `modules.programme.rows` en plus des sections, pour ne plus dépendre du parsing HTML sur les nouveaux documents.
 
-| Fichier | Action |
-|---------|--------|
-| `src/components/admin/FloatingToolbar.tsx` | Ajout H2/H3/H4, taille police, alignement, separateur |
-| `src/pages/admin/AdminInvitationPreview.tsx` | Fix overflow, inputs adaptatifs, harmonisation hero |
-| `src/pages/EventLanding.tsx` | Fix overflow, lecture metadata editee, harmonisation hero |
+## Impact métier
+- Édition plus rapide et plus fiable.
+- Réduction forte des erreurs visuelles avant partage/PDF.
+- Suppression de la dépendance à un HTML fragile pour le programme détaillé.
+- Base saine pour faire évoluer ensuite les autres modules d’invitation.
 
-Aucune migration DB. Aucune edge function.
+## Fichiers impactés
+- `src/pages/admin/AdminInvitationPreview.tsx`
+- `src/components/admin/FloatingToolbar.tsx`
+- `src/pages/EventLanding.tsx`
+- potentiellement `supabase/functions/generate-document/index.ts`
 
+Aucune migration SQL obligatoire si on étend `content_json`.
