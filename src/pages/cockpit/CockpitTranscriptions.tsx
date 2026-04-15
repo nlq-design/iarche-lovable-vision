@@ -603,7 +603,7 @@ export default function CockpitTranscriptions() {
                          </div>
 
                          {/* Summary */}
-                         <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+                         <p className="text-sm text-muted-foreground mt-2 line-clamp-3">
                            {transcription.summary?.executive_summary
                              ? (typeof transcription.summary.executive_summary === 'string'
                                  ? transcription.summary.executive_summary
