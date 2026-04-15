@@ -264,7 +264,8 @@ const AdminInvitationPreview = () => {
                   onChange={e => updateMetadata('eventType', e.target.value)}
                   readOnly={!editable}
                   placeholder="Type d'événement"
-                  className="bg-transparent border-none outline-none text-white placeholder:text-white/50 w-32 text-xs"
+                  className="bg-transparent border-none outline-none text-white placeholder:text-white/50 min-w-[2ch] w-auto text-xs"
+                  style={{ width: `${Math.max(2, (editMetadata.eventType || '').length + 1)}ch` }}
                 />
               </Badge>
 
@@ -287,7 +288,8 @@ const AdminInvitationPreview = () => {
                     onChange={e => updateMetadata('eventDate', e.target.value)}
                     readOnly={!editable}
                     placeholder="Date"
-                    className="bg-transparent border-none outline-none text-white placeholder:text-white/50 w-40 cursor-text"
+                    className="bg-transparent border-none outline-none text-white placeholder:text-white/50 min-w-[4ch] w-auto cursor-text"
+                    style={{ width: `${Math.max(4, (editMetadata.eventDate || '').length + 1)}ch` }}
                   />
                 </span>
                 <span className="flex items-center gap-2 bg-white/10 rounded-full px-4 py-2">
@@ -298,7 +300,8 @@ const AdminInvitationPreview = () => {
                     onChange={e => updateMetadata('eventLocation', e.target.value)}
                     readOnly={!editable}
                     placeholder="Lieu"
-                    className="bg-transparent border-none outline-none text-white placeholder:text-white/50 w-40 cursor-text"
+                    className="bg-transparent border-none outline-none text-white placeholder:text-white/50 min-w-[4ch] w-auto cursor-text"
+                    style={{ width: `${Math.max(4, (editMetadata.eventLocation || '').length + 1)}ch` }}
                   />
                 </span>
               </div>
@@ -334,12 +337,14 @@ const AdminInvitationPreview = () => {
                       prose-ul:text-muted-foreground
                       prose-li:text-muted-foreground
                       prose-table:text-sm
-                      [&_table]:w-full [&_table]:border-collapse
+                      [&_table]:w-full [&_table]:border-collapse [&_table]:table-fixed
                       [&_th]:bg-muted/50 [&_th]:text-left [&_th]:px-4 [&_th]:py-3 [&_th]:font-semibold [&_th]:text-foreground [&_th]:border-b
                       [&_td]:px-4 [&_td]:py-3 [&_td]:border-b [&_td]:border-border
                       [&_tr:last-child_td]:border-b-0
                       [&_.invitation-hero]:hidden
+                      [&_hr]:my-4 [&_hr]:border-border
                       focus:outline-none
+                      overflow-x-auto break-words [overflow-wrap:break-word]
                     "
                     contentEditable={editable}
                     suppressContentEditableWarning

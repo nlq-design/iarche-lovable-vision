@@ -20,6 +20,9 @@ interface InvitationMetadata {
   eventLocation?: string;
   eventType?: string;
   organizerName?: string;
+  qrTitle?: string;
+  qrDescription?: string;
+  footerText?: string;
 }
 
 interface InvitationDocument {
@@ -100,7 +103,7 @@ const EventLanding = () => {
             className="relative rounded-2xl overflow-hidden mb-8"
             style={{
               background: `linear-gradient(135deg, ${COLORS.bleuNuit} 0%, ${COLORS.bleuNuit}dd 50%, ${COLORS.terracotta}40 100%)`,
-              minHeight: '360px'
+              minHeight: '400px'
             }}
           >
             <div className="absolute inset-0 opacity-10">
@@ -108,7 +111,7 @@ const EventLanding = () => {
               <div className="absolute bottom-10 left-10 w-48 h-48 rounded-full" style={{ background: '#4A90D9', filter: 'blur(60px)' }} />
             </div>
 
-            <div className="relative z-10 p-10 md:p-16 flex flex-col justify-center min-h-[360px]">
+            <div className="relative z-10 p-10 md:p-16 flex flex-col justify-center min-h-[400px]">
               <div className="mb-8">
                 <img src="/logos/iarche-main.svg" alt="IArche" className="h-8 brightness-0 invert" />
               </div>
@@ -160,11 +163,13 @@ const EventLanding = () => {
                       prose-strong:text-foreground
                       prose-ul:text-muted-foreground prose-li:text-muted-foreground
                       prose-table:text-sm
-                      [&_table]:w-full [&_table]:border-collapse
+                      [&_table]:w-full [&_table]:border-collapse [&_table]:table-fixed
                       [&_th]:bg-muted/50 [&_th]:text-left [&_th]:px-4 [&_th]:py-3 [&_th]:font-semibold [&_th]:text-foreground [&_th]:border-b
                       [&_td]:px-4 [&_td]:py-3 [&_td]:border-b [&_td]:border-border
                       [&_tr:last-child_td]:border-b-0
                       [&_.invitation-hero]:hidden
+                      [&_hr]:my-4 [&_hr]:border-border
+                      overflow-x-auto break-words [overflow-wrap:break-word]
                     "
                     dangerouslySetInnerHTML={{ __html: section.content }}
                   />
@@ -186,11 +191,11 @@ const EventLanding = () => {
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-1 h-8 rounded-full" style={{ background: COLORS.terracotta }} />
                   <h2 className="text-xl md:text-2xl font-bold text-foreground">
-                    Inscription
+                    {metadata.qrTitle || 'Inscription'}
                   </h2>
                 </div>
                 <p className="text-sm text-muted-foreground mb-6 ml-4 pl-px">
-                  Remplissez ce formulaire pour confirmer votre participation.
+                  {metadata.qrDescription || 'Remplissez ce formulaire pour confirmer votre participation.'}
                 </p>
                 <EventLandingForm articleId={doc.article_id} />
               </div>
@@ -202,7 +207,7 @@ const EventLanding = () => {
             <div className="bg-muted/30 rounded-xl p-8">
               <img src="/logos/iarche-main.svg" alt="IArche" className="h-6 mx-auto mb-4 opacity-60" />
               <p className="text-xs text-muted-foreground">
-                © {new Date().getFullYear()} IArche • Programme officiel
+                {metadata.footerText || `© ${new Date().getFullYear()} IArche • Programme officiel`}
               </p>
             </div>
           </section>
