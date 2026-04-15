@@ -611,7 +611,7 @@ const ArticleDetail = () => {
                         toast.success('Programme généré !', {
                           action: {
                             label: 'Voir',
-                            onClick: () => navigate(`/cockpit/documents/programme-${doc.slug || doc.id}`),
+                            onClick: () => navigate(`/cockpit/documents/programme-${doc.id}`),
                           },
                         });
                       },
