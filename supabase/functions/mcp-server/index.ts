@@ -1959,11 +1959,14 @@ mcpServer.registerTool(
     const ctx = getAuthContext();
     if (!ctx) return authError();
 
-    const { article_id, ...fields } = params;
+    const { article_id, intervenants, programme_detaille, ...fields } = params;
     const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
     for (const [key, value] of Object.entries(fields)) {
       if (value !== undefined) updates[key] = value;
     }
+    // Parse JSON string fields
+    if (intervenants) updates.intervenants = JSON.parse(intervenants);
+    if (programme_detaille) updates.programme_detaille = JSON.parse(programme_detaille);
 
     const { data, error } = await supabaseAdmin
       .from("articles")
