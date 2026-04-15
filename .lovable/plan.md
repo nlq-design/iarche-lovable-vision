@@ -1,63 +1,77 @@
 
 
-# Plan : Edition inline transparente (WYSIWYG sans blocs)
+# Audit & Cahier des charges : Module Programme Invitation
 
-## Problème
+## Problemes identifies
 
-Le mode édition actuel utilise des composants Quill avec toolbar visible et des inputs avec bordures pointillées — cela casse l'architecture visuelle de consultation. L'utilisateur veut que le mode édition soit **visuellement identique** au mode consultation, avec chaque élément texte directement cliquable et modifiable in-place.
+### 1. Debordement de texte (critique)
+- Les `contentEditable` divs dans `AdminInvitationPreview.tsx` n'ont **aucune contrainte `overflow`** — le contenu HTML genere (tableaux larges, texte long sans retour a la ligne) depasse les cartes.
+- Classes manquantes : `overflow-hidden`, `overflow-x-auto` sur les conteneurs prose, `break-words` / `word-break: break-word` sur le texte.
+- Le probleme affecte potentiellement aussi `EventLanding.tsx` (memes classes prose, meme absence de contrainte overflow).
 
-## Approche
+### 2. FloatingToolbar incomplete
+- Actuellement : Bold, Italic, Underline, Lists, Link — **aucun controle de taille de texte**.
+- Pas de heading (H2, H3, H4) pour structurer les programmes detailles.
+- Pas de separateur horizontal (`<hr>`) pour scinder les blocs.
+- Pas d'alignement texte (gauche, centre).
 
-Remplacer **tous les Quill editors** par des `contentEditable` divs et **tous les inputs avec bordures** par des inputs transparents sans bordure. Le rendu en mode brouillon sera pixel-identical au mode figé, sauf que le texte est cliquable et modifiable. Une mini toolbar flottante apparaît uniquement à la sélection de texte pour le gras/italique/lien.
+### 3. Parite brouillon / public non garantie
+- Admin utilise `max-w-4xl` + `px-6` — identique au public. OK.
+- Admin hero : `minHeight: 400px` vs public `360px` — **divergence**.
+- Admin footer : utilise `editMetadata.footerText` vs public hardcode `© 2026 IArche` — le footer edite n'est **pas lu par la page publique** (elle ignore `qrTitle`, `qrDescription`, `footerText`).
+- Public `EventLanding.tsx` ne lit pas les champs metadata `qrTitle`, `qrDescription`, `footerText` — ces modifications sont perdues a la publication.
 
-## Modifications sur `AdminInvitationPreview.tsx`
+### 4. Inputs a largeur fixe dans le hero
+- Les inputs date/lieu ont `w-40` fixe — si le texte est plus long, il est tronque au lieu de s'adapter.
 
-### 1. Supprimer LazyQuill — utiliser `contentEditable`
+---
 
-- Chaque section `.content` : un `<div contentEditable>` avec les mêmes classes prose que le mode figé
-- `onBlur` capture le `innerHTML` et met à jour `editSections`
-- `onInput` pour détecter les changements en temps réel (hasChanges)
+## Plan d'implementation
 
-### 2. Inputs transparents partout
+### Etape 1 — Corriger les debordements (Admin + Public)
 
-- Titre hero, type événement, date, lieu : inputs **sans bordure** (pas de `border-dashed`), mêmes classes que les `<h1>`, `<Badge>`, `<span>` du mode figé
-- Titres de section : input sans bordure, mêmes classes que le `<h2>` figé
-- Footer texte : `contentEditable` sur le paragraphe
-- Section QR : titre "Inscription" et texte descriptif éditables
+**Fichiers** : `AdminInvitationPreview.tsx`, `EventLanding.tsx`
 
-### 3. Toolbar flottante contextuelle
+- Ajouter `overflow-x-auto` sur les divs prose (pour les tableaux larges).
+- Ajouter `break-words` / `[overflow-wrap:break-word]` sur les conteneurs texte.
+- Forcer `[&_table]:table-fixed` ou `[&_table]:max-w-full` pour empecher les tableaux de deborder.
+- Inputs hero : remplacer `w-40` par `w-auto min-w-[2ch]` pour s'adapter au contenu.
 
-- Un composant `FloatingToolbar` qui apparaît au-dessus de la sélection
-- Actions : Bold, Italic, Underline, Link (via `document.execCommand`)
-- Se masque quand la sélection disparaît
-- Ne s'affiche que si `!isApproved`
+### Etape 2 — Enrichir la FloatingToolbar
 
-### 4. Suppression complète des conditionnels `!isApproved ? (editor) : (display)`
+**Fichier** : `FloatingToolbar.tsx`
 
-- Un seul rendu pour les deux modes
-- En mode brouillon : `contentEditable={true}` + inputs éditables
-- En mode figé : `contentEditable={false}` + inputs `readOnly`
-- Zéro différence visuelle entre les deux états
+Ajouter au menu contextuel :
+- **Tailles de titre** : H2, H3, H4, Paragraphe (via `document.execCommand('formatBlock', false, 'h2')`)
+- **Separateur** : insertion `<hr>` pour structurer les programmes
+- **Alignement** : gauche, centre (via `justifyLeft`, `justifyCenter`)
+- **Taille de police** : petit / normal / grand (via style inline `fontSize`)
+- Organiser en groupes separes par des dividers visuels
 
-### 5. Éléments éditables
+### Etape 3 — Parite Admin/Public
 
-| Élément | Méthode |
-|---------|---------|
-| Type événement (badge hero) | Input transparent dans le badge |
-| Titre événement (h1 hero) | Input transparent, mêmes classes h1 |
-| Date, Lieu (pills hero) | Inputs transparents dans les pills |
-| Titres de section | Input transparent, mêmes classes h2 |
-| Contenu de section | `contentEditable` div avec classes prose |
-| Titre "Inscription" QR | Input transparent |
-| Texte descriptif QR | `contentEditable` span |
-| Footer texte | `contentEditable` p |
+**Fichiers** : `AdminInvitationPreview.tsx`, `EventLanding.tsx`
 
-## Fichiers impactés
+- Harmoniser `minHeight` hero a `400px` sur les deux.
+- Faire lire par `EventLanding.tsx` les champs `qrTitle`, `qrDescription`, `footerText` depuis `content_json.metadata` — sinon les modifications admin sont ignorees.
+- Ajouter le type `qrTitle`, `qrDescription`, `footerText` a l'interface `InvitationMetadata` dans `EventLanding.tsx`.
+
+### Etape 4 — Ajout de lignes dans les programmes
+
+Deja fonctionnel via `contentEditable` + Enter. La toolbar enrichie (Etape 2) permettra en plus de :
+- Inserer des listes a puces/numerotees
+- Ajouter des sous-titres H3/H4
+- Inserer des separateurs `<hr>`
+
+---
+
+## Fichiers impactes
 
 | Fichier | Action |
 |---------|--------|
-| `src/pages/admin/AdminInvitationPreview.tsx` | Refonte complète : suppression Quill, contentEditable partout, FloatingToolbar inline |
-| `src/components/admin/LazyQuill.tsx` | Aucune modification (reste pour d'autres usages) |
+| `src/components/admin/FloatingToolbar.tsx` | Ajout H2/H3/H4, taille police, alignement, separateur |
+| `src/pages/admin/AdminInvitationPreview.tsx` | Fix overflow, inputs adaptatifs, harmonisation hero |
+| `src/pages/EventLanding.tsx` | Fix overflow, lecture metadata editee, harmonisation hero |
 
 Aucune migration DB. Aucune edge function.
 
