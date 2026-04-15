@@ -187,8 +187,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const fieldLabelMap: Record<string, string> = {};
     if (form_fields && Array.isArray(form_fields) && form_fields.length > 0) {
       for (const field of form_fields) {
-        if (field && field.id && field.label) {
-          fieldLabelMap[field.id] = field.label;
+        if (field && field.label) {
+          const key = field.id || (field as any).name;
+          if (key) fieldLabelMap[key] = field.label;
         }
       }
     }
