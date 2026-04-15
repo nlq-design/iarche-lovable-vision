@@ -727,8 +727,20 @@ serve(async (req) => {
 
     // Fetch related data
     let project = null, lead = null, opportunity = null, solution = null;
+    let article = null;
     let specifications: any[] = [];
     let contextNotes: any[] = [];
+
+    // Fetch article/event data if article_id provided
+    if (article_id) {
+      const { data: articleData } = await supabase
+        .from("articles")
+        .select("*")
+        .eq("id", article_id)
+        .single();
+      article = articleData;
+      console.log(`Loaded article: ${article?.title || 'Not found'}`);
+    }
 
     if (project_id) {
       const { data: projectData } = await supabase.from("projects").select("*").eq("id", project_id).single();
