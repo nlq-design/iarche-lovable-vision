@@ -1,43 +1,29 @@
 
+# Plan : Accès permanent au programme généré
 
-# Plan : Mise en forme cohérente du formulaire d'inscription événement
+## Problème
+Le toast "Programme généré !" disparaît après quelques secondes. Une fois disparu, aucun moyen d'accéder au document depuis la liste des ateliers.
 
-## Problèmes identifiés
+## Solution
+Charger les `generated_documents` existants pour chaque atelier et afficher un **lien permanent** vers le dernier programme généré directement dans la carte de l'atelier.
 
-1. **Champs incompatibles** : Les formulaires en DB utilisent `name` comme identifiant, mais `EventLandingForm` référence `field.id` — les champs ne s'affichent probablement pas ou les valeurs ne sont pas capturées correctement.
-2. **Mise en page basique** : Prénom et Nom empilés verticalement au lieu d'être côte à côte. Pas de grille responsive.
-3. **Style incohérent** : Le formulaire utilise un `Button` standard alors que le reste de la brochure utilise les couleurs IArche (Night Blue, Terracotta). Pas d'espacement harmonieux avec les sections brochure.
-4. **Pas de consentement RGPD** : Le formulaire d'inscription natif (`AtelierInscriptionForm`) a un checkbox marketing, celui de la landing n'en a pas.
+### Modifications sur `AdminAteliersWebinaires.tsx`
 
-## Modifications prévues
+1. **Charger les documents existants** : après le chargement des articles, requêter `generated_documents` par `article_id` pour récupérer le dernier document de chaque atelier (trié par `created_at desc`).
 
-### 1. `EventLandingForm.tsx` — Refonte complète
+2. **Afficher dans la carte** : à côté du badge "Formulaire lié", ajouter un badge cliquable :
+   - Si un programme existe : badge vert "Programme v1" cliquable → navigue vers `/admin/invitation/{doc.id}`
+   - Si figé (`approved`) : badge avec icône cadenas
+   - Sinon : rien (le bouton "Programme" sert à générer)
 
-- **Résolution `id`/`name`** : Utiliser `field.name || field.id` comme clé de champ pour compatibilité avec les deux formats.
-- **Grille responsive** : Prénom + Nom sur la même ligne (`grid grid-cols-2 gap-4`) sur desktop, empilés sur mobile.
-- **Styles IArche** : Bouton CTA en gradient Terracotta, inputs avec focus ring cohérent, espacement `space-y-5` au lieu de `space-y-4`.
-- **Consentement marketing** : Ajout d'un checkbox RGPD optionnel en bas du formulaire.
-- **Message succès enrichi** : Reprendre le style de `AtelierInscriptionForm` (icône CheckCircle, message structuré).
-- **Placeholder intelligents** : Si le champ a un placeholder, l'afficher ; sinon en générer un cohérent.
+3. **Après génération** : en plus du toast, recharger les articles pour mettre à jour le badge immédiatement. Le toast reste mais n'est plus le seul point d'accès.
 
-### 2. `EventLanding.tsx` — Cohérence visuelle
+4. **Toast plus persistant** : passer `duration: 10000` (10s au lieu de ~4s par défaut) pour laisser le temps de cliquer.
 
-- Section formulaire : fond légèrement différencié (`bg-primary/5`), bordure accentuée pour guider l'oeil.
-- Titre "Inscription" avec sous-texte explicatif ("Remplissez ce formulaire pour confirmer votre participation").
-- Espacement harmonisé entre sections.
-
-### 3. `AdminInvitationPreview.tsx` — Même cohérence
-
-- Harmoniser les espacements des sections avec la landing publique.
-- S'assurer que le print/PDF conserve les mêmes proportions.
-
-## Fichiers impactés
+### Fichier impacté
 
 | Fichier | Action |
 |---------|--------|
-| `src/components/events/EventLandingForm.tsx` | Refonte : grille, id/name compat, RGPD, style IArche |
-| `src/pages/EventLanding.tsx` | Section formulaire enrichie visuellement |
-| `src/pages/admin/AdminInvitationPreview.tsx` | Harmonisation espacement |
+| `src/pages/admin/AdminAteliersWebinaires.tsx` | Charger `generated_documents`, afficher badge permanent, recharger après génération, toast 10s |
 
-Aucune migration DB nécessaire. Aucun changement d'edge function.
-
+Aucune migration. Aucun nouveau fichier.
