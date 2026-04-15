@@ -1,29 +1,52 @@
 
-# Plan : Accès permanent au programme généré
 
-## Problème
-Le toast "Programme généré !" disparaît après quelques secondes. Une fois disparu, aucun moyen d'accéder au document depuis la liste des ateliers.
+# Plan : Edition inline du programme avant figement
+
+## Constat
+
+Le preview actuel (`AdminInvitationPreview.tsx`) affiche les sections en `dangerouslySetInnerHTML` — lecture seule. Aucune possibilité d'éditer le texte, les titres, ou la mise en forme. Une fois figé (`approved`), le contenu doit devenir non-modifiable.
 
 ## Solution
-Charger les `generated_documents` existants pour chaque atelier et afficher un **lien permanent** vers le dernier programme généré directement dans la carte de l'atelier.
 
-### Modifications sur `AdminAteliersWebinaires.tsx`
+Rendre chaque section éditable en mode brouillon via le composant `LazyQuill` (déjà dans le projet). Ajouter l'édition des titres de section et des métadonnées hero. Sauvegarder les modifications dans `content_json` en base.
 
-1. **Charger les documents existants** : après le chargement des articles, requêter `generated_documents` par `article_id` pour récupérer le dernier document de chaque atelier (trié par `created_at desc`).
+## Modifications sur `AdminInvitationPreview.tsx`
 
-2. **Afficher dans la carte** : à côté du badge "Formulaire lié", ajouter un badge cliquable :
-   - Si un programme existe : badge vert "Programme v1" cliquable → navigue vers `/admin/invitation/{doc.id}`
-   - Si figé (`approved`) : badge avec icône cadenas
-   - Sinon : rien (le bouton "Programme" sert à générer)
+### Mode brouillon (status != 'approved')
 
-3. **Après génération** : en plus du toast, recharger les articles pour mettre à jour le badge immédiatement. Le toast reste mais n'est plus le seul point d'accès.
+1. **Titres de section** : remplacer les `<h2>` par des `<input>` éditables inline, stylés identiquement
+2. **Contenu de section** : remplacer `dangerouslySetInnerHTML` par `<LazyQuill>` avec toolbar bold/italic/underline/lists/links
+3. **Métadonnées hero** : titre, date, lieu, type d'événement — tous éditables via inputs inline
+4. **Bouton "Enregistrer"** : sauvegarde le `content_json` modifié en base (update sur `generated_documents`)
+5. **Indicateur visuel** : bordure pointillée subtile autour des zones éditables + tooltip "Cliquez pour modifier"
 
-4. **Toast plus persistant** : passer `duration: 10000` (10s au lieu de ~4s par défaut) pour laisser le temps de cliquer.
+### Mode figé (status == 'approved')
 
-### Fichier impacté
+- Tout revient en lecture seule (`dangerouslySetInnerHTML` comme aujourd'hui)
+- Aucun input, aucun Quill affiché
+- Le bouton "Enregistrer" disparaît
+
+### Toolbar Quill
+
+Configuration minimale adaptée au format brochure :
+- Bold, Italic, Underline
+- Listes (puces, numérotées)
+- Titres (h3, h4)
+- Liens
+- Clean formatting
+
+### Sauvegarde
+
+- Bouton "Enregistrer les modifications" dans la toolbar admin (à côté de "Figer")
+- Appel `supabase.update({ content_json })` sur `generated_documents`
+- Toast de confirmation
+- Auto-détection des changements (bouton grisé si rien n'a changé)
+
+## Fichier impacté
 
 | Fichier | Action |
 |---------|--------|
-| `src/pages/admin/AdminAteliersWebinaires.tsx` | Charger `generated_documents`, afficher badge permanent, recharger après génération, toast 10s |
+| `src/pages/admin/AdminInvitationPreview.tsx` | Ajout état local éditable, LazyQuill conditionnel, sauvegarde, inputs hero |
 
-Aucune migration. Aucun nouveau fichier.
+Aucune migration. Aucun nouveau fichier. Le composant `LazyQuill` existe déjà dans `src/components/admin/LazyQuill.tsx`.
+
