@@ -1,52 +1,56 @@
 
 
-# Plan : Outils MCP manquants pour éditer programmes et formulaires
+# Plan : Fix trigger `restrict_forms_counter_updates` + désactiver formulaire doublon
 
-## Constat
+## Probleme
 
-Le serveur MCP expose déjà `get_documents` et `create_document`, mais :
-- **Pas de `get_document_detail`** : impossible de lire le `content_json` (sections, metadata, modules) d'un programme invitation.
-- **Pas de `update_document`** : impossible de modifier le contenu, les sections, les lignes du programme détaillé, le QR, le footer.
-- **Pas de `update_form`** : on peut créer et lister les formulaires, mais pas les modifier (champs, paramètres, titre, activation).
+Le trigger `restrict_forms_counter_updates` bloque les updates MCP sur `forms` car `auth.uid()` est NULL avec `service_role`. Le check `has_role(auth.uid(), 'admin')` retourne false, et le trigger rejette toute modification non-compteur.
 
-## Outils à ajouter
+## Actions
 
-### 1. `get_document_detail` (lecture complète)
-- Input : `document_id` (UUID)
-- Retourne : `id, title, document_type, status, version, content_json, article_id, lead_id, project_id, created_at, updated_at`
-- Le `content_json` contient sections, metadata et modules — c'est la donnée nécessaire pour éditer via Claude.
+### 1. Migration SQL — autoriser service_role dans le trigger
 
-### 2. `update_document` (modification programme/invitation)
-- Input : `document_id` (UUID) + champs optionnels :
-  - `title`, `status` (draft/approved)
-  - `content_json` (JSON string complet — remplace l'existant)
-  - `sections` (JSON string — met à jour uniquement `content_json.sections`)
-  - `metadata` (JSON string — merge dans `content_json.metadata`)
-  - `modules` (JSON string — merge dans `content_json.modules`)
-- Logique : lecture du `content_json` actuel, merge intelligent des champs fournis, écriture.
-- Sécurité : refuse la modification si `status = approved` (document figé).
+Modifier la fonction pour détecter le rôle JWT `service_role` (en plus de `admin`) :
 
-### 3. `update_form` (modification formulaire)
-- Input : `form_id` (UUID) + champs optionnels :
-  - `title`, `description`, `slug`
-  - `fields` (JSON string — champs du formulaire)
-  - `settings` (JSON string — paramètres)
-  - `is_active` (boolean)
-  - `article_id` (UUID — lier à un atelier)
-- Logique : update partiel, seuls les champs fournis sont modifiés.
+```sql
+CREATE OR REPLACE FUNCTION public.restrict_forms_counter_updates()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path TO 'public'
+AS $$
+DECLARE
+  new_data jsonb;
+  old_data jsonb;
+BEGIN
+  -- Admins and service_role can update any fields
+  IF public.has_role(auth.uid(), 'admin'::public.app_role) THEN
+    RETURN NEW;
+  END IF;
 
-## Whitelist
+  -- service_role bypasses (MCP, edge functions)
+  IF current_setting('request.jwt.claim.role', true) = 'service_role' THEN
+    RETURN NEW;
+  END IF;
 
-Ajouter les 3 outils dans `_EXPOSED_TOOLS` :
-```
-'get_document_detail', 'update_document', 'update_form'
+  -- ... rest unchanged (counter-only logic)
+$$;
 ```
 
-## Fichier impacté
+### 2. Désactiver le formulaire doublon
+
+Via l'outil insert :
+```sql
+UPDATE forms SET is_active = false WHERE id = '6c2b3a02-0a77-4116-9e06-78f0b4a80c7e';
+```
+
+### 3. Vérification
+
+Tester `update_form` MCP avec `is_active = false` sur un formulaire de test pour confirmer que le trigger ne bloque plus.
+
+## Fichiers impactés
 
 | Fichier | Action |
 |---------|--------|
-| `supabase/functions/mcp-server/index.ts` | Ajout de 3 tools + whitelist |
-
-Aucune migration. Redéploiement automatique de l'edge function.
+| Migration SQL | `CREATE OR REPLACE FUNCTION restrict_forms_counter_updates` |
+| Données | `UPDATE forms SET is_active = false` (doublon) |
 
