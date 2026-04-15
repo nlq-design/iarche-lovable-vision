@@ -11,6 +11,11 @@ import { normalizeFormFields } from '@/lib/form-fields';
 
 interface Props {
   articleId: string;
+  articleTitle?: string;
+  eventDate?: string;
+  eventLocation?: string;
+  heureDebut?: string;
+  typeEvenement?: string;
 }
 
 /** Determines if two fields should be grouped on the same row (Prénom + Nom pattern) */

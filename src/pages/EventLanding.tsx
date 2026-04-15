@@ -236,7 +236,14 @@ const EventLanding = () => {
                 <p className="text-sm text-muted-foreground mb-6 ml-4 pl-px">
                   {metadata.qrDescription || 'Remplissez ce formulaire pour confirmer votre participation.'}
                 </p>
-                <EventLandingForm articleId={doc.article_id} />
+                <EventLandingForm
+                  articleId={doc.article_id}
+                  articleTitle={metadata.eventTitle || doc.title}
+                  eventDate={metadata.eventDate}
+                  eventLocation={metadata.eventLocation}
+                  heureDebut={undefined}
+                  typeEvenement={metadata.eventType}
+                />
 
               </div>
             </section>
