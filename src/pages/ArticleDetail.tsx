@@ -596,34 +596,6 @@ const ArticleDetail = () => {
               </div>
             )}
 
-            {/* Bouton générer programme/invitation pour admin sur événements */}
-            {isAdmin && article.resource_type === 'atelier-webinaire' && (
-              <div className="mb-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    generateDocument.mutate({
-                      article_id: article.id,
-                      document_type: 'invitation',
-                    }, {
-                      onSuccess: (doc) => {
-                        toast.success('Programme généré !', {
-                          action: {
-                            label: 'Voir',
-                            onClick: () => navigate(`/cockpit/documents/programme-${doc.id}`),
-                          },
-                        });
-                      },
-                    });
-                  }}
-                  disabled={generateDocument.isPending}
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  {generateDocument.isPending ? 'Génération...' : 'Générer programme / invitation'}
-                </Button>
-              </div>
-            )}
             
             {article.resource_type === 'solution' && article.tags && article.tags.length > 0 && (
               <div className="mb-4 animate-fadeIn">
