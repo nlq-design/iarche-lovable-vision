@@ -2547,6 +2547,7 @@ export type Database = {
           ai_metadata: Json | null
           approved_at: string | null
           approved_by: string | null
+          article_id: string | null
           billing_entity_id: string | null
           content_json: Json
           created_at: string | null
@@ -2578,6 +2579,7 @@ export type Database = {
           ai_metadata?: Json | null
           approved_at?: string | null
           approved_by?: string | null
+          article_id?: string | null
           billing_entity_id?: string | null
           content_json?: Json
           created_at?: string | null
@@ -2609,6 +2611,7 @@ export type Database = {
           ai_metadata?: Json | null
           approved_at?: string | null
           approved_by?: string | null
+          article_id?: string | null
           billing_entity_id?: string | null
           content_json?: Json
           created_at?: string | null
@@ -2635,6 +2638,13 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "generated_documents_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "generated_documents_billing_entity_id_fkey"
             columns: ["billing_entity_id"]
