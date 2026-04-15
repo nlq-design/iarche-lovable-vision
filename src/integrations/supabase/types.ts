@@ -2497,6 +2497,7 @@ export type Database = {
       }
       forms: {
         Row: {
+          article_id: string | null
           created_at: string | null
           description: string | null
           fields: Json | null
@@ -2511,6 +2512,7 @@ export type Database = {
           views_count: number | null
         }
         Insert: {
+          article_id?: string | null
           created_at?: string | null
           description?: string | null
           fields?: Json | null
@@ -2525,6 +2527,7 @@ export type Database = {
           views_count?: number | null
         }
         Update: {
+          article_id?: string | null
           created_at?: string | null
           description?: string | null
           fields?: Json | null
@@ -2538,7 +2541,15 @@ export type Database = {
           updated_at?: string | null
           views_count?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "forms_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       generated_documents: {
         Row: {

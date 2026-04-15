@@ -6,11 +6,19 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Plus, Edit, Trash2, Eye, History, HelpCircle, FileText } from 'lucide-react';
+import { Loader2, Plus, Edit, Trash2, Eye, History, HelpCircle, FileText, ClipboardCopy, ExternalLink } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { useCockpitGeneratedDocuments } from '@/hooks/cockpit/useCockpitGeneratedDocuments';
 import { toast as sonnerToast } from 'sonner';
+
+interface LinkedForm {
+  id: string;
+  slug: string;
+  title: string;
+  is_active: boolean;
+  submissions_count: number;
+}
 
 interface Article {
   id: string;
@@ -22,6 +30,7 @@ interface Article {
   created_at: string;
   resource_type: string;
   has_faq?: boolean;
+  linked_form?: LinkedForm | null;
 }
 
 const AdminAteliersWebinaires = () => {
@@ -69,14 +78,38 @@ const AdminAteliersWebinaires = () => {
         description: 'Impossible de charger les ateliers et webinaires',
         variant: 'destructive',
       });
-    } else {
-      const articlesWithFAQ = (data || []).map((article: any) => ({
-        ...article,
-        has_faq: article.faqs && article.faqs.length > 0,
-        faqs: undefined, // Remove faqs from final object
-      }));
-      setArticles(articlesWithFAQ);
+      setLoading(false);
+      return;
     }
+
+    const articleIds = (data || []).map((a: any) => a.id);
+
+    // Load linked forms
+    const { data: formsData } = await supabase
+      .from('forms')
+      .select('id, slug, title, is_active, submissions_count, article_id')
+      .in('article_id', articleIds);
+
+    const formsByArticle = new Map<string, LinkedForm>();
+    (formsData || []).forEach((f: any) => {
+      if (f.article_id) {
+        formsByArticle.set(f.article_id, {
+          id: f.id,
+          slug: f.slug,
+          title: f.title,
+          is_active: f.is_active,
+          submissions_count: f.submissions_count || 0,
+        });
+      }
+    });
+
+    const articlesWithData = (data || []).map((article: any) => ({
+      ...article,
+      has_faq: article.faqs && article.faqs.length > 0,
+      faqs: undefined,
+      linked_form: formsByArticle.get(article.id) || null,
+    }));
+    setArticles(articlesWithData);
     setLoading(false);
   };
 
@@ -98,6 +131,12 @@ const AdminAteliersWebinaires = () => {
       });
       loadArticles();
     }
+  };
+
+  const copyFormUrl = (slug: string) => {
+    const url = `https://iarche.fr/formulaires/${slug}`;
+    navigator.clipboard.writeText(url);
+    sonnerToast.success('URL copiée !', { description: url });
   };
 
   if (authLoading || loading) {
@@ -147,7 +186,7 @@ const AdminAteliersWebinaires = () => {
                           {article.excerpt}
                         </p>
                       )}
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
                         <span className={`px-2 py-1 rounded ${article.published ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
                           {article.published ? 'Publié' : 'Brouillon'}
                         </span>
@@ -159,9 +198,46 @@ const AdminAteliersWebinaires = () => {
                         <span>
                           {new Date(article.created_at).toLocaleDateString('fr-FR')}
                         </span>
+                        {/* Linked form info */}
+                        {article.linked_form ? (
+                          <span className="flex items-center gap-1.5 px-2 py-1 rounded bg-primary/10 text-primary text-xs font-medium">
+                            📋 Formulaire lié ({article.linked_form.submissions_count} réponses)
+                          </span>
+                        ) : (
+                          <span className="px-2 py-1 rounded bg-muted text-muted-foreground text-xs">
+                            Aucun formulaire lié
+                          </span>
+                        )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap justify-end">
+                      {/* Form actions */}
+                      {article.linked_form ? (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-1.5"
+                            onClick={() => navigate(`/admin/formulaires/${article.linked_form!.id}`)}
+                            title="Éditer le formulaire"
+                          >
+                            📋 Formulaire
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => copyFormUrl(article.linked_form!.slug)}
+                            title="Copier l'URL du formulaire"
+                          >
+                            <ClipboardCopy className="h-4 w-4" />
+                          </Button>
+                          <NavLink to={`/formulaires/${article.linked_form!.slug}`}>
+                            <Button variant="outline" size="icon" title="Voir le formulaire public">
+                              <ExternalLink className="h-4 w-4" />
+                            </Button>
+                          </NavLink>
+                        </>
+                      ) : null}
                       <Button
                         variant="outline"
                         size="sm"
