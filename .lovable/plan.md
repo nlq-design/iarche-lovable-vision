@@ -1,54 +1,43 @@
 
 
-## Améliorations Signature Email IArche v5
+# Fix: Exposer `create_article` et les tools manquants dans le MCP discovery
 
-### Problemes actuels
-- Logo petit (28px preview, 32px HTML) et utilise le SVG local au lieu du PNG hébergé
-- Design basique : pas d'icônes contact, pas de séparateur visuel soigné
-- Tagline mal alignée (commence sous le logo au lieu de couvrir toute la largeur)
-- Pas de lien LinkedIn / réseaux sociaux
-- Le téléphone par défaut est vide
+## Diagnostic
 
-### Améliorations proposées
+Le MCP server enregistre **87 tools** mais n'en expose que **45 via `tools/list`** grace a un filtre `_EXPOSED_TOOLS` (Set, ligne 5032). Claude.ai utilise `tools/list` pour decouvrir les tools disponibles — tout ce qui n'est pas dans le Set est invisible.
 
-**1. Logo plus grand et net**
-- Passer le logo de 32px à 48px en hauteur dans le HTML et le preview
-- Centrer verticalement le logo par rapport au bloc texte
+`create_article` (ligne 1852) est enregistre et callable, mais absent du Set.
 
-**2. Structure visuelle améliorée**
-- Ajouter des icones email/phone/web en texte Unicode (✉ ☎ 🌐) pour compatibilité email-safe (pas de SVG inline)
-- Ligne séparatrice fine (1px, couleur `bleuNuitLight`) entre les infos contact et la tagline
-- Tagline alignée à gauche sous toute la signature (colspan=2), avec un petit trait terracotta décoratif
+## Correction
 
-**3. Champ LinkedIn optionnel**
-- Nouveau champ dans le formulaire : "LinkedIn (optionnel)"
-- Affiche un lien `in/pseudo` dans la signature si renseigné
+**Fichier** : `supabase/functions/mcp-server/index.ts`
 
-**4. Meilleure hiérarchie typographique**
-- Nom : 17px bold, Bleu Nuit
-- Fonction : 13px regular, gris #555
-- Contact (email/tel/site) : 13px, espacement uniforme
-- Tagline : 11px italic, gris #999, précédée d'un tiret em "—"
+Ajouter les tools manquants dans `_EXPOSED_TOOLS` (ligne 5032-5061) :
 
-**5. Preview fidèle au HTML**
-- Synchroniser les tailles/couleurs entre le preview React et le `generateHTML()` pour un rendu WYSIWYG
-
-### Fichier modifié
-- `src/pages/admin/SignatureEditor.tsx` : formulaire (ajout champ LinkedIn), preview React, et `generateHTML()`
-
-### Rendu attendu
-
-```text
-┌──────────────────────────────────────────────┐
-│  [LOGO 48px]  │  Nicolas LARA QUERALTA       │
-│               │  CEO & Fondateur · IArche     │
-│               │                               │
-│               │  ✉ nlq@iarche.fr              │
-│               │  ☎ +33 6 00 00 00 00          │
-│               │  🔗 iarche.fr                  │
-│               │  in linkedin.com/in/nlq       │
-│───────────────┴───────────────────────────────│
-│  — L'IA se construit avec vous                │
-└──────────────────────────────────────────────┘
+```typescript
+// CONTENU — ajouter
+'get_articles', 'create_article', 'update_article',
+// PARTENAIRES — ajouter  
+'get_partners', 'update_partner', 'get_partner_report',
+// BOOKINGS
+'get_bookings', 'create_booking',
+// INSCRIPTIONS
+'get_atelier_inscriptions',
 ```
+
+**Pas de nouveau code, pas de nouvelle table.** Juste l'ajout des noms dans le Set existant.
+
+## Impact
+
+- Claude.ai verra immediatement les tools apres redeploy
+- Aucun changement de comportement pour les tools deja exposes
+- `tools/call` continue de fonctionner pour les 87 tools (pas de regression)
+
+## Deploiement
+
+Apres modification : deploy automatique de la edge function `mcp-server`. Le health check GET confirmera le count mis a jour.
+
+## Estimation
+
+Complexite : **S** (5 minutes)
 
