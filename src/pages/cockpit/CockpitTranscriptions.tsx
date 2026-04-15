@@ -508,7 +508,7 @@ export default function CockpitTranscriptions() {
                           )}
                         </div>
                         
-                         <h3 className="font-medium truncate">
+                         <h3 className="font-medium line-clamp-2">
                            {transcription.title 
                              ? transcription.title
                              : transcription.summary?.title
