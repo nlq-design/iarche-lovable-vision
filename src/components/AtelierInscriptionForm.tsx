@@ -276,7 +276,7 @@ const AtelierInscriptionForm = ({
             </div>
           )}
 
-          {showParticipantsCount && (
+          {showParticipantsCount && maxParticipants > 0 && (
             <div className="flex items-start gap-3">
               <Users className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
               <div>

@@ -286,7 +286,7 @@ const AteliersWebinaires = () => {
                       )}
                       
                       {/* Compteur d'inscrits - uniquement pour événements à venir */}
-                      {item.event_date && new Date(item.event_date) >= new Date() && item.show_participants_count && item.max_participants && item.inscriptions_count !== undefined && (
+                      {item.event_date && new Date(item.event_date) >= new Date() && item.show_participants_count && item.max_participants && item.max_participants > 0 && item.inscriptions_count !== undefined && (
                         <Badge 
                           variant={item.inscriptions_count >= item.max_participants ? "destructive" : "secondary"}
                           className="text-xs"

@@ -932,7 +932,7 @@ const ArticleDetail = () => {
           ) : article.resource_type === 'atelier-webinaire' ? (
             <div className="my-12 animate-fadeIn [animation-delay:0.6s]">
               {/* Si inscriptions ouvertes et places disponibles */}
-              {article.registration_open && inscriptionsCount < (article.max_participants || 30) ? (
+              {article.registration_open && (!article.max_participants || inscriptionsCount < article.max_participants) ? (
                 <AtelierInscriptionForm
                   articleId={article.id}
                   articleTitle={article.title}
@@ -940,15 +940,15 @@ const ArticleDetail = () => {
                   eventLocation={article.event_location}
                   heureDebut={article.heure_debut}
                   typeEvenement={article.type_evenement}
-              maxParticipants={article.max_participants || 30}
-              inscriptionsCount={inscriptionsCount}
-              showParticipantsCount={article.show_participants_count ?? true}
+                  maxParticipants={article.max_participants || 0}
+                  inscriptionsCount={inscriptionsCount}
+                  showParticipantsCount={article.show_participants_count === true && (article.max_participants ?? 0) > 0}
                 />
-              ) : inscriptionsCount >= (article.max_participants || 30) ? (
+              ) : article.max_participants && article.max_participants > 0 && inscriptionsCount >= article.max_participants ? (
                 /* Si complet - liste d'attente */
                 <div className="text-center p-8 bg-red-50 border-2 border-red-200 rounded-xl">
                   <p className="text-lg font-bold text-red-800 mb-2">
-                    🚫 Événement complet ({inscriptionsCount}/{article.max_participants || 30} inscrits)
+                    🚫 Événement complet ({inscriptionsCount}/{article.max_participants} inscrits)
                   </p>
                   <p className="text-sm text-red-700 mb-6">
                     Rejoignez la liste d'attente pour être prévenu en cas de désistement
