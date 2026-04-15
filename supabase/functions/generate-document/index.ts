@@ -979,6 +979,32 @@ ${contextNotes.length > 0 ? `NOTES: ${contextNotes.map(n => n.content).join(' | 
 CONSIGNES:
 1. Réponds UNIQUEMENT avec le JSON complet
 2. AUCUN placeholder (ni {{...}} ni [...]) : utilise les vraies valeurs ci-dessus ou invente une valeur réaliste`,
+
+      invitation: `GÉNÈRE MAINTENANT LE JSON DU PROGRAMME D'INVITATION. Ne pose aucune question.
+
+DONNÉES ÉVÉNEMENT:
+- Titre: ${article?.title || 'Événement'}
+- Date: ${article?.event_date ? new Date(article.event_date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'À définir'}
+- Heure: ${article?.heure_debut || 'À définir'}
+- Lieu: ${article?.event_location || 'À définir'}
+- Type: ${article?.type_evenement || 'présentiel'}
+- Description: ${article?.excerpt || article?.content?.substring(0, 500) || ''}
+- Durée: ${article?.duree_heures ? `${article.duree_heures}h` : 'À définir'}
+- Prérequis: ${article?.prerequis || 'Aucun'}
+- Niveau: ${article?.niveau || 'Tous niveaux'}
+
+${article?.intervenants ? `INTERVENANTS:\n${JSON.stringify(article.intervenants)}` : ''}
+${article?.programme_detaille ? `PROGRAMME DÉTAILLÉ:\n${JSON.stringify(article.programme_detaille)}` : ''}
+${article?.thematiques?.length ? `THÉMATIQUES: ${article.thematiques.join(', ')}` : ''}
+
+${custom_instructions ? `INSTRUCTIONS SPÉCIFIQUES: ${custom_instructions}` : ""}
+
+CONSIGNES:
+1. Réponds UNIQUEMENT avec le JSON complet
+2. AUCUN placeholder : utilise les vraies données de l'événement
+3. Crée un programme attractif et professionnel qui donne envie de s'inscrire
+4. Si des données manquent, invente des valeurs réalistes et cohérentes avec le thème
+5. Le ton doit être dynamique et orienté bénéfices pour le participant`,
     };
     const userPrompt = USER_PROMPTS[document_type];
 
@@ -1199,11 +1225,12 @@ CONSIGNES:
     }
 
     // Generate title
-    const titleClientName = documentContent.metadata?.clientCompany || lead?.company || project?.name || opportunity?.title || "Nouveau";
+    const titleClientName = documentContent.metadata?.clientCompany || lead?.company || project?.name || opportunity?.title || article?.title || "Nouveau";
     const documentTitles: Record<DocumentType, string> = {
       quote: quoteNumber ? `Devis ${quoteNumber} - ${titleClientName}` : `Devis - ${titleClientName}`,
       spec: `CDC - ${titleClientName}`,
       proposal: `Proposition - ${titleClientName}`,
+      invitation: `Programme - ${article?.title || titleClientName}`,
     };
 
     // Save to database with billing entity reference
@@ -1216,6 +1243,7 @@ CONSIGNES:
         project_id: project_id || null,
         opportunity_id: opportunity_id || null,
         lead_id: lead_id || null,
+        article_id: article_id || null,
         billing_entity_id: billingEntity?.id || null,
         quote_number: quoteNumber,
         content_json: documentContent,
