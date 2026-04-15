@@ -26,7 +26,7 @@ import GradientTitle from '@/components/ui/GradientTitle';
 import { useCTATracking } from '@/hooks/useCTATracking';
 import { TableOfContents } from '@/components/ui/TableOfContents';
 import { RessourcesComplementaires } from '@/components/ui/RessourcesComplementaires';
-import { useCockpitGeneratedDocuments } from '@/hooks/cockpit/useCockpitGeneratedDocuments';
+
 import { toast } from 'sonner';
 import 'react-quill/dist/quill.snow.css';
 
