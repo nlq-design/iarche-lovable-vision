@@ -5073,6 +5073,76 @@ mcpServer.registerTool(
 );
 
 
+// ============================================================
+// TOOL: create_form
+// ============================================================
+mcpServer.registerTool(
+  "create_form",
+  {
+    title: "Create Form",
+    description: "Créer un nouveau formulaire ALMA. Le slug est auto-généré depuis le titre si non fourni.",
+    inputSchema: {
+      title: z.string().describe("Titre du formulaire"),
+      description: z.string().optional().describe("Description du formulaire"),
+      slug: z.string().optional().describe("Slug personnalisé (auto-généré si absent)"),
+      fields: z.string().optional().describe("JSON string des champs du formulaire"),
+      settings: z.string().optional().describe("JSON string des paramètres"),
+      is_active: z.boolean().optional().describe("Formulaire actif (défaut: true)"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+
+    const slug = params.slug || params.title.toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+    const insertData: Record<string, unknown> = {
+      title: params.title,
+      slug,
+      description: params.description || null,
+      is_active: params.is_active !== undefined ? params.is_active : true,
+    };
+    if (params.fields) insertData.fields = JSON.parse(params.fields);
+    if (params.settings) insertData.settings = JSON.parse(params.settings);
+
+    const { data, error } = await supabaseAdmin.from("forms").insert(insertData)
+      .select("id, title, slug, is_active, created_at").single();
+
+    if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ success: true, form: data }) }] };
+  }
+);
+
+// ============================================================
+// TOOL: get_forms
+// ============================================================
+mcpServer.registerTool(
+  "get_forms",
+  {
+    title: "Get Forms",
+    description: "Lister les formulaires ALMA avec leurs statistiques.",
+    inputSchema: {
+      is_active: z.boolean().optional().describe("Filtrer par statut actif/inactif"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+
+    let query = supabaseAdmin.from("forms")
+      .select("id, title, slug, description, is_active, submissions_count, views_count, created_at, updated_at")
+      .order("created_at", { ascending: false });
+    if (params.is_active !== undefined) query = query.eq("is_active", params.is_active);
+
+    const { data, error } = await query;
+    if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ forms: data, count: data?.length }) }] };
+  }
+);
+
+
 // === Tools exposés via tools/list (les autres restent appelables via callTool) ===
 const _EXPOSED_TOOLS = new Set([
   // CORE CRM
@@ -5105,6 +5175,8 @@ const _EXPOSED_TOOLS = new Set([
   // BOOKINGS & INSCRIPTIONS
   'get_bookings', 'create_booking',
   'get_atelier_inscriptions',
+  // FORMULAIRES
+  'get_forms', 'create_form',
   // TRANSCRIPTIONS
   'get_transcriptions', 'get_transcription_detail', 'list_transcriptions', 'get_transcription',
   // PREFERENCES
