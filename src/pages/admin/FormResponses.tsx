@@ -308,7 +308,7 @@ const FormResponses = () => {
                   </TableHead>
                   <TableHead>Date</TableHead>
                   {displayFields.map(field => (
-                    <TableHead key={field.id}>{field.label}</TableHead>
+                    <TableHead key={(field as any).name || field.id}>{field.label}</TableHead>
                   ))}
                   <TableHead className="w-12"></TableHead>
                 </TableRow>
@@ -325,13 +325,16 @@ const FormResponses = () => {
                     <TableCell className="text-sm">
                       {format(new Date(response.submitted_at), 'dd/MM/yy HH:mm', { locale: fr })}
                     </TableCell>
-                    {displayFields.map(field => (
-                      <TableCell key={field.id} className="max-w-[200px] truncate">
-                        {Array.isArray(response.data[field.id]) 
-                          ? response.data[field.id].join(', ')
-                          : String(response.data[field.id] || '-')}
+                    {displayFields.map(field => {
+                      const fk = (field as any).name || field.id;
+                      return (
+                      <TableCell key={fk} className="max-w-[200px] truncate">
+                        {Array.isArray(response.data[fk]) 
+                          ? response.data[fk].join(', ')
+                          : String(response.data[fk] || '-')}
                       </TableCell>
-                    ))}
+                      );
+                    })}
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -379,16 +382,19 @@ const FormResponses = () => {
                 <div className="space-y-4">
                   {form.fields
                     .filter(f => !['heading', 'paragraph', 'divider'].includes(f.type))
-                    .map(field => (
-                      <div key={field.id} className="border-b pb-3">
+                    .map(field => {
+                      const fk = (field as any).name || field.id;
+                      return (
+                      <div key={fk} className="border-b pb-3">
                         <p className="text-sm font-medium text-muted-foreground">{field.label}</p>
                         <p className="mt-1">
-                          {Array.isArray(selectedResponse.data[field.id])
-                            ? selectedResponse.data[field.id].join(', ')
-                            : String(selectedResponse.data[field.id] || '-')}
+                          {Array.isArray(selectedResponse.data[fk])
+                            ? selectedResponse.data[fk].join(', ')
+                            : String(selectedResponse.data[fk] || '-')}
                         </p>
                       </div>
-                    ))}
+                      );
+                    })}
                 </div>
 
                 {selectedResponse.metadata && (
