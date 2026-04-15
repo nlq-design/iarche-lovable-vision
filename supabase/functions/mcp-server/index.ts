@@ -1864,6 +1864,19 @@ mcpServer.registerTool(
       status: z.string().optional().describe("Statut (défaut: draft)"),
       published: z.boolean().optional().describe("Publié (défaut: false)"),
       slug: z.string().optional().describe("Slug personnalisé (auto-généré si absent)"),
+      // Champs événement (atelier-webinaire)
+      event_date: z.string().optional().describe("Date événement ISO 8601"),
+      event_location: z.string().optional().describe("Lieu de l'événement"),
+      heure_debut: z.string().optional().describe("Heure de début (HH:MM)"),
+      type_evenement: z.string().optional().describe("presentiel, webinaire, hybride"),
+      max_participants: z.number().optional().describe("Jauge max participants"),
+      intervenants: z.string().optional().describe("JSON string array [{nom, role, bio}]"),
+      programme_detaille: z.string().optional().describe("JSON string programme"),
+      prerequis: z.string().optional().describe("Prérequis pour l'atelier"),
+      registration_open: z.boolean().optional().describe("Inscriptions ouvertes"),
+      certificat_delivre: z.boolean().optional().describe("Certificat délivré"),
+      rappels_automatiques: z.boolean().optional().describe("Rappels auto activés"),
+      duree_heures: z.number().optional().describe("Durée en heures"),
     },
   },
   async (params) => {
@@ -1874,7 +1887,7 @@ mcpServer.registerTool(
       .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
-    const { data, error } = await supabaseAdmin.from("articles").insert({
+    const insertData: Record<string, unknown> = {
       title: params.title,
       slug,
       resource_type: params.resource_type,
@@ -1885,7 +1898,23 @@ mcpServer.registerTool(
       cover_image_url: params.cover_image_url || null,
       status: params.status || "draft",
       published: params.published || false,
-    }).select("id, title, slug, resource_type, status, created_at").single();
+    };
+    // Event fields
+    if (params.event_date) insertData.event_date = params.event_date;
+    if (params.event_location) insertData.event_location = params.event_location;
+    if (params.heure_debut) insertData.heure_debut = params.heure_debut;
+    if (params.type_evenement) insertData.type_evenement = params.type_evenement;
+    if (params.max_participants) insertData.max_participants = params.max_participants;
+    if (params.intervenants) insertData.intervenants = JSON.parse(params.intervenants);
+    if (params.programme_detaille) insertData.programme_detaille = JSON.parse(params.programme_detaille);
+    if (params.prerequis) insertData.prerequis = params.prerequis;
+    if (params.registration_open !== undefined) insertData.registration_open = params.registration_open;
+    if (params.certificat_delivre !== undefined) insertData.certificat_delivre = params.certificat_delivre;
+    if (params.rappels_automatiques !== undefined) insertData.rappels_automatiques = params.rappels_automatiques;
+    if (params.duree_heures) insertData.duree_heures = params.duree_heures;
+
+    const { data, error } = await supabaseAdmin.from("articles").insert(insertData)
+      .select("id, title, slug, resource_type, status, created_at").single();
 
     if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
     return { content: [{ type: "text" as const, text: JSON.stringify({ success: true, article: data }) }] };
@@ -1911,6 +1940,19 @@ mcpServer.registerTool(
       status: z.string().optional(),
       published: z.boolean().optional(),
       slug: z.string().optional(),
+      // Champs événement (atelier-webinaire)
+      event_date: z.string().optional().describe("Date événement ISO 8601"),
+      event_location: z.string().optional().describe("Lieu de l'événement"),
+      heure_debut: z.string().optional().describe("Heure de début (HH:MM)"),
+      type_evenement: z.string().optional().describe("presentiel, webinaire, hybride"),
+      max_participants: z.number().optional().describe("Jauge max participants"),
+      intervenants: z.string().optional().describe("JSON string array [{nom, role, bio}]"),
+      programme_detaille: z.string().optional().describe("JSON string programme"),
+      prerequis: z.string().optional(),
+      registration_open: z.boolean().optional(),
+      certificat_delivre: z.boolean().optional(),
+      rappels_automatiques: z.boolean().optional(),
+      duree_heures: z.number().optional(),
     },
   },
   async (params) => {
