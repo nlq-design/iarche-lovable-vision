@@ -1,4 +1,4 @@
-// redeploy 08/03/2026 v7 — 45 exposed tools (85 internal)
+// redeploy 15/04/2026 v8 — 48 exposed tools (88 internal)
 /**
  * MCP Server Edge Function — IArche CRM (45 exposed / 85 internal tools)
  *
@@ -5142,6 +5142,144 @@ mcpServer.registerTool(
   }
 );
 
+// ============================================================
+// TOOL: get_document_detail
+// ============================================================
+mcpServer.registerTool(
+  "get_document_detail",
+  {
+    title: "Get Document Detail",
+    description: "Lecture complète d'un document généré, incluant le content_json (sections, metadata, modules). Indispensable pour éditer un programme invitation.",
+    inputSchema: {
+      document_id: z.string().describe("UUID du document"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+
+    const { data, error } = await supabaseAdmin
+      .from("generated_documents")
+      .select("id, title, document_type, status, version, content_json, article_id, lead_id, project_id, quote_number, created_at, updated_at")
+      .eq("id", params.document_id)
+      .eq("workspace_id", ctx.wsId)
+      .single();
+
+    if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ document: data }) }] };
+  }
+);
+
+// ============================================================
+// TOOL: update_document
+// ============================================================
+mcpServer.registerTool(
+  "update_document",
+  {
+    title: "Update Document",
+    description: "Modifier un document généré (titre, statut, content_json). Supporte le merge partiel : envoyer sections, metadata ou modules met à jour uniquement cette partie du content_json. Refuse la modification si status=approved.",
+    inputSchema: {
+      document_id: z.string().describe("UUID du document"),
+      title: z.string().optional().describe("Nouveau titre"),
+      status: z.string().optional().describe("Nouveau statut (draft, sent, approved, rejected)"),
+      content_json: z.string().optional().describe("JSON complet du content_json (remplace tout)"),
+      sections: z.string().optional().describe("JSON des sections — remplace content_json.sections uniquement"),
+      metadata: z.string().optional().describe("JSON metadata — merge dans content_json.metadata"),
+      modules: z.string().optional().describe("JSON modules — merge dans content_json.modules"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+
+    // Fetch current document
+    const { data: doc, error: fetchErr } = await supabaseAdmin
+      .from("generated_documents")
+      .select("id, status, content_json")
+      .eq("id", params.document_id)
+      .eq("workspace_id", ctx.wsId)
+      .single();
+
+    if (fetchErr || !doc) return { content: [{ type: "text" as const, text: `Erreur: ${fetchErr?.message || 'Document non trouvé'}` }] };
+
+    if (doc.status === "approved" && params.status !== "draft") {
+      return { content: [{ type: "text" as const, text: "Refusé : document approuvé. Passez d'abord le statut à 'draft' pour le modifier." }] };
+    }
+
+    const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() };
+
+    if (params.title) updateData.title = params.title;
+    if (params.status) updateData.status = params.status;
+
+    // Handle content_json updates
+    if (params.content_json) {
+      // Full replace
+      updateData.content_json = JSON.parse(params.content_json);
+    } else if (params.sections || params.metadata || params.modules) {
+      // Partial merge
+      const current = (doc.content_json as Record<string, unknown>) || {};
+      if (params.sections) current.sections = JSON.parse(params.sections);
+      if (params.metadata) current.metadata = { ...(current.metadata as Record<string, unknown> || {}), ...JSON.parse(params.metadata) };
+      if (params.modules) current.modules = { ...(current.modules as Record<string, unknown> || {}), ...JSON.parse(params.modules) };
+      updateData.content_json = current;
+    }
+
+    const { error } = await supabaseAdmin
+      .from("generated_documents")
+      .update(updateData)
+      .eq("id", params.document_id)
+      .eq("workspace_id", ctx.wsId);
+
+    if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ success: true, document_id: params.document_id }) }] };
+  }
+);
+
+// ============================================================
+// TOOL: update_form
+// ============================================================
+mcpServer.registerTool(
+  "update_form",
+  {
+    title: "Update Form",
+    description: "Modifier un formulaire ALMA existant (titre, champs, paramètres, activation, liaison atelier).",
+    inputSchema: {
+      form_id: z.string().describe("UUID du formulaire"),
+      title: z.string().optional().describe("Nouveau titre"),
+      description: z.string().optional().describe("Nouvelle description"),
+      slug: z.string().optional().describe("Nouveau slug"),
+      fields: z.string().optional().describe("JSON string des champs du formulaire"),
+      settings: z.string().optional().describe("JSON string des paramètres"),
+      is_active: z.boolean().optional().describe("Activer/désactiver le formulaire"),
+      article_id: z.string().optional().describe("UUID de l'atelier à lier"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+
+    const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() };
+
+    if (params.title !== undefined) updateData.title = params.title;
+    if (params.description !== undefined) updateData.description = params.description;
+    if (params.slug !== undefined) updateData.slug = params.slug;
+    if (params.is_active !== undefined) updateData.is_active = params.is_active;
+    if (params.article_id !== undefined) updateData.article_id = params.article_id;
+    if (params.fields) updateData.fields = JSON.parse(params.fields);
+    if (params.settings) updateData.settings = JSON.parse(params.settings);
+
+    const { data, error } = await supabaseAdmin
+      .from("forms")
+      .update(updateData)
+      .eq("id", params.form_id)
+      .select("id, title, slug, is_active, updated_at")
+      .single();
+
+    if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ success: true, form: data }) }] };
+  }
+);
+
 
 // === Tools exposés via tools/list (les autres restent appelables via callTool) ===
 const _EXPOSED_TOOLS = new Set([
@@ -5169,14 +5307,14 @@ const _EXPOSED_TOOLS = new Set([
   'search_viviers', 'promote_vivier',
   // PROJETS
   'get_projects', 'project_write', 'get_specifications', 'create_specification',
-  'get_documents', 'create_document',
+  'get_documents', 'create_document', 'get_document_detail', 'update_document',
   // LEGAL & FINANCE
   'analyze_legal',
   // BOOKINGS & INSCRIPTIONS
   'get_bookings', 'create_booking',
   'get_atelier_inscriptions',
   // FORMULAIRES
-  'get_forms', 'create_form',
+  'get_forms', 'create_form', 'update_form',
   // TRANSCRIPTIONS
   'get_transcriptions', 'get_transcription_detail', 'list_transcriptions', 'get_transcription',
   // PREFERENCES
