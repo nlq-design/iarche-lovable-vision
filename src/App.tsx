@@ -259,6 +259,13 @@ const App = () => (
             </Suspense>
           } />
           
+          {/* Landing pages événements publiques */}
+          <Route path="/evenements/:slug" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <EventLanding />
+            </Suspense>
+          } />
+          
           {/* Pages légales */}
           <Route path="/mentions-legales" element={<MentionsLegales />} />
           <Route path="/conditions-generales" element={<ConditionsGenerales />} />
