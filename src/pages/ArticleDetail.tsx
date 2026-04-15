@@ -86,7 +86,7 @@ const ArticleDetail = () => {
   const location = useLocation();
   const { isAdmin } = useAuth();
   const { trackCTAClick } = useCTATracking();
-  const { generateDocument } = useCockpitGeneratedDocuments();
+  
 
   const [article, setArticle] = useState<Article | null>(null);
   const [faq, setFaq] = useState<Array<{ question: string; answer: string }>>([]);
