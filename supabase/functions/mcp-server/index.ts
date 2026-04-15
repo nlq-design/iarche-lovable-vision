@@ -5028,7 +5028,7 @@ mcpServer.registerTool(
 );
 
 
-// === 45 outils exposés via tools/list (les 40 autres restent appelables via callTool) ===
+// === Tools exposés via tools/list (les autres restent appelables via callTool) ===
 const _EXPOSED_TOOLS = new Set([
   // CORE CRM
   'get_leads', 'get_lead_detail', 'create_lead', 'update_lead',
@@ -5045,15 +5045,21 @@ const _EXPOSED_TOOLS = new Set([
   // WORKFLOWS
   'run_workflow', 'run_consulte', 'generate_followup_email', 'lookup_company',
   // CONTENU
+  'get_articles', 'create_article', 'update_article',
   'analyze_content_gaps', 'plan_editorial', 'generate_article', 'enrich_seo',
   'suggest_tags', 'generate_faq',
+  // PARTENAIRES
+  'get_partners', 'update_partner', 'get_partner_report',
   // PROSPECTION
   'search_viviers', 'promote_vivier',
   // PROJETS
   'get_projects', 'project_write', 'get_specifications', 'create_specification',
   'get_documents', 'create_document',
   // LEGAL & FINANCE
-  'analyze_legal', 'get_partner_report',
+  'analyze_legal',
+  // BOOKINGS & INSCRIPTIONS
+  'get_bookings', 'create_booking',
+  'get_atelier_inscriptions',
   // TRANSCRIPTIONS
   'get_transcriptions', 'get_transcription_detail', 'list_transcriptions', 'get_transcription',
   // PREFERENCES
