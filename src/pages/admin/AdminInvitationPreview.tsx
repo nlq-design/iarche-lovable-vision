@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,10 +6,11 @@ import { useAuth } from '@/hooks/useAuth';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, ArrowLeft, Printer, Lock, Link2, Copy, CheckCircle } from 'lucide-react';
+import { Loader2, ArrowLeft, Printer, Lock, Copy, Save } from 'lucide-react';
 import { COLORS } from '@/components/admin/medias/shared/tokens';
 import { toast } from 'sonner';
 import QRCode from 'qrcode';
+import { LazyQuill } from '@/components/admin/LazyQuill';
 
 interface InvitationSection {
   id: string;
@@ -39,6 +40,21 @@ interface InvitationDocument {
   article_id?: string;
 }
 
+const QUILL_MODULES = {
+  toolbar: [
+    ['bold', 'italic', 'underline'],
+    [{ header: [3, 4, false] }],
+    [{ list: 'ordered' }, { list: 'bullet' }],
+    ['link'],
+    ['clean'],
+  ],
+};
+
+const QUILL_FORMATS = [
+  'bold', 'italic', 'underline',
+  'header', 'list', 'link',
+];
+
 const AdminInvitationPreview = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -46,7 +62,21 @@ const AdminInvitationPreview = () => {
   const [doc, setDoc] = useState<InvitationDocument | null>(null);
   const [loading, setLoading] = useState(true);
   const [freezing, setFreezing] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+
+  // Editable state
+  const [editSections, setEditSections] = useState<InvitationSection[]>([]);
+  const [editMetadata, setEditMetadata] = useState<InvitationMetadata>({});
+  const [originalJson, setOriginalJson] = useState<string>('');
+
+  const isApproved = doc?.status === 'approved';
+
+  const hasChanges = useMemo(() => {
+    if (!doc) return false;
+    const currentJson = JSON.stringify({ sections: editSections, metadata: editMetadata });
+    return currentJson !== originalJson;
+  }, [doc, editSections, editMetadata, originalJson]);
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
@@ -73,9 +103,14 @@ const AdminInvitationPreview = () => {
     }
     const document = data as unknown as InvitationDocument;
     setDoc(document);
+
+    const sections = document.content_json?.sections || [];
+    const metadata = document.content_json?.metadata || {};
+    setEditSections(sections);
+    setEditMetadata(metadata);
+    setOriginalJson(JSON.stringify({ sections, metadata }));
     setLoading(false);
 
-    // Generate QR code if slug exists
     if (document.slug) {
       generateQRCode(document.slug);
     }
@@ -95,8 +130,43 @@ const AdminInvitationPreview = () => {
     }
   };
 
+  const updateSectionContent = useCallback((sectionId: string, content: string) => {
+    setEditSections(prev => prev.map(s => s.id === sectionId ? { ...s, content } : s));
+  }, []);
+
+  const updateSectionTitle = useCallback((sectionId: string, title: string) => {
+    setEditSections(prev => prev.map(s => s.id === sectionId ? { ...s, title } : s));
+  }, []);
+
+  const updateMetadata = useCallback((key: keyof InvitationMetadata, value: string) => {
+    setEditMetadata(prev => ({ ...prev, [key]: value }));
+  }, []);
+
+  const handleSave = async () => {
+    if (!doc || !hasChanges) return;
+    setSaving(true);
+    const newContentJson = { ...doc.content_json, sections: editSections, metadata: editMetadata };
+    const { error } = await supabase
+      .from('generated_documents')
+      .update({ content_json: newContentJson as any })
+      .eq('id', doc.id);
+
+    if (error) {
+      toast.error('Erreur lors de la sauvegarde');
+    } else {
+      toast.success('Modifications enregistrées');
+      setDoc(prev => prev ? { ...prev, content_json: newContentJson } : null);
+      setOriginalJson(JSON.stringify({ sections: editSections, metadata: editMetadata }));
+    }
+    setSaving(false);
+  };
+
   const handleFreeze = async () => {
     if (!doc) return;
+    if (hasChanges) {
+      toast.error('Veuillez enregistrer vos modifications avant de figer.');
+      return;
+    }
     setFreezing(true);
     const { error } = await supabase
       .from('generated_documents')
@@ -112,9 +182,7 @@ const AdminInvitationPreview = () => {
     setFreezing(false);
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
+  const handlePrint = () => window.print();
 
   const copyPublicUrl = () => {
     if (!doc?.slug) return;
@@ -135,9 +203,7 @@ const AdminInvitationPreview = () => {
 
   if (!doc) return null;
 
-  const { sections = [], metadata = {} } = doc.content_json || {};
-  const sortedSections = [...sections].sort((a, b) => a.order - b.order);
-  const isApproved = doc.status === 'approved';
+  const sortedSections = [...editSections].sort((a, b) => a.order - b.order);
   const publicUrl = doc.slug ? `https://iarche.fr/evenements/${doc.slug}` : null;
 
   return (
@@ -147,7 +213,7 @@ const AdminInvitationPreview = () => {
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
 
-      {/* Admin toolbar - hidden on print */}
+      {/* Admin toolbar */}
       <div className="print:hidden sticky top-0 z-50 bg-background/95 backdrop-blur border-b px-6 py-3">
         <div className="container mx-auto max-w-5xl flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -156,15 +222,26 @@ const AdminInvitationPreview = () => {
               Retour
             </Button>
             <Badge variant={isApproved ? 'default' : 'secondary'}>
-              {isApproved ? '✅ Figé' : 'Brouillon'}
+              {isApproved ? '✅ Figé' : '✏️ Brouillon — éditez le contenu'}
             </Badge>
           </div>
           <div className="flex items-center gap-2">
             {!isApproved && (
-              <Button variant="default" size="sm" onClick={handleFreeze} disabled={freezing}>
-                {freezing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Lock className="h-4 w-4 mr-1" />}
-                Figer la version
-              </Button>
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSave}
+                  disabled={saving || !hasChanges}
+                >
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
+                  Enregistrer
+                </Button>
+                <Button variant="default" size="sm" onClick={handleFreeze} disabled={freezing}>
+                  {freezing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Lock className="h-4 w-4 mr-1" />}
+                  Figer la version
+                </Button>
+              </>
             )}
             {publicUrl && (
               <Button variant="outline" size="sm" onClick={copyPublicUrl}>
@@ -180,48 +257,93 @@ const AdminInvitationPreview = () => {
         </div>
       </div>
 
-      {/* Document content - brochure-style */}
+      {/* Document content */}
       <div className="min-h-screen bg-background">
         <div className="container mx-auto max-w-4xl py-8 px-6 print:px-0 print:py-0">
-          
+
           {/* Hero Section */}
-          <section 
+          <section
             className="relative rounded-2xl overflow-hidden mb-8 print:rounded-none print:mb-0 print:break-after-page"
-            style={{ 
+            style={{
               background: `linear-gradient(135deg, ${COLORS.bleuNuit} 0%, ${COLORS.bleuNuit}dd 50%, ${COLORS.terracotta}40 100%)`,
-              minHeight: '400px'
+              minHeight: '400px',
             }}
           >
             <div className="absolute inset-0 opacity-10">
               <div className="absolute top-10 right-10 w-64 h-64 rounded-full" style={{ background: COLORS.terracotta, filter: 'blur(80px)' }} />
               <div className="absolute bottom-10 left-10 w-48 h-48 rounded-full" style={{ background: '#4A90D9', filter: 'blur(60px)' }} />
             </div>
-            
+
             <div className="relative z-10 p-10 md:p-16 flex flex-col justify-center min-h-[400px]">
               <div className="mb-8">
                 <img src="/logos/iarche-main.svg" alt="IArche" className="h-8 brightness-0 invert" />
               </div>
-              
-              {metadata.eventType && (
+
+              {!isApproved ? (
+                <input
+                  type="text"
+                  value={editMetadata.eventType || ''}
+                  onChange={e => updateMetadata('eventType', e.target.value)}
+                  placeholder="Type d'événement"
+                  className="w-fit mb-4 text-xs px-3 py-1 rounded-full bg-white/20 text-white placeholder:text-white/50 border border-dashed border-white/30 outline-none focus:border-white/60"
+                />
+              ) : editMetadata.eventType ? (
                 <Badge className="w-fit mb-4 text-xs" style={{ background: COLORS.terracotta, color: 'white' }}>
-                  {metadata.eventType}
+                  {editMetadata.eventType}
                 </Badge>
+              ) : null}
+
+              {!isApproved ? (
+                <input
+                  type="text"
+                  value={editMetadata.eventTitle || doc.title}
+                  onChange={e => updateMetadata('eventTitle', e.target.value)}
+                  className="text-3xl md:text-5xl font-bold text-white mb-4 leading-tight bg-transparent border-b border-dashed border-white/30 outline-none focus:border-white/60 w-full"
+                  placeholder="Titre de l'événement"
+                />
+              ) : (
+                <h1 className="text-3xl md:text-5xl font-bold text-white mb-4 leading-tight">
+                  {editMetadata.eventTitle || doc.title}
+                </h1>
               )}
-              
-              <h1 className="text-3xl md:text-5xl font-bold text-white mb-4 leading-tight">
-                {metadata.eventTitle || doc.title}
-              </h1>
-              
+
               <div className="flex flex-wrap gap-4 mt-6 text-white/90 text-sm md:text-base">
-                {metadata.eventDate && (
-                  <span className="flex items-center gap-2 bg-white/10 rounded-full px-4 py-2">
-                    📅 {metadata.eventDate}
-                  </span>
-                )}
-                {metadata.eventLocation && (
-                  <span className="flex items-center gap-2 bg-white/10 rounded-full px-4 py-2">
-                    📍 {metadata.eventLocation}
-                  </span>
+                {!isApproved ? (
+                  <>
+                    <span className="flex items-center gap-2 bg-white/10 rounded-full px-4 py-2">
+                      📅
+                      <input
+                        type="text"
+                        value={editMetadata.eventDate || ''}
+                        onChange={e => updateMetadata('eventDate', e.target.value)}
+                        placeholder="Date"
+                        className="bg-transparent outline-none text-white placeholder:text-white/50 w-40 border-b border-dashed border-white/30 focus:border-white/60"
+                      />
+                    </span>
+                    <span className="flex items-center gap-2 bg-white/10 rounded-full px-4 py-2">
+                      📍
+                      <input
+                        type="text"
+                        value={editMetadata.eventLocation || ''}
+                        onChange={e => updateMetadata('eventLocation', e.target.value)}
+                        placeholder="Lieu"
+                        className="bg-transparent outline-none text-white placeholder:text-white/50 w-40 border-b border-dashed border-white/30 focus:border-white/60"
+                      />
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    {editMetadata.eventDate && (
+                      <span className="flex items-center gap-2 bg-white/10 rounded-full px-4 py-2">
+                        📅 {editMetadata.eventDate}
+                      </span>
+                    )}
+                    {editMetadata.eventLocation && (
+                      <span className="flex items-center gap-2 bg-white/10 rounded-full px-4 py-2">
+                        📍 {editMetadata.eventLocation}
+                      </span>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -232,51 +354,67 @@ const AdminInvitationPreview = () => {
             if (section.id === 'hero') return null;
 
             return (
-              <section 
-                key={section.id} 
-                className="mb-8 print:break-inside-avoid print:mb-4"
-              >
+              <section key={section.id} className="mb-8 print:break-inside-avoid print:mb-4">
                 <div className="bg-card rounded-xl border shadow-sm overflow-hidden print:shadow-none print:border-0">
                   <div className="flex items-center gap-3 px-8 pt-8 pb-4">
-                    <div 
-                      className="w-1 h-8 rounded-full" 
+                    <div
+                      className="w-1 h-8 rounded-full flex-shrink-0"
                       style={{ background: index % 2 === 0 ? COLORS.terracotta : '#4A90D9' }}
                     />
-                    <h2 className="text-xl md:text-2xl font-bold text-foreground">
-                      {section.title}
-                    </h2>
+                    {!isApproved ? (
+                      <input
+                        type="text"
+                        value={section.title}
+                        onChange={e => updateSectionTitle(section.id, e.target.value)}
+                        className="text-xl md:text-2xl font-bold text-foreground bg-transparent border-b border-dashed border-border outline-none focus:border-primary w-full"
+                      />
+                    ) : (
+                      <h2 className="text-xl md:text-2xl font-bold text-foreground">
+                        {section.title}
+                      </h2>
+                    )}
                   </div>
-                  
-                  <div 
-                    className="px-8 pb-8 prose prose-sm md:prose-base max-w-none
-                      prose-headings:text-foreground prose-headings:font-semibold
-                      prose-p:text-muted-foreground prose-p:leading-relaxed
-                      prose-strong:text-foreground
-                      prose-ul:text-muted-foreground
-                      prose-li:text-muted-foreground
-                      prose-table:text-sm
-                      [&_table]:w-full [&_table]:border-collapse
-                      [&_th]:bg-muted/50 [&_th]:text-left [&_th]:px-4 [&_th]:py-3 [&_th]:font-semibold [&_th]:text-foreground [&_th]:border-b
-                      [&_td]:px-4 [&_td]:py-3 [&_td]:border-b [&_td]:border-border
-                      [&_tr:last-child_td]:border-b-0
-                      [&_.invitation-hero]:hidden
-                    "
-                    dangerouslySetInnerHTML={{ __html: section.content }}
-                  />
+
+                  {!isApproved ? (
+                    <div className="px-8 pb-8">
+                      <LazyQuill
+                        value={section.content}
+                        onChange={(val) => updateSectionContent(section.id, val)}
+                        modules={QUILL_MODULES}
+                        formats={QUILL_FORMATS}
+                        className="invitation-editor [&_.ql-container]:border-dashed [&_.ql-container]:border-border [&_.ql-toolbar]:border-dashed [&_.ql-toolbar]:border-border [&_.ql-editor]:min-h-[100px]"
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      className="px-8 pb-8 prose prose-sm md:prose-base max-w-none
+                        prose-headings:text-foreground prose-headings:font-semibold
+                        prose-p:text-muted-foreground prose-p:leading-relaxed
+                        prose-strong:text-foreground
+                        prose-ul:text-muted-foreground
+                        prose-li:text-muted-foreground
+                        prose-table:text-sm
+                        [&_table]:w-full [&_table]:border-collapse
+                        [&_th]:bg-muted/50 [&_th]:text-left [&_th]:px-4 [&_th]:py-3 [&_th]:font-semibold [&_th]:text-foreground [&_th]:border-b
+                        [&_td]:px-4 [&_td]:py-3 [&_td]:border-b [&_td]:border-border
+                        [&_tr:last-child_td]:border-b-0
+                        [&_.invitation-hero]:hidden
+                      "
+                      dangerouslySetInnerHTML={{ __html: section.content }}
+                    />
+                  )}
                 </div>
               </section>
             );
           })}
 
-          {/* QR Code Section - visible in print and screen */}
+          {/* QR Code Section */}
           {qrDataUrl && publicUrl && (
             <section className="mb-8 print:break-inside-avoid">
               <div className="bg-card rounded-xl border shadow-sm overflow-hidden print:shadow-none print:border-0 p-8">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-1 h-8 rounded-full" style={{ background: COLORS.terracotta }} />
-                  <h2 className="text-xl md:text-2xl font-bold text-foreground">
-                    Inscription
-                  </h2>
+                  <h2 className="text-xl md:text-2xl font-bold text-foreground">Inscription</h2>
                 </div>
                 <div className="flex flex-col md:flex-row items-center gap-8">
                   <div className="flex-shrink-0">
