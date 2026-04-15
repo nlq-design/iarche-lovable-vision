@@ -192,7 +192,7 @@ export function useCockpitVoiceTranscriptions(
         `)
         .eq('workspace_id', workspaceId)
         .order('created_at', { ascending: false })
-        .limit(100);
+        .limit(500);
 
       if (entityType === 'lead' && entityId) {
         query = query.eq('lead_id', entityId);
