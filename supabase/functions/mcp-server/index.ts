@@ -1,4 +1,4 @@
-// redeploy 08/03/2026 v7 — 45 exposed tools (85 internal)
+// redeploy 15/04/2026 v8 — 48 exposed tools (88 internal)
 /**
  * MCP Server Edge Function — IArche CRM (45 exposed / 85 internal tools)
  *
