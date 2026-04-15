@@ -1043,9 +1043,9 @@ serve(async (req) => {
 
     // Extract title
     const extractedTitle = typeof summary.title === 'string' && summary.title.trim()
-      ? summary.title.trim().slice(0, 100)
+      ? summary.title.trim().slice(0, 300)
       : typeof summary.executive_summary === 'string' && summary.executive_summary.trim()
-        ? (summary.executive_summary.match(/^[^.!?]+[.!?]?/)?.[0] ?? "").trim().slice(0, 100)
+        ? (summary.executive_summary.match(/^[^.!?]+[.!?]?/)?.[0] ?? "").trim().slice(0, 300)
         : undefined;
 
     // Save final result
