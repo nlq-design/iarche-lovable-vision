@@ -1,0 +1,2 @@
+ALTER TABLE public.generated_documents DROP CONSTRAINT generated_documents_document_type_check;
+ALTER TABLE public.generated_documents ADD CONSTRAINT generated_documents_document_type_check CHECK (document_type = ANY (ARRAY['quote','proposal','spec','report','email','contract','invitation']));
