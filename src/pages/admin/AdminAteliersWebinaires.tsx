@@ -30,6 +30,8 @@ const AdminAteliersWebinaires = () => {
   const navigate = useNavigate();
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
+  const [generatingId, setGeneratingId] = useState<string | null>(null);
+  const { generateDocument } = useCockpitGeneratedDocuments();
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
