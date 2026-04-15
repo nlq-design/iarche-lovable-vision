@@ -178,7 +178,7 @@ const AdminAteliersWebinaires = () => {
                               sonnerToast.success('Programme généré !', {
                                 action: {
                                   label: 'Voir',
-                                  onClick: () => navigate(`/cockpit/documents/programme-${doc.id}`),
+                                  onClick: () => navigate(`/admin/invitation/${doc.id}`),
                                 },
                               });
                             },
