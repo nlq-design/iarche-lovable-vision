@@ -20,6 +20,13 @@ interface LinkedForm {
   submissions_count: number;
 }
 
+interface LinkedDocument {
+  id: string;
+  title: string;
+  version: number;
+  status: string;
+}
+
 interface Article {
   id: string;
   title: string;
@@ -31,6 +38,7 @@ interface Article {
   resource_type: string;
   has_faq?: boolean;
   linked_form?: LinkedForm | null;
+  linked_document?: LinkedDocument | null;
 }
 
 const AdminAteliersWebinaires = () => {
