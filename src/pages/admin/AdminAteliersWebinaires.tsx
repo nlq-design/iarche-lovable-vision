@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Plus, Edit, Trash2, Eye, History, HelpCircle, FileText, ClipboardCopy, ExternalLink } from 'lucide-react';
+import { Loader2, Plus, Edit, Trash2, Eye, History, HelpCircle, FileText, ClipboardCopy, ExternalLink, Lock } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { useCockpitGeneratedDocuments } from '@/hooks/cockpit/useCockpitGeneratedDocuments';
@@ -20,6 +20,13 @@ interface LinkedForm {
   submissions_count: number;
 }
 
+interface LinkedDocument {
+  id: string;
+  title: string;
+  version: number;
+  status: string;
+}
+
 interface Article {
   id: string;
   title: string;
@@ -31,6 +38,7 @@ interface Article {
   resource_type: string;
   has_faq?: boolean;
   linked_form?: LinkedForm | null;
+  linked_document?: LinkedDocument | null;
 }
 
 const AdminAteliersWebinaires = () => {
@@ -90,6 +98,13 @@ const AdminAteliersWebinaires = () => {
       .select('id, slug, title, is_active, submissions_count, article_id')
       .in('article_id', articleIds);
 
+    // Load latest generated documents per article
+    const { data: docsData } = await supabase
+      .from('generated_documents')
+      .select('id, title, version, status, article_id')
+      .in('article_id', articleIds)
+      .order('created_at', { ascending: false });
+
     const formsByArticle = new Map<string, LinkedForm>();
     (formsData || []).forEach((f: any) => {
       if (f.article_id) {
@@ -103,11 +118,24 @@ const AdminAteliersWebinaires = () => {
       }
     });
 
+    const docsByArticle = new Map<string, LinkedDocument>();
+    (docsData || []).forEach((d: any) => {
+      if (d.article_id && !docsByArticle.has(d.article_id)) {
+        docsByArticle.set(d.article_id, {
+          id: d.id,
+          title: d.title,
+          version: d.version || 1,
+          status: d.status,
+        });
+      }
+    });
+
     const articlesWithData = (data || []).map((article: any) => ({
       ...article,
       has_faq: article.faqs && article.faqs.length > 0,
       faqs: undefined,
       linked_form: formsByArticle.get(article.id) || null,
+      linked_document: docsByArticle.get(article.id) || null,
     }));
     setArticles(articlesWithData);
     setLoading(false);
@@ -208,6 +236,21 @@ const AdminAteliersWebinaires = () => {
                             Aucun formulaire lié
                           </span>
                         )}
+                        {/* Linked document info */}
+                        {article.linked_document && (
+                          <button
+                            onClick={() => navigate(`/admin/invitation/${article.linked_document!.id}`)}
+                            className="flex items-center gap-1.5 px-2 py-1 rounded bg-green-100 text-green-800 text-xs font-medium hover:bg-green-200 transition-colors cursor-pointer"
+                            title="Voir le programme généré"
+                          >
+                            {article.linked_document.status === 'approved' ? (
+                              <Lock className="h-3 w-3" />
+                            ) : (
+                              <FileText className="h-3 w-3" />
+                            )}
+                            Programme v{article.linked_document.version}
+                          </button>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap justify-end">
@@ -251,7 +294,9 @@ const AdminAteliersWebinaires = () => {
                           }, {
                             onSuccess: (doc) => {
                               setGeneratingId(null);
+                              loadArticles();
                               sonnerToast.success('Programme généré !', {
+                                duration: 10000,
                                 action: {
                                   label: 'Voir',
                                   onClick: () => navigate(`/admin/invitation/${doc.id}`),
