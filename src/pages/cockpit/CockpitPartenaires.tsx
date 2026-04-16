@@ -42,7 +42,7 @@ import {
   Calendar,
   Mic
 } from "lucide-react";
-import { useCockpitPartners, Partner, PartnerType, PARTNER_TYPES, generateSlug } from "@/hooks/cockpit/useCockpitPartners";
+import { useCockpitPartners, Partner, PartnerType, PartnerSubtype, PARTNER_TYPES, PARTNER_SUBTYPES, generateSlug } from "@/hooks/cockpit/useCockpitPartners";
 import { usePartnerLinkCounts } from "@/hooks/cockpit/usePartnerLinks";
 import {
   DropdownMenu,
@@ -68,9 +68,16 @@ import {
 } from "@/components/ui/tooltip";
 
 const PARTNER_TYPE_CONFIG: Record<PartnerType, { label: string; icon: React.ReactNode; color: string }> = {
-  expert_ia: { label: "Expert IA", icon: <Brain className="h-3 w-3" />, color: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300" },
-  independant: { label: "Indépendant", icon: <UserCheck className="h-3 w-3" />, color: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" },
-  apport_affaires: { label: "Apporteur", icon: <Handshake className="h-3 w-3" />, color: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300" },
+  client: { label: "Client", icon: <UserCheck className="h-3 w-3" />, color: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300" },
+  partenaire: { label: "Partenaire", icon: <Brain className="h-3 w-3" />, color: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300" },
+  affilie: { label: "Affilié", icon: <Link2 className="h-3 w-3" />, color: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" },
+  apporteur_affaires: { label: "Apporteur d'affaires", icon: <Handshake className="h-3 w-3" />, color: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300" },
+};
+
+const PARTNER_SUBTYPE_LABELS: Record<PartnerSubtype, string> = {
+  expert_ia: "Expert IA",
+  independant: "Indépendant",
+  apport_affaires: "Apport d'affaires",
 };
 
 export default function CockpitPartenaires() {
@@ -90,7 +97,8 @@ export default function CockpitPartenaires() {
     email: "",
     phone: "",
     company: "",
-    partner_type: "independant" as PartnerType,
+    partner_type: "partenaire" as PartnerType,
+    partner_subtype: null as PartnerSubtype | null,
     bio: "",
     linkedin_url: "",
     website: "",
@@ -106,7 +114,8 @@ export default function CockpitPartenaires() {
       email: "",
       phone: "",
       company: "",
-      partner_type: "independant",
+      partner_type: "partenaire",
+      partner_subtype: null,
       bio: "",
       linkedin_url: "",
       website: "",
@@ -161,6 +170,7 @@ export default function CockpitPartenaires() {
       phone: partner.phone || "",
       company: partner.company || "",
       partner_type: partner.partner_type,
+      partner_subtype: partner.partner_subtype,
       bio: partner.bio || "",
       linkedin_url: partner.linkedin_url || "",
       website: partner.website || "",
@@ -233,26 +243,45 @@ export default function CockpitPartenaires() {
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="partner_type" className="text-xs">Type de partenaire *</Label>
-        <Select
-          value={formData.partner_type}
-          onValueChange={(v) => setFormData({ ...formData, partner_type: v as PartnerType })}
-        >
-          <SelectTrigger className="h-9">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {PARTNER_TYPES.map((type) => (
-              <SelectItem key={type.value} value={type.value}>
-                <div className="flex items-center gap-2">
-                  {PARTNER_TYPE_CONFIG[type.value].icon}
-                  {type.label}
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="partner_type" className="text-xs">Type *</Label>
+          <Select
+            value={formData.partner_type}
+            onValueChange={(v) => setFormData({ ...formData, partner_type: v as PartnerType })}
+          >
+            <SelectTrigger className="h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PARTNER_TYPES.map((type) => (
+                <SelectItem key={type.value} value={type.value}>
+                  <div className="flex items-center gap-2">
+                    {PARTNER_TYPE_CONFIG[type.value].icon}
+                    {type.label}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="partner_subtype" className="text-xs">Sous-type</Label>
+          <Select
+            value={formData.partner_subtype ?? "none"}
+            onValueChange={(v) => setFormData({ ...formData, partner_subtype: v === "none" ? null : (v as PartnerSubtype) })}
+          >
+            <SelectTrigger className="h-9">
+              <SelectValue placeholder="Aucun" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Aucun</SelectItem>
+              {PARTNER_SUBTYPES.map((s) => (
+                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -314,7 +343,7 @@ export default function CockpitPartenaires() {
         />
       </div>
 
-      {formData.partner_type === "apport_affaires" && (
+      {formData.partner_type === "apporteur_affaires" && (
         <div className="space-y-2">
           <Label htmlFor="commission" className="text-xs">Taux de commission (%)</Label>
           <Input
@@ -367,17 +396,21 @@ export default function CockpitPartenaires() {
               <span className="font-semibold">{stats.total}</span>
             </div>
             <div className="h-4 w-px bg-border hidden sm:block" />
-            <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2" title="Clients">
+              <UserCheck className="h-4 w-4 text-emerald-600" />
+              <span className="font-medium text-emerald-600">{stats.byType.client}</span>
+            </div>
+            <div className="flex items-center gap-2" title="Partenaires">
               <Brain className="h-4 w-4 text-purple-600" />
-              <span className="font-medium text-purple-600">{stats.byType.expert_ia}</span>
+              <span className="font-medium text-purple-600">{stats.byType.partenaire}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <UserCheck className="h-4 w-4 text-blue-600" />
-              <span className="font-medium text-blue-600">{stats.byType.independant}</span>
+            <div className="flex items-center gap-2" title="Affiliés">
+              <Link2 className="h-4 w-4 text-blue-600" />
+              <span className="font-medium text-blue-600">{stats.byType.affilie}</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2" title="Apporteurs d'affaires">
               <Handshake className="h-4 w-4 text-amber-600" />
-              <span className="font-medium text-amber-600">{stats.byType.apport_affaires}</span>
+              <span className="font-medium text-amber-600">{stats.byType.apporteur_affaires}</span>
             </div>
           </div>
           
@@ -479,10 +512,17 @@ export default function CockpitPartenaires() {
                           
                           {/* Type */}
                           <TableCell>
-                            <Badge variant="secondary" className={`text-xs ${typeConfig.color}`}>
-                              {typeConfig.icon}
-                              <span className="ml-1">{typeConfig.label}</span>
-                            </Badge>
+                            <div className="flex flex-col gap-1">
+                              <Badge variant="secondary" className={`text-xs w-fit ${typeConfig?.color || ''}`}>
+                                {typeConfig?.icon}
+                                <span className="ml-1">{typeConfig?.label || partner.partner_type}</span>
+                              </Badge>
+                              {partner.partner_subtype && (
+                                <span className="text-[10px] text-muted-foreground pl-1">
+                                  {PARTNER_SUBTYPE_LABELS[partner.partner_subtype]}
+                                </span>
+                              )}
+                            </div>
                           </TableCell>
                           
                           {/* Contact */}
