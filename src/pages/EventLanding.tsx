@@ -126,9 +126,9 @@ const EventLanding = () => {
     prose-strong:text-foreground
     prose-ul:text-muted-foreground prose-li:text-muted-foreground
     prose-table:text-sm
-    [&_table]:w-full [&_table]:border-collapse [&_table]:table-fixed
-    [&_th]:bg-muted/50 [&_th]:text-left [&_th]:px-4 [&_th]:py-3 [&_th]:font-semibold [&_th]:text-foreground [&_th]:border-b
-    [&_td]:px-4 [&_td]:py-3 [&_td]:border-b [&_td]:border-border
+    [&_table]:w-full [&_table]:border-collapse [&_table]:table-auto
+    [&_th]:bg-muted/50 [&_th]:text-left [&_th]:px-2 [&_th]:py-2 md:[&_th]:px-4 md:[&_th]:py-3 [&_th]:font-semibold [&_th]:text-foreground [&_th]:border-b
+    [&_td]:px-2 [&_td]:py-2 md:[&_td]:px-4 md:[&_td]:py-3 [&_td]:border-b [&_td]:border-border
     [&_tr:last-child_td]:border-b-0
     [&_.invitation-hero]:hidden
     [&_hr]:my-4 [&_hr]:border-border
@@ -145,14 +145,13 @@ const EventLanding = () => {
       </Helmet>
 
       <div className="min-h-screen bg-background">
-        <div className="container mx-auto max-w-4xl py-8 px-6">
+        <div className="container mx-auto max-w-4xl py-6 md:py-8 px-4 md:px-6">
 
           {/* Hero Section */}
           <section
             className="relative rounded-2xl overflow-hidden mb-8"
             style={{
               background: `linear-gradient(135deg, ${COLORS.bleuNuit} 0%, ${COLORS.bleuNuit}dd 50%, ${COLORS.terracotta}40 100%)`,
-              minHeight: '400px'
             }}
           >
             <div className="absolute inset-0 opacity-10">
@@ -160,7 +159,7 @@ const EventLanding = () => {
               <div className="absolute bottom-10 left-10 w-48 h-48 rounded-full" style={{ background: '#4A90D9', filter: 'blur(60px)' }} />
             </div>
 
-            <div className="relative z-10 p-10 md:p-16 flex flex-col justify-center min-h-[400px]">
+            <div className="relative z-10 p-6 md:p-16 flex flex-col justify-center min-h-[280px] md:min-h-[400px]">
               <div className="mb-8">
                 <img src="/logos/iarche-main.svg" alt="IArche" className="h-8 brightness-0 invert" />
               </div>
@@ -171,7 +170,7 @@ const EventLanding = () => {
                 </Badge>
               )}
 
-              <h1 className="text-3xl md:text-5xl font-bold text-white mb-4 leading-tight break-words [overflow-wrap:break-word]">
+              <h1 className="text-2xl md:text-5xl font-bold text-white mb-4 leading-tight break-words [overflow-wrap:break-word]">
                 {pageTitle}
               </h1>
 
@@ -196,7 +195,7 @@ const EventLanding = () => {
             return (
               <section key={section.id} className="mb-8">
                 <div className="bg-card rounded-xl border shadow-sm overflow-hidden">
-                  <div className="flex items-center gap-3 px-8 pt-8 pb-4">
+                  <div className="flex items-center gap-3 px-4 pt-6 pb-4 md:px-8 md:pt-8">
                     <div
                       className="w-1 h-8 rounded-full flex-shrink-0"
                       style={{ background: index % 2 === 0 ? COLORS.terracotta : '#4A90D9' }}
@@ -207,13 +206,14 @@ const EventLanding = () => {
                   </div>
 
                   {isProgrammeSection(section) ? (
-                    <div className="px-8 pb-8 overflow-x-auto">
-                      <table className="w-full border-collapse table-fixed text-sm">
+                    <div className="px-4 pb-6 md:px-8 md:pb-8">
+                      {/* Desktop table */}
+                      <table className="hidden md:table w-full border-collapse table-auto text-sm">
                         <thead>
                           <tr>
-                            <th className="bg-muted/50 text-left px-4 py-3 font-semibold text-foreground border-b w-[20%]">Horaire</th>
-                            <th className="bg-muted/50 text-left px-4 py-3 font-semibold text-foreground border-b w-[50%]">Thème</th>
-                            <th className="bg-muted/50 text-left px-4 py-3 font-semibold text-foreground border-b w-[30%]">Intervenant</th>
+                            <th className="bg-muted/50 text-left px-4 py-3 font-semibold text-foreground border-b">Horaire</th>
+                            <th className="bg-muted/50 text-left px-4 py-3 font-semibold text-foreground border-b">Thème</th>
+                            <th className="bg-muted/50 text-left px-4 py-3 font-semibold text-foreground border-b">Intervenant</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -226,10 +226,22 @@ const EventLanding = () => {
                           ))}
                         </tbody>
                       </table>
+                      {/* Mobile stacked cards */}
+                      <div className="md:hidden space-y-3">
+                        {programmeRows.map((row, ri) => (
+                          <div key={ri} className="bg-muted/30 rounded-lg p-3 space-y-1">
+                            <div className="text-xs font-semibold text-foreground">{row.horaire}</div>
+                            <div className="text-sm text-muted-foreground">{row.theme}</div>
+                            {row.intervenant && (
+                              <div className="text-xs text-muted-foreground/70">{row.intervenant}</div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   ) : (
                     <div
-                      className={`px-8 pb-8 ${proseClasses}`}
+                      className={`px-4 pb-6 md:px-8 md:pb-8 ${proseClasses}`}
                       dangerouslySetInnerHTML={{ __html: section.content }}
                     />
                   )}
@@ -241,12 +253,12 @@ const EventLanding = () => {
           {/* Registration Form */}
           {doc.article_id && (
             <section id="inscription" className="mb-8">
-              <div
-                className="rounded-xl border-2 overflow-hidden p-8"
-                style={{
-                  borderColor: `${COLORS.terracotta}30`,
-                  background: `${COLORS.terracotta}05`,
-                }}
+                <div
+                  className="rounded-xl border-2 overflow-hidden p-4 md:p-8"
+                  style={{
+                    borderColor: `${COLORS.terracotta}30`,
+                    background: `${COLORS.terracotta}05`,
+                  }}
               >
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-1 h-8 rounded-full" style={{ background: COLORS.terracotta }} />
@@ -272,7 +284,7 @@ const EventLanding = () => {
 
           {/* Footer */}
           <section className="mt-12 mb-8 text-center">
-            <div className="bg-muted/30 rounded-xl p-8">
+            <div className="bg-muted/30 rounded-xl p-4 md:p-8">
               <img src="/logos/iarche-main.svg" alt="IArche" className="h-6 mx-auto mb-4 opacity-60" />
               <p className="text-xs text-muted-foreground break-words [overflow-wrap:break-word]">
                 {metadata.footerText || `© ${new Date().getFullYear()} IArche • Programme officiel`}
