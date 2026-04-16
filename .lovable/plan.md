@@ -1,44 +1,34 @@
 
 
-# Fix : Compteur inscrits + Emails de notification
+# Responsive Mobile — EventLanding.tsx
 
-## Diagnostic
+## Problèmes
 
-### Problème 1 : Compteur "0/30 inscrits"
-Le compteur utilise `count_atelier_inscriptions` qui compte les lignes dans la table `atelier_inscriptions`. Or le formulaire de la page événement (`EventLandingForm.tsx`) insère UNIQUEMENT dans `form_responses` — il n'insère **jamais** dans `atelier_inscriptions`. Les 2 réponses existantes sont dans `form_responses` mais `atelier_inscriptions` est vide.
+| Zone | Problème | Impact mobile (375px) |
+|------|----------|----------------------|
+| Hero | `minHeight: 400px` fixe | Occupe tout l'écran, scroll obligatoire |
+| Hero | `p-10` padding | 40px chaque côté = 295px de contenu |
+| Container | `px-6` + cards `px-8` | Double padding = ~260px utile |
+| Programme table | `table-fixed` 3 colonnes | Colonnes écrasées, texte illisible |
+| Inscription | `p-8` fixe | Trop d'espace perdu |
+| H1 | `text-3xl` minimum | Titres longs débordent visuellement |
 
-Le formulaire classique `AtelierInscriptionForm.tsx` (utilisé sur la page article standard) fait correctement les deux : `upsert_lead` → `atelier_inscriptions.insert`. Mais `EventLandingForm` ne fait que `form_responses.insert` + `upsert_lead` basique.
+## Corrections (fichier unique : `EventLanding.tsx`)
 
-### Problème 2 : Emails non envoyés
-`EventLandingForm.tsx` n'appelle **aucune** edge function de notification après soumission. Pas de `send-form-notification`, pas de `send-atelier-confirmation`, pas de `send-lead-notification`. L'ancien appel à `send-form-notification` dans `FormPublic.tsx` a été supprimé lors du fix précédent, et `EventLandingForm` n'a jamais eu ces appels.
+1. **Hero** : `min-h-[280px] md:min-h-[400px]`, padding `p-6 md:p-16`
+2. **Container** : `px-4 md:px-6`
+3. **Cards internes** : `px-4 md:px-8`, `pt-6 md:pt-8`, `pb-6 md:pb-8`
+4. **Programme table** : remplacer `table-fixed` par `table-auto` + sur mobile, transformer en cards empilées (chaque row = un bloc vertical horaire/thème/intervenant) via classes responsive `hidden md:table-cell` + bloc mobile `md:hidden`
+5. **Inscription** : `p-4 md:p-8`
+6. **H1** : `text-2xl md:text-5xl`
+7. **Footer** : `p-4 md:p-8`
+8. **Prose classes** : réduire les padding table internes `[&_th]:px-2 md:[&_th]:px-4`
 
-## Actions
-
-### 1. `EventLandingForm.tsx` — Ajouter insertion `atelier_inscriptions` + emails
-
-Après l'insertion dans `form_responses` et le `upsert_lead`, ajouter :
-
-1. **Récupérer le `lead_id`** depuis `upsert_lead` (la RPC retourne l'ID)
-2. **Insérer dans `atelier_inscriptions`** avec `atelier_id: articleId` et `lead_id`
-3. **Appeler `send-form-notification`** pour notifier l'admin (nlq) et envoyer la confirmation au participant
-4. **Appeler `send-atelier-confirmation`** pour l'email de confirmation structuré avec détails de l'événement
-
-Le flux final sera aligné avec `AtelierInscriptionForm.tsx` :
-- `form_responses.insert` → réponse brute
-- `upsert_lead` → lead CRM
-- `atelier_inscriptions.insert` → compteur
-- `send-form-notification` → email admin + confirmation
-- `send-atelier-confirmation` → email participant avec détails événement
-
-### 2. Enrichir les données du `upsert_lead`
-
-Actuellement l'appel `upsert_lead` dans `EventLandingForm` est minimal (email + name). Il faut passer aussi `p_company`, `p_phone`, `p_source_id` comme le fait `AtelierInscriptionForm`.
-
-## Fichier impacté
+## Fichiers impactés
 
 | Fichier | Modification |
 |---------|-------------|
-| `src/components/events/EventLandingForm.tsx` | Ajouter insertion `atelier_inscriptions`, enrichir `upsert_lead`, appeler edge functions de notification |
+| `src/pages/EventLanding.tsx` | Tous les ajustements responsive ci-dessus |
 
-Zero migration SQL. Les tables et fonctions existent déjà.
+Zero migration. Zero nouveau composant.
 
