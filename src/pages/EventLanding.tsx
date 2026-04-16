@@ -262,8 +262,10 @@ const EventLanding = () => {
                   articleTitle={metadata.eventTitle || doc.title}
                   eventDate={metadata.eventDate}
                   eventLocation={metadata.eventLocation}
-                  heureDebut={undefined}
-                  typeEvenement={metadata.eventType}
+                  eventDate={articleData.event_date || metadata.eventDate}
+                  eventLocation={articleData.event_location || metadata.eventLocation}
+                  heureDebut={articleData.heure_debut}
+                  typeEvenement={articleData.type_evenement || metadata.eventType}
                 />
 
               </div>
