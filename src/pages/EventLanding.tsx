@@ -48,9 +48,17 @@ interface InvitationDocument {
   created_at: string;
 }
 
+interface ArticleEventData {
+  event_date?: string;
+  event_location?: string;
+  heure_debut?: string;
+  type_evenement?: string;
+}
+
 const EventLanding = () => {
   const { slug } = useParams<{ slug: string }>();
   const [doc, setDoc] = useState<InvitationDocument | null>(null);
+  const [articleData, setArticleData] = useState<ArticleEventData>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -72,6 +80,19 @@ const EventLanding = () => {
       return;
     }
     setDoc(data as unknown as InvitationDocument);
+
+    // Fetch linked article event data for email notifications
+    if (data.article_id) {
+      const { data: article } = await supabase
+        .from('articles')
+        .select('event_date, event_location, heure_debut, type_evenement')
+        .eq('id', data.article_id)
+        .single();
+      if (article) {
+        setArticleData(article);
+      }
+    }
+
     setLoading(false);
   };
 
@@ -239,10 +260,10 @@ const EventLanding = () => {
                 <EventLandingForm
                   articleId={doc.article_id}
                   articleTitle={metadata.eventTitle || doc.title}
-                  eventDate={metadata.eventDate}
-                  eventLocation={metadata.eventLocation}
-                  heureDebut={undefined}
-                  typeEvenement={metadata.eventType}
+                  eventDate={articleData.event_date || metadata.eventDate}
+                  eventLocation={articleData.event_location || metadata.eventLocation}
+                  heureDebut={articleData.heure_debut}
+                  typeEvenement={articleData.type_evenement || metadata.eventType}
                 />
 
               </div>
