@@ -337,6 +337,12 @@ const AdminInvitationPreview = () => {
                 </Button>
               </>
             )}
+            {isApproved && (
+              <Button variant="outline" size="sm" onClick={handleUnfreeze}>
+                <Unlock className="h-4 w-4 mr-1" />
+                Défiger pour modifier
+              </Button>
+            )}
             {publicUrl && (
               <Button variant="outline" size="sm" onClick={copyPublicUrl}>
                 <Copy className="h-4 w-4 mr-1" />
