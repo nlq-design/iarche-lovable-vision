@@ -3410,6 +3410,7 @@ export type Database = {
           probability: number | null
           source: string | null
           stage: string
+          stage_entered_at: string | null
           title: string
           updated_at: string | null
           value_amount: number | null
@@ -3430,6 +3431,7 @@ export type Database = {
           probability?: number | null
           source?: string | null
           stage?: string
+          stage_entered_at?: string | null
           title: string
           updated_at?: string | null
           value_amount?: number | null
@@ -3450,6 +3452,7 @@ export type Database = {
           probability?: number | null
           source?: string | null
           stage?: string
+          stage_entered_at?: string | null
           title?: string
           updated_at?: string | null
           value_amount?: number | null
