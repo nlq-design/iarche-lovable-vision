@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, ArrowLeft, Printer, Lock, Copy, Save, Plus, Trash2 } from 'lucide-react';
+import { Loader2, ArrowLeft, Printer, Lock, Unlock, Copy, Save, Plus, Trash2 } from 'lucide-react';
 import { COLORS } from '@/components/admin/medias/shared/tokens';
 import { toast } from 'sonner';
 import QRCode from 'qrcode';
@@ -243,6 +243,21 @@ const AdminInvitationPreview = () => {
     setFreezing(false);
   };
 
+  const handleUnfreeze = async () => {
+    if (!doc) return;
+    const { error } = await supabase
+      .from('generated_documents')
+      .update({ status: 'draft' })
+      .eq('id', doc.id);
+
+    if (error) {
+      toast.error('Erreur lors du défigement');
+    } else {
+      toast.success('Document débloqué — vous pouvez le modifier.');
+      setDoc(prev => prev ? { ...prev, status: 'draft' } : null);
+    }
+  };
+
   const handlePrint = () => window.print();
 
   const copyPublicUrl = () => {
@@ -321,6 +336,12 @@ const AdminInvitationPreview = () => {
                   Figer la version
                 </Button>
               </>
+            )}
+            {isApproved && (
+              <Button variant="outline" size="sm" onClick={handleUnfreeze}>
+                <Unlock className="h-4 w-4 mr-1" />
+                Défiger pour modifier
+              </Button>
             )}
             {publicUrl && (
               <Button variant="outline" size="sm" onClick={copyPublicUrl}>
