@@ -243,6 +243,21 @@ const AdminInvitationPreview = () => {
     setFreezing(false);
   };
 
+  const handleUnfreeze = async () => {
+    if (!doc) return;
+    const { error } = await supabase
+      .from('generated_documents')
+      .update({ status: 'draft' })
+      .eq('id', doc.id);
+
+    if (error) {
+      toast.error('Erreur lors du défigement');
+    } else {
+      toast.success('Document débloqué — vous pouvez le modifier.');
+      setDoc(prev => prev ? { ...prev, status: 'draft' } : null);
+    }
+  };
+
   const handlePrint = () => window.print();
 
   const copyPublicUrl = () => {
