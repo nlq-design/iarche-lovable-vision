@@ -164,10 +164,10 @@ const EventLandingForm = ({ articleId, articleTitle, eventDate, eventLocation, h
               email: recipientEmail,
               atelier_title: articleTitle || form.title,
               atelier_id: articleId,
-              event_date: eventDate,
-              event_location: eventLocation,
-              heure_debut: heureDebut,
-              type_evenement: typeEvenement,
+              event_date: eventDate || null,
+              event_location: eventLocation || null,
+              heure_debut: heureDebut || null,
+              type_evenement: typeEvenement || null,
             },
           });
         } catch (confirmError) {
