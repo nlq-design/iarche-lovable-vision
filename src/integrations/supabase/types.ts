@@ -4104,6 +4104,7 @@ export type Database = {
           linkedin_url: string | null
           login_count: number | null
           name: string
+          partner_subtype: string | null
           partner_type: string
           phone: string | null
           slug: string
@@ -4130,6 +4131,7 @@ export type Database = {
           linkedin_url?: string | null
           login_count?: number | null
           name: string
+          partner_subtype?: string | null
           partner_type: string
           phone?: string | null
           slug: string
@@ -4156,6 +4158,7 @@ export type Database = {
           linkedin_url?: string | null
           login_count?: number | null
           name?: string
+          partner_subtype?: string | null
           partner_type?: string
           phone?: string | null
           slug?: string
@@ -7328,7 +7331,6 @@ export type Database = {
           expires_at: string
           id: string
           is_valid: boolean
-          partner_type: string
         }[]
       }
       validate_resource_type: {
