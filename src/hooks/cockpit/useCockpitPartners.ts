@@ -2,7 +2,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-export type PartnerType = "expert_ia" | "independant" | "apport_affaires";
+export type PartnerType = "client" | "partenaire" | "affilie" | "apporteur_affaires";
+export type PartnerSubtype = "expert_ia" | "independant" | "apport_affaires";
 
 export interface Partner {
   id: string;
@@ -13,6 +14,7 @@ export interface Partner {
   phone: string | null;
   company: string | null;
   partner_type: PartnerType;
+  partner_subtype: PartnerSubtype | null;
   bio: string | null;
   linkedin_url: string | null;
   website: string | null;
@@ -44,6 +46,13 @@ export function generateSlug(text: string): string {
 }
 
 export const PARTNER_TYPES: { value: PartnerType; label: string }[] = [
+  { value: "client", label: "Client" },
+  { value: "partenaire", label: "Partenaire" },
+  { value: "affilie", label: "Affilié" },
+  { value: "apporteur_affaires", label: "Apporteur d'affaires" },
+];
+
+export const PARTNER_SUBTYPES: { value: PartnerSubtype; label: string }[] = [
   { value: "expert_ia", label: "Expert IA" },
   { value: "independant", label: "Indépendant" },
   { value: "apport_affaires", label: "Apport d'affaires" },
@@ -186,9 +195,15 @@ export function useCockpitPartners() {
   const stats = {
     total: partners?.length || 0,
     byType: {
-      expert_ia: partners?.filter((p) => p.partner_type === "expert_ia").length || 0,
-      independant: partners?.filter((p) => p.partner_type === "independant").length || 0,
-      apport_affaires: partners?.filter((p) => p.partner_type === "apport_affaires").length || 0,
+      client: partners?.filter((p) => p.partner_type === "client").length || 0,
+      partenaire: partners?.filter((p) => p.partner_type === "partenaire").length || 0,
+      affilie: partners?.filter((p) => p.partner_type === "affilie").length || 0,
+      apporteur_affaires: partners?.filter((p) => p.partner_type === "apporteur_affaires").length || 0,
+    },
+    bySubtype: {
+      expert_ia: partners?.filter((p) => p.partner_subtype === "expert_ia").length || 0,
+      independant: partners?.filter((p) => p.partner_subtype === "independant").length || 0,
+      apport_affaires: partners?.filter((p) => p.partner_subtype === "apport_affaires").length || 0,
     },
     active: partners?.filter((p) => p.is_active).length || 0,
     deleted: allPartners?.filter((p) => p.deleted_at != null).length || 0,

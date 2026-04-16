@@ -18,6 +18,7 @@ import {
   Brain, 
   UserCheck, 
   Handshake,
+  Link2,
   Mail,
   Phone,
   Globe,
@@ -30,7 +31,7 @@ import {
   UserPlus,
   Shield
 } from "lucide-react";
-import { useCockpitPartners, Partner, PartnerType, PARTNER_TYPES, generateSlug } from "@/hooks/cockpit/useCockpitPartners";
+import { useCockpitPartners, Partner, PartnerType, PartnerSubtype, PARTNER_TYPES, PARTNER_SUBTYPES, generateSlug } from "@/hooks/cockpit/useCockpitPartners";
 import { ConsulteTab } from "@/components/cockpit/ConsulteTab";
 import { LinkedTranscriptionsSection } from "@/components/cockpit/LinkedTranscriptionsSection";
 import { LinkedFilesSection } from "@/components/cockpit/LinkedFilesSection";
@@ -50,9 +51,16 @@ import {
 import { InvitePartnerDialog } from "@/components/cockpit/InvitePartnerDialog";
 
 const PARTNER_TYPE_CONFIG: Record<PartnerType, { label: string; icon: React.ReactNode; color: string }> = {
-  expert_ia: { label: "Expert IA", icon: <Brain className="h-4 w-4" />, color: "text-purple-600" },
-  independant: { label: "Indépendant", icon: <UserCheck className="h-4 w-4" />, color: "text-blue-600" },
-  apport_affaires: { label: "Apport d'affaires", icon: <Handshake className="h-4 w-4" />, color: "text-amber-600" },
+  client: { label: "Client", icon: <UserCheck className="h-4 w-4" />, color: "text-emerald-600" },
+  partenaire: { label: "Partenaire", icon: <Brain className="h-4 w-4" />, color: "text-purple-600" },
+  affilie: { label: "Affilié", icon: <Link2 className="h-4 w-4" />, color: "text-blue-600" },
+  apporteur_affaires: { label: "Apporteur d'affaires", icon: <Handshake className="h-4 w-4" />, color: "text-amber-600" },
+};
+
+const PARTNER_SUBTYPE_LABELS: Record<PartnerSubtype, string> = {
+  expert_ia: "Expert IA",
+  independant: "Indépendant",
+  apport_affaires: "Apport d'affaires",
 };
 
 export default function CockpitPartenaireDetail() {
@@ -71,7 +79,8 @@ export default function CockpitPartenaireDetail() {
     email: "",
     phone: "",
     company: "",
-    partner_type: "independant" as PartnerType,
+    partner_type: "partenaire" as PartnerType,
+    partner_subtype: null as PartnerSubtype | null,
     bio: "",
     linkedin_url: "",
     website: "",
@@ -92,6 +101,7 @@ export default function CockpitPartenaireDetail() {
         phone: existingPartner.phone || "",
         company: existingPartner.company || "",
         partner_type: existingPartner.partner_type,
+        partner_subtype: existingPartner.partner_subtype,
         bio: existingPartner.bio || "",
         linkedin_url: existingPartner.linkedin_url || "",
         website: existingPartner.website || "",
@@ -317,26 +327,45 @@ export default function CockpitPartenaireDetail() {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="partner_type">Type de partenaire *</Label>
-                    <Select
-                      value={formData.partner_type}
-                      onValueChange={(v) => setFormData({ ...formData, partner_type: v as PartnerType })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PARTNER_TYPES.map((type) => (
-                          <SelectItem key={type.value} value={type.value}>
-                            <div className="flex items-center gap-2">
-                              {PARTNER_TYPE_CONFIG[type.value].icon}
-                              {type.label}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="partner_type">Type *</Label>
+                      <Select
+                        value={formData.partner_type}
+                        onValueChange={(v) => setFormData({ ...formData, partner_type: v as PartnerType })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {PARTNER_TYPES.map((type) => (
+                            <SelectItem key={type.value} value={type.value}>
+                              <div className="flex items-center gap-2">
+                                {PARTNER_TYPE_CONFIG[type.value].icon}
+                                {type.label}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="partner_subtype">Sous-type</Label>
+                      <Select
+                        value={formData.partner_subtype ?? "none"}
+                        onValueChange={(v) => setFormData({ ...formData, partner_subtype: v === "none" ? null : (v as PartnerSubtype) })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Aucun" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Aucun</SelectItem>
+                          {PARTNER_SUBTYPES.map((s) => (
+                            <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
 
                   <Separator />

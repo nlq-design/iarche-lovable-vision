@@ -22,6 +22,7 @@ import {
   Brain, 
   UserCheck, 
   Handshake,
+  Link2,
   Building2
 } from "lucide-react";
 import { useCockpitPartners, PartnerType } from '@/hooks/cockpit/useCockpitPartners';
@@ -34,9 +35,10 @@ interface LinkedPartnersSectionProps {
 }
 
 const PARTNER_TYPE_CONFIG: Record<PartnerType, { label: string; icon: React.ReactNode; color: string }> = {
-  expert_ia: { label: "Expert IA", icon: <Brain className="h-3 w-3" />, color: "text-purple-600" },
-  independant: { label: "Indépendant", icon: <UserCheck className="h-3 w-3" />, color: "text-blue-600" },
-  apport_affaires: { label: "Apporteur", icon: <Handshake className="h-3 w-3" />, color: "text-amber-600" },
+  client: { label: "Client", icon: <UserCheck className="h-3 w-3" />, color: "text-emerald-600" },
+  partenaire: { label: "Partenaire", icon: <Brain className="h-3 w-3" />, color: "text-purple-600" },
+  affilie: { label: "Affilié", icon: <Link2 className="h-3 w-3" />, color: "text-blue-600" },
+  apporteur_affaires: { label: "Apporteur", icon: <Handshake className="h-3 w-3" />, color: "text-amber-600" },
 };
 
 export function LinkedPartnersSection({ entityType, entityId, compact = false }: LinkedPartnersSectionProps) {

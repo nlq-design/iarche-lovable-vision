@@ -10,6 +10,7 @@ export function usePartnerAuth() {
     name: string;
     email: string | null;
     partner_type: string;
+    partner_subtype: string | null;
     avatar_url: string | null;
   } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -45,7 +46,7 @@ export function usePartnerAuth() {
         // Get partner profile linked to this user
         const { data: partner, error } = await supabase
           .from('partners')
-          .select('id, name, email, partner_type, avatar_url')
+          .select('id, name, email, partner_type, partner_subtype, avatar_url')
           .eq('user_id', user.id)
           .is('deleted_at', null)
           .single();
@@ -62,6 +63,7 @@ export function usePartnerAuth() {
             name: partner.name,
             email: partner.email,
             partner_type: partner.partner_type,
+            partner_subtype: partner.partner_subtype,
             avatar_url: partner.avatar_url,
           });
           
