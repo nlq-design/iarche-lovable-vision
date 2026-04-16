@@ -1305,7 +1305,8 @@ mcpServer.registerTool(
     title: "Get Partners",
     description: "Liste les partenaires du workspace.",
     inputSchema: {
-      partner_type: z.string().optional().describe("Filtrer par type (consultant, apporteur, revendeur)"),
+      partner_type: z.string().optional().describe("Filtrer par type (client, partenaire, affilie, apporteur_affaires)"),
+      partner_subtype: z.string().optional().describe("Filtrer par sous-type (expert_ia, independant, apport_affaires)"),
       is_active: z.boolean().optional().describe("Filtrer par statut actif"),
       limit: z.number().optional().describe("Nombre max (défaut 20)"),
     },
@@ -1316,13 +1317,14 @@ mcpServer.registerTool(
 
     let query = supabaseAdmin
       .from("partners")
-      .select("id, name, email, company, partner_type, specialties, commission_rate, is_active, created_at")
+      .select("id, name, email, company, partner_type, partner_subtype, specialties, commission_rate, is_active, created_at")
       .eq("workspace_id", ctx.wsId)
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
       .limit(params.limit || 20);
 
     if (params.partner_type) query = query.eq("partner_type", params.partner_type);
+    if (params.partner_subtype) query = query.eq("partner_subtype", params.partner_subtype);
     if (params.is_active !== undefined) query = query.eq("is_active", params.is_active);
 
     const { data, error } = await query;
@@ -1344,7 +1346,8 @@ mcpServer.registerTool(
       name: z.string().optional(),
       email: z.string().optional(),
       company: z.string().optional(),
-      partner_type: z.string().optional(),
+      partner_type: z.string().optional().describe("client, partenaire, affilie, apporteur_affaires"),
+      partner_subtype: z.string().optional().describe("expert_ia, independant, apport_affaires"),
       specialties: z.array(z.string()).optional().describe("Liste de spécialités"),
       commission_rate: z.number().optional().describe("Taux de commission (0-100)"),
       is_active: z.boolean().optional(),
@@ -1368,7 +1371,7 @@ mcpServer.registerTool(
       .update(updates)
       .eq("id", partner_id)
       .eq("workspace_id", ctx.wsId)
-      .select("id, name, email, company, partner_type, specialties, commission_rate, is_active, updated_at")
+      .select("id, name, email, company, partner_type, partner_subtype, specialties, commission_rate, is_active, updated_at")
       .single();
 
     if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };

@@ -7,8 +7,22 @@ import {
   User, 
   Mail, 
   Building2, 
-  Calendar 
+  Calendar,
+  Tag
 } from 'lucide-react';
+
+const PARTNER_TYPE_LABELS: Record<string, string> = {
+  client: 'Client',
+  partenaire: 'Partenaire',
+  affilie: 'Affilié',
+  apporteur_affaires: "Apporteur d'affaires",
+};
+
+const PARTNER_SUBTYPE_LABELS: Record<string, string> = {
+  expert_ia: 'Expert IA',
+  independant: 'Indépendant',
+  apport_affaires: "Apport d'affaires",
+};
 
 export default function PartnerProfile() {
   const { partnerData, user } = usePartnerAuth();
@@ -35,9 +49,14 @@ export default function PartnerProfile() {
                   </AvatarFallback>
                 </Avatar>
                 <h2 className="text-xl font-semibold">{partnerData?.name || 'Partenaire'}</h2>
-                <Badge variant="secondary" className="mt-2 capitalize">
-                  {partnerData?.partner_type?.replace('_', ' ') || 'Partenaire'}
+                <Badge variant="secondary" className="mt-2">
+                  {PARTNER_TYPE_LABELS[partnerData?.partner_type || ''] || 'Partenaire'}
                 </Badge>
+                {partnerData?.partner_subtype && (
+                  <Badge variant="outline" className="mt-2">
+                    {PARTNER_SUBTYPE_LABELS[partnerData.partner_subtype] || partnerData.partner_subtype}
+                  </Badge>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -71,11 +90,23 @@ export default function PartnerProfile() {
                 <Building2 className="h-5 w-5 text-muted-foreground" />
                 <div>
                   <p className="text-sm text-muted-foreground">Type de partenariat</p>
-                  <p className="font-medium capitalize">
-                    {partnerData?.partner_type?.replace('_', ' ') || '—'}
+                  <p className="font-medium">
+                    {PARTNER_TYPE_LABELS[partnerData?.partner_type || ''] || '—'}
                   </p>
                 </div>
               </div>
+
+              {partnerData?.partner_subtype && (
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                  <Tag className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Sous-type</p>
+                    <p className="font-medium">
+                      {PARTNER_SUBTYPE_LABELS[partnerData.partner_subtype] || partnerData.partner_subtype}
+                    </p>
+                  </div>
+                </div>
+              )}
 
               <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                 <Calendar className="h-5 w-5 text-muted-foreground" />

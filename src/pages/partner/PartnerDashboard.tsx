@@ -80,9 +80,25 @@ export default function PartnerDashboard() {
               Voici un aperçu de votre activité partenaire
             </p>
           </div>
-          <Badge variant="outline" className="w-fit capitalize">
-            {partnerData?.partner_type?.replace('_', ' ') || 'Partenaire'}
-          </Badge>
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="outline" className="w-fit">
+              {({
+                client: 'Client',
+                partenaire: 'Partenaire',
+                affilie: 'Affilié',
+                apporteur_affaires: "Apporteur d'affaires",
+              } as Record<string, string>)[partnerData?.partner_type || ''] || 'Partenaire'}
+            </Badge>
+            {partnerData?.partner_subtype && (
+              <Badge variant="secondary" className="w-fit">
+                {({
+                  expert_ia: 'Expert IA',
+                  independant: 'Indépendant',
+                  apport_affaires: "Apport d'affaires",
+                } as Record<string, string>)[partnerData.partner_subtype] || partnerData.partner_subtype}
+              </Badge>
+            )}
+          </div>
         </div>
 
         {/* Stats Grid */}
