@@ -260,8 +260,6 @@ const EventLanding = () => {
                 <EventLandingForm
                   articleId={doc.article_id}
                   articleTitle={metadata.eventTitle || doc.title}
-                  eventDate={metadata.eventDate}
-                  eventLocation={metadata.eventLocation}
                   eventDate={articleData.event_date || metadata.eventDate}
                   eventLocation={articleData.event_location || metadata.eventLocation}
                   heureDebut={articleData.heure_debut}
