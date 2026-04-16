@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, ArrowLeft, Printer, Lock, Copy, Save, Plus, Trash2 } from 'lucide-react';
+import { Loader2, ArrowLeft, Printer, Lock, Unlock, Copy, Save, Plus, Trash2 } from 'lucide-react';
 import { COLORS } from '@/components/admin/medias/shared/tokens';
 import { toast } from 'sonner';
 import QRCode from 'qrcode';
