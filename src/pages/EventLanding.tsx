@@ -127,9 +127,15 @@ const EventLanding = () => {
     prose-ul:text-muted-foreground prose-li:text-muted-foreground
     prose-table:text-sm
     [&_table]:w-full [&_table]:border-collapse [&_table]:table-auto
-    [&_th]:bg-muted/50 [&_th]:text-left [&_th]:px-2 [&_th]:py-2 md:[&_th]:px-4 md:[&_th]:py-3 [&_th]:font-semibold [&_th]:text-foreground [&_th]:border-b
-    [&_td]:px-2 [&_td]:py-2 md:[&_td]:px-4 md:[&_td]:py-3 [&_td]:border-b [&_td]:border-border
-    [&_tr:last-child_td]:border-b-0
+    md:[&_th]:bg-muted/50 md:[&_th]:text-left md:[&_th]:px-4 md:[&_th]:py-3 md:[&_th]:font-semibold md:[&_th]:text-foreground md:[&_th]:border-b
+    md:[&_td]:px-4 md:[&_td]:py-3 md:[&_td]:border-b md:[&_td]:border-border
+    md:[&_tr:last-child_td]:border-b-0
+    max-md:[&_table]:block max-md:[&_thead]:hidden max-md:[&_tbody]:block
+    max-md:[&_tr]:block max-md:[&_tr]:bg-muted/30 max-md:[&_tr]:rounded-lg max-md:[&_tr]:p-3 max-md:[&_tr]:mb-3 max-md:[&_tr]:space-y-1
+    max-md:[&_td]:block max-md:[&_td]:px-0 max-md:[&_td]:py-0 max-md:[&_td]:border-0 max-md:[&_td]:text-muted-foreground
+    max-md:[&_td:first-child]:text-xs max-md:[&_td:first-child]:font-semibold max-md:[&_td:first-child]:text-foreground
+    max-md:[&_td:nth-child(2)]:text-sm
+    max-md:[&_td:last-child]:text-xs max-md:[&_td:last-child]:text-muted-foreground/70
     [&_.invitation-hero]:hidden
     [&_hr]:my-4 [&_hr]:border-border
     overflow-x-auto break-words [overflow-wrap:break-word]`;
