@@ -1,74 +1,27 @@
 
 
-# Migration P0-A — Création colonne + trigger `set_stage_entered_at`
+# État actuel & décision à prendre
 
-Audit confirmé : la colonne ET le trigger manquent. Migration unique idempotente.
+## Contexte (audit 360° clôturé sur D8)
 
-## Migration SQL
+L'audit a révélé que la spec P0-A est implémentée à ~9% en BDD :
+- ✅ En BDD : `stage_entered_at` + trigger + `probability`
+- 🔴 Spec dormante (0 BDD, 0 code) : BANT (5 col), `loss_reason`, `temperature`+`last_contact_date`, `health_score`+`budget_sold`
 
-```sql
--- 1. Colonne (idempotent)
-ALTER TABLE public.opportunities 
-  ADD COLUMN IF NOT EXISTS stage_entered_at timestamptz;
+Tu avais validé l'**Option A** : pas de migration des 10 colonnes fantômes, juste reconsolidation mémoire stratégique.
 
--- 2. Backfill AVANT trigger (sinon NEW.stage_entered_at = now() au lieu de created_at)
-UPDATE public.opportunities 
-SET stage_entered_at = COALESCE(updated_at, created_at) 
-WHERE stage_entered_at IS NULL;
+## Plan en attente — Reconsolidation mémoire (3 fichiers)
 
--- 3. Fonction trigger
-CREATE OR REPLACE FUNCTION public.set_stage_entered_at()
-RETURNS TRIGGER 
-LANGUAGE plpgsql
-SET search_path TO 'public'
-AS $$
-BEGIN
-  IF NEW.stage IS DISTINCT FROM OLD.stage THEN
-    NEW.stage_entered_at = now();
-  END IF;
-  RETURN NEW;
-END;
-$$;
+1. **`mem://cockpit/cdc-audit-p0-p3.md`** — Ajouter en tête bloc "Statut réel BDD (audit 16/04/2026)" séparant implémenté vs spec dormante
+2. **`mem://index.md`** — Section Core : règle de closure permanente "Aucune feature 'livrée' sans preuve BDD + preuve code (grep). Spec ≠ implémentation." + Section Memories : référence vers nouveau fichier
+3. **`mem://cockpit/cdc-p0a-statut-reel-fr.md`** (nouveau) — Snapshot état P0-A post-audit + recommandations métier prioritaires (BANT critique, Loss à 5 perdues, Temperature à ≥50 leads, Health report)
 
--- 4. Trigger BEFORE UPDATE OF stage (idempotent)
-DROP TRIGGER IF EXISTS set_stage_entered_at ON public.opportunities;
-CREATE TRIGGER set_stage_entered_at
-  BEFORE UPDATE OF stage ON public.opportunities
-  FOR EACH ROW
-  EXECUTE FUNCTION public.set_stage_entered_at();
-```
+Aucune migration BDD, aucun code projet touché.
 
-## Vérifications post-migration (à coller en réponse)
+## Options de bascule
 
-```sql
--- A. Colonne créée
-SELECT column_name, data_type 
-FROM information_schema.columns 
-WHERE table_schema='public' AND table_name='opportunities' AND column_name='stage_entered_at';
-
--- B. Fonction présente
-SELECT proname FROM pg_proc WHERE proname='set_stage_entered_at';
-
--- C. Trigger actif
-SELECT trigger_name, event_manipulation, event_object_table 
-FROM information_schema.triggers 
-WHERE trigger_name='set_stage_entered_at';
-
--- D. Backfill complet (attendu : restants=0, total=26)
-SELECT 
-  COUNT(*) FILTER (WHERE stage_entered_at IS NULL) AS restants,
-  COUNT(*) AS total
-FROM public.opportunities;
-```
-
-## Périmètre strict
-
-- Aucune autre table touchée
-- Aucun front modifié
-- Aucun autre trigger / fonction modifié
-- Migration entièrement réversible
-
-## Note
-
-La vérification exhaustive du reste de P0-A (11 colonnes attendues sur opportunities/leads/projects) sera traitée dans un prompt suivant, après confirmation de cette migration.
+- **A** — J'exécute la reconsolidation mémoire maintenant (option déjà validée hier, je confirme avant action)
+- **B** — On attaque BANT en vrai (la feature à plus haute valeur stratégique selon matrice §3 du dernier verdict) : migration 5 colonnes + composant scoring + intégration Consulte (~2 sessions)
+- **C** — On creuse les 2 dernières specs ambiguës restantes : auto-task post-transcription + pre-meeting brief (audit BDD + grep, lecture seule)
+- **D** — Autre sujet (tu précises)
 
