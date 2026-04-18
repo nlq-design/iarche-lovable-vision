@@ -1,5 +1,24 @@
 # CDC Complet & Audit BDD — P0 à P3
-Updated: 2026-03-14
+Updated: 2026-03-14 / Audit BDD : 2026-04-16
+
+---
+
+## 🔍 STATUT RÉEL BDD (audit 16/04/2026)
+
+**P0-A implémenté à ~9%.** Audit croisé `pg_trigger` + `information_schema.columns` + grep `src/` + `supabase/functions/`.
+
+### ✅ En BDD + opérationnel
+- `opportunities.stage_entered_at` + trigger `set_stage_entered_at`
+- `opportunities.probability` (existant — pas d'auto-calc par stage)
+
+### 🔴 Specs dormantes (0 BDD, 0 référence code)
+- BANT : `bant_score`, `bant_budget`, `bant_authority`, `bant_need`, `bant_timeline` (opportunities)
+- Loss : `loss_reason` (opportunities)
+- Lead Temperature : `temperature`, `last_contact_date` (leads)
+- Project Health : `health_score`, `budget_sold` (projects) — note : `health_status` CHECK existe et couvre ~80%
+
+### Règle de closure
+Aucune de ces 10 colonnes ne doit être créée en batch. Création UNIQUEMENT au moment où la feature consommatrice (UI + logique) est codée. Détail + priorisation métier : voir `mem://cockpit/cdc-p0a-statut-reel-fr.md`.
 
 ---
 
