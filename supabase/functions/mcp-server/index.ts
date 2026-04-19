@@ -5353,9 +5353,17 @@ const OWNER_WORKSPACE_ID = Deno.env.get("OWNER_WORKSPACE_ID") || "00000000-0000-
 // Health check — avoids 406 on GET
 app.get("/*", (c) => c.json({ status: 'ok', tools: _toolsList().length, tools_internal: _tools.length, server: 'iarche-crm', version: '2.0.0' }));
 
-// MCP JSON-RPC handler
+// MCP JSON-RPC handler — requires valid iarche_mcp_* API key
 app.post("/*", async (c) => {
-  (globalThis as any).__mcpAuth = { workspace_id: OWNER_WORKSPACE_ID, user_id: null };
+  // === AUTH GATE: validate MCP API key BEFORE any processing ===
+  const auth = await authenticateMcpKey(c.req.raw);
+  if (!auth.valid) {
+    return c.json(
+      { jsonrpc: '2.0', id: null, error: { code: -32001, message: 'Invalid or missing MCP API key. Provide header: Authorization: Bearer iarche_mcp_*' } },
+      401
+    );
+  }
+  (globalThis as any).__mcpAuth = { workspace_id: auth.workspace_id, user_id: auth.user_id };
 
   let body: any;
   try {
