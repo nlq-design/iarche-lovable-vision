@@ -315,7 +315,7 @@ const AGENT_TOOLS = [
       parameters: {
         type: "object",
         properties: {
-          stage: { type: "string", description: "Filtrer par stage (lead, r1, r2, pause, won, lost)" },
+          stage: { type: "string", description: "Filtrer par stage (lead, r1, r2, pause, closed_won, lost)" },
           min_value: { type: "number", description: "Valeur minimum en euros" },
           limit: { type: "number", description: "Nombre max de résultats (défaut: 10)" },
         },
@@ -804,7 +804,7 @@ const AGENT_TOOLS = [
         type: "object",
         properties: {
           opportunity_id: { type: "string", description: "ID de l'opportunité" },
-          new_stage: { type: "string", description: "Nouveau stage (lead, qualified, proposal, negotiation, won, lost)" },
+          new_stage: { type: "string", description: "Nouveau stage (lead, qualified, proposal, negotiation, closed_won, lost)" },
           reason: { type: "string", description: "Justification du changement" },
           value_amount: { type: "number", description: "Nouvelle valeur estimée (optionnel)" },
         },
@@ -3585,7 +3585,7 @@ async function executeTool(
 
       if (error) throw error;
 
-      const stages = ["lead", "qualified", "proposal", "negotiation", "won", "lost"];
+      const stages = ["lead", "qualified", "proposal", "negotiation", "closed_won", "lost"];
       const opps = (opportunities || []) as OpportunityRow[];
       const stats = stages.reduce((acc, stage) => {
         const stageOpps = opps.filter((o: OpportunityRow) => o.stage === stage);
@@ -3598,7 +3598,7 @@ async function executeTool(
       }, {} as Record<string, { count: number; total_value: number; weighted_value: number }>);
 
       const totalValue = opps.reduce((sum: number, o: OpportunityRow) => sum + (o.value_amount || 0), 0);
-      const wonValue = stats.won?.total_value || 0;
+      const wonValue = stats.closed_won?.total_value || 0;
       const lostValue = stats.lost?.total_value || 0;
       const conversionRate = totalValue > 0 ? (wonValue / (wonValue + lostValue) * 100) : 0;
 
@@ -8830,7 +8830,7 @@ Quand une demande implique PLUSIEURS actions, tu DOIS les exécuter TOUTES en s�
    get_leads → suggest_solutions_for_lead → log_activity
 
 9. **Création projet post-signature**
-   get_opportunities(stage=won) → create_project → create_task
+   get_opportunities(stage=closed_won) → create_project → create_task
 
 10. **Report RDV**
     cancel_booking(reason) → create_booking(nouvelle date)

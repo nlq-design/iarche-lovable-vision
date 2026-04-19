@@ -306,7 +306,7 @@ async function handleMorningBriefing(supabase: SupabaseClientAny, chatId: string
     .from("opportunities")
     .select("id, title, value_amount, stage, expected_close_date")
     .lt("expected_close_date", new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString())
-    .not("stage", "in", "(won,lost)")
+    .not("stage", "in", "(closed_won,lost)")
     .limit(5);
 
   // Build briefing message

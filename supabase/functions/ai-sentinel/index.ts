@@ -146,7 +146,7 @@ serve(async (req) => {
     // --- LOGICAL INCONSISTENCIES ---
     const { data: wonOpps } = await supabase
       .from("opportunities").select("id, title, lead_id")
-      .eq("stage", "won").eq("workspace_id", ws.id).not("lead_id", "is", null).limit(10);
+      .eq("stage", "closed_won").eq("workspace_id", ws.id).not("lead_id", "is", null).limit(10);
 
     if (wonOpps?.length) {
       const leadIds = [...new Set(wonOpps.map((o) => o.lead_id).filter(Boolean))];
