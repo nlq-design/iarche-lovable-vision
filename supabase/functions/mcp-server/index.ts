@@ -3153,14 +3153,14 @@ mcpServer.registerTool(
         .select("id, title, stage, value_amount")
         .eq("workspace_id", wsId)
         .is("expected_close_date", null)
-        .not("stage", "in", '("won","lost")'),
+        .not("stage", "in", '("closed_won","lost")'),
       // 6. Opportunités sans montant
       supabaseAdmin
         .from("opportunities")
         .select("id, title, stage")
         .eq("workspace_id", wsId)
         .or("value_amount.is.null,value_amount.eq.0")
-        .not("stage", "in", '("won","lost")'),
+        .not("stage", "in", '("closed_won","lost")'),
       // 7. Projets rouges sans tâche active
       supabaseAdmin
         .from("projects")
@@ -3410,7 +3410,7 @@ mcpServer.registerTool(
         leads(id, name, company, email, lead_score, status)
       `)
       .eq("workspace_id", wsId)
-      .not("stage", "in", '("won","lost")')
+      .not("stage", "in", '("closed_won","lost")')
       .order("value_amount", { ascending: false })
       .limit(1000);
 
@@ -3447,7 +3447,7 @@ mcpServer.registerTool(
         .from("opportunities")
         .select("id, title, value_amount, stage, closed_at, probability")
         .eq("workspace_id", wsId)
-        .eq("stage", "won")
+        .eq("stage", "closed_won")
         .gte("closed_at", new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()),
     ]);
 
@@ -3612,13 +3612,13 @@ mcpServer.registerTool(
         .from("opportunities")
         .select("id, title, stage, value_amount, probability, expected_close_date, created_at")
         .eq("workspace_id", wsId)
-        .not("stage", "in", '("won","lost")')
+        .not("stage", "in", '("closed_won","lost")')
         .not("expected_close_date", "is", null),
       supabaseAdmin
         .from("opportunities")
         .select("id, value_amount, closed_at, stage, probability")
         .eq("workspace_id", wsId)
-        .eq("stage", "won")
+        .eq("stage", "closed_won")
         .gte("closed_at", new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString())
         .order("closed_at", { ascending: true }),
       supabaseAdmin
@@ -3840,16 +3840,16 @@ mcpServer.registerTool(
 
         if (!opp) throw new Error("Opportunité introuvable");
 
-        const outcome = wfParams?.outcome || "won";
+        const outcome = wfParams?.outcome || "closed_won";
 
-        const steps = outcome === "won" ? [
+        const steps = outcome === "closed_won" ? [
           {
             step: 1,
             action: "update_opportunity",
-            description: "Passer l'opportunité en \"won\"",
+            description: "Passer l'opportunité en \"closed_won\"",
             data: {
               opportunity_id: opp.id,
-              stage: "won",
+              stage: "closed_won",
               closed_at: new Date().toISOString(),
               probability: 100,
             },
@@ -4359,7 +4359,7 @@ mcpServer.registerTool(
           .from('opportunities')
           .select('id, title, stage, expected_close_date, value_amount')
           .eq('workspace_id', wsId)
-          .not('stage', 'in', '("won","lost")')
+          .not('stage', 'in', '("closed_won","lost")')
           .not('expected_close_date', 'is', null)
           .lte('expected_close_date', horizonDate),
         supabaseAdmin
@@ -4657,8 +4657,8 @@ mcpServer.registerTool(
       const period = quarterMap[quarter] || quarterMap[`Q${Math.ceil((new Date().getMonth() + 1) / 3)}`];
 
       const [wonDeals, activeOpps, aiUsage, projects, tasks] = await Promise.all([
-        supabaseAdmin.from('opportunities').select('id, title, value_amount, closed_at, stage, lead_id').eq('workspace_id', wsId).eq('stage', 'won').gte('closed_at', period.start).lte('closed_at', period.end + 'T23:59:59'),
-        supabaseAdmin.from('opportunities').select('id, title, value_amount, probability, stage, expected_close_date').eq('workspace_id', wsId).not('stage', 'in', '("won","lost")'),
+        supabaseAdmin.from('opportunities').select('id, title, value_amount, closed_at, stage, lead_id').eq('workspace_id', wsId).eq('stage', 'closed_won').gte('closed_at', period.start).lte('closed_at', period.end + 'T23:59:59'),
+        supabaseAdmin.from('opportunities').select('id, title, value_amount, probability, stage, expected_close_date').eq('workspace_id', wsId).not('stage', 'in', '("closed_won","lost")'),
         supabaseAdmin.from('ai_usage_metrics').select('model_provider, total_tokens, estimated_cost_cents, created_at').eq('workspace_id', wsId).gte('created_at', period.start).lte('created_at', period.end + 'T23:59:59'),
         supabaseAdmin.from('projects').select('id, name, budget_amount, consumed_amount, status, health_status').eq('workspace_id', wsId).eq('status', 'active'),
         supabaseAdmin.from('tasks').select('status, priority, created_at').eq('workspace_id', wsId).gte('created_at', period.start),
@@ -4946,7 +4946,7 @@ mcpServer.registerTool(
         if (!partnerStats.has(o.partner_id)) return;
         const ps = partnerStats.get(o.partner_id);
         ps.opportunities_count++;
-        if (o.stage === 'won') {
+        if (o.stage === 'closed_won') {
           ps.revenue_won += o.value_amount || 0;
           ps.commission_earned += (o.value_amount || 0) * (ps.commission_rate / 100);
         } else if (o.stage !== 'lost') {

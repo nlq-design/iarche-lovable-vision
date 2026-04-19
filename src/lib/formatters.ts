@@ -88,7 +88,7 @@ export const getOpportunityStageConfig = (stage: string): StatusConfig => {
       return { label: "R2", variant: "default", className: "bg-amber-100 text-amber-800" };
     case "pause":
       return { label: "Pause", variant: "default", className: "bg-orange-100 text-orange-800" };
-    case "won":
+    case "closed_won":
       return { label: "Gagné", variant: "default", className: "bg-green-100 text-green-800" };
     case "lost":
       return { label: "Perdu", variant: "destructive", className: "bg-red-100 text-red-800" };
