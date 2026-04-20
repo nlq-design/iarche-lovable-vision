@@ -686,7 +686,8 @@ async function indexSpecification(supabase: any, spec: any): Promise<{ success: 
       version: spec.version, 
       status: spec.status 
     },
-    false
+    false,
+    spec.workspace_id ?? null
   );
 }
 
