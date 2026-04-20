@@ -2855,7 +2855,7 @@ export type Database = {
           phone: string | null
           position: string | null
           updated_at: string | null
-          workspace_id: string | null
+          workspace_id: string
         }
         Insert: {
           created_at?: string | null
@@ -2868,7 +2868,7 @@ export type Database = {
           phone?: string | null
           position?: string | null
           updated_at?: string | null
-          workspace_id?: string | null
+          workspace_id?: string
         }
         Update: {
           created_at?: string | null
@@ -2881,7 +2881,7 @@ export type Database = {
           phone?: string | null
           position?: string | null
           updated_at?: string | null
-          workspace_id?: string | null
+          workspace_id?: string
         }
         Relationships: [
           {
@@ -2972,7 +2972,7 @@ export type Database = {
           synthesis_stale: boolean | null
           updated_at: string | null
           website: string | null
-          workspace_id: string | null
+          workspace_id: string
         }
         Insert: {
           address?: string | null
@@ -3010,7 +3010,7 @@ export type Database = {
           synthesis_stale?: boolean | null
           updated_at?: string | null
           website?: string | null
-          workspace_id?: string | null
+          workspace_id?: string
         }
         Update: {
           address?: string | null
@@ -3048,7 +3048,7 @@ export type Database = {
           synthesis_stale?: boolean | null
           updated_at?: string | null
           website?: string | null
-          workspace_id?: string | null
+          workspace_id?: string
         }
         Relationships: [
           {
