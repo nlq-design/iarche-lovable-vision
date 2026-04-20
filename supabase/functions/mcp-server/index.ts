@@ -87,12 +87,34 @@ interface McpAuth {
 }
 
 async function authenticateMcpKey(req: Request): Promise<McpAuth> {
+  // Token resolution order:
+  // 1. Authorization: Bearer iarche_mcp_*
+  // 2. Query string ?apikey=iarche_mcp_*  (Claude.ai custom connector workaround — UI lacks header field)
+  // 3. Header x-api-key: iarche_mcp_*
+  let key: string | null = null;
+
   const authHeader = req.headers.get("Authorization");
-  if (!authHeader?.startsWith("Bearer iarche_mcp_")) {
+  if (authHeader?.startsWith("Bearer ")) {
+    key = authHeader.slice("Bearer ".length).trim();
+  }
+
+  if (!key) {
+    try {
+      const url = new URL(req.url);
+      const qp = url.searchParams.get("apikey");
+      if (qp) key = qp.trim();
+    } catch { /* ignore malformed URL */ }
+  }
+
+  if (!key) {
+    const xApiKey = req.headers.get("x-api-key");
+    if (xApiKey) key = xApiKey.trim();
+  }
+
+  if (!key || !key.startsWith("iarche_mcp_")) {
     return { valid: false };
   }
 
-  const key = authHeader.replace("Bearer ", "");
   const keyHash = await sha256(key);
 
   const { data } = await supabaseAdmin
