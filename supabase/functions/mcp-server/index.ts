@@ -2491,48 +2491,58 @@ mcpServer.registerTool(
 );
 
 // ============================================================
-// TOOL 57: get_transcriptions
+// TOOL 57: list_transcriptions (PRIMARY)
+// Lightweight metadata listing — payload budget <15k tokens / 20 items
 // ============================================================
 mcpServer.registerTool(
-  "get_transcriptions",
+  "list_transcriptions",
   {
-    title: "Get Transcriptions",
-    description: "Liste les transcriptions vocales du workspace.",
+    title: "List Transcriptions",
+    description: "Search and list voice transcriptions from CRM meetings, calls, and recordings. Returns metadata only (id, date, title, summary, linked entities). Use for browsing or filtering by date range, lead, project, or status. Excludes heavy fields (full transcript, segments) — use get_transcription_detail for those.",
     inputSchema: {
-      lead_id: z.string().uuid().optional().describe("Filtrer par lead"),
-      project_id: z.string().uuid().optional().describe("Filtrer par projet"),
-      status: z.string().optional().describe("Filtrer par statut (pending, completed, error)"),
-      limit: z.number().optional().describe("Nombre max (défaut 20)"),
+      lead_id: z.string().uuid().optional().describe("Filter by associated lead UUID"),
+      project_id: z.string().uuid().optional().describe("Filter by associated project UUID"),
+      entity_id: z.string().uuid().optional().describe("Filter by any linked entity UUID (lead or project)"),
+      status: z.string().optional().describe("Filter by status (pending, completed, error)"),
+      date_from: z.string().optional().describe("ISO date — only transcriptions created on or after this date"),
+      date_to: z.string().optional().describe("ISO date — only transcriptions created on or before this date"),
+      limit: z.number().int().min(1).max(50).optional().describe("Max results (default 20, max 50)"),
     },
   },
   async (params) => {
     const ctx = getAuthContext();
     if (!ctx) return authError();
+    const limit = Math.min(params.limit ?? 20, 50);
+    // Lightweight columns only — exclude raw_transcript, segments, synthesis_long, raw_audio_url, embeddings
     let query = supabaseAdmin
       .from("voice_transcriptions")
-      .select("id, title, status, raw_transcript, summary, lead_id, project_id, slug, source, created_at")
+      .select("id, title, summary, status, source, slug, lead_id, project_id, created_at, duration_seconds")
       .eq("workspace_id", ctx.wsId)
       .order("created_at", { ascending: false })
-      .limit(params.limit || 20);
+      .limit(limit);
     if (params.lead_id) query = query.eq("lead_id", params.lead_id);
     if (params.project_id) query = query.eq("project_id", params.project_id);
+    if (params.entity_id) query = query.or(`lead_id.eq.${params.entity_id},project_id.eq.${params.entity_id}`);
     if (params.status) query = query.eq("status", params.status);
+    if (params.date_from) query = query.gte("created_at", params.date_from);
+    if (params.date_to) query = query.lte("created_at", params.date_to);
     const { data, error } = await query;
     if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
-    return { content: [{ type: "text" as const, text: JSON.stringify({ transcriptions: data, count: data?.length || 0 }) }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ transcriptions: data ?? [], count: data?.length ?? 0 }) }] };
   }
 );
 
 // ============================================================
-// TOOL 58: get_transcription_detail
+// TOOL 58: get_transcription_detail (PRIMARY)
+// Full content for a single transcription
 // ============================================================
 mcpServer.registerTool(
   "get_transcription_detail",
   {
     title: "Get Transcription Detail",
-    description: "Détail complet d'une transcription avec ses participants.",
+    description: "Fetch full content of a single voice transcription including speaker-segmented text, AI synthesis, action items, participants, and CRM entity links. Requires transcription UUID obtained from list_transcriptions.",
     inputSchema: {
-      transcription_id: z.string().uuid().describe("ID de la transcription"),
+      transcription_id: z.string().uuid().describe("UUID of the transcription to fetch"),
     },
   },
   async (params) => {
@@ -2548,103 +2558,86 @@ mcpServer.registerTool(
 );
 
 // ============================================================
-// TOOL 59: list_transcriptions
-// Alias compatible Claude.ai
+// TOOL 59: get_transcriptions [DEPRECATED — removal 2026-05-20]
+// Thin wrapper → list_transcriptions
 // ============================================================
 mcpServer.registerTool(
-  "list_transcriptions",
+  "get_transcriptions",
   {
-    title: "List Transcriptions",
-    description: "Alias de compatibilité pour lister les transcriptions vocales du workspace.",
+    title: "Get Transcriptions [DEPRECATED]",
+    description: "[DEPRECATED — use list_transcriptions instead, removal 2026-05-20] Legacy alias. Lists voice transcriptions.",
     inputSchema: {
-      lead_id: z.string().uuid().optional().describe("Filtrer par lead"),
-      project_id: z.string().uuid().optional().describe("Filtrer par projet"),
-      status: z.string().optional().describe("Filtrer par statut"),
-      limit: z.number().int().min(1).max(50).optional().describe("Nombre max (défaut 10)"),
+      lead_id: z.string().uuid().optional(),
+      project_id: z.string().uuid().optional(),
+      status: z.string().optional(),
+      limit: z.number().int().min(1).max(50).optional(),
     },
   },
   async (params) => {
+    console.warn('[MCP-DEPRECATED] tool=get_transcriptions called, migrate to list_transcriptions, removal=2026-05-20');
     const ctx = getAuthContext();
     if (!ctx) return authError();
+    const limit = Math.min(params.limit ?? 20, 50);
     let query = supabaseAdmin
       .from("voice_transcriptions")
-      .select("id, title, summary, created_at, lead_id, project_id, status, source, slug")
+      .select("id, title, summary, status, source, slug, lead_id, project_id, created_at, duration_seconds")
       .eq("workspace_id", ctx.wsId)
       .order("created_at", { ascending: false })
-      .limit(params.limit || 10);
+      .limit(limit);
     if (params.lead_id) query = query.eq("lead_id", params.lead_id);
     if (params.project_id) query = query.eq("project_id", params.project_id);
     if (params.status) query = query.eq("status", params.status);
-
     const { data, error } = await query;
     if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
-    return { content: [{ type: "text" as const, text: JSON.stringify(data ?? [], null, 2) }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ transcriptions: data ?? [], count: data?.length ?? 0, _deprecated: "Use list_transcriptions" }) }] };
   }
 );
 
 // ============================================================
-// TOOL 60: get_transcription
-// Alias compatible Claude.ai
+// TOOL 60: get_transcription [DEPRECATED — removal 2026-05-20]
+// Thin wrapper → list_transcriptions or get_transcription_detail
 // ============================================================
 mcpServer.registerTool(
   "get_transcription",
   {
-    title: "Get Transcription",
-    description: "Récupère une transcription par ID ou liste les transcriptions récentes si aucun ID n'est fourni.",
+    title: "Get Transcription [DEPRECATED]",
+    description: "[DEPRECATED — use list_transcriptions or get_transcription_detail instead, removal 2026-05-20] Legacy alias.",
     inputSchema: {
-      transcription_id: z.string().uuid().optional().describe("UUID de la transcription"),
-      lead_id: z.string().uuid().optional().describe("Filtrer par lead associé"),
-      limit: z.number().int().min(1).max(50).optional().describe("Nombre max de résultats (défaut 10)"),
+      transcription_id: z.string().uuid().optional(),
+      lead_id: z.string().uuid().optional(),
+      limit: z.number().int().min(1).max(50).optional(),
     },
   },
   async (params) => {
+    console.warn('[MCP-DEPRECATED] tool=get_transcription called, migrate to list_transcriptions or get_transcription_detail, removal=2026-05-20');
     const ctx = getAuthContext();
     if (!ctx) return authError();
 
     if (params.transcription_id) {
-      const [transcriptionRes, participantsRes] = await Promise.all([
-        supabaseAdmin
-          .from("voice_transcriptions")
-          .select("*")
-          .eq("id", params.transcription_id)
-          .eq("workspace_id", ctx.wsId)
-          .single(),
-        supabaseAdmin
-          .from("transcription_participants")
-          .select("*")
-          .eq("transcription_id", params.transcription_id),
+      const [transcRes, partRes] = await Promise.all([
+        supabaseAdmin.from("voice_transcriptions").select("*").eq("id", params.transcription_id).eq("workspace_id", ctx.wsId).single(),
+        supabaseAdmin.from("transcription_participants").select("*").eq("transcription_id", params.transcription_id),
       ]);
-
-      if (transcriptionRes.error) {
-        return { content: [{ type: "text" as const, text: `Transcription introuvable : ${transcriptionRes.error.message}` }] };
-      }
-
-      return {
-        content: [{
-          type: "text" as const,
-          text: JSON.stringify({ transcription: transcriptionRes.data, participants: participantsRes.data || [] }, null, 2),
-        }],
-      };
+      if (transcRes.error) return { content: [{ type: "text" as const, text: `Erreur: ${transcRes.error.message}` }] };
+      return { content: [{ type: "text" as const, text: JSON.stringify({ transcription: transcRes.data, participants: partRes.data || [], _deprecated: "Use get_transcription_detail" }) }] };
     }
 
+    const limit = Math.min(params.limit ?? 10, 50);
     let query = supabaseAdmin
       .from("voice_transcriptions")
-      .select("id, title, summary, created_at, lead_id, project_id, status, source, slug")
+      .select("id, title, summary, status, source, slug, lead_id, project_id, created_at")
       .eq("workspace_id", ctx.wsId)
       .order("created_at", { ascending: false })
-      .limit(params.limit || 10);
-
+      .limit(limit);
     if (params.lead_id) query = query.eq("lead_id", params.lead_id);
-
     const { data, error } = await query;
-    if (error) return { content: [{ type: "text" as const, text: `Erreur listing : ${error.message}` }] };
-
-    return { content: [{ type: "text" as const, text: JSON.stringify(data ?? [], null, 2) }] };
+    if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ transcriptions: data ?? [], _deprecated: "Use list_transcriptions" }) }] };
   }
 );
 
 // ============================================================
-// TOOL 59: update_workspace_config
+// TOOL 61: update_workspace_config
 // ============================================================
 mcpServer.registerTool(
   "update_workspace_config",
