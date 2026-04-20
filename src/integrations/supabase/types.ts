@@ -500,8 +500,8 @@ export type Database = {
           category: string
           created_at: string | null
           description: string | null
-          entity_id: string | null
-          entity_type: string | null
+          entity_id: string
+          entity_type: string
           id: string
           resolved_at: string | null
           resolved_by: string | null
@@ -514,8 +514,8 @@ export type Database = {
           category: string
           created_at?: string | null
           description?: string | null
-          entity_id?: string | null
-          entity_type?: string | null
+          entity_id: string
+          entity_type: string
           id?: string
           resolved_at?: string | null
           resolved_by?: string | null
@@ -528,8 +528,8 @@ export type Database = {
           category?: string
           created_at?: string | null
           description?: string | null
-          entity_id?: string | null
-          entity_type?: string | null
+          entity_id?: string
+          entity_type?: string
           id?: string
           resolved_at?: string | null
           resolved_by?: string | null
