@@ -1842,7 +1842,6 @@ export type Database = {
           source: string | null
           source_context: string | null
           subject: string
-          user_session: string | null
         }
         Insert: {
           company?: string | null
@@ -1855,7 +1854,6 @@ export type Database = {
           source?: string | null
           source_context?: string | null
           subject: string
-          user_session?: string | null
         }
         Update: {
           company?: string | null
@@ -1868,7 +1866,6 @@ export type Database = {
           source?: string | null
           source_context?: string | null
           subject?: string
-          user_session?: string | null
         }
         Relationships: []
       }
@@ -3002,7 +2999,6 @@ export type Database = {
           position: string | null
           postal_code: string | null
           qualification_status: string | null
-          revenue_range: string | null
           siret: string | null
           slug: string | null
           source: string
@@ -3041,7 +3037,6 @@ export type Database = {
           position?: string | null
           postal_code?: string | null
           qualification_status?: string | null
-          revenue_range?: string | null
           siret?: string | null
           slug?: string | null
           source: string
@@ -3080,7 +3075,6 @@ export type Database = {
           position?: string | null
           postal_code?: string | null
           qualification_status?: string | null
-          revenue_range?: string | null
           siret?: string | null
           slug?: string | null
           source?: string
@@ -3398,7 +3392,6 @@ export type Database = {
         Row: {
           ai_metadata: Json | null
           assigned_to: string | null
-          close_reason: string | null
           closed_at: string | null
           created_at: string | null
           description: string | null
@@ -3406,7 +3399,6 @@ export type Database = {
           expected_revenue: number | null
           id: string
           lead_id: string | null
-          lost_to: string | null
           probability: number | null
           source: string | null
           stage: string
@@ -3419,7 +3411,6 @@ export type Database = {
         Insert: {
           ai_metadata?: Json | null
           assigned_to?: string | null
-          close_reason?: string | null
           closed_at?: string | null
           created_at?: string | null
           description?: string | null
@@ -3427,7 +3418,6 @@ export type Database = {
           expected_revenue?: number | null
           id?: string
           lead_id?: string | null
-          lost_to?: string | null
           probability?: number | null
           source?: string | null
           stage?: string
@@ -3440,7 +3430,6 @@ export type Database = {
         Update: {
           ai_metadata?: Json | null
           assigned_to?: string | null
-          close_reason?: string | null
           closed_at?: string | null
           created_at?: string | null
           description?: string | null
@@ -3448,7 +3437,6 @@ export type Database = {
           expected_revenue?: number | null
           id?: string
           lead_id?: string | null
-          lost_to?: string | null
           probability?: number | null
           source?: string | null
           stage?: string
