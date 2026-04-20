@@ -5351,18 +5351,13 @@ const OWNER_WORKSPACE_ID = Deno.env.get("OWNER_WORKSPACE_ID") || "00000000-0000-
 // Health check — avoids 406 on GET
 app.get("/*", (c) => c.json({ status: 'ok', tools: _toolsList().length, tools_internal: _tools.length, server: 'iarche-crm', version: '2.0.0' }));
 
-// MCP JSON-RPC handler — requires valid iarche_mcp_* API key
-app.post("/*", async (c) => {
-  // === AUTH GATE: validate MCP API key BEFORE any processing ===
-  const auth = await authenticateMcpKey(c.req.raw);
-  if (!auth.valid) {
-    return c.json(
-      { jsonrpc: '2.0', id: null, error: { code: -32001, message: 'Invalid or missing MCP API key. Provide header: Authorization: Bearer iarche_mcp_*' } },
-      401
-    );
-  }
-  (globalThis as any).__mcpAuth = { workspace_id: auth.workspace_id, user_id: auth.user_id };
+// MCP JSON-RPC handler — auth required only for tools/call
+// Discovery methods (initialize, notifications/initialized, tools/list) are public
+// per MCP spec to allow clients (e.g. Claude.ai) to handshake before presenting credentials.
+const PUBLIC_MCP_METHODS = new Set(['initialize', 'notifications/initialized', 'tools/list']);
 
+app.post("/*", async (c) => {
+  // === Parse body FIRST so we can route auth based on method ===
   let body: any;
   try {
     body = await c.req.json();
@@ -5371,6 +5366,18 @@ app.post("/*", async (c) => {
   }
 
   const { method, params, id } = body;
+
+  // === AUTH GATE: only enforce on tools/call (sensitive ops) ===
+  if (!PUBLIC_MCP_METHODS.has(method)) {
+    const auth = await authenticateMcpKey(c.req.raw);
+    if (!auth.valid) {
+      return c.json(
+        { jsonrpc: '2.0', id: id ?? null, error: { code: -32001, message: 'Invalid or missing MCP API key. Provide header: Authorization: Bearer iarche_mcp_*' } },
+        401
+      );
+    }
+    (globalThis as any).__mcpAuth = { workspace_id: auth.workspace_id, user_id: auth.user_id };
+  }
 
   try {
     if (method === 'initialize') {
