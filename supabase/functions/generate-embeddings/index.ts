@@ -728,7 +728,8 @@ async function indexVoiceTranscription(supabase: any, transcription: any): Promi
       has_summary: !!summaryText,
       duration_seconds: transcription.duration_seconds 
     },
-    false
+    false,
+    transcription.workspace_id ?? null
   );
 }
 
