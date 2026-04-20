@@ -866,7 +866,8 @@ async function indexGeneratedDocument(supabase: any, doc: any): Promise<{ succes
       version: doc.version,
       status: doc.status 
     },
-    false
+    false,
+    doc.workspace_id ?? null
   );
 }
 
