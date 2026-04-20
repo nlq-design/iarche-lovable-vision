@@ -501,7 +501,8 @@ async function indexLead(supabase: any, lead: any): Promise<{ success: boolean; 
       opportunities_count: opportunities?.length || 0,
       projects_count: projects?.length || 0
     },
-    false
+    false,
+    lead.workspace_id ?? null
   );
 }
 
