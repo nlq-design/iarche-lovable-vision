@@ -278,9 +278,21 @@ async function indexResource(
   slug: string,
   content: string,
   metadata: Record<string, unknown> = {},
-  isHtml: boolean = true
+  isHtml: boolean = true,
+  workspaceId: string | null = null
 ): Promise<{ success: boolean; chunks: number; error?: string }> {
   try {
+    // QW#9d HYBRID — enforce workspace_id rule consistent with CHECK constraint
+    // CMS types must store NULL; CRM types MUST have a workspace_id.
+    const CMS_TYPES = new Set(['article', 'actualite', 'cas-client', 'livre-blanc', 'atelier-webinaire', 'solution', 'service']);
+    const CRM_TYPES = new Set(['lead', 'project', 'partner', 'generated_document', 'uploaded_file', 'specification', 'voice_transcription']);
+    const effectiveWorkspaceId = CMS_TYPES.has(resourceType) ? null : workspaceId;
+    if (CRM_TYPES.has(resourceType) && !effectiveWorkspaceId) {
+      const errorMsg = `Refusing to index ${resourceType}/${resourceId}: workspace_id is required for CRM resources (HYBRID isolation rule).`;
+      console.error(`[generate-embeddings] ${errorMsg}`);
+      return { success: false, chunks: 0, error: errorMsg };
+    }
+
     // Delete existing embeddings for this resource
     await supabase
       .from("resource_embeddings")
@@ -289,7 +301,7 @@ async function indexResource(
 
     // Smart chunking avec sections sémantiques et overlap
     const chunks = smartChunk(content, isHtml);
-    console.log(`Indexing ${resourceType}/${slug.slice(0, 20)}: ${chunks.length} chunks`);
+    console.log(`Indexing ${resourceType}/${slug.slice(0, 20)}: ${chunks.length} chunks (ws=${effectiveWorkspaceId ?? 'GLOBAL'})`);
 
     if (chunks.length === 0) {
       // Even if no chunks, we consider it "processed" - just no content to index
@@ -312,6 +324,7 @@ async function indexResource(
           content_chunk: chunk,
           chunk_index: i,
           embedding: `[${embedding.join(",")}]`,
+          workspace_id: effectiveWorkspaceId,
           metadata: { 
             ...metadata, 
             chunk_total: chunks.length,
