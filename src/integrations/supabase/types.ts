@@ -4633,6 +4633,7 @@ export type Database = {
           resource_title: string
           resource_type: string
           updated_at: string | null
+          workspace_id: string | null
         }
         Insert: {
           chunk_index?: number
@@ -4646,6 +4647,7 @@ export type Database = {
           resource_title: string
           resource_type: string
           updated_at?: string | null
+          workspace_id?: string | null
         }
         Update: {
           chunk_index?: number
@@ -4659,8 +4661,17 @@ export type Database = {
           resource_title?: string
           resource_type?: string
           updated_at?: string | null
+          workspace_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "resource_embeddings_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       search_queries: {
         Row: {
