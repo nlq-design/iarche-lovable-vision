@@ -122,14 +122,9 @@ export type Database = {
           id: string
           is_ai_generated: boolean | null
           lead_id: string | null
-          meeting_note_id: string | null
           metadata: Json | null
-          opportunity_id: string | null
           pending_ai_review: boolean | null
           project_id: string | null
-          related_entity_id: string | null
-          related_entity_type: string | null
-          task_id: string | null
           title: string | null
           visibility: string
           workspace_id: string
@@ -146,14 +141,9 @@ export type Database = {
           id?: string
           is_ai_generated?: boolean | null
           lead_id?: string | null
-          meeting_note_id?: string | null
           metadata?: Json | null
-          opportunity_id?: string | null
           pending_ai_review?: boolean | null
           project_id?: string | null
-          related_entity_id?: string | null
-          related_entity_type?: string | null
-          task_id?: string | null
           title?: string | null
           visibility?: string
           workspace_id?: string
@@ -170,14 +160,9 @@ export type Database = {
           id?: string
           is_ai_generated?: boolean | null
           lead_id?: string | null
-          meeting_note_id?: string | null
           metadata?: Json | null
-          opportunity_id?: string | null
           pending_ai_review?: boolean | null
           project_id?: string | null
-          related_entity_id?: string | null
-          related_entity_type?: string | null
-          task_id?: string | null
           title?: string | null
           visibility?: string
           workspace_id?: string
@@ -191,31 +176,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "activity_log_meeting_note_id_fkey"
-            columns: ["meeting_note_id"]
-            isOneToOne: false
-            referencedRelation: "meeting_notes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "activity_log_opportunity_id_fkey"
-            columns: ["opportunity_id"]
-            isOneToOne: false
-            referencedRelation: "opportunities"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "activity_log_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "activity_log_task_id_fkey"
-            columns: ["task_id"]
-            isOneToOne: false
-            referencedRelation: "tasks"
             referencedColumns: ["id"]
           },
           {
