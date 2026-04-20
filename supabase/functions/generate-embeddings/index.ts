@@ -804,7 +804,8 @@ async function indexPartner(supabase: any, partner: any): Promise<{ success: boo
       leads_count: leadPartners?.length || 0,
       projects_count: projectPartners?.length || 0
     },
-    false
+    false,
+    partner.workspace_id ?? null
   );
 }
 
