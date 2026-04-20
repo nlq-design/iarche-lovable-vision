@@ -734,7 +734,6 @@ async function harvestRespond(supabase: any, workspaceId: string, taskIds: strin
       title: `Récolte IA: ${task.title}`,
       content: `Action: ${action}. Réponse: ${response}`,
       is_ai_generated: true,
-      task_id: task.id,
     });
   }
 
