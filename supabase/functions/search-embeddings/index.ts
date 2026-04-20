@@ -50,6 +50,47 @@ serve(async (req) => {
     console.log("[search-embeddings] Filter types:", body.filter_types);
     console.log("[search-embeddings] Synthesize:", body.synthesize);
 
+    // ============================================================
+    // QW#9d HYBRID — Resolve caller workspace_id for tenant isolation
+    // - Admin (super_admin) → bypass: pass NULL (no tenant filter)
+    // - Authenticated user  → resolve via workspace_members (first match)
+    // - Anonymous (no auth) → bypass NULL (CMS-only access via filter_types)
+    // ============================================================
+    let resolvedWorkspaceId: string | null = null;
+    const authHeader = req.headers.get("Authorization");
+    if (authHeader?.startsWith("Bearer ")) {
+      try {
+        const token = authHeader.slice(7);
+        const userClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+          global: { headers: { Authorization: authHeader } },
+        });
+        const { data: claimsData } = await userClient.auth.getClaims(token);
+        const userId = claimsData?.claims?.sub;
+        if (userId) {
+          // Check admin bypass
+          const { data: isAdminRes } = await supabase.rpc("has_role" as any, {
+            _user_id: userId,
+            _role: "admin",
+          });
+          if (isAdminRes === true) {
+            resolvedWorkspaceId = null; // bypass
+            console.log("[search-embeddings] Admin bypass: no tenant filter");
+          } else {
+            const { data: ws } = await supabase
+              .from("workspace_members")
+              .select("workspace_id")
+              .eq("user_id", userId)
+              .limit(1)
+              .maybeSingle();
+            resolvedWorkspaceId = ws?.workspace_id ?? null;
+            console.log(`[search-embeddings] Resolved workspace_id=${resolvedWorkspaceId}`);
+          }
+        }
+      } catch (authErr) {
+        console.warn("[search-embeddings] Auth resolution failed (treating as anon):", authErr);
+      }
+    }
+
     // Generate embedding using centralized AI client
     const queryEmbedding = await generateEmbedding(body.query, { 
       functionName: 'search-embeddings' 
@@ -64,6 +105,7 @@ serve(async (req) => {
       match_threshold: body.match_threshold || 0.7,
       match_count: body.match_count || 5,
       filter_types: body.filter_types || null,
+      p_workspace_id: resolvedWorkspaceId,
     });
 
     if (error) {

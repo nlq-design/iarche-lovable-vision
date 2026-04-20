@@ -7248,6 +7248,7 @@ export type Database = {
           filter_types?: string[]
           match_count?: number
           match_threshold?: number
+          p_workspace_id?: string
           query_embedding_text: string
         }
         Returns: {

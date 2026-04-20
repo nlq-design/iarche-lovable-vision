@@ -278,9 +278,21 @@ async function indexResource(
   slug: string,
   content: string,
   metadata: Record<string, unknown> = {},
-  isHtml: boolean = true
+  isHtml: boolean = true,
+  workspaceId: string | null = null
 ): Promise<{ success: boolean; chunks: number; error?: string }> {
   try {
+    // QW#9d HYBRID — enforce workspace_id rule consistent with CHECK constraint
+    // CMS types must store NULL; CRM types MUST have a workspace_id.
+    const CMS_TYPES = new Set(['article', 'actualite', 'cas-client', 'livre-blanc', 'atelier-webinaire', 'solution', 'service']);
+    const CRM_TYPES = new Set(['lead', 'project', 'partner', 'generated_document', 'uploaded_file', 'specification', 'voice_transcription']);
+    const effectiveWorkspaceId = CMS_TYPES.has(resourceType) ? null : workspaceId;
+    if (CRM_TYPES.has(resourceType) && !effectiveWorkspaceId) {
+      const errorMsg = `Refusing to index ${resourceType}/${resourceId}: workspace_id is required for CRM resources (HYBRID isolation rule).`;
+      console.error(`[generate-embeddings] ${errorMsg}`);
+      return { success: false, chunks: 0, error: errorMsg };
+    }
+
     // Delete existing embeddings for this resource
     await supabase
       .from("resource_embeddings")
@@ -289,7 +301,7 @@ async function indexResource(
 
     // Smart chunking avec sections sémantiques et overlap
     const chunks = smartChunk(content, isHtml);
-    console.log(`Indexing ${resourceType}/${slug.slice(0, 20)}: ${chunks.length} chunks`);
+    console.log(`Indexing ${resourceType}/${slug.slice(0, 20)}: ${chunks.length} chunks (ws=${effectiveWorkspaceId ?? 'GLOBAL'})`);
 
     if (chunks.length === 0) {
       // Even if no chunks, we consider it "processed" - just no content to index
@@ -312,6 +324,7 @@ async function indexResource(
           content_chunk: chunk,
           chunk_index: i,
           embedding: `[${embedding.join(",")}]`,
+          workspace_id: effectiveWorkspaceId,
           metadata: { 
             ...metadata, 
             chunk_total: chunks.length,
@@ -488,7 +501,8 @@ async function indexLead(supabase: any, lead: any): Promise<{ success: boolean; 
       opportunities_count: opportunities?.length || 0,
       projects_count: projects?.length || 0
     },
-    false
+    false,
+    lead.workspace_id ?? null
   );
 }
 
@@ -590,7 +604,8 @@ async function indexProject(supabase: any, project: any): Promise<{ success: boo
       specs_count: specs?.length || 0,
       docs_count: docs?.length || 0
     },
-    false
+    false,
+    project.workspace_id ?? null
   );
 }
 
@@ -616,7 +631,8 @@ async function indexUploadedFile(supabase: any, file: any): Promise<{ success: b
       category: file.category,
       has_ai_summary: !!file.ai_summary 
     },
-    false
+    false,
+    file.workspace_id ?? null
   );
 }
 
@@ -670,7 +686,8 @@ async function indexSpecification(supabase: any, spec: any): Promise<{ success: 
       version: spec.version, 
       status: spec.status 
     },
-    false
+    false,
+    spec.workspace_id ?? null
   );
 }
 
@@ -711,7 +728,8 @@ async function indexVoiceTranscription(supabase: any, transcription: any): Promi
       has_summary: !!summaryText,
       duration_seconds: transcription.duration_seconds 
     },
-    false
+    false,
+    transcription.workspace_id ?? null
   );
 }
 
@@ -786,7 +804,8 @@ async function indexPartner(supabase: any, partner: any): Promise<{ success: boo
       leads_count: leadPartners?.length || 0,
       projects_count: projectPartners?.length || 0
     },
-    false
+    false,
+    partner.workspace_id ?? null
   );
 }
 
@@ -847,7 +866,8 @@ async function indexGeneratedDocument(supabase: any, doc: any): Promise<{ succes
       version: doc.version,
       status: doc.status 
     },
-    false
+    false,
+    doc.workspace_id ?? null
   );
 }
 
