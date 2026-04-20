@@ -890,7 +890,7 @@ serve(async (req) => {
       // Determine the meeting link to use
       const meetLink = zoomJoinUrl;
 
-      // Create booking record
+      // Create booking record (Phase 2 multi-tenant: workspace_id required)
       const { data: booking, error: bookingError } = await supabase
         .from('bookings')
         .insert({
@@ -910,6 +910,7 @@ serve(async (req) => {
           additional_guests: additionalGuests,
           zoom_meeting_id: zoomMeetingId,
           zoom_join_url: zoomJoinUrl,
+          workspace_id: DEFAULT_WORKSPACE_ID,
         })
         .select()
         .single();

@@ -1508,7 +1508,7 @@ export type Database = {
           start_time: string
           status: string
           updated_at: string
-          workspace_id: string | null
+          workspace_id: string
           zoom_join_url: string | null
           zoom_meeting_id: string | null
         }
@@ -1533,7 +1533,7 @@ export type Database = {
           start_time: string
           status?: string
           updated_at?: string
-          workspace_id?: string | null
+          workspace_id?: string
           zoom_join_url?: string | null
           zoom_meeting_id?: string | null
         }
@@ -1558,7 +1558,7 @@ export type Database = {
           start_time?: string
           status?: string
           updated_at?: string
-          workspace_id?: string | null
+          workspace_id?: string
           zoom_join_url?: string | null
           zoom_meeting_id?: string | null
         }
