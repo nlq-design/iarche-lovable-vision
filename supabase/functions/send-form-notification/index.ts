@@ -5,6 +5,7 @@ import { trackAPIUsage } from '../_shared/api-tracker.ts';
 import { checkRateLimit, getRateLimitHeaders } from '../_shared/rateLimit.ts';
 import { EMAIL_COLORS, LOGO_URL, getEmailHeader, getEmailFooter, wrapEmailContent, getCtaButton, getInfoCard, getSignature } from '../_shared/emailTemplate.ts';
 import { formNotificationSchema, validateRequest, type FormNotificationRequest } from '../_shared/validation.ts';
+import { DEFAULT_WORKSPACE_ID } from '../_shared/workspace.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -364,7 +365,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     if (emailsSent > 0) {
       try {
         await trackAPIUsage({
-          workspaceId: '00000000-0000-0000-0000-000000000001',
+          workspaceId: DEFAULT_WORKSPACE_ID,
           apiCategory: 'email',
           apiName: 'resend',
           providerName: 'resend',
