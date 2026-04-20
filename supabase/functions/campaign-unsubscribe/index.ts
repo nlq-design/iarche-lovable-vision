@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { DEFAULT_WORKSPACE_ID } from '../_shared/workspace.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,80 +23,115 @@ serve(async (req) => {
 
     if (!email) {
       return new Response(
-        JSON.stringify({ error: 'Email is required' }),
+        JSON.stringify({ error: 'email required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`Processing unsubscribe for: ${email}`);
+    const lowerEmail = email.toLowerCase().trim();
 
-    // Check if already unsubscribed in vivier_campaign_recipients
+    // --- Résolution workspace_id : priorité campaign, fallback DEFAULT ---
+    let resolvedWorkspaceId: string = DEFAULT_WORKSPACE_ID;
     if (campaign_id) {
-      const { data: recipient } = await supabase
+      const { data: campaign } = await supabase
+        .from('vivier_campaigns')
+        .select('workspace_id')
+        .eq('id', campaign_id)
+        .maybeSingle();
+      if (campaign?.workspace_id) {
+        resolvedWorkspaceId = campaign.workspace_id;
+      }
+    }
+
+    // --- Idempotence : si déjà désinscrit pour cette campagne, short-circuit sans double event ---
+    if (campaign_id) {
+      const { data: existing } = await supabase
         .from('vivier_campaign_recipients')
         .select('id, unsubscribed_at')
-        .eq('email', email.toLowerCase())
+        .eq('email', lowerEmail)
         .eq('campaign_id', campaign_id)
-        .single();
+        .eq('workspace_id', resolvedWorkspaceId)
+        .maybeSingle();
 
-      if (recipient?.unsubscribed_at) {
+      if (existing?.unsubscribed_at) {
         return new Response(
           JSON.stringify({ success: true, already_unsubscribed: true }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
+    }
 
-      // Update recipient status
-      if (recipient) {
+    // --- 1) INSERT event EN PREMIER : source de vérité RGPD, workspace_id obligatoire ---
+    const { error: insertError } = await supabase
+      .from('vivier_campaign_events')
+      .insert({
+        campaign_id: campaign_id || null,
+        event_type: 'unsubscribe',
+        event_data: { email: lowerEmail, source: 'web' },
+        workspace_id: resolvedWorkspaceId,
+      });
+
+    if (insertError) {
+      console.error('[campaign-unsubscribe] INSERT event failed:', insertError);
+      return new Response(
+        JSON.stringify({ error: 'unsubscribe_failed', detail: insertError.message }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // --- 2-4) UPDATEs best-effort scopés workspace — try/catch granulaire, log errors, ne bloque pas le flux ---
+    const nowIso = new Date().toISOString();
+
+    // 2) UPDATE recipient scopé (email + campaign_id + workspace_id)
+    if (campaign_id) {
+      try {
         await supabase
           .from('vivier_campaign_recipients')
-          .update({ 
-            unsubscribed_at: new Date().toISOString(),
-            status: 'unsubscribed',
-          })
-          .eq('id', recipient.id);
+          .update({ unsubscribed_at: nowIso, status: 'unsubscribed' })
+          .eq('email', lowerEmail)
+          .eq('campaign_id', campaign_id)
+          .eq('workspace_id', resolvedWorkspaceId);
+      } catch (err) {
+        console.error('[campaign-unsubscribe] UPDATE recipient scoped failed:', err);
       }
     }
 
-    // Also update/mark in viviers table if exists
-    const { data: vivier } = await supabase
-      .from('viviers')
-      .select('id, status')
-      .eq('email', email.toLowerCase())
-      .single();
-
-    if (vivier) {
-      await supabase
+    // 3) UPDATE viviers scopé (email + workspace_id)
+    try {
+      const { data: vivier } = await supabase
         .from('viviers')
-        .update({ 
-          status: 'unsubscribed',
-          unsubscribed_at: new Date().toISOString(),
-        })
-        .eq('id', vivier.id);
+        .select('id')
+        .eq('email', lowerEmail)
+        .eq('workspace_id', resolvedWorkspaceId)
+        .maybeSingle();
+
+      if (vivier?.id) {
+        await supabase
+          .from('viviers')
+          .update({ status: 'unsubscribed', unsubscribed_at: nowIso })
+          .eq('id', vivier.id);
+      }
+    } catch (err) {
+      console.error('[campaign-unsubscribe] UPDATE vivier failed:', err);
     }
 
-    // Mark all pending campaign recipients for this email as unsubscribed
-    await supabase
-      .from('vivier_campaign_recipients')
-      .update({ 
-        unsubscribed_at: new Date().toISOString(),
-        status: 'unsubscribed',
-      })
-      .eq('email', email.toLowerCase())
-      .is('unsubscribed_at', null);
+    // 4) UPDATE masse recipients scopé workspace
+    try {
+      await supabase
+        .from('vivier_campaign_recipients')
+        .update({ unsubscribed_at: nowIso, status: 'unsubscribed' })
+        .eq('email', lowerEmail)
+        .eq('workspace_id', resolvedWorkspaceId)
+        .is('unsubscribed_at', null);
+    } catch (err) {
+      console.error('[campaign-unsubscribe] UPDATE mass recipients failed:', err);
+    }
 
-    // Log the unsubscribe event
-    await supabase.from('vivier_campaign_events').insert({
-      campaign_id: campaign_id || null,
-      event_type: 'unsubscribe',
-      event_data: { email, source: 'web' },
-    });
-
-    console.log(`Successfully unsubscribed: ${email}`);
+    console.log('[campaign-unsubscribe] success', { email: lowerEmail, campaign_id, workspace_id: resolvedWorkspaceId });
 
     return new Response(
-      JSON.stringify({ success: true, already_unsubscribed: false }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ success: true }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
