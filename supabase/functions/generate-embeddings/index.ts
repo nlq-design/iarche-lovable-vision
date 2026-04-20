@@ -631,7 +631,8 @@ async function indexUploadedFile(supabase: any, file: any): Promise<{ success: b
       category: file.category,
       has_ai_summary: !!file.ai_summary 
     },
-    false
+    false,
+    file.workspace_id ?? null
   );
 }
 
