@@ -2513,10 +2513,10 @@ mcpServer.registerTool(
     const ctx = getAuthContext();
     if (!ctx) return authError();
     const limit = Math.min(params.limit ?? 20, 50);
-    // Lightweight columns only — exclude raw_transcript, segments, synthesis_long, raw_audio_url, embeddings
+    // Lightweight columns only — exclude raw_transcript, segments, synthesis_long, raw_audio_url, embeddings, summary (heavy JSON)
     let query = supabaseAdmin
       .from("voice_transcriptions")
-      .select("id, title, summary, status, source, slug, lead_id, project_id, created_at, duration_seconds")
+      .select("id, title, status, source, slug, lead_id, project_id, created_at, duration_seconds")
       .eq("workspace_id", ctx.wsId)
       .order("created_at", { ascending: false })
       .limit(limit);
