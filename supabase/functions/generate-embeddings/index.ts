@@ -604,7 +604,8 @@ async function indexProject(supabase: any, project: any): Promise<{ success: boo
       specs_count: specs?.length || 0,
       docs_count: docs?.length || 0
     },
-    false
+    false,
+    project.workspace_id ?? null
   );
 }
 
