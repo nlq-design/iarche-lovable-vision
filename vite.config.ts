@@ -23,6 +23,8 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "@tiptap/core": path.resolve(__dirname, "./node_modules/@tiptap/core"),
     },
+    dedupe: ["@tiptap/core", "@tiptap/pm", "prosemirror-model", "prosemirror-state", "prosemirror-view", "prosemirror-transform"],
   },
 }));
