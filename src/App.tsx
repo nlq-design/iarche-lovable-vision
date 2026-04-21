@@ -869,7 +869,9 @@ const App = () => (
         <ResourceTypeValidator />
       </BrowserRouter>
     </TooltipProvider>
+    </WorkspaceProvider>
   </QueryClientProvider>
+
 );
 
 export default App;
