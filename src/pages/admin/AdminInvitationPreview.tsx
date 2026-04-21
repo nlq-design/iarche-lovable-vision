@@ -361,6 +361,18 @@ const AdminInvitationPreview = () => {
                 Copier lien public
               </Button>
             )}
+            {doc?.slug && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleOpenEmailExport}
+                disabled={hasChanges}
+                title={hasChanges ? "Sauvegarde d'abord vos modifications" : 'Exporter le HTML email pour Brevo'}
+              >
+                <Mail className="h-4 w-4 mr-1" />
+                Copier HTML email
+              </Button>
+            )}
             <Button variant="outline" size="sm" onClick={handlePrint}>
               <Printer className="h-4 w-4 mr-1" />
               Imprimer / PDF
@@ -371,7 +383,11 @@ const AdminInvitationPreview = () => {
 
       {/* Document content */}
       <div className="min-h-screen bg-background" ref={contentContainerRef}>
-        <FloatingToolbar containerRef={contentContainerRef} disabled={isApproved} />
+        <FloatingToolbar
+          containerRef={contentContainerRef}
+          disabled={isApproved}
+          onExportEmailHtml={doc?.slug ? handleOpenEmailExport : undefined}
+        />
 
         <div className="container mx-auto max-w-4xl py-8 px-6 print:px-0 print:py-0">
 
