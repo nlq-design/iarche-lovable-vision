@@ -6,11 +6,12 @@ import { useAuth } from '@/hooks/useAuth';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, ArrowLeft, Printer, Lock, Unlock, Copy, Save, Plus, Trash2 } from 'lucide-react';
+import { Loader2, ArrowLeft, Printer, Lock, Unlock, Copy, Save, Plus, Trash2, Mail } from 'lucide-react';
 import { COLORS } from '@/components/admin/medias/shared/tokens';
 import { toast } from 'sonner';
 import QRCode from 'qrcode';
 import FloatingToolbar from '@/components/admin/FloatingToolbar';
+import { EmailHtmlExportDialog } from '@/components/admin/invitation/EmailHtmlExportDialog';
 
 interface InvitationSection {
   id: string;
@@ -94,6 +95,7 @@ const AdminInvitationPreview = () => {
   const [freezing, setFreezing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [emailExportOpen, setEmailExportOpen] = useState(false);
 
   const [editSections, setEditSections] = useState<InvitationSection[]>([]);
   const [editMetadata, setEditMetadata] = useState<InvitationMetadata>({});
@@ -259,6 +261,16 @@ const AdminInvitationPreview = () => {
   };
 
   const handlePrint = () => window.print();
+
+  const handleOpenEmailExport = () => {
+    if (hasChanges) {
+      toast.error('Modifications non sauvegardées', {
+        description: "Sauvegarde d'abord avant d'exporter le HTML email.",
+      });
+      return;
+    }
+    setEmailExportOpen(true);
+  };
 
   const copyPublicUrl = () => {
     if (!doc?.slug) return;
