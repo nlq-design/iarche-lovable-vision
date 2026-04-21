@@ -110,6 +110,27 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
+    // QW#10 B1 — Scope rôle au workspace du partner (anti fuite cross-tenant)
+    const partnerWorkspaceId = (partner as any).workspace_id;
+    if (partnerWorkspaceId) {
+      const { data: canAccess, error: accessError } = await supabase.rpc(
+        'can_access_entity_workspace',
+        { p_workspace_id: partnerWorkspaceId, p_user_id: userData.user.id }
+      );
+      if (accessError || !canAccess) {
+        console.warn('[invite-partner] cross-tenant blocked', {
+          user_id: userData.user.id,
+          partner_id,
+          partner_workspace_id: partnerWorkspaceId,
+          error: accessError?.message,
+        });
+        return new Response(JSON.stringify({ error: "Accès refusé à ce workspace" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
     // Check if partner already has a linked user
     if (partner.user_id) {
       return new Response(JSON.stringify({ error: "Ce partenaire a déjà un compte lié" }), {
