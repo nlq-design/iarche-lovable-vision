@@ -97,7 +97,7 @@ serve(async (req: Request): Promise<Response> => {
     // Get partner info
     const { data: partner, error: partnerError } = await supabase
       .from("partners")
-      .select("id, name, slug, email, user_id")
+      .select("id, name, slug, email, user_id, workspace_id")
       .eq("id", partner_id)
       .is("deleted_at", null)
       .single();
