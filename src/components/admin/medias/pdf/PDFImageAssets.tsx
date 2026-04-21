@@ -1,5 +1,5 @@
-import { View, Text, Svg, Rect, Line, Path, Image, StyleSheet } from '@react-pdf/renderer';
-import type { Style } from '@react-pdf/types';
+import { View, Text, Svg, Rect, Line, Path, Image, StyleSheet, type Styles } from '@react-pdf/renderer';
+type Style = Styles[string];
 import { IARCHE_COLORS } from './tokens';
 import { BASE64_ASSETS } from './base64Assets';
 
