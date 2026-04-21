@@ -6,11 +6,12 @@ import { useAuth } from '@/hooks/useAuth';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, ArrowLeft, Printer, Lock, Unlock, Copy, Save, Plus, Trash2 } from 'lucide-react';
+import { Loader2, ArrowLeft, Printer, Lock, Unlock, Copy, Save, Plus, Trash2, Mail } from 'lucide-react';
 import { COLORS } from '@/components/admin/medias/shared/tokens';
 import { toast } from 'sonner';
 import QRCode from 'qrcode';
 import FloatingToolbar from '@/components/admin/FloatingToolbar';
+import { EmailHtmlExportDialog } from '@/components/admin/invitation/EmailHtmlExportDialog';
 
 interface InvitationSection {
   id: string;
@@ -94,6 +95,7 @@ const AdminInvitationPreview = () => {
   const [freezing, setFreezing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [emailExportOpen, setEmailExportOpen] = useState(false);
 
   const [editSections, setEditSections] = useState<InvitationSection[]>([]);
   const [editMetadata, setEditMetadata] = useState<InvitationMetadata>({});
@@ -260,6 +262,16 @@ const AdminInvitationPreview = () => {
 
   const handlePrint = () => window.print();
 
+  const handleOpenEmailExport = () => {
+    if (hasChanges) {
+      toast.error('Modifications non sauvegardées', {
+        description: "Sauvegarde d'abord avant d'exporter le HTML email.",
+      });
+      return;
+    }
+    setEmailExportOpen(true);
+  };
+
   const copyPublicUrl = () => {
     if (!doc?.slug) return;
     const url = `https://iarche.fr/evenements/${doc.slug}`;
@@ -349,6 +361,18 @@ const AdminInvitationPreview = () => {
                 Copier lien public
               </Button>
             )}
+            {doc?.slug && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleOpenEmailExport}
+                disabled={hasChanges}
+                title={hasChanges ? "Sauvegarde d'abord vos modifications" : 'Exporter le HTML email pour Brevo'}
+              >
+                <Mail className="h-4 w-4 mr-1" />
+                Copier HTML email
+              </Button>
+            )}
             <Button variant="outline" size="sm" onClick={handlePrint}>
               <Printer className="h-4 w-4 mr-1" />
               Imprimer / PDF
@@ -359,7 +383,11 @@ const AdminInvitationPreview = () => {
 
       {/* Document content */}
       <div className="min-h-screen bg-background" ref={contentContainerRef}>
-        <FloatingToolbar containerRef={contentContainerRef} disabled={isApproved} />
+        <FloatingToolbar
+          containerRef={contentContainerRef}
+          disabled={isApproved}
+          onExportEmailHtml={doc?.slug ? handleOpenEmailExport : undefined}
+        />
 
         <div className="container mx-auto max-w-4xl py-8 px-6 print:px-0 print:py-0">
 
@@ -580,6 +608,21 @@ const AdminInvitationPreview = () => {
           </section>
         </div>
       </div>
+
+      {doc && doc.slug && (
+        <EmailHtmlExportDialog
+          open={emailExportOpen}
+          onOpenChange={setEmailExportOpen}
+          docId={doc.id}
+          slug={doc.slug}
+          content={{
+            metadata: editMetadata,
+            sections: editSections,
+            modules: { programme: { rows: programmeRows } },
+          }}
+          eventTitle={editMetadata.eventTitle || doc.title}
+        />
+      )}
     </AdminLayout>
   );
 };

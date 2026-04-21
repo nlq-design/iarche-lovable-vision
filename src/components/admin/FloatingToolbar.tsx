@@ -2,15 +2,16 @@ import { useEffect, useState, useCallback } from 'react';
 import {
   Bold, Italic, Underline, Link, List, ListOrdered,
   Heading2, Heading3, Heading4, Minus, AlignLeft, AlignCenter,
-  Type, ALargeSmall,
+  Type, ALargeSmall, Mail,
 } from 'lucide-react';
 
 interface FloatingToolbarProps {
   containerRef: React.RefObject<HTMLElement>;
   disabled?: boolean;
+  onExportEmailHtml?: () => void;
 }
 
-const FloatingToolbar = ({ containerRef, disabled }: FloatingToolbarProps) => {
+const FloatingToolbar = ({ containerRef, disabled, onExportEmailHtml }: FloatingToolbarProps) => {
   const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
 
   const handleSelection = useCallback(() => {
@@ -132,6 +133,15 @@ const FloatingToolbar = ({ containerRef, disabled }: FloatingToolbarProps) => {
       <button onClick={handleLink} title="Lien" className={btnClass}>
         <Link className="h-3.5 w-3.5" />
       </button>
+
+      {onExportEmailHtml && (
+        <>
+          {divider}
+          <button onClick={onExportEmailHtml} title="Copier HTML email (Brevo)" className={btnClass}>
+            <Mail className="h-3.5 w-3.5" />
+          </button>
+        </>
+      )}
     </div>
   );
 };
