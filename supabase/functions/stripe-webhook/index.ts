@@ -297,7 +297,7 @@ serve(async (req) => {
 
     await supabase
       .from("stripe_events")
-      .update({ error_message: msg })
+      .update({ error: msg })
       .eq("stripe_event_id", event.id);
 
     return new Response(JSON.stringify({ error: msg }), {
