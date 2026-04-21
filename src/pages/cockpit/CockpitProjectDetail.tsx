@@ -81,6 +81,8 @@ import { LinkedPartnersSection } from '@/components/cockpit/LinkedPartnersSectio
 import { LinkedGeneratedDocumentsSection } from '@/components/cockpit/LinkedGeneratedDocumentsSection';
 
 import { useToast } from '@/hooks/use-toast';
+import { useWorkspaceId } from '@/contexts/WorkspaceContext';
+import { DEFAULT_WORKSPACE_ID } from '@/lib/constants/workspace';
 import type { Database } from '@/integrations/supabase/types';
 import { InterviewModeDialog } from '@/components/cockpit/InterviewModeDialog';
 import { CompletenessIndicator } from '@/components/cockpit/CompletenessIndicator';
@@ -99,6 +101,7 @@ const CockpitProjectDetail = () => {
   const { meetingNotes } = useCockpitMeetingNotes();
   const { transcriptions } = useCockpitVoiceTranscriptions();
   const { notes: projectNotes, createNote, deleteNote } = useCockpitProjectNotes(id);
+  const ctxWorkspaceId = useWorkspaceId();
 
   // State
   const [formData, setFormData] = useState<Partial<Project> & { lead_id?: string | null; solution_id?: string | null }>({});
@@ -233,7 +236,7 @@ const CockpitProjectDetail = () => {
     
     createNote.mutate({
       project_id: id,
-      workspace_id: '00000000-0000-0000-0000-000000000001',
+      workspace_id: ctxWorkspaceId ?? DEFAULT_WORKSPACE_ID,
       title: newNoteTitle,
       content: newNoteContent || null,
       note_type: 'synthesis',

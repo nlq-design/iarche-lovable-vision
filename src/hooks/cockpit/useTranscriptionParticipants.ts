@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useOwnerProfile } from '@/hooks/cockpit/useOwnerProfile';
+import { useWorkspaceId } from '@/contexts/WorkspaceContext';
+import { DEFAULT_WORKSPACE_ID } from '@/lib/constants/workspace';
 
 export type PresenceStatus = 'present' | 'mentioned' | 'observer';
 export type MeetingRole = 'animator' | 'decision_maker' | 'technical_expert' | 'commercial' | 'support';
@@ -47,6 +49,7 @@ export const ENTITY_TYPE_LABELS: Record<LinkedEntityType, string> = {
 export function useTranscriptionParticipants(transcriptionId: string | null) {
   const queryClient = useQueryClient();
   const { ownerProfile } = useOwnerProfile();
+  const ctxWorkspaceId = useWorkspaceId();
   const queryKey = ['transcription-participants', transcriptionId];
 
   const { data: participants = [], isLoading } = useQuery({
@@ -129,7 +132,7 @@ export function useTranscriptionParticipants(transcriptionId: string | null) {
             }
 
             await supabase.from('participant_entity_mappings').upsert({
-              workspace_id: '00000000-0000-0000-0000-000000000001',
+              workspace_id: ctxWorkspaceId ?? DEFAULT_WORKSPACE_ID,
               participant_name: participant.name,
               linked_entity_type: updates.linked_entity_type,
               linked_entity_id: updates.linked_entity_id,

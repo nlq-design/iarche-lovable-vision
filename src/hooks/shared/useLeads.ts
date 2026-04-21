@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useWorkspaceId } from "@/contexts/WorkspaceContext";
+import { DEFAULT_WORKSPACE_ID } from "@/lib/constants/workspace";
 import type { Database } from "@/integrations/supabase/types";
 
 type Lead = Database["public"]["Tables"]["leads"]["Row"];
@@ -16,6 +18,7 @@ export const LEADS_QUERY_KEY = "leads";
 export const useLeads = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const ctxWorkspaceId = useWorkspaceId();
 
   // Fetch all leads
   const { data: leads = [], isLoading, error, refetch } = useQuery({
@@ -33,9 +36,6 @@ export const useLeads = () => {
     refetchOnWindowFocus: true,
   });
 
-  // Default workspace ID (IArche Interne) - Phase 1.5 multi-tenant
-  const DEFAULT_WORKSPACE_ID = "00000000-0000-0000-0000-000000000001";
-
   // Create lead
   const createLead = useMutation({
     mutationFn: async (lead: LeadInsert) => {
@@ -43,7 +43,7 @@ export const useLeads = () => {
         .from("leads")
         .insert({
           ...lead,
-          workspace_id: lead.workspace_id || DEFAULT_WORKSPACE_ID,
+          workspace_id: lead.workspace_id || ctxWorkspaceId || DEFAULT_WORKSPACE_ID,
         })
         .select()
         .single();

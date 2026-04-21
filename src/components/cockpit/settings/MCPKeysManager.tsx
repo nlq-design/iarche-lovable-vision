@@ -12,6 +12,8 @@ import { toast } from "sonner";
 import { Plus, Copy, Check, Trash2, Key, ExternalLink, Clock, Shield } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
+import { useWorkspaceId } from "@/contexts/WorkspaceContext";
+import { DEFAULT_WORKSPACE_ID } from "@/lib/constants/workspace";
 
 interface McpKey {
   id: string;
@@ -29,6 +31,7 @@ const MCP_SERVER_URL = `https://${PROJECT_ID}.supabase.co/functions/v1/mcp-serve
 
 export function MCPKeysManager() {
   const queryClient = useQueryClient();
+  const ctxWorkspaceId = useWorkspaceId();
   const [createOpen, setCreateOpen] = useState(false);
   const [newLabel, setNewLabel] = useState("");
   const [generatedKey, setGeneratedKey] = useState<string | null>(null);
@@ -53,7 +56,7 @@ export function MCPKeysManager() {
         body: {
           action: "create",
           label,
-          workspace_id: "00000000-0000-0000-0000-000000000001",
+          workspace_id: ctxWorkspaceId ?? DEFAULT_WORKSPACE_ID,
         },
       });
       if (error) throw error;
