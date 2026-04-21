@@ -17,17 +17,11 @@ import type {
 } from './types';
 import { sanitizeSectionHtml } from './sanitize';
 import { EMAIL_ASSETS } from './assets';
+import { COLORS } from '@/components/admin/medias/shared/tokens';
 
-/* ── Couleurs IArche strictes (HEX, requis pour clients email) ── */
-const COLORS = {
-  bleuNuit: '#1A2B4A',
-  bleuNuitLight: '#2C3E5F', // variante pour pills hero (bon contraste sur fond bleu)
-  terracotta: '#D15A3E',
-  blancCasse: '#FAF9F7',
-  grisSable: '#F0EDE8',
-  blanc: '#FFFFFF',
-} as const;
-
+/* ── Constantes spécifiques au médium email (non présentes dans tokens.ts) ── */
+const GRIS_SABLE = '#F0EDE8'; // Background body email uniquement
+const PILL_FALLBACK_BG = '#2E3F5E'; // Fallback solide pour rgba(255,255,255,0.1) sur bleu nuit (Outlook)
 const FONT_STACK = "'Helvetica Neue', Arial, sans-serif";
 
 /* ── Helpers ── */
