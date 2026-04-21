@@ -55,7 +55,7 @@ export function RichTextEditor({ content, onChange, placeholder = 'Commencez à 
 
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({
+      (StarterKit as any).configure({
         heading: {
           levels: [2, 3],
         },
