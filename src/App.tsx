@@ -54,6 +54,7 @@ const AdminLivresBlancs = lazy(() => import("./pages/admin/AdminLivresBlancs"));
 const AdminAteliersWebinaires = lazy(() => import("./pages/admin/AdminAteliersWebinaires"));
 const AdminSolutions = lazy(() => import("./pages/admin/AdminSolutions"));
 const AdminInvitationPreview = lazy(() => import("./pages/admin/AdminInvitationPreview"));
+const AdminInvitationEmailPreview = lazy(() => import("./pages/admin/AdminInvitationEmailPreview"));
 const AdminLeads = lazy(() => import("./pages/admin/AdminLeads"));
 const AdminContacts = lazy(() => import("./pages/admin/AdminContacts"));
 const IArcheLabsAdmin = lazy(() => import("./pages/admin/IArcheLabsAdmin"));
@@ -444,6 +445,11 @@ const App = () => (
           <Route path="/admin/invitation/:id" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <ProtectedAdminRoute><AdminInvitationPreview /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/invitation/:id/email-preview" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AdminInvitationEmailPreview /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/categories" element={
