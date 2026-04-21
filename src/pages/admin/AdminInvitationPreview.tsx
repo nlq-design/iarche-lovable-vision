@@ -608,6 +608,21 @@ const AdminInvitationPreview = () => {
           </section>
         </div>
       </div>
+
+      {doc && doc.slug && (
+        <EmailHtmlExportDialog
+          open={emailExportOpen}
+          onOpenChange={setEmailExportOpen}
+          docId={doc.id}
+          slug={doc.slug}
+          content={{
+            metadata: editMetadata,
+            sections: editSections,
+            modules: { programme: { rows: programmeRows } },
+          }}
+          eventTitle={editMetadata.eventTitle || doc.title}
+        />
+      )}
     </AdminLayout>
   );
 };
