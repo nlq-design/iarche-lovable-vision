@@ -193,9 +193,7 @@ function renderProgrammeBlock(rows: ProgrammeRow[]): string {
 
 function renderQrBlock(publicUrl: string, qrCodeUrl: string | undefined): string {
   if (!qrCodeUrl) return '';
-  const url = escapeAttr(publicUrl);
   const qr = escapeAttr(qrCodeUrl);
-  const urlText = escapeHtml(publicUrl);
   return `
   <tr>
     <td style="padding:24px 30px 0 30px;">
@@ -203,11 +201,7 @@ function renderQrBlock(publicUrl: string, qrCodeUrl: string | undefined): string
         <tr>
           <td align="center" style="padding:24px;">
             <h3 style="margin:0 0 16px 0; color:${COLORS.white}; font-size:18px; font-weight:600; font-family:${FONT_STACK};">Inscription en ligne</h3>
-            <img src="${qr}" alt="QR Code inscription" width="140" style="display:block; width:140px; height:140px; background-color:${COLORS.white}; padding:8px; border-radius:6px; margin:0 auto 12px auto; border:0;" />
-            <p style="margin:0; color:${COLORS.blancCasse}; font-size:12px; line-height:1.5; font-family:${FONT_STACK};">
-              Scannez ou rendez-vous sur :<br>
-              <a href="${url}" style="color:${COLORS.terracotta}; text-decoration:underline;">${urlText}</a>
-            </p>
+            <img src="${qr}" alt="QR Code inscription" width="140" style="display:block; width:140px; height:140px; background-color:${COLORS.white}; padding:8px; border-radius:6px; margin:0 auto; border:0;" />
           </td>
         </tr>
       </table>
