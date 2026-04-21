@@ -1,7 +1,6 @@
 // TODO Nick: replace with real Stripe keys from Supabase secrets.
-// M2 Phase 3 — Stripe Customer Portal session
-// Auth: verify_jwt = true + in-code JWT validation
-// Pattern: std@0.190.0 + supabase-js@2.49.1 + service_role + inline corsHeaders
+// M2 Phase 3 — Stripe Customer Portal (billing owner only)
+// Pattern: std@0.190.0 + supabase-js@2.49.1 + service_role + corsHeaders inline + auth.getUser inline
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
@@ -20,28 +19,17 @@ const stripe = new Stripe(
   { apiVersion: "2024-04-10" },
 );
 
-interface PortalBody {
-  workspace_id: string;
-  return_url: string;
-}
-
 serve(async (req) => {
+  // (a) CORS
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { status: 200, headers: corsHeaders });
   }
 
   try {
-    if (req.method !== "POST") {
-      return new Response(JSON.stringify({ error: "Method not allowed" }), {
-        status: 405,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // ---- Auth ----
+    // (b) Auth JWT
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Missing Authorization header" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -60,27 +48,20 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const user = userData.user;
 
-    // ---- Body ----
-    const body = (await req.json()) as Partial<PortalBody>;
-    const { workspace_id, return_url } = body;
-
+    const { workspace_id, return_url } = await req.json();
     if (!workspace_id || !return_url) {
       return new Response(
-        JSON.stringify({
-          error: "Missing required fields: workspace_id, return_url",
-        }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
+        JSON.stringify({ error: "Missing required fields: workspace_id, return_url" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    // ---- Load workspace + stripe_customer_id ----
+    // (c) Vérif STRICT billing owner
     const { data: workspace, error: wsErr } = await supabase
       .from("workspaces")
-      .select("id, stripe_customer_id")
+      .select("billing_owner_id, stripe_customer_id")
       .eq("id", workspace_id)
       .maybeSingle();
 
@@ -91,26 +72,29 @@ serve(async (req) => {
       });
     }
 
-    if (!workspace.stripe_customer_id) {
+    if (workspace.billing_owner_id !== user.id) {
       return new Response(
-        JSON.stringify({
-          error:
-            "No Stripe customer associated with this workspace. Subscribe first.",
-        }),
-        {
-          status: 422,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
+        JSON.stringify({ error: "Only billing owner can access portal" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    // ---- Create Stripe Billing Portal session ----
+    // (d) Vérif customer
+    if (!workspace.stripe_customer_id) {
+      return new Response(JSON.stringify({ error: "No subscription yet" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // (e) Création portal session
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: workspace.stripe_customer_id,
       return_url,
     });
 
-    return new Response(JSON.stringify({ url: portalSession.url }), {
+    // (f) Return
+    return new Response(JSON.stringify({ portal_url: portalSession.url }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

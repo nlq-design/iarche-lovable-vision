@@ -1,7 +1,6 @@
 // TODO Nick: replace with real Stripe keys from Supabase secrets.
-// M2 Phase 3 — Stripe Checkout Session creation
-// Auth: verify_jwt = true (handled by Supabase) + in-code JWT validation
-// Pattern: std@0.190.0 + supabase-js@2.49.1 + service_role + inline corsHeaders
+// M2 Phase 3 — Stripe Checkout Session
+// Pattern: std@0.190.0 + supabase-js@2.49.1 + service_role + corsHeaders inline + auth.getUser inline
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
@@ -20,30 +19,17 @@ const stripe = new Stripe(
   { apiVersion: "2024-04-10" },
 );
 
-interface CheckoutBody {
-  plan_slug: string;
-  workspace_id: string;
-  success_url: string;
-  cancel_url: string;
-}
-
 serve(async (req) => {
+  // (a) CORS preflight
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { status: 200, headers: corsHeaders });
   }
 
   try {
-    if (req.method !== "POST") {
-      return new Response(JSON.stringify({ error: "Method not allowed" }), {
-        status: 405,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // ---- Auth: validate JWT inline ----
+    // (b) Auth JWT inline
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Missing Authorization header" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -64,56 +50,60 @@ serve(async (req) => {
     }
     const user = userData.user;
 
-    // ---- Body ----
-    const body = (await req.json()) as Partial<CheckoutBody>;
-    const { plan_slug, workspace_id, success_url, cancel_url } = body;
-
+    // Body
+    const { plan_slug, workspace_id, success_url, cancel_url } = await req.json();
     if (!plan_slug || !workspace_id || !success_url || !cancel_url) {
       return new Response(
         JSON.stringify({
           error:
             "Missing required fields: plan_slug, workspace_id, success_url, cancel_url",
         }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    // ---- Load plan ----
+    // (c) Vérif membre workspace
+    const { data: member } = await supabase
+      .from("workspace_members")
+      .select("id")
+      .eq("workspace_id", workspace_id)
+      .eq("user_id", user.id)
+      .limit(1)
+      .maybeSingle();
+
+    if (!member) {
+      return new Response(
+        JSON.stringify({ error: "Not a member of this workspace" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    // (d) Plan actif
     const { data: plan, error: planErr } = await supabase
       .from("plans")
-      .select("id, slug, name, tier, stripe_price_id, active")
+      .select("*")
       .eq("slug", plan_slug)
+      .eq("active", true)
       .maybeSingle();
 
     if (planErr || !plan) {
       return new Response(
-        JSON.stringify({ error: `Plan '${plan_slug}' not found` }),
-        {
-          status: 404,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
+        JSON.stringify({ error: "Plan inactive or not found" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
     if (!plan.stripe_price_id) {
       return new Response(
-        JSON.stringify({
-          error: `Plan '${plan_slug}' has no stripe_price_id configured`,
-        }),
-        {
-          status: 422,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
+        JSON.stringify({ error: "Plan has no stripe_price_id configured" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    // ---- Load workspace + reuse stripe_customer_id if exists ----
+    // (e) Récup ou création stripe_customer_id
     const { data: workspace, error: wsErr } = await supabase
       .from("workspaces")
-      .select("id, name, stripe_customer_id, billing_owner_id")
+      .select("id, name, stripe_customer_id")
       .eq("id", workspace_id)
       .maybeSingle();
 
@@ -124,40 +114,51 @@ serve(async (req) => {
       });
     }
 
-    // ---- Create Stripe Checkout Session ----
-    const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      payment_method_types: ["card"],
-      line_items: [{ price: plan.stripe_price_id, quantity: 1 }],
-      customer: workspace.stripe_customer_id || undefined,
-      customer_email: workspace.stripe_customer_id ? undefined : user.email,
-      client_reference_id: workspace_id,
-      success_url,
-      cancel_url,
-      metadata: {
-        workspace_id,
-        user_id: user.id,
-        plan_id: plan.id,
-        plan_slug: plan.slug,
-        plan_tier: plan.tier,
-      },
-      subscription_data: {
+    let stripeCustomerId = workspace.stripe_customer_id;
+    if (!stripeCustomerId) {
+      const customer = await stripe.customers.create({
+        email: user.email,
         metadata: {
           workspace_id,
           user_id: user.id,
+        },
+      });
+      stripeCustomerId = customer.id;
+
+      const { error: updErr } = await supabase
+        .from("workspaces")
+        .update({ stripe_customer_id: stripeCustomerId })
+        .eq("id", workspace_id);
+
+      if (updErr) {
+        console.error("[stripe-checkout-session] update workspace failed:", updErr);
+        throw updErr;
+      }
+    }
+
+    // (f) Création Checkout Session
+    const session = await stripe.checkout.sessions.create({
+      customer: stripeCustomerId,
+      mode: "subscription",
+      line_items: [{ price: plan.stripe_price_id, quantity: 1 }],
+      subscription_data: {
+        metadata: {
+          workspace_id,
           plan_id: plan.id,
-          plan_slug: plan.slug,
+          plan_slug,
+          user_id: user.id,
         },
       },
+      success_url,
+      cancel_url,
+      allow_promotion_codes: true,
     });
 
-    return new Response(
-      JSON.stringify({ session_id: session.id, url: session.url }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
-    );
+    // (g) Return
+    return new Response(JSON.stringify({ checkout_url: session.url }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error("[stripe-checkout-session] error:", msg);
