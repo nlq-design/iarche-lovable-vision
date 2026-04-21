@@ -1,10 +1,10 @@
-import { Extension } from '@tiptap/core';
+import { Extension } from '@tiptap/react';
 
 export interface FontSizeOptions {
   types: string[];
 }
 
-declare module '@tiptap/core' {
+declare module '@tiptap/react' {
   interface Commands<ReturnType> {
     fontSize: {
       setFontSize: (size: string) => ReturnType;
