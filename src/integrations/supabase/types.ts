@@ -4197,6 +4197,48 @@ export type Database = {
         }
         Relationships: []
       }
+      plans: {
+        Row: {
+          active: boolean
+          created_at: string
+          features: Json
+          id: string
+          limits: Json
+          name: string
+          price_monthly_eur: number
+          slug: string
+          stripe_price_id: string | null
+          tier: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          features?: Json
+          id?: string
+          limits?: Json
+          name: string
+          price_monthly_eur?: number
+          slug: string
+          stripe_price_id?: string | null
+          tier: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          features?: Json
+          id?: string
+          limits?: Json
+          name?: string
+          price_monthly_eur?: number
+          slug?: string
+          stripe_price_id?: string | null
+          tier?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       project_contacts: {
         Row: {
           lead_id: string
@@ -4894,6 +4936,99 @@ export type Database = {
           ui_variant?: string | null
         }
         Relationships: []
+      }
+      stripe_events: {
+        Row: {
+          created_at: string
+          error: string | null
+          id: string
+          payload: Json
+          processed_at: string | null
+          stripe_event_id: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          payload: Json
+          processed_at?: string | null
+          stripe_event_id: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          payload?: Json
+          processed_at?: string | null
+          stripe_event_id?: string
+          type?: string
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          canceled_at: string | null
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          plan_id: string
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          trial_end: string | null
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          canceled_at?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan_id: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          trial_end?: string | null
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          canceled_at?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan_id?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          trial_end?: string | null
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tags: {
         Row: {
@@ -6559,6 +6694,8 @@ export type Database = {
       }
       workspaces: {
         Row: {
+          billing_owner_id: string | null
+          billing_status: string | null
           created_at: string | null
           created_by: string | null
           description: string | null
@@ -6566,10 +6703,15 @@ export type Database = {
           name: string
           owner_id: string | null
           settings: Json | null
+          stripe_customer_id: string | null
+          subscription_tier: string | null
+          trial_ends_at: string | null
           type: string
           updated_at: string | null
         }
         Insert: {
+          billing_owner_id?: string | null
+          billing_status?: string | null
           created_at?: string | null
           created_by?: string | null
           description?: string | null
@@ -6577,10 +6719,15 @@ export type Database = {
           name: string
           owner_id?: string | null
           settings?: Json | null
+          stripe_customer_id?: string | null
+          subscription_tier?: string | null
+          trial_ends_at?: string | null
           type?: string
           updated_at?: string | null
         }
         Update: {
+          billing_owner_id?: string | null
+          billing_status?: string | null
           created_at?: string | null
           created_by?: string | null
           description?: string | null
@@ -6588,6 +6735,9 @@ export type Database = {
           name?: string
           owner_id?: string | null
           settings?: Json | null
+          stripe_customer_id?: string | null
+          subscription_tier?: string | null
+          trial_ends_at?: string | null
           type?: string
           updated_at?: string | null
         }
