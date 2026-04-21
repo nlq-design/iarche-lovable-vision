@@ -18,9 +18,11 @@ const ALLOWED_STYLE_PROPS = new Set([
   'font-style',
 ]);
 
+import { COLORS as TOKEN_COLORS } from '@/components/admin/medias/shared/tokens';
+
 const COLORS = {
-  bleuNuit: '#1A2B4A',
-  terracotta: '#D15A3E',
+  bleuNuit: TOKEN_COLORS.bleuNuit,
+  terracotta: TOKEN_COLORS.terracotta,
 };
 
 /** Filtre la valeur d'un attribut style pour ne garder que les propriétés sûres. */
