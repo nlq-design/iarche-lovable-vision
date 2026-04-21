@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import QRCode from 'qrcode';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -25,6 +26,8 @@ const AdminInvitationEmailPreview = () => {
   const [doc, setDoc] = useState<InvitationDocRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [qrDataUrl, setQrDataUrl] = useState<string | undefined>(undefined);
+  const [qrLoading, setQrLoading] = useState(false);
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) navigate('/admin');
@@ -48,23 +51,56 @@ const AdminInvitationEmailPreview = () => {
       }
       setLoading(false);
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [id, user, isAdmin]);
+
+  const publicUrl = useMemo(() => {
+    if (!doc) return '';
+    return `https://iarche.fr/evenements/${doc.slug || ''}`;
+  }, [doc]);
+
+  // Génération QR code asynchrone à partir de l'URL publique
+  useEffect(() => {
+    if (!publicUrl) return;
+    let cancelled = false;
+    setQrLoading(true);
+    QRCode.toDataURL(publicUrl, {
+      width: 280,
+      margin: 1,
+      color: { dark: '#1A2B4A', light: '#FFFFFF' },
+    })
+      .then((url) => {
+        if (!cancelled) setQrDataUrl(url);
+      })
+      .catch(() => {
+        if (!cancelled) setQrDataUrl(undefined);
+      })
+      .finally(() => {
+        if (!cancelled) setQrLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [publicUrl]);
 
   const html = useMemo(() => {
     if (!doc) return '';
     const content = (doc.content_json || { metadata: {}, sections: [] }) as InvitationContentJson;
-    const slug = doc.slug || '';
-    const publicUrl = `https://iarche.fr/evenements/${slug}`;
-    return buildEmailHtml(content, { publicUrl });
-  }, [doc]);
+    return buildEmailHtml(content, { publicUrl, qrCodeDataUrl: qrDataUrl });
+  }, [doc, publicUrl, qrDataUrl]);
 
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(html);
-      toast({ title: 'HTML copié', description: 'Collez-le dans l\'éditeur HTML de Brevo.' });
+      toast({ title: 'HTML copié', description: "Collez-le dans l'éditeur HTML de Brevo." });
     } catch {
-      toast({ title: 'Échec de la copie', description: 'Sélectionnez le HTML manuellement dans le textarea.', variant: 'destructive' });
+      toast({
+        title: 'Échec de la copie',
+        description: 'Sélectionnez le HTML manuellement dans le textarea.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -75,7 +111,10 @@ const AdminInvitationEmailPreview = () => {
         <div className="flex items-center justify-between gap-4 flex-wrap bg-card border border-border rounded-lg p-4">
           <div>
             <h1 className="text-xl font-semibold text-foreground">Preview HTML email</h1>
-            <p className="text-sm text-muted-foreground">Largeur 600px rendue dans iframe — prêt à coller dans Brevo</p>
+            <p className="text-sm text-muted-foreground">
+              Largeur 600px rendue dans iframe — prêt à coller dans Brevo
+              {qrLoading && ' · génération QR code…'}
+            </p>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => navigate(`/admin/invitation/${id}`)}>

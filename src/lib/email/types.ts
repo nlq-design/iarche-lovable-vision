@@ -44,4 +44,6 @@ export interface InvitationContentJson {
 export interface BuildEmailHtmlOptions {
   /** URL publique complète de l'événement, ex: https://iarche.fr/evenements/mon-event */
   publicUrl: string;
+  /** Optionnel : data URL PNG du QR code (ex: data:image/png;base64,…). Si absent, le bloc QR est masqué. */
+  qrCodeDataUrl?: string;
 }
