@@ -18,9 +18,13 @@ interface AssetResult {
 }
 
 const COLORS = {
-  navy: '#1A2B4A',
-  terracotta: '#D15A3E',
+  bleuNuit: '#1A2B4A',
+  terracotta: '#B04A32', // Couleur officielle IArche (corrigée v3)
+  bleuClair: '#4A90D9',
 } as const;
+
+const HERO_PREVIEW_GRADIENT =
+  'linear-gradient(135deg, #1A2B4A 0%, rgba(26,43,74,0.867) 50%, rgba(176,74,50,0.251) 100%)';
 
 /** Convertit un canvas en Blob PNG (Promise). */
 const canvasToBlob = (canvas: HTMLCanvasElement): Promise<Blob> =>
@@ -41,35 +45,60 @@ const loadImage = (src: string): Promise<HTMLImageElement> =>
     img.src = src;
   });
 
-/** Génère le logo IArche en PNG 600x160 (fond transparent). */
+/**
+ * Génère le logo IArche en PNG 600x160 BLANC (fond transparent).
+ * Applique brightness(0) invert(1) via pixel manipulation cross-browser.
+ */
 const generateLogoPng = async (): Promise<{ blob: Blob; dataUrl: string }> => {
+  const img = await loadImage('/logos/iarche-main.svg');
+
+  // Canvas temporaire pour appliquer le filtre blanc
+  const tempCanvas = document.createElement('canvas');
+  tempCanvas.width = img.naturalWidth;
+  tempCanvas.height = img.naturalHeight;
+  const tempCtx = tempCanvas.getContext('2d');
+  if (!tempCtx) throw new Error('Canvas 2D context unavailable (temp)');
+  tempCtx.drawImage(img, 0, 0);
+
+  // Pixel manipulation : tout pixel non-transparent → blanc pur (alpha conservé)
+  const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+  const data = imageData.data;
+  for (let i = 0; i < data.length; i += 4) {
+    if (data[i + 3] > 0) {
+      data[i] = 255;
+      data[i + 1] = 255;
+      data[i + 2] = 255;
+    }
+  }
+  tempCtx.putImageData(imageData, 0, 0);
+
+  // Canvas final 600x160, logo blanc centré
   const canvas = document.createElement('canvas');
   canvas.width = 600;
   canvas.height = 160;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas 2D context unavailable');
 
-  // Charger le SVG depuis /public/logos/iarche-main.svg
-  const img = await loadImage('/logos/iarche-main.svg');
-
-  // Centrer en gardant le ratio (max 560x140 pour padding visuel)
   const maxW = 560;
   const maxH = 140;
-  const scale = Math.min(maxW / img.naturalWidth, maxH / img.naturalHeight);
-  const drawW = img.naturalWidth * scale;
-  const drawH = img.naturalHeight * scale;
+  const scale = Math.min(maxW / tempCanvas.width, maxH / tempCanvas.height);
+  const drawW = tempCanvas.width * scale;
+  const drawH = tempCanvas.height * scale;
   const dx = (canvas.width - drawW) / 2;
   const dy = (canvas.height - drawH) / 2;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(img, dx, dy, drawW, drawH);
+  ctx.drawImage(tempCanvas, dx, dy, drawW, drawH);
 
   const blob = await canvasToBlob(canvas);
   const dataUrl = canvas.toDataURL('image/png');
   return { blob, dataUrl };
 };
 
-/** Génère un PNG 1200x600 — gradient bleu nuit → terracotta (135deg). */
+/**
+ * Génère un PNG 1200x600 — gradient 135deg avec 3 stops alphas + 2 cercles flous overlays.
+ * Reproduit fidèlement le hero de /admin/invitation/:id.
+ */
 const generateHeroGradientPng = async (): Promise<{ blob: Blob; dataUrl: string }> => {
   const canvas = document.createElement('canvas');
   canvas.width = 1200;
@@ -77,20 +106,37 @@ const generateHeroGradientPng = async (): Promise<{ blob: Blob; dataUrl: string 
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas 2D context unavailable');
 
-  // 135deg = du coin haut-gauche vers coin bas-droit
-  const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-  gradient.addColorStop(0, COLORS.navy);
-  gradient.addColorStop(1, COLORS.terracotta);
+  // 1. Fond bleu nuit plein
+  ctx.fillStyle = COLORS.bleuNuit;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+  // 2. Gradient 135deg (haut-gauche → bas-droit), 3 stops avec alphas
+  const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+  gradient.addColorStop(0, '#1A2B4A');
+  gradient.addColorStop(0.5, 'rgba(26, 43, 74, 0.867)');
+  gradient.addColorStop(1, 'rgba(176, 74, 50, 0.251)');
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Léger overlay sombre pour améliorer le contraste du texte superposé
-  const overlay = ctx.createLinearGradient(0, 0, 0, canvas.height);
-  overlay.addColorStop(0, 'rgba(26,43,74,0.15)');
-  overlay.addColorStop(1, 'rgba(26,43,74,0.35)');
-  ctx.fillStyle = overlay;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // 3. Overlay : 2 cercles flous à opacity globale 10%
+  ctx.save();
+  ctx.globalAlpha = 0.1;
+
+  // Cercle haut-droit : terracotta, blur 160px (page = 80px × scale 2x)
+  ctx.filter = 'blur(160px)';
+  ctx.fillStyle = COLORS.terracotta;
+  ctx.beginPath();
+  ctx.arc(canvas.width - 80 - 256, 80 + 256, 256, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Cercle bas-gauche : bleu clair, blur 120px
+  ctx.filter = 'blur(120px)';
+  ctx.fillStyle = COLORS.bleuClair;
+  ctx.beginPath();
+  ctx.arc(80 + 192, canvas.height - 80 - 192, 192, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
 
   const blob = await canvasToBlob(canvas);
   const dataUrl = canvas.toDataURL('image/png');
