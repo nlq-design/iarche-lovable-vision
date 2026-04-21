@@ -238,7 +238,7 @@ const AdminEmailAssetsGenerator = () => {
             minHeight: 140,
             background:
               previewBg === 'gradient'
-                ? 'linear-gradient(135deg, #1A2B4A 0%, #D15A3E 100%)'
+                ? HERO_PREVIEW_GRADIENT
                 : 'hsl(var(--muted))',
           }}
         >
