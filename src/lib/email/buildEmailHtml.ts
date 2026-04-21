@@ -191,10 +191,10 @@ function renderProgrammeBlock(rows: ProgrammeRow[]): string {
   </tr>`;
 }
 
-function renderQrBlock(publicUrl: string, qrCodeDataUrl: string | undefined): string {
-  if (!qrCodeDataUrl) return '';
+function renderQrBlock(publicUrl: string, qrCodeUrl: string | undefined): string {
+  if (!qrCodeUrl) return '';
   const url = escapeAttr(publicUrl);
-  const qr = escapeAttr(qrCodeDataUrl);
+  const qr = escapeAttr(qrCodeUrl);
   const urlText = escapeHtml(publicUrl);
   return `
   <tr>
@@ -289,7 +289,7 @@ export function buildEmailHtml(
   }
 
   const heroBlock = renderHeroBlock(metadata);
-  const qrBlock = renderQrBlock(options.publicUrl, options.qrCodeDataUrl);
+  const qrBlock = renderQrBlock(options.publicUrl, options.qrCodeUrl);
   const ctaBlock = renderCtaBlock(options.publicUrl);
   const footerBlock = renderFooterBlock(metadata);
 
