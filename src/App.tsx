@@ -453,7 +453,11 @@ const App = () => (
               <ProtectedAdminRoute><AdminInvitationEmailPreview /></ProtectedAdminRoute>
             </Suspense>
           } />
-          <Route path="/admin/categories" element={
+          <Route path="/admin/email-assets-generator" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AdminEmailAssetsGenerator /></ProtectedAdminRoute>
+            </Suspense>
+          } />
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <ProtectedAdminRoute><AdminCategories /></ProtectedAdminRoute>
             </Suspense>
