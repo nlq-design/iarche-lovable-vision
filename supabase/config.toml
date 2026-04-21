@@ -191,3 +191,12 @@ verify_jwt = false
 
 [functions.zoom-recording-webhook]
 verify_jwt = false
+
+[functions.stripe-checkout-session]
+verify_jwt = true
+
+[functions.stripe-customer-portal]
+verify_jwt = true
+
+[functions.stripe-webhook]
+verify_jwt = false
