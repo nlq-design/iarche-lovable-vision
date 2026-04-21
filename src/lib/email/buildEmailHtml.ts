@@ -4,8 +4,9 @@
  *
  * Compatible Gmail, Outlook (Windows/Mac), Apple Mail, iOS Mail, Brevo.
  *
- * Niveau de fidélité : v2 — assets PNG hébergés (logo, hero gradient),
- * cards stylées, badge pill, programme stylé, CTA bulletproof, QR code optionnel.
+ * Niveau de fidélité : v3 — couleurs alignées sur tokens.ts (source unique de vérité),
+ * terracotta officiel #B04A32, pills date/lieu rgba blanc 10%, badge shadcn-fidèle,
+ * logos compacts (40px).
  */
 
 import type {
@@ -47,23 +48,25 @@ function renderHeroBlock(metadata: InvitationMetadata): string {
   const date = escapeHtml(metadata.eventDate);
   const location = escapeHtml(metadata.eventLocation);
 
+  // Badge shadcn-fidèle : padding compact 4px 10px, border-radius 6px, sans uppercase ni letter-spacing
   const badgeHtml = eventType
     ? `<table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin:0 auto 20px auto;">
         <tr>
-          <td bgcolor="${COLORS.terracotta}" style="padding:8px 20px; border-radius:20px; background-color:${COLORS.terracotta};">
-            <span style="color:${COLORS.blanc}; font-size:12px; font-weight:600; letter-spacing:1px; text-transform:uppercase; font-family:${FONT_STACK};">${eventType}</span>
+          <td bgcolor="${COLORS.terracotta}" style="padding:4px 10px; border-radius:6px; background-color:${COLORS.terracotta};">
+            <span style="color:${COLORS.white}; font-size:13px; font-weight:600; font-family:${FONT_STACK};">${eventType}</span>
           </td>
         </tr>
       </table>`
     : '';
 
+  // Pill date/lieu : rgba(255,255,255,0.1) en style inline, fallback solide PILL_FALLBACK_BG via bgcolor (Outlook)
   const datePill = date
     ? `<tr>
         <td style="padding:4px;" align="center">
           <table role="presentation" cellspacing="0" cellpadding="0" border="0">
             <tr>
-              <td bgcolor="${COLORS.bleuNuitLight}" style="padding:8px 16px; border-radius:20px; background-color:${COLORS.bleuNuitLight};">
-                <span style="color:${COLORS.blanc}; font-size:14px; font-family:${FONT_STACK};">📅 ${date}</span>
+              <td bgcolor="${PILL_FALLBACK_BG}" style="padding:8px 16px; border-radius:9999px; background-color:rgba(255,255,255,0.1);">
+                <span style="color:${COLORS.white}; font-size:14px; font-family:${FONT_STACK};">📅 ${date}</span>
               </td>
             </tr>
           </table>
@@ -76,8 +79,8 @@ function renderHeroBlock(metadata: InvitationMetadata): string {
         <td style="padding:4px;" align="center">
           <table role="presentation" cellspacing="0" cellpadding="0" border="0">
             <tr>
-              <td bgcolor="${COLORS.bleuNuitLight}" style="padding:8px 16px; border-radius:20px; background-color:${COLORS.bleuNuitLight};">
-                <span style="color:${COLORS.blanc}; font-size:14px; font-family:${FONT_STACK};">📍 ${location}</span>
+              <td bgcolor="${PILL_FALLBACK_BG}" style="padding:8px 16px; border-radius:9999px; background-color:rgba(255,255,255,0.1);">
+                <span style="color:${COLORS.white}; font-size:14px; font-family:${FONT_STACK};">📍 ${location}</span>
               </td>
             </tr>
           </table>
@@ -93,14 +96,14 @@ function renderHeroBlock(metadata: InvitationMetadata): string {
         </table>`
       : '';
 
-  // Contenu central du hero (logo + badge + titre + pills)
+  // Logo : height 40px (proche de h-8 = 32px de la page admin, légèrement augmenté pour l'email)
   const heroInner = `
     <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="width:100%;">
       <tr>
         <td align="center" style="padding:40px 30px;">
-          <img src="${escapeAttr(EMAIL_ASSETS.logo)}" alt="IArche" width="180" style="display:block; width:180px; height:auto; max-width:180px; margin:0 auto 24px auto; border:0; outline:none; text-decoration:none;" />
+          <img src="${escapeAttr(EMAIL_ASSETS.logo)}" alt="IArche" height="40" style="display:block; height:40px; width:auto; margin:0 auto 24px auto; border:0; outline:none; text-decoration:none;" />
           ${badgeHtml}
-          <h1 style="margin:0 0 24px 0; color:${COLORS.blanc}; font-size:32px; line-height:1.2; font-weight:700; font-family:${FONT_STACK}; text-align:center;">${title}</h1>
+          <h1 style="margin:0 0 16px 0; color:${COLORS.white}; font-size:36px; line-height:1.15; font-weight:700; font-family:${FONT_STACK}; text-align:center;">${title}</h1>
           ${pillsTable}
         </td>
       </tr>
@@ -149,7 +152,7 @@ function renderProgrammeBlock(rows: ProgrammeRow[]): string {
   const validRows = rows.filter((r) => r && r.horaire && r.theme);
   if (validRows.length === 0) return '';
 
-  const headerCellStyle = `padding:12px; color:${COLORS.blanc}; font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; font-family:${FONT_STACK};`;
+  const headerCellStyle = `padding:12px; color:${COLORS.white}; font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; font-family:${FONT_STACK};`;
 
   const headerHtml = `
     <tr>
@@ -160,12 +163,12 @@ function renderProgrammeBlock(rows: ProgrammeRow[]): string {
 
   const rowsHtml = validRows
     .map((row) => {
-      const baseCell = `padding:10px 12px; font-size:14px; border-bottom:1px solid ${COLORS.grisSable}; font-family:${FONT_STACK};`;
+      const baseCell = `padding:10px 12px; font-size:14px; border-bottom:1px solid ${GRIS_SABLE}; font-family:${FONT_STACK};`;
       return `
     <tr>
-      <td bgcolor="${COLORS.blanc}" style="${baseCell} color:${COLORS.bleuNuit}; font-weight:600; white-space:nowrap;">${escapeHtml(row.horaire)}</td>
-      <td bgcolor="${COLORS.blanc}" style="${baseCell} color:${COLORS.bleuNuit}; line-height:1.5;">${escapeHtml(row.theme)}</td>
-      <td bgcolor="${COLORS.blanc}" style="${baseCell} color:${COLORS.terracotta}; font-weight:600;">${escapeHtml(row.intervenant)}</td>
+      <td bgcolor="${COLORS.white}" style="${baseCell} color:${COLORS.bleuNuit}; font-weight:600; white-space:nowrap;">${escapeHtml(row.horaire)}</td>
+      <td bgcolor="${COLORS.white}" style="${baseCell} color:${COLORS.bleuNuit}; line-height:1.5;">${escapeHtml(row.theme)}</td>
+      <td bgcolor="${COLORS.white}" style="${baseCell} color:${COLORS.terracotta}; font-weight:600;">${escapeHtml(row.intervenant)}</td>
     </tr>`;
     })
     .join('');
@@ -199,8 +202,8 @@ function renderQrBlock(publicUrl: string, qrCodeDataUrl: string | undefined): st
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="${COLORS.bleuNuit}" style="background-color:${COLORS.bleuNuit};">
         <tr>
           <td align="center" style="padding:24px;">
-            <h3 style="margin:0 0 16px 0; color:${COLORS.blanc}; font-size:18px; font-weight:600; font-family:${FONT_STACK};">Inscription en ligne</h3>
-            <img src="${qr}" alt="QR Code inscription" width="140" style="display:block; width:140px; height:140px; background-color:${COLORS.blanc}; padding:8px; border-radius:6px; margin:0 auto 12px auto; border:0;" />
+            <h3 style="margin:0 0 16px 0; color:${COLORS.white}; font-size:18px; font-weight:600; font-family:${FONT_STACK};">Inscription en ligne</h3>
+            <img src="${qr}" alt="QR Code inscription" width="140" style="display:block; width:140px; height:140px; background-color:${COLORS.white}; padding:8px; border-radius:6px; margin:0 auto 12px auto; border:0;" />
             <p style="margin:0; color:${COLORS.blancCasse}; font-size:12px; line-height:1.5; font-family:${FONT_STACK};">
               Scannez ou rendez-vous sur :<br>
               <a href="${url}" style="color:${COLORS.terracotta}; text-decoration:underline;">${urlText}</a>
@@ -220,14 +223,14 @@ function renderCtaBlock(publicUrl: string): string {
       <!--[if mso]>
       <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${url}" style="height:52px; v-text-anchor:middle; width:280px;" arcsize="12%" stroke="f" fillcolor="${COLORS.terracotta}">
         <w:anchorlock/>
-        <center style="color:${COLORS.blanc}; font-family:${FONT_STACK}; font-size:16px; font-weight:bold;">S'inscrire à l'événement</center>
+        <center style="color:${COLORS.white}; font-family:${FONT_STACK}; font-size:16px; font-weight:bold;">S'inscrire à l'événement</center>
       </v:roundrect>
       <![endif]-->
       <!--[if !mso]><!-- -->
       <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center">
         <tr>
           <td bgcolor="${COLORS.terracotta}" style="border-radius:6px; background-color:${COLORS.terracotta};">
-            <a href="${url}" target="_blank" style="display:inline-block; padding:16px 36px; color:${COLORS.blanc}; text-decoration:none; font-size:16px; font-weight:600; border-radius:6px; font-family:${FONT_STACK};">S'inscrire à l'événement</a>
+            <a href="${url}" target="_blank" style="display:inline-block; padding:16px 36px; color:${COLORS.white}; text-decoration:none; font-size:16px; font-weight:600; border-radius:6px; font-family:${FONT_STACK};">S'inscrire à l'événement</a>
           </td>
         </tr>
       </table>
@@ -243,7 +246,7 @@ function renderFooterBlock(metadata: InvitationMetadata): string {
   return `
   <tr>
     <td bgcolor="${COLORS.bleuNuit}" align="center" style="padding:24px 30px; background-color:${COLORS.bleuNuit};">
-      <img src="${escapeAttr(EMAIL_ASSETS.logo)}" alt="IArche" width="100" style="display:block; width:100px; height:auto; max-width:100px; margin:0 auto 12px auto; border:0; outline:none; text-decoration:none;" />
+      <img src="${escapeAttr(EMAIL_ASSETS.logo)}" alt="IArche" height="40" style="display:block; height:40px; width:auto; margin:0 auto 12px auto; border:0; outline:none; text-decoration:none;" />
       <p style="margin:0 0 8px 0; color:${COLORS.blancCasse}; font-size:12px; line-height:1.6; font-family:${FONT_STACK};">${footerText}</p>
       <p style="margin:0; color:${COLORS.blancCasse}; font-size:12px; font-family:${FONT_STACK};">
         <a href="https://iarche.fr" style="color:${COLORS.terracotta}; text-decoration:none;">iarche.fr</a>
@@ -263,13 +266,10 @@ export function buildEmailHtml(
   const sections = Array.isArray(content.sections) ? [...content.sections] : [];
   const programmeRows = content.modules?.programme?.rows || [];
 
-  // Tri des sections par order, en excluant le hero (toujours en premier)
   const sortedSections = sections
     .filter((s) => s.id !== 'hero')
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
-  // Construire blocs ordonnés. Pour les sections d'id 'programme', injecter
-  // le bloc programme reconstruit depuis modules.programme.rows.
   let hasProgrammeInSections = false;
   const middleBlocks: string[] = [];
   for (const section of sortedSections) {
@@ -283,7 +283,6 @@ export function buildEmailHtml(
     }
   }
 
-  // Si pas de section 'programme' mais des rows existent, ajouter en fin
   if (!hasProgrammeInSections && programmeRows.length > 0) {
     const block = renderProgrammeBlock(programmeRows);
     if (block) middleBlocks.push(block);
@@ -315,12 +314,12 @@ table { border-collapse: collapse; }
 </style>
 <![endif]-->
 </head>
-<body style="margin:0; padding:0; background-color:${COLORS.grisSable}; font-family:${FONT_STACK};">
-<div style="display:none; max-height:0; overflow:hidden; mso-hide:all; font-size:1px; line-height:1px; color:${COLORS.grisSable};">${preheaderParts}</div>
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="${COLORS.grisSable}" style="background-color:${COLORS.grisSable};">
+<body style="margin:0; padding:0; background-color:${GRIS_SABLE}; font-family:${FONT_STACK};">
+<div style="display:none; max-height:0; overflow:hidden; mso-hide:all; font-size:1px; line-height:1px; color:${GRIS_SABLE};">${preheaderParts}</div>
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="${GRIS_SABLE}" style="background-color:${GRIS_SABLE};">
   <tr>
     <td align="center" style="padding:20px 10px;">
-      <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" bgcolor="${COLORS.blanc}" style="max-width:600px; background-color:${COLORS.blanc};">
+      <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" bgcolor="${COLORS.white}" style="max-width:600px; background-color:${COLORS.white};">
         ${heroBlock}
         ${middleBlocks.join('\n')}
         ${qrBlock}
