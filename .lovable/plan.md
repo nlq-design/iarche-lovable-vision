@@ -1,76 +1,106 @@
 
-## Plan v3 — Tools Transcription invisibles dans Claude runtime
 
-### Diagnostic
-Handshake MCP OK (`get_leads` fonctionne). Les 4 tools transcription filtrés par ranker Anthropic — cause probable: noms quasi identiques + descriptions similaires + redondance.
+# Étape 1 — Utility HTML email-safe + route preview admin
 
-### Phase 1 — Audit (read-only, 5 min)
-1. Localiser les 4 handlers dans `supabase/functions/mcp-server/index.ts` : `get_transcription`, `get_transcription_detail`, `get_transcriptions`, `list_transcriptions`.
-2. Extraire `name`, `description`, `inputSchema`, payload moyen.
-3. Comparer avec `get_leads` (témoin OK).
-4. Vérifier présence dans `_EXPOSED_TOOLS`.
+Création d'une chaîne de transformation pure `content_json` → HTML email-safe Brevo, et d'une route de preview isolée. Aucune modification de l'éditeur existant, aucune migration BDD, aucune dépendance npm.
 
-### Phase 2 — Commit 1 : Refonte `list_transcriptions` + `get_transcription_detail`
-**Cible :**
-- `list_transcriptions(filters?, limit?, date_from?, date_to?, entity_id?)` — métadonnées légères
-- `get_transcription_detail(id)` — détail complet
+## Fichiers créés
 
-**Actions :**
-1. Enrichir `list_transcriptions` avec filtres consolidés.
-2. Descriptions distinctes orientées intent :
-   - `list_transcriptions`: "Search and list voice transcriptions from CRM meetings, calls, and recordings. Returns metadata only (id, date, title, participants, linked entities). Use for browsing or filtering by date/entity."
-   - `get_transcription_detail`: "Fetch full content of a single transcription including speaker-segmented text, AI synthesis, action items, and CRM links. Requires transcription UUID."
-3. `inputSchema` valide JSON Schema draft-07 (`type:object`, `properties`, `required`, `additionalProperties:false`).
-4. **Budget payload `list_transcriptions`** :
-   - `limit` default=20, max=50
-   - Exclus obligatoires : `full_text`, `segments`, `synthesis_long`, `raw_audio_url`, `embeddings`
-   - Cible <15k tokens / 20 items
+### 1. `src/lib/email/types.ts`
+Types TypeScript stricts reflétant la structure `generated_documents.content_json` :
+- `InvitationMetadata` : eventTitle, eventDate, eventLocation, eventType, organizerName, footerText, qrTitle, qrDescription
+- `InvitationSection` : id, order, title, content
+- `ProgrammeRow` : horaire, theme, intervenant
+- `InvitationContentJson` : { metadata, sections, modules: { programme: { rows } } }
+- `BuildEmailHtmlOptions` : { publicUrl: string }
 
-**Commit :** `MCP P2.1 — Refonte transcription tools + payload budget`
+### 2. `src/lib/email/sanitize.ts`
+Fonction `sanitizeSectionHtml(html: string): string` utilisant **DOMParser natif** (zéro dépendance).
 
-### Phase 2.5 — Commit 2 : Deprecation graceful (NOUVEAU)
-1. **Grep usages existants** :
-   - Codebase IArche (`src/`, `supabase/functions/`)
-   - Recherche workflows n8n (si table `n8n_workflows` ou config externe accessible)
-   - Scripts (`scripts/`, `*.sh`, `*.py`)
-2. **Garder aliases 30j** : `get_transcription` et `get_transcriptions` deviennent thin wrappers :
-   - Délèguent vers `list_transcriptions` ou `get_transcription_detail`
-   - Log warning structuré : `console.warn('[MCP-DEPRECATED] tool=get_transcription called, migrate to list_transcriptions, removal=2026-05-20')`
-   - Description préfixée `[DEPRECATED — use X]`
-3. Ajout entrée `mem://cockpit/transcriptions/deprecation-30j-fr` avec date suppression cible.
+Whitelist de tags : `p, br, strong, b, em, i, u, ul, ol, li, a, span`.
 
-**Commit :** `MCP P2.2 — Deprecation wrappers + warning logs (30j)`
+Règles :
+- Strip `class="..."` systématique
+- Strip `style="..."` sauf 4 propriétés autorisées : `color`, `font-weight`, `text-decoration`, `font-style`
+- `<div>` → `<p style="margin:0 0 12px 0; color:#1A2B4A; line-height:1.6;">`
+- `<ul>/<ol>` → inline `style="margin:0 0 16px 20px; padding:0; color:#1A2B4A;"`
+- `<li>` → inline `style="margin:0 0 6px 0;"`
+- `<a href>` → conserve `href`, force `style="color:#D15A3E; text-decoration:underline;"`, ajoute `target="_blank" rel="noopener"`
+- Tags hors whitelist (script, iframe, img, etc.) → supprimés (children préservés en texte)
 
-### Phase 3 — Validation post-merge
-1. Curl `tools/list` → vérifier présence des 4 noms (2 actifs + 2 deprecated wrappers), schemas valides.
-2. Curl `list_transcriptions` avec apikey → mesurer taille réponse (`wc -c`), assert <60KB (~15k tokens).
-3. Curl `get_transcription_detail` avec UUID réel.
-4. **Critère succès Claude.ai** :
-   - Reco connecteur côté Nick
-   - Prompt test : "liste mes transcriptions du jour via Cockpit IArche"
-   - **Vérification stricte logs Supabase** : `method=tools/call` + `tool_name=list_transcriptions` + namespace `Cockpit IArche` (PAS `ALMA by IArche:voice_transcribe`)
-   - Query `function_edge_logs` filtrée pour confirmer
+### 3. `src/lib/email/buildEmailHtml.ts`
+Fonction principale `buildEmailHtml(content, options): string`.
 
-### Phase 4 — Suppression dure (commit séparé, J+30)
-Conditionnée à : 0 appel sur les wrappers deprecated dans logs des 7 derniers jours.
-**Commit futur :** `MCP P2.3 — Remove deprecated transcription aliases`
+**Helpers internes** :
+- `escapeHtml(str: string): string` — échappe `& < > "`
+- `renderHeroBlock(metadata)` — `<tr><td bgcolor="#1A2B4A">…</td></tr>`
+- `renderSectionBlock(section)` — `<tr><td>` avec `<h2>` + `sanitizeSectionHtml(content)`
+- `renderProgrammeBlock(rows)` — table 3 colonnes, header `#1A2B4A`, rows alternées `#FAF9F7/#FFFFFF`, **filtre `row.horaire && row.theme`**
+- `renderCtaBlock(publicUrl)` — bouton bulletproof
+- `renderFooterBlock(metadata)` — bandeau `#1A2B4A`
 
-### Phase 5 — Si échec persiste après Commit 1+2 (commits 3-7 séparés, PR groupé)
-Stop dès que résolu :
-- **Commit 3** — Logging structuré JSON-line + header `X-Request-Id`
-- **Commit 4** — CORS : `Mcp-Session-Id` dans `Allow-Headers` + `Expose-Headers`
-- **Commit 5** — Conformité `initialize` (`protocolVersion: "2024-11-05"`, capabilities, serverInfo)
-- **Commit 6** — Normalisation tous schemas tools/list (descriptions <1024 chars, draft-07)
-- **Commit 7** — Vérif `StreamableHttpTransport` mcp-lite ≥0.10
+**Logique d'ordre des sections** :
+1. Hero toujours en premier
+2. Construire un tableau ordonné des blocs : pour chaque entrée des `sections` triées par `order`, si `id === 'programme'` insérer le bloc programme (rendu depuis `modules.programme.rows`), sinon rendre la section HTML normale
+3. Si aucune section `id === 'programme'` n'existe mais `modules.programme.rows` est non vide → append en fin de liste avant CTA
+4. CTA puis footer
 
-Rollback granulaire garanti.
+**Document complet** : DOCTYPE + `<html lang="fr">` + `<head>` (charset, viewport, X-UA-Compatible, title) + `<body>` avec wrapper table 100% bgcolor `#F0EDE8` + container 600px bgcolor `#FFFFFF`.
 
-### Hors scope (tickets séparés)
-- Implémenter `get_solutions`
-- Migration OAuth2
+**Couleurs strictes** : `#1A2B4A`, `#D15A3E`, `#FAF9F7`, `#F0EDE8`, `#FFFFFF`.
+**Font stack** : `'Helvetica Neue', Arial, sans-serif`.
+**Aucun gradient, aucune classe CSS, aucune image externe.**
 
-### Livrables
-- Rapport diff Phase 1
-- Commits 1 + 2 mergés/déployés/validés
-- Curl + log Supabase prouvant `tool_name=list_transcriptions` namespace Cockpit
-- Commit 3 (suppression dure) planifié J+30
+### 4. `src/pages/admin/AdminInvitationEmailPreview.tsx`
+Page admin wrappée dans `AdminLayout`.
+
+Comportement :
+- `useParams<{ id: string }>()` pour récupérer l'ID
+- Fetch `generated_documents` par id via `supabase.from('generated_documents').select('*').eq('id', id).single()` (même pattern que `AdminInvitationPreview`)
+- Cast `content_json` en `InvitationContentJson`
+- Construit `publicUrl = \`https://iarche.fr/evenements/${slug}\``
+- Appelle `buildEmailHtml(content, { publicUrl })`
+- Layout :
+  - **Bandeau header** : titre "Preview HTML email — largeur 600px rendue dans iframe" + bouton `Button variant="outline"` "Retour à l'édition" → `navigate(\`/admin/invitation/${id}\`)` + bouton "Copier HTML" (bonus utile pour debug, copie via `navigator.clipboard`)
+  - **Iframe** : `<iframe srcDoc={html} style={{ width: '100%', minHeight: '800px', border: '1px solid #E5E5E5' }} title="Email preview" />`
+  - **Textarea read-only** : affiche le HTML brut, monospace, hauteur 400px
+
+États gérés : loading (LoadingState standard), error (EmptyState), not-found.
+
+## Modification minimale
+
+### 5. `src/App.tsx`
+Ajout d'un seul lazy import + route :
+```tsx
+const AdminInvitationEmailPreview = lazy(() => import('./pages/admin/AdminInvitationEmailPreview'));
+// …
+<Route path="/admin/invitation/:id/email-preview" element={<AdminInvitationEmailPreview />} />
+```
+Placée juste après la route `/admin/invitation/:id` existante. Aucune autre modification.
+
+## Garanties / contraintes respectées
+
+| Contrainte | Garantie |
+|---|---|
+| `AdminInvitationPreview.tsx` inchangé | Aucun touch |
+| BDD inchangée | Aucune migration |
+| Aucune edge function | N/A |
+| Aucune dépendance npm | DOMParser natif uniquement |
+| Couleurs IArche strictes | Constantes inline dans `buildEmailHtml.ts` |
+| 600px strict | `width="600" style="max-width:600px"` |
+| Pas de Manrope en email | Font stack système email-safe |
+| Pas de gradient | bgcolor solide `#1A2B4A` |
+| TypeScript strict | Types explicites, zéro `any` |
+
+## Test post-livraison
+
+URL testable : `/admin/invitation/742926a9-217c-4ed3-96f2-7751e7c86476/email-preview`
+
+Checklist de vérification fournie en réponse après build (13 points numérotés conformes à la demande).
+
+## Hors scope (étape suivante, à valider après ce livrable)
+
+- Bouton "Copier HTML email" sur `AdminInvitationPreview.tsx`
+- Push API Brevo
+- Variantes par template
+
