@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import QRCode from 'qrcode';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -8,6 +7,7 @@ import AdminLayout from '@/components/layouts/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Copy, Loader2, AlertCircle } from 'lucide-react';
 import { buildEmailHtml } from '@/lib/email/buildEmailHtml';
+import { generateAndUploadQr } from '@/lib/email/qrUpload';
 import type { InvitationContentJson } from '@/lib/email/types';
 
 interface InvitationDocRow {
@@ -26,7 +26,7 @@ const AdminInvitationEmailPreview = () => {
   const [doc, setDoc] = useState<InvitationDocRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [qrDataUrl, setQrDataUrl] = useState<string | undefined>(undefined);
+  const [qrImageUrl, setQrImageUrl] = useState<string | undefined>(undefined);
   const [qrLoading, setQrLoading] = useState(false);
 
   useEffect(() => {
@@ -61,21 +61,18 @@ const AdminInvitationEmailPreview = () => {
     return `https://iarche.fr/evenements/${doc.slug || ''}`;
   }, [doc]);
 
-  // Génération QR code asynchrone à partir de l'URL publique
+  // Génération + upload du QR code dans Supabase Storage (URL publique pour Brevo)
   useEffect(() => {
-    if (!publicUrl) return;
+    if (!doc?.id || !publicUrl) return;
     let cancelled = false;
     setQrLoading(true);
-    QRCode.toDataURL(publicUrl, {
-      width: 280,
-      margin: 1,
-      color: { dark: '#1A2B4A', light: '#FFFFFF' },
-    })
+    generateAndUploadQr(doc.id, publicUrl)
       .then((url) => {
-        if (!cancelled) setQrDataUrl(url);
+        if (!cancelled) setQrImageUrl(url);
       })
-      .catch(() => {
-        if (!cancelled) setQrDataUrl(undefined);
+      .catch((err) => {
+        console.error('QR generation/upload failed:', err);
+        if (!cancelled) setQrImageUrl(undefined);
       })
       .finally(() => {
         if (!cancelled) setQrLoading(false);
@@ -83,13 +80,13 @@ const AdminInvitationEmailPreview = () => {
     return () => {
       cancelled = true;
     };
-  }, [publicUrl]);
+  }, [doc?.id, publicUrl]);
 
   const html = useMemo(() => {
     if (!doc) return '';
     const content = (doc.content_json || { metadata: {}, sections: [] }) as InvitationContentJson;
-    return buildEmailHtml(content, { publicUrl, qrCodeDataUrl: qrDataUrl });
-  }, [doc, publicUrl, qrDataUrl]);
+    return buildEmailHtml(content, { publicUrl, qrCodeUrl: qrImageUrl });
+  }, [doc, publicUrl, qrImageUrl]);
 
   const handleCopy = async () => {
     try {
