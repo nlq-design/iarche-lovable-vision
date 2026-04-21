@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useWorkspaceId } from '@/contexts/WorkspaceContext';
 
 const QUERY_KEY = 'cockpit-voice-transcriptions';
 const DEFAULT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000001';
@@ -166,10 +167,12 @@ export const TRANSCRIPTION_STATUSES = [
 ];
 
 export function useCockpitVoiceTranscriptions(
-  workspaceId: string = DEFAULT_WORKSPACE_ID,
+  workspaceIdOverride?: string,
   entityType?: 'lead' | 'project' | 'solution',
   entityId?: string
 ) {
+  const ctxWorkspaceId = useWorkspaceId();
+  const workspaceId = workspaceIdOverride ?? ctxWorkspaceId ?? DEFAULT_WORKSPACE_ID;
   const queryClient = useQueryClient();
 
   // Fetch transcriptions

@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { handleAIError } from '@/lib/ai-error-handler';
 import { toast as sonnerToast } from 'sonner';
+import { useWorkspaceId } from '@/contexts/WorkspaceContext';
 
 export interface IntelligenceAction {
   action: string;
@@ -83,7 +84,9 @@ export interface IntelligenceResult {
 
 const DEFAULT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000001';
 
-export function useCockpitIntelligence(workspaceId: string = DEFAULT_WORKSPACE_ID) {
+export function useCockpitIntelligence(workspaceIdOverride?: string) {
+  const ctxWorkspaceId = useWorkspaceId();
+  const workspaceId = workspaceIdOverride ?? ctxWorkspaceId ?? DEFAULT_WORKSPACE_ID;
   const queryClient = useQueryClient();
 
   // Step 1: Read today's cached brief from DB (instant, no LLM)
