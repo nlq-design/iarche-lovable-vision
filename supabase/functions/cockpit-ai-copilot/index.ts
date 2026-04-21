@@ -43,6 +43,8 @@ serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const isServiceRole = token === serviceRoleKey;
 
+    let authenticatedUserId: string | null = null;
+
     if (!isServiceRole) {
       const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
       const userClient = createClient(Deno.env.get("SUPABASE_URL")!, anonKey, {
@@ -55,6 +57,7 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+      authenticatedUserId = user.id;
     }
 
     const body = await req.json();
@@ -65,6 +68,32 @@ serve(async (req) => {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // MULTI-TENANT GUARD — valide que workspaceId appartient au user JWT
+    // Service-role bypass préservé (CRON / triggers internes)
+    // ═══════════════════════════════════════════════════════════════
+    if (!isServiceRole && workspaceId && authenticatedUserId) {
+      const { data: canAccess, error: rpcError } = await supabase.rpc(
+        "can_access_entity_workspace",
+        { p_workspace_id: workspaceId, p_user_id: authenticatedUserId }
+      );
+
+      if (rpcError || !canAccess) {
+        console.warn(`[${FUNCTION_NAME}] cross-tenant blocked`, {
+          user_id: authenticatedUserId,
+          requested_workspace: workspaceId,
+          rpc_error: rpcError?.message ?? null,
+        });
+        return new Response(
+          JSON.stringify({ error: "Accès refusé à ce workspace" }),
+          {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
     }
 
     let result: unknown;
