@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { useWorkspaceId } from '@/contexts/WorkspaceContext';
 
 const DEFAULT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000001';
 
@@ -28,8 +29,10 @@ export type OwnerProfileInput = {
 
 const QUERY_KEY = ['owner-profile'];
 
-export function useOwnerProfile(workspaceId: string = DEFAULT_WORKSPACE_ID) {
+export function useOwnerProfile(workspaceIdOverride?: string) {
   const { user } = useAuth();
+  const ctxWorkspaceId = useWorkspaceId();
+  const workspaceId = workspaceIdOverride ?? ctxWorkspaceId ?? DEFAULT_WORKSPACE_ID;
   const queryClient = useQueryClient();
 
   const { data: ownerProfile, isLoading } = useQuery({
