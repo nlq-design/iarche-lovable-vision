@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useWorkspaceId } from "@/contexts/WorkspaceContext";
+import { DEFAULT_WORKSPACE_ID } from "@/lib/constants/workspace";
 
 export interface UploadedFile {
   id: string;
@@ -87,6 +89,8 @@ export function useCockpitUploads(filters?: {
   category?: string;
 }) {
   const queryClient = useQueryClient();
+  const ctxWorkspaceId = useWorkspaceId();
+  const workspaceId = ctxWorkspaceId ?? DEFAULT_WORKSPACE_ID;
 
   // Fetch uploaded files
   const { data: uploads, isLoading, error, refetch } = useQuery({
@@ -210,7 +214,7 @@ export function useCockpitUploads(filters?: {
       const { data: record, error: insertError } = await supabase
         .from('uploaded_files')
         .insert({
-          workspace_id: '00000000-0000-0000-0000-000000000001', // Default workspace
+          workspace_id: workspaceId,
           original_filename: file.name,
           file_type: fileType,
           mime_type: file.type,
@@ -277,7 +281,7 @@ export function useCockpitUploads(filters?: {
       const { data: record, error } = await supabase
         .from('uploaded_files')
         .insert({
-          workspace_id: '00000000-0000-0000-0000-000000000001', // Default workspace
+          workspace_id: workspaceId,
           original_filename: filename || `texte_${Date.now()}.txt`,
           file_type: 'pasted_text',
           mime_type: 'text/plain',

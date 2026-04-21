@@ -9,6 +9,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useCockpitTasks, useCockpitLeads, useCockpitOpportunities, useCockpitProjects, useCockpitBookings } from "@/hooks/cockpit";
 import { Loader2, Calendar, Bell } from "lucide-react";
 import { toast } from "sonner";
+import { useWorkspaceId } from "@/contexts/WorkspaceContext";
+import { DEFAULT_WORKSPACE_ID } from "@/lib/constants/workspace";
 
 interface CreateTaskDialogProps {
   open: boolean;
@@ -42,7 +44,8 @@ export const CreateTaskDialog = ({ open, onOpenChange, defaultEntityType, defaul
   const { opportunities = [] } = useCockpitOpportunities();
   const { projects = [] } = useCockpitProjects();
   const { createBooking } = useCockpitBookings();
-  
+  const ctxWorkspaceId = useWorkspaceId();
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -101,7 +104,7 @@ export const CreateTaskDialog = ({ open, onOpenChange, defaultEntityType, defaul
         priority: formData.priority,
         due_date: formData.due_date || undefined,
         due_time: formData.due_time || undefined,
-        workspace_id: "00000000-0000-0000-0000-000000000001",
+        workspace_id: ctxWorkspaceId ?? DEFAULT_WORKSPACE_ID,
       };
 
       // Set the correct FK based on entity type

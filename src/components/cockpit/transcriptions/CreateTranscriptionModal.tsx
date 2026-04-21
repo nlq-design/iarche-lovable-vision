@@ -30,6 +30,8 @@ import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { useWorkspaceId } from '@/contexts/WorkspaceContext';
+import { DEFAULT_WORKSPACE_ID } from '@/lib/constants/workspace';
 // Audio chunking no longer needed client-side — transcription-worker handles it server-side
 
 interface CreateTranscriptionModalProps {
@@ -43,7 +45,6 @@ interface CreateTranscriptionModalProps {
   defaultFiles?: File[];
 }
 
-const DEFAULT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000001';
 const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB — server handles large files via signed URL
 
 export function CreateTranscriptionModal({
@@ -99,6 +100,8 @@ export function CreateTranscriptionModal({
   const meetingNotesResult = useCockpitMeetingNotes();
   const meetingNotes = meetingNotesResult?.meetingNotes ?? [];
   const { ownerProfile } = useOwnerProfile();
+  const ctxWorkspaceId = useWorkspaceId();
+  const workspaceId = ctxWorkspaceId ?? DEFAULT_WORKSPACE_ID;
 
   // Auto-add owner as expected participant when modal opens
   useEffect(() => {
@@ -315,7 +318,7 @@ export function CreateTranscriptionModal({
             ? audioBlob.name.split('.').pop() || 'm4a'
             : 'webm';
           const fileName = `${crypto.randomUUID()}.${fileExt}`;
-          const storagePath = `${DEFAULT_WORKSPACE_ID}/${userId}/${fileName}`;
+          const storagePath = `${workspaceId}/${userId}/${fileName}`;
 
           // Get audio metadata first to determine if chunking is needed
           const audioMeta = await getAudioMetadata(audioBlob);

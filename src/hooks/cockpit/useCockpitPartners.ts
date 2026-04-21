@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useWorkspaceId } from "@/contexts/WorkspaceContext";
+import { DEFAULT_WORKSPACE_ID } from "@/lib/constants/workspace";
 
 export type PartnerType = "client" | "partenaire" | "affilie" | "apporteur_affaires";
 export type PartnerSubtype = "expert_ia" | "independant" | "apport_affaires";
@@ -61,6 +63,7 @@ export const PARTNER_SUBTYPES: { value: PartnerSubtype; label: string }[] = [
 export function useCockpitPartners() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const ctxWorkspaceId = useWorkspaceId();
 
   const { data: partners, isLoading, error, refetch } = useQuery({
     queryKey: ["cockpit-partners"],
@@ -100,7 +103,7 @@ export function useCockpitPartners() {
         .from("partners")
         .insert({
           ...partner,
-          workspace_id: "00000000-0000-0000-0000-000000000001",
+          workspace_id: ctxWorkspaceId ?? DEFAULT_WORKSPACE_ID,
         })
         .select()
         .single();

@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useWorkspaceId } from '@/contexts/WorkspaceContext';
+import { DEFAULT_WORKSPACE_ID } from '@/lib/constants/workspace';
 
 interface FeedbackParams {
   entityType: string;
@@ -13,13 +15,16 @@ interface FeedbackParams {
   aiMetadata?: Record<string, unknown>;
 }
 
-export function useAIFeedback(workspaceId?: string) {
+export function useAIFeedback(workspaceIdOverride?: string) {
+  const ctxWorkspaceId = useWorkspaceId();
+  const workspaceId = workspaceIdOverride ?? ctxWorkspaceId ?? DEFAULT_WORKSPACE_ID;
+
   const submitFeedback = useMutation({
     mutationFn: async (params: FeedbackParams) => {
       const { data: { user } } = await supabase.auth.getUser();
       
       const { error } = await supabase.from('ai_feedback').insert({
-        workspace_id: workspaceId || '00000000-0000-0000-0000-000000000001',
+        workspace_id: workspaceId,
         user_id: user?.id,
         entity_type: params.entityType,
         entity_id: params.entityId,

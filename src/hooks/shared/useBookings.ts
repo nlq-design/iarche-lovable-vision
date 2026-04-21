@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useWorkspaceId } from "@/contexts/WorkspaceContext";
+import { DEFAULT_WORKSPACE_ID } from "@/lib/constants/workspace";
 import type { Database } from "@/integrations/supabase/types";
 
 type Booking = Database["public"]["Tables"]["bookings"]["Row"] & {
@@ -18,6 +20,7 @@ export const BOOKING_QUERY_KEY = "bookings";
 export const useBookings = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const ctxWorkspaceId = useWorkspaceId();
 
   // Fetch all bookings
   const { data: bookings = [], isLoading, error, refetch } = useQuery({
@@ -36,9 +39,6 @@ export const useBookings = () => {
     },
   });
 
-  // Default workspace ID (IArche Interne) - Phase 1.5 multi-tenant
-  const DEFAULT_WORKSPACE_ID = "00000000-0000-0000-0000-000000000001";
-
   // Create booking
   const createBooking = useMutation({
     mutationFn: async (booking: BookingInsert) => {
@@ -46,7 +46,7 @@ export const useBookings = () => {
         .from("bookings")
         .insert({
           ...booking,
-          workspace_id: booking.workspace_id || DEFAULT_WORKSPACE_ID,
+          workspace_id: booking.workspace_id || ctxWorkspaceId || DEFAULT_WORKSPACE_ID,
         })
         .select()
         .single();

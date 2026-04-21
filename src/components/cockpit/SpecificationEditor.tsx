@@ -61,6 +61,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCockpitSpecifications, SPECIFICATION_STATUSES } from "@/hooks/cockpit/useCockpitSpecifications";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useWorkspaceId } from "@/contexts/WorkspaceContext";
+import { DEFAULT_WORKSPACE_ID } from "@/lib/constants/workspace";
 import type { Database } from "@/integrations/supabase/types";
 
 type Specification = Database["public"]["Tables"]["specifications"]["Row"];
@@ -93,6 +95,7 @@ const getFileIcon = (fileType: string | null) => {
 export const SpecificationEditor = ({ projectId, specifications }: SpecificationEditorProps) => {
   const { user } = useAuth();
   const { createSpecification, updateSpecification, approveSpecification, deleteSpecification } = useCockpitSpecifications();
+  const ctxWorkspaceId = useWorkspaceId();
 
   // Dialog states
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -155,7 +158,7 @@ export const SpecificationEditor = ({ projectId, specifications }: Specification
         content: newContent ? { text: newContent } : {},
         status: "draft",
         version: "1.0",
-        workspace_id: "00000000-0000-0000-0000-000000000001",
+        workspace_id: ctxWorkspaceId ?? DEFAULT_WORKSPACE_ID,
         tags: newTags.length > 0 ? newTags : null,
       };
 

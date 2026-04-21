@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useWorkspaceId } from "@/contexts/WorkspaceContext";
+import { DEFAULT_WORKSPACE_ID } from "@/lib/constants/workspace";
 
 export interface LeadContact {
   id: string;
@@ -18,6 +20,7 @@ export interface LeadContact {
 export function useCockpitLeadContacts(leadId: string | undefined) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const ctxWorkspaceId = useWorkspaceId();
 
   const { data: contacts, isLoading, error, refetch } = useQuery({
     queryKey: ["lead-contacts", leadId],
@@ -36,9 +39,6 @@ export function useCockpitLeadContacts(leadId: string | undefined) {
     enabled: !!leadId,
   });
 
-  // Default workspace ID (IArche Interne) - Phase 1.5 multi-tenant
-  const DEFAULT_WORKSPACE_ID = "00000000-0000-0000-0000-000000000001";
-
   const createContact = useMutation({
     mutationFn: async (contact: Omit<LeadContact, "id" | "created_at" | "updated_at" | "lead_id">) => {
       const { data, error } = await supabase
@@ -46,7 +46,7 @@ export function useCockpitLeadContacts(leadId: string | undefined) {
         .insert({
           ...contact,
           lead_id: leadId,
-          workspace_id: DEFAULT_WORKSPACE_ID,
+          workspace_id: ctxWorkspaceId ?? DEFAULT_WORKSPACE_ID,
         })
         .select()
         .single();
