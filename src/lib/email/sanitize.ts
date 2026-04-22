@@ -87,8 +87,12 @@ function escapeAttr(v: string): string {
  * Sérialise un nœud DOM en HTML email-safe en appliquant la whitelist.
  * Les tags hors whitelist sont supprimés mais leurs enfants sont conservés.
  * Les `<div>` sont convertis en `<p>`.
+ *
+ * `defaultLinkHref` : si fourni, les `<a>` sans href valide reçoivent
+ * automatiquement ce lien (utile pour rendre les CTA inline cliquables
+ * vers la page publique de l'événement).
  */
-function serializeNode(node: Node): string {
+function serializeNode(node: Node, defaultLinkHref?: string): string {
   if (node.nodeType === Node.TEXT_NODE) {
     const text = node.nodeValue ?? '';
     return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
