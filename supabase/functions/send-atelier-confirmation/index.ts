@@ -160,7 +160,8 @@ Deno.serve(async (req) => {
       `;
     }
 
-    const emailSubject = subject(safeAtelierTitle);
+    // Le subject email n'est pas du HTML : utiliser le titre brut (pas escapeHtml)
+    const emailSubject = subject(atelier_title);
 
     // Récupérer le template depuis la BDD
     const { data: emailConfig } = await supabaseAdmin
