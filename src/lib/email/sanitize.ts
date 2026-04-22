@@ -87,8 +87,12 @@ function escapeAttr(v: string): string {
  * Sérialise un nœud DOM en HTML email-safe en appliquant la whitelist.
  * Les tags hors whitelist sont supprimés mais leurs enfants sont conservés.
  * Les `<div>` sont convertis en `<p>`.
+ *
+ * `defaultLinkHref` : si fourni, les `<a>` sans href valide reçoivent
+ * automatiquement ce lien (utile pour rendre les CTA inline cliquables
+ * vers la page publique de l'événement).
  */
-function serializeNode(node: Node): string {
+function serializeNode(node: Node, defaultLinkHref?: string): string {
   if (node.nodeType === Node.TEXT_NODE) {
     const text = node.nodeValue ?? '';
     return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -109,7 +113,7 @@ function serializeNode(node: Node): string {
   // Sérialiser les enfants
   let inner = '';
   el.childNodes.forEach(child => {
-    inner += serializeNode(child);
+    inner += serializeNode(child, defaultLinkHref);
   });
 
   // Tag hors whitelist : supprimer le tag, garder le contenu
@@ -132,11 +136,14 @@ function serializeNode(node: Node): string {
   const style = mergedStyle(tagName, userStyle);
   if (style) attrs.push(`style="${escapeAttr(style)}"`);
 
-  // <a href> : conserver href, forcer target/rel
+  // <a href> : conserver href, forcer target/rel ; fallback defaultLinkHref si href absent/invalide
   if (tagName === 'A') {
-    const href = el.getAttribute('href');
-    if (href && /^(https?:|mailto:|tel:)/i.test(href)) {
-      attrs.push(`href="${escapeAttr(href)}"`);
+    const rawHref = el.getAttribute('href');
+    const validHref =
+      rawHref && /^(https?:|mailto:|tel:)/i.test(rawHref) ? rawHref : undefined;
+    const finalHref = validHref ?? defaultLinkHref;
+    if (finalHref) {
+      attrs.push(`href="${escapeAttr(finalHref)}"`);
       attrs.push('target="_blank"');
       attrs.push('rel="noopener"');
     }
@@ -150,7 +157,7 @@ function serializeNode(node: Node): string {
  * Sanitize un fragment HTML pour usage email-safe.
  * Whitelist : p, br, strong, b, em, i, u, ul, ol, li, a, span.
  */
-export function sanitizeSectionHtml(html: string): string {
+export function sanitizeSectionHtml(html: string, defaultLinkHref?: string): string {
   if (!html || typeof html !== 'string') return '';
 
   // DOMParser natif (browser-only — toutes les routes admin sont client-side)
@@ -167,7 +174,7 @@ export function sanitizeSectionHtml(html: string): string {
 
   let out = '';
   root.childNodes.forEach(child => {
-    out += serializeNode(child);
+    out += serializeNode(child, defaultLinkHref);
   });
   return out;
 }

@@ -128,9 +128,9 @@ function renderHeroBlock(metadata: InvitationMetadata): string {
   </tr>`;
 }
 
-function renderSectionBlock(section: InvitationSection): string {
+function renderSectionBlock(section: InvitationSection, defaultLinkHref?: string): string {
   const title = escapeHtml(section.title);
-  const content = sanitizeSectionHtml(section.content || '');
+  const content = sanitizeSectionHtml(section.content || '', defaultLinkHref);
   if (!title && !content) return '';
 
   return `
@@ -268,7 +268,7 @@ export function buildEmailHtml(
       const block = renderProgrammeBlock(programmeRows);
       if (block) middleBlocks.push(block);
     } else {
-      const block = renderSectionBlock(section);
+      const block = renderSectionBlock(section, options.publicUrl);
       if (block) middleBlocks.push(block);
     }
   }
