@@ -75,6 +75,8 @@ const getDefaultEmailContent = (data: UserConfirmationRequest) => {
   const safeSourceContext = escapeHtml(data.source_context);
   const safeLivreBlanctitle = escapeHtml(data.livre_blanc_title);
   const safeFileUrl = validateFileUrl(data.file_url);
+  // Subjects email = texte brut (pas HTML), ne pas utiliser escapeHtml
+  const rawSourceContext = data.source_context;
 
   const header = (title: string) => getEmailHeader(title);
   const footer = getEmailFooter();
