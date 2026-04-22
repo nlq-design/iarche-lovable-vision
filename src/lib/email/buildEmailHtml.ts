@@ -128,9 +128,9 @@ function renderHeroBlock(metadata: InvitationMetadata): string {
   </tr>`;
 }
 
-function renderSectionBlock(section: InvitationSection): string {
+function renderSectionBlock(section: InvitationSection, defaultLinkHref?: string): string {
   const title = escapeHtml(section.title);
-  const content = sanitizeSectionHtml(section.content || '');
+  const content = sanitizeSectionHtml(section.content || '', defaultLinkHref);
   if (!title && !content) return '';
 
   return `
