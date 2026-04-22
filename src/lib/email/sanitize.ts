@@ -157,7 +157,7 @@ function serializeNode(node: Node, defaultLinkHref?: string): string {
  * Sanitize un fragment HTML pour usage email-safe.
  * Whitelist : p, br, strong, b, em, i, u, ul, ol, li, a, span.
  */
-export function sanitizeSectionHtml(html: string): string {
+export function sanitizeSectionHtml(html: string, defaultLinkHref?: string): string {
   if (!html || typeof html !== 'string') return '';
 
   // DOMParser natif (browser-only — toutes les routes admin sont client-side)
@@ -174,7 +174,7 @@ export function sanitizeSectionHtml(html: string): string {
 
   let out = '';
   root.childNodes.forEach(child => {
-    out += serializeNode(child);
+    out += serializeNode(child, defaultLinkHref);
   });
   return out;
 }
