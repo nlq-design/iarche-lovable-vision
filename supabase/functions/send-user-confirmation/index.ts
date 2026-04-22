@@ -99,7 +99,7 @@ const getDefaultEmailContent = (data: UserConfirmationRequest) => {
 
     case 'solution-contact':
       return {
-        subject: `✅ Demande pour ${safeSourceContext || 'nos solutions'} · IArche`,
+        subject: `✅ Demande pour ${rawSourceContext || 'nos solutions'} · IArche`,
         html: wrapEmailContent(
           header('Demande reçue !'),
           `
