@@ -75,6 +75,8 @@ const getDefaultEmailContent = (data: UserConfirmationRequest) => {
   const safeSourceContext = escapeHtml(data.source_context);
   const safeLivreBlanctitle = escapeHtml(data.livre_blanc_title);
   const safeFileUrl = validateFileUrl(data.file_url);
+  // Subjects email = texte brut (pas HTML), ne pas utiliser escapeHtml
+  const rawSourceContext = data.source_context;
 
   const header = (title: string) => getEmailHeader(title);
   const footer = getEmailFooter();
@@ -97,7 +99,7 @@ const getDefaultEmailContent = (data: UserConfirmationRequest) => {
 
     case 'solution-contact':
       return {
-        subject: `✅ Demande pour ${safeSourceContext || 'nos solutions'} · IArche`,
+        subject: `✅ Demande pour ${rawSourceContext || 'nos solutions'} · IArche`,
         html: wrapEmailContent(
           header('Demande reçue !'),
           `
@@ -167,7 +169,7 @@ const getDefaultEmailContent = (data: UserConfirmationRequest) => {
 
     case 'atelier-webinaire':
       return {
-        subject: `🎓 Inscription confirmée : ${safeSourceContext || 'Atelier IArche'}`,
+        subject: `🎓 Inscription confirmée : ${rawSourceContext || 'Atelier IArche'}`,
         html: wrapEmailContent(
           header('Inscription confirmée !'),
           `
@@ -182,7 +184,7 @@ const getDefaultEmailContent = (data: UserConfirmationRequest) => {
 
     case 'booking':
       return {
-        subject: `✅ Rendez-vous confirmé : ${safeSourceContext || 'IArche'}`,
+        subject: `✅ Rendez-vous confirmé : ${rawSourceContext || 'IArche'}`,
         html: wrapEmailContent(
           header('Rendez-vous confirmé !'),
           `
