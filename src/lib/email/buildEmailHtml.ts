@@ -233,15 +233,11 @@ function renderCtaBlock(publicUrl: string): string {
   </tr>`;
 }
 
-function renderFooterBlock(metadata: InvitationMetadata): string {
-  const footerText = escapeHtml(
-    metadata.footerText || 'IArche — Intelligence Artificielle au service des entreprises',
-  );
+function renderFooterBlock(_metadata: InvitationMetadata): string {
   return `
   <tr>
     <td bgcolor="${COLORS.bleuNuit}" align="center" style="padding:24px 30px; background-color:${COLORS.bleuNuit};">
       <img src="${escapeAttr(EMAIL_ASSETS.logo)}" alt="IArche" height="40" style="display:block; height:40px; width:auto; margin:0 auto 12px auto; border:0; outline:none; text-decoration:none;" />
-      <p style="margin:0 0 8px 0; color:${COLORS.blancCasse}; font-size:12px; line-height:1.6; font-family:${FONT_STACK};">${footerText}</p>
       <p style="margin:0; color:${COLORS.blancCasse}; font-size:12px; font-family:${FONT_STACK};">
         <a href="https://iarche.fr" style="color:${COLORS.terracotta}; text-decoration:none;">iarche.fr</a>
         &nbsp;·&nbsp; L'IA se construit avec vous
