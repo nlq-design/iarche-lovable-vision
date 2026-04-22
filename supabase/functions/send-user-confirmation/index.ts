@@ -184,7 +184,7 @@ const getDefaultEmailContent = (data: UserConfirmationRequest) => {
 
     case 'booking':
       return {
-        subject: `✅ Rendez-vous confirmé : ${safeSourceContext || 'IArche'}`,
+        subject: `✅ Rendez-vous confirmé : ${rawSourceContext || 'IArche'}`,
         html: wrapEmailContent(
           header('Rendez-vous confirmé !'),
           `
