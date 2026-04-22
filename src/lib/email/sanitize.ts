@@ -113,7 +113,7 @@ function serializeNode(node: Node, defaultLinkHref?: string): string {
   // Sérialiser les enfants
   let inner = '';
   el.childNodes.forEach(child => {
-    inner += serializeNode(child);
+    inner += serializeNode(child, defaultLinkHref);
   });
 
   // Tag hors whitelist : supprimer le tag, garder le contenu
@@ -136,11 +136,14 @@ function serializeNode(node: Node, defaultLinkHref?: string): string {
   const style = mergedStyle(tagName, userStyle);
   if (style) attrs.push(`style="${escapeAttr(style)}"`);
 
-  // <a href> : conserver href, forcer target/rel
+  // <a href> : conserver href, forcer target/rel ; fallback defaultLinkHref si href absent/invalide
   if (tagName === 'A') {
-    const href = el.getAttribute('href');
-    if (href && /^(https?:|mailto:|tel:)/i.test(href)) {
-      attrs.push(`href="${escapeAttr(href)}"`);
+    const rawHref = el.getAttribute('href');
+    const validHref =
+      rawHref && /^(https?:|mailto:|tel:)/i.test(rawHref) ? rawHref : undefined;
+    const finalHref = validHref ?? defaultLinkHref;
+    if (finalHref) {
+      attrs.push(`href="${escapeAttr(finalHref)}"`);
       attrs.push('target="_blank"');
       attrs.push('rel="noopener"');
     }
