@@ -169,7 +169,7 @@ const getDefaultEmailContent = (data: UserConfirmationRequest) => {
 
     case 'atelier-webinaire':
       return {
-        subject: `🎓 Inscription confirmée : ${safeSourceContext || 'Atelier IArche'}`,
+        subject: `🎓 Inscription confirmée : ${rawSourceContext || 'Atelier IArche'}`,
         html: wrapEmailContent(
           header('Inscription confirmée !'),
           `
