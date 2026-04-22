@@ -268,7 +268,7 @@ export function buildEmailHtml(
       const block = renderProgrammeBlock(programmeRows);
       if (block) middleBlocks.push(block);
     } else {
-      const block = renderSectionBlock(section);
+      const block = renderSectionBlock(section, options.publicUrl);
       if (block) middleBlocks.push(block);
     }
   }
