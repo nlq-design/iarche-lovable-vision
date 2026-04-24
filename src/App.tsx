@@ -134,6 +134,7 @@ const ViviersCampaigns = lazy(() => import("./pages/viviers/ViviersCampaigns"));
 const VivierCampaignDetail = lazy(() => import("./pages/viviers/VivierCampaignDetail"));
 const ViviersSettings = lazy(() => import("./pages/viviers/ViviersSettings"));
 const ViviersListDetail = lazy(() => import("./pages/viviers/ViviersListDetail"));
+const VivierGraph = lazy(() => import("./pages/viviers/VivierGraph"));
 
 // Espace Partenaire (External Partner Portal)
 const ProtectedPartnerRoute = lazy(() => import("./components/partner/ProtectedPartnerRoute"));
@@ -809,6 +810,11 @@ const App = () => (
           <Route path="/viviers/settings" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-orange-500" /></div>}>
               <ProtectedVivierRoute><ViviersSettings /></ProtectedVivierRoute>
+            </Suspense>
+          } />
+          <Route path="/viviers/graphe" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-orange-500" /></div>}>
+              <ProtectedVivierRoute><VivierGraph /></ProtectedVivierRoute>
             </Suspense>
           } />
           

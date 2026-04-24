@@ -6979,6 +6979,15 @@ export type Database = {
           usage_percent_tokens: number
         }[]
       }
+      get_crm_graph: {
+        Args: {
+          p_depth?: number
+          p_entity_id: string
+          p_entity_type: string
+          p_workspace_id?: string
+        }
+        Returns: Json
+      }
       get_current_partner_id: { Args: never; Returns: string }
       get_document_workspace_id: {
         Args: { p_document_id: string }
