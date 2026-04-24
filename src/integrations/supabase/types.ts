@@ -2661,6 +2661,39 @@ export type Database = {
           },
         ]
       }
+      invite_codes: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          email_restriction: string | null
+          expires_at: string | null
+          id: string
+          max_uses: number
+          uses_count: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          email_restriction?: string | null
+          expires_at?: string | null
+          id?: string
+          max_uses?: number
+          uses_count?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          email_restriction?: string | null
+          expires_at?: string | null
+          id?: string
+          max_uses?: number
+          uses_count?: number
+        }
+        Relationships: []
+      }
       keyword_alias_suggestions: {
         Row: {
           confidence_score: number | null
@@ -4236,6 +4269,27 @@ export type Database = {
           stripe_price_id?: string | null
           tier?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          onboarded_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          onboarded_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          onboarded_at?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
