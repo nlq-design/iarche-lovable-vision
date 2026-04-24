@@ -241,7 +241,7 @@ function EmptyStatePicker() {
     queryFn: async () => {
       const { data } = await supabase
         .from('partners')
-        .select('id, full_name, company_name')
+        .select('id, name, company')
         .eq('workspace_id', workspaceId)
         .order('updated_at', { ascending: false })
         .limit(5);
@@ -324,7 +324,7 @@ function EmptyStatePicker() {
                   onClick={() => pick('partner', p.id)}
                   className="w-full text-left px-2 py-1.5 rounded text-sm hover:bg-muted transition-colors truncate"
                 >
-                  {p.company_name || p.full_name}
+                  {p.company || p.name}
                 </button>
               ))
             ) : (
