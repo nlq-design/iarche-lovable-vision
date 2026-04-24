@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Loader2, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ interface ProtectedAdminRouteProps {
 const ProtectedAdminRoute = ({ children }: ProtectedAdminRouteProps) => {
   const { user, isAdmin, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isPartner, setIsPartner] = useState<boolean | null>(null);
   const [checkingPartner, setCheckingPartner] = useState(false);
 
@@ -36,12 +37,12 @@ const ProtectedAdminRoute = ({ children }: ProtectedAdminRouteProps) => {
     checkPartnerRole();
   }, [user, isAdmin, loading]);
 
-  // Only redirect unauthenticated users to the admin login.
+  // Redirect unauthenticated users to the public login page.
   useEffect(() => {
     if (!loading && !user) {
-      navigate('/admin', { replace: true });
+      navigate('/login', { replace: true, state: { from: location } });
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, location]);
 
   if (loading || checkingPartner) {
     return (
