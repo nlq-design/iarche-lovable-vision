@@ -64,7 +64,7 @@ const ProtectedCockpitRoute = ({ children }: ProtectedCockpitRouteProps) => {
 
   // Not logged in
   if (!user) {
-    return <Navigate to="/admin" state={{ from: location }} replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   // Access denied - No cockpit role

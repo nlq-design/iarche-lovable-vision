@@ -136,6 +136,13 @@ const ViviersSettings = lazy(() => import("./pages/viviers/ViviersSettings"));
 const ViviersListDetail = lazy(() => import("./pages/viviers/ViviersListDetail"));
 const VivierGraph = lazy(() => import("./pages/viviers/VivierGraph"));
 
+// Auth public pages (M4)
+const Signup = lazy(() => import("./pages/auth/Signup"));
+const Login = lazy(() => import("./pages/auth/Login"));
+const AuthCallback = lazy(() => import("./pages/auth/AuthCallback"));
+const ResetPassword = lazy(() => import("./pages/auth/ResetPassword"));
+const Onboarding = lazy(() => import("./pages/auth/Onboarding"));
+
 // Espace Partenaire (External Partner Portal)
 const ProtectedPartnerRoute = lazy(() => import("./components/partner/ProtectedPartnerRoute"));
 const PartnerDashboard = lazy(() => import("./pages/partner/PartnerDashboard"));
@@ -276,7 +283,34 @@ const App = () => (
           <Route path="/conditions-generales" element={<ConditionsGenerales />} />
           <Route path="/confidentialite" element={<Confidentialite />} />
           <Route path="/charte-graphique" element={<CharteGraphique />} />
-          
+
+          {/* Auth public (M4) */}
+          <Route path="/signup" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <Signup />
+            </Suspense>
+          } />
+          <Route path="/login" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <Login />
+            </Suspense>
+          } />
+          <Route path="/auth/callback" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <AuthCallback />
+            </Suspense>
+          } />
+          <Route path="/reset-password" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ResetPassword />
+            </Suspense>
+          } />
+          <Route path="/onboarding" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <Onboarding />
+            </Suspense>
+          } />
+
           {/* Admin - Lazy loaded avec Suspense */}
           <Route path="/admin" element={<Admin />} />
           <Route path="/admin/dashboard" element={
