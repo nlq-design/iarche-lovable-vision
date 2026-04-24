@@ -3,8 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { useWorkspaceId } from '@/contexts/WorkspaceContext';
-
-const DEFAULT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000001';
+import { DEFAULT_WORKSPACE_ID } from '@/lib/constants/workspace';
 
 export interface OwnerProfile {
   id: string;

@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { handleAIError } from '@/lib/ai-error-handler';
 import { toast as sonnerToast } from 'sonner';
 import { useWorkspaceId } from '@/contexts/WorkspaceContext';
+import { DEFAULT_WORKSPACE_ID } from '@/lib/constants/workspace';
 
 export interface IntelligenceAction {
   action: string;
@@ -81,8 +82,6 @@ export interface IntelligenceResult {
   intelligence: IntelligencePayload;
   raw: IntelligenceRawData;
 }
-
-const DEFAULT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000001';
 
 export function useCockpitIntelligence(workspaceIdOverride?: string) {
   const ctxWorkspaceId = useWorkspaceId();
