@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { usePartnerAuth } from './usePartnerAuth';
 import { toast } from 'sonner';
+import { DEFAULT_WORKSPACE_ID } from '@/lib/constants/workspace';
 
 // Types pour les créations
 interface CreateLeadInput {
@@ -43,9 +44,6 @@ interface UpdateProjectInput {
 export function usePartnerMutations() {
   const { partnerId } = usePartnerAuth();
   const queryClient = useQueryClient();
-
-  // Default workspace ID (IArche Interne) - Phase 1.5 multi-tenant
-  const DEFAULT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000001';
 
   // Création de lead
   const createLead = useMutation({
@@ -139,7 +137,7 @@ export function usePartnerMutations() {
           start_date: input.start_date || null,
           target_end_date: input.target_end_date || null,
           budget_amount: input.budget_amount || null,
-          workspace_id: '00000000-0000-0000-0000-000000000001',
+          workspace_id: DEFAULT_WORKSPACE_ID,
           created_by_partner_id: partnerId,
         })
         .select('id')

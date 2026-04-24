@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
+import { useWorkspaceId } from '@/contexts/WorkspaceContext';
+import { DEFAULT_WORKSPACE_ID } from '@/lib/constants/workspace';
 
 type Task = Database['public']['Tables']['tasks']['Row'];
 type TaskInsert = Database['public']['Tables']['tasks']['Insert'];
@@ -14,10 +16,12 @@ const TASK_TYPES = ['follow_up', 'call', 'email', 'meeting', 'proposal', 'other'
 export function useCockpitTasks(workspaceId?: string, entityType?: string, entityId?: string) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const ctxWorkspaceId = useWorkspaceId();
+  const effectiveWorkspaceId = workspaceId ?? ctxWorkspaceId ?? DEFAULT_WORKSPACE_ID;
 
   // Fetch tasks — exclude harvested/cancelled, apply sensible limit
   const { data: tasks, isLoading, error, refetch } = useQuery({
-    queryKey: ['cockpit-tasks', workspaceId, entityType, entityId],
+    queryKey: ['cockpit-tasks', effectiveWorkspaceId, entityType, entityId],
     queryFn: async () => {
       let query = supabase
         .from('tasks')
@@ -27,13 +31,10 @@ export function useCockpitTasks(workspaceId?: string, entityType?: string, entit
           opportunities:opportunity_id (id, title),
           projects:project_id (id, name)
         `)
+        .eq('workspace_id', effectiveWorkspaceId)
         .not('status', 'in', '("harvested","cancelled")')
         .order('due_date', { ascending: true, nullsFirst: false })
         .order('priority', { ascending: false });
-
-      if (workspaceId) {
-        query = query.eq('workspace_id', workspaceId);
-      }
 
       if (entityType && entityId) {
         query = query.eq('entity_type', entityType).eq('entity_id', entityId);
@@ -53,21 +54,17 @@ export function useCockpitTasks(workspaceId?: string, entityType?: string, entit
     const today = new Date().toISOString().split('T')[0];
     
     return useQuery({
-      queryKey: ['cockpit-tasks', 'today', workspaceId],
+      queryKey: ['cockpit-tasks', 'today', effectiveWorkspaceId],
       queryFn: async () => {
-        let query = supabase
+        const { data, error } = await supabase
           .from('tasks')
           .select('*')
+          .eq('workspace_id', effectiveWorkspaceId)
           .eq('due_date', today)
           .neq('status', 'completed')
           .neq('status', 'cancelled')
           .order('due_time', { ascending: true, nullsFirst: false });
 
-        if (workspaceId) {
-          query = query.eq('workspace_id', workspaceId);
-        }
-
-        const { data, error } = await query;
         if (error) throw error;
         return data;
       },
@@ -81,21 +78,17 @@ export function useCockpitTasks(workspaceId?: string, entityType?: string, entit
     const today = new Date().toISOString().split('T')[0];
     
     return useQuery({
-      queryKey: ['cockpit-tasks', 'overdue', workspaceId],
+      queryKey: ['cockpit-tasks', 'overdue', effectiveWorkspaceId],
       queryFn: async () => {
-        let query = supabase
+        const { data, error } = await supabase
           .from('tasks')
           .select('*')
+          .eq('workspace_id', effectiveWorkspaceId)
           .lt('due_date', today)
           .neq('status', 'completed')
           .neq('status', 'cancelled')
           .order('due_date', { ascending: true });
 
-        if (workspaceId) {
-          query = query.eq('workspace_id', workspaceId);
-        }
-
-        const { data, error } = await query;
         if (error) throw error;
         return data;
       },

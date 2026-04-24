@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
+import { useWorkspaceId } from "@/contexts/WorkspaceContext";
+import { DEFAULT_WORKSPACE_ID } from "@/lib/constants/workspace";
 
 type Specification = Database["public"]["Tables"]["specifications"]["Row"];
 type SpecificationInsert = Database["public"]["Tables"]["specifications"]["Insert"];
@@ -11,23 +13,21 @@ export const SPECIFICATION_STATUSES = ["draft", "in_review", "approved", "archiv
 
 export const useCockpitSpecifications = (workspaceId?: string) => {
   const queryClient = useQueryClient();
+  const ctxWorkspaceId = useWorkspaceId();
+  const effectiveWorkspaceId = workspaceId ?? ctxWorkspaceId ?? DEFAULT_WORKSPACE_ID;
 
   const { data: specifications = [], isLoading, error, refetch } = useQuery({
-    queryKey: ["cockpit-specifications", workspaceId],
+    queryKey: ["cockpit-specifications", effectiveWorkspaceId],
     queryFn: async () => {
-      let query = supabase
+      const { data, error } = await supabase
         .from("specifications")
         .select(`
           *,
           project:projects(id, name)
         `)
+        .eq("workspace_id", effectiveWorkspaceId)
         .order("updated_at", { ascending: false });
       
-      if (workspaceId) {
-        query = query.eq("workspace_id", workspaceId);
-      }
-      
-      const { data, error } = await query;
       if (error) throw error;
       return data;
     },

@@ -1,8 +1,9 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { DEFAULT_WORKSPACE_ID } from '@/lib/constants/workspace';
 
-export const DEFAULT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000001';
+export { DEFAULT_WORKSPACE_ID } from '@/lib/constants/workspace';
 
 type WorkspaceRole = 'owner' | 'editor' | 'viewer';
 

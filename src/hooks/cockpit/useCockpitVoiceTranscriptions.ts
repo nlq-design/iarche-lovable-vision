@@ -2,9 +2,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useWorkspaceId } from '@/contexts/WorkspaceContext';
+import { DEFAULT_WORKSPACE_ID } from '@/lib/constants/workspace';
 
 const QUERY_KEY = 'cockpit-voice-transcriptions';
-const DEFAULT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000001';
 
 export interface VoiceTranscription {
   id: string;
