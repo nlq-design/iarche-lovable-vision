@@ -120,6 +120,9 @@ verify_jwt = true
 [functions.synthesize-entity-documents]
 verify_jwt = true
 
+[functions.validate-invite-code]
+verify_jwt = false
+
 [functions.transcribe-audio-chunk]
 verify_jwt = true
 
