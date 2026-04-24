@@ -19,7 +19,8 @@ import {
   Settings,
   Fish,
   Sparkles,
-  Target
+  Target,
+  Network
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import LogoArc from '@/components/ui/LogoArc';
@@ -49,6 +50,11 @@ const menuItems = [
     title: 'Campagnes',
     icon: Mail,
     href: '/viviers/campaigns',
+  },
+  {
+    title: 'Graphe relationnel',
+    icon: Network,
+    href: '/viviers/graphe',
   },
 ];
 
