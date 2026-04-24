@@ -136,6 +136,13 @@ const ViviersSettings = lazy(() => import("./pages/viviers/ViviersSettings"));
 const ViviersListDetail = lazy(() => import("./pages/viviers/ViviersListDetail"));
 const VivierGraph = lazy(() => import("./pages/viviers/VivierGraph"));
 
+// Auth public pages (M4)
+const Signup = lazy(() => import("./pages/auth/Signup"));
+const Login = lazy(() => import("./pages/auth/Login"));
+const AuthCallback = lazy(() => import("./pages/auth/AuthCallback"));
+const ResetPassword = lazy(() => import("./pages/auth/ResetPassword"));
+const Onboarding = lazy(() => import("./pages/auth/Onboarding"));
+
 // Espace Partenaire (External Partner Portal)
 const ProtectedPartnerRoute = lazy(() => import("./components/partner/ProtectedPartnerRoute"));
 const PartnerDashboard = lazy(() => import("./pages/partner/PartnerDashboard"));
