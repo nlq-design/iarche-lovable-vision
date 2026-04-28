@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, FileText, MessageCircle, Eye, Users, TrendingUp } from 'lucide-react';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { PublicationTrendChart, EngagementPieChart } from '@/components/admin/AnalyticsCharts';
+import M4ComplianceReportButton from '@/components/admin/M4ComplianceReportButton';
 import { format, subDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -486,6 +487,9 @@ const Admin = () => {
                   </CardContent>
                 </Card>
               </div>
+
+              {/* Rapport conformité M4 */}
+              <M4ComplianceReportButton />
 
               {/* Charts Row */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
