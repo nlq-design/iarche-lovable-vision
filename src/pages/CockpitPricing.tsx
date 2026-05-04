@@ -71,13 +71,16 @@ const CockpitPricing = () => {
       const { data, error: err } = await supabase
         .from('plans')
         .select('id, slug, name, tier, price_monthly_eur, features, limits, active')
-        .eq('active', true)
-        .order('price_monthly_eur', { ascending: true });
+        .eq('active', true);
       if (!mounted) return;
       if (err) {
         setError(err.message);
       } else {
-        setPlans((data ?? []) as Plan[]);
+        const order = ['starter', 'pro', 'enterprise'];
+        const sorted = ((data ?? []) as Plan[]).slice().sort(
+          (a, b) => order.indexOf(a.slug) - order.indexOf(b.slug),
+        );
+        setPlans(sorted);
       }
       setLoading(false);
     })();
