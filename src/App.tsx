@@ -815,6 +815,11 @@ const App = () => (
               <ProtectedCockpitRoute><CockpitMCPSettings /></ProtectedCockpitRoute>
             </Suspense>
           } />
+          <Route path="/cockpit/settings/billing" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedCockpitRoute><SettingsBilling /></ProtectedCockpitRoute>
+            </Suspense>
+          } />
 
           {/* Viviers (Cold Leads) */}
           <Route path="/viviers" element={
