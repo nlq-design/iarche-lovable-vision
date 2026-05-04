@@ -29,8 +29,12 @@ const reasonToMessage = (reason: string): string => {
   }
 };
 
+const ALLOWED_PLANS = ['starter', 'pro', 'enterprise'] as const;
+const PENDING_PLAN_KEY = 'iarche_pending_plan';
+
 const Signup = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { signUp, signInWithGoogle } = useAuth();
 
   const [email, setEmail] = useState('');
@@ -40,6 +44,18 @@ const Signup = () => {
   const [workspaceName, setWorkspaceName] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+
+  // Capture ?plan=… au montage si valide, persiste pour la fin de l'onboarding
+  useEffect(() => {
+    const plan = searchParams.get('plan');
+    if (plan && (ALLOWED_PLANS as readonly string[]).includes(plan)) {
+      try {
+        sessionStorage.setItem(PENDING_PLAN_KEY, plan);
+      } catch {
+        // sessionStorage indisponible, ignore silencieusement
+      }
+    }
+  }, [searchParams]);
 
   const validateClient = (): string | null => {
     if (!EMAIL_REGEX.test(email.trim())) return 'Email invalide';
