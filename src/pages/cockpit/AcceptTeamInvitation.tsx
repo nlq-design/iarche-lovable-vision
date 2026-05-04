@@ -16,25 +16,28 @@ export default function AcceptTeamInvitation() {
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [invitationEmail, setInvitationEmail] = useState<string | null>(null);
+  const [workspaceName, setWorkspaceName] = useState<string | null>(null);
+  const [invitationRole, setInvitationRole] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token) return;
-    supabase
-      .from('team_invitations')
-      .select('email, accepted_at, expires_at')
-      .eq('token', token)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (!data) {
+    supabase.functions
+      .invoke('lookup-team-invitation', { body: { token } })
+      .then(({ data, error: invErr }) => {
+        if (invErr || !data) {
           setError("Invitation introuvable.");
-        } else if (data.accepted_at) {
-          setError("Cette invitation a déjà été acceptée.");
-        } else if (new Date(data.expires_at) < new Date()) {
-          setError("Cette invitation a expiré.");
-        } else {
-          setInvitationEmail((data as any).email);
+          return;
         }
+        if (!data.valid) {
+          if (data.already_accepted) setError("Cette invitation a déjà été acceptée.");
+          else if (data.expired) setError("Cette invitation a expiré.");
+          else setError("Invitation introuvable.");
+          return;
+        }
+        setInvitationEmail(data.email);
+        setWorkspaceName(data.workspace_name ?? null);
+        setInvitationRole(data.role ?? null);
       });
   }, [token]);
 
@@ -51,7 +54,7 @@ export default function AcceptTeamInvitation() {
       if (user) {
         navigate('/cockpit');
       } else {
-        navigate(`/auth/login?email=${encodeURIComponent(invitationEmail ?? '')}`);
+        navigate(`/login?email=${encodeURIComponent(invitationEmail ?? '')}`);
       }
     } catch (e: any) {
       toast.error(e.message ?? "Erreur lors de l'acceptation");
@@ -77,7 +80,7 @@ export default function AcceptTeamInvitation() {
             {error
               ? error
               : invitationEmail
-              ? `Invitation pour ${invitationEmail}`
+              ? `Invitation pour ${invitationEmail}${workspaceName ? ` — ${workspaceName}` : ''}${invitationRole ? ` (${invitationRole})` : ''}`
               : 'Vérification de votre invitation...'}
           </CardDescription>
         </CardHeader>
