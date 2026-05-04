@@ -134,6 +134,7 @@ export const useAuth = () => {
     user,
     session,
     isAdmin,
+    isSuperAdmin,
     loading,
     signIn,
     signUp,
