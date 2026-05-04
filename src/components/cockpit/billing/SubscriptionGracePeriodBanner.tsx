@@ -43,10 +43,10 @@ export function SubscriptionGracePeriodBanner() {
   };
 
   return (
-    <div className="border-b border-warning/30 bg-warning/10 px-4 py-2">
+    <div className="border-b border-amber-500/40 bg-amber-500/10 px-4 py-2">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2 text-sm text-foreground">
-          <AlertTriangle className="h-4 w-4 text-warning" />
+          <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
           <span>
             Votre abonnement se termine le <strong>{endDate}</strong>. Réactivez-le pour conserver
             votre accès.
