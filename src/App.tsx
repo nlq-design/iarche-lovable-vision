@@ -827,14 +827,14 @@ const App = () => (
               <ProtectedVivierRoute><ViviersScoring /></ProtectedVivierRoute>
             </Suspense>
           } />
-          <Route path="/viviers/campaigns" element={
+<Route path="/viviers/campaigns" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-orange-500" /></div>}>
-              <ProtectedVivierRoute><ViviersCampaigns /></ProtectedVivierRoute>
+              <ProtectedVivierRoute><ProtectedSuperAdminRoute><ViviersCampaigns /></ProtectedSuperAdminRoute></ProtectedVivierRoute>
             </Suspense>
           } />
           <Route path="/viviers/campaigns/:slug" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-orange-500" /></div>}>
-              <ProtectedVivierRoute><VivierCampaignDetail /></ProtectedVivierRoute>
+              <ProtectedVivierRoute><ProtectedSuperAdminRoute><VivierCampaignDetail /></ProtectedSuperAdminRoute></ProtectedVivierRoute>
             </Suspense>
           } />
           <Route path="/viviers/lists/:id" element={
