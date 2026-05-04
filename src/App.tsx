@@ -124,6 +124,9 @@ const CockpitImports = lazy(() => import("./pages/cockpit/CockpitImports"));
 const CockpitSettings = lazy(() => import("./pages/cockpit/CockpitSettings"));
 const CockpitMCPSettings = lazy(() => import("./pages/cockpit/CockpitMCPSettings"));
 const CockpitPricing = lazy(() => import("./pages/CockpitPricing"));
+const SettingsBilling = lazy(() => import("./pages/cockpit/SettingsBilling"));
+const PaymentSuccess = lazy(() => import("./pages/onboarding/PaymentSuccess"));
+const PaymentCancelled = lazy(() => import("./pages/onboarding/PaymentCancelled"));
 
 // Viviers (Cold Leads)
 const ProtectedVivierRoute = lazy(() => import("./components/viviers/ProtectedVivierRoute"));
@@ -184,6 +187,16 @@ const App = () => (
           {/* Homepage */}
           <Route path="/" element={<Index />} />
           <Route path="/cockpit/pricing" element={<CockpitPricing />} />
+          <Route path="/onboarding/payment-success" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <PaymentSuccess />
+            </Suspense>
+          } />
+          <Route path="/onboarding/payment-cancelled" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <PaymentCancelled />
+            </Suspense>
+          } />
           
           {/* Redirection 301: /accueil → / */}
           <Route path="/accueil" element={<Navigate to="/" replace />} />
