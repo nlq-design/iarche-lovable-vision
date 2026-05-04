@@ -125,6 +125,8 @@ const CockpitSettings = lazy(() => import("./pages/cockpit/CockpitSettings"));
 const CockpitMCPSettings = lazy(() => import("./pages/cockpit/CockpitMCPSettings"));
 const CockpitPricing = lazy(() => import("./pages/CockpitPricing"));
 const SettingsBilling = lazy(() => import("./pages/cockpit/SettingsBilling"));
+const SettingsTeam = lazy(() => import("./pages/cockpit/settings/SettingsTeam"));
+const AcceptTeamInvitation = lazy(() => import("./pages/cockpit/AcceptTeamInvitation"));
 const PaymentSuccess = lazy(() => import("./pages/onboarding/PaymentSuccess"));
 const PaymentCancelled = lazy(() => import("./pages/onboarding/PaymentCancelled"));
 
