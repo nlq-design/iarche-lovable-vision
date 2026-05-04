@@ -7351,6 +7351,7 @@ export type Database = {
         Args: { p_solution_id: string; p_user_id: string }
         Returns: boolean
       }
+      is_super_admin: { Args: never; Returns: boolean }
       is_transcription_creator_partner: {
         Args: { p_transcription_id: string; p_user_id: string }
         Returns: boolean
@@ -7549,6 +7550,7 @@ export type Database = {
         | "cockpit_admin"
         | "partner"
         | "owner"
+        | "super_admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -7683,6 +7685,7 @@ export const Constants = {
         "cockpit_admin",
         "partner",
         "owner",
+        "super_admin",
       ],
     },
   },

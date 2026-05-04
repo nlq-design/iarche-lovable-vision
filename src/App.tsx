@@ -97,6 +97,7 @@ const BrochureEditor = lazy(() => import("./pages/admin/BrochureEditor"));
 const AdminAIPrompts = lazy(() => import("./pages/admin/AdminAIPrompts"));
 const AdminAPILibrary = lazy(() => import("./pages/admin/AdminAPILibrary"));
 const ProtectedAdminRoute = lazy(() => import("./components/ProtectedAdminRoute"));
+const ProtectedSuperAdminRoute = lazy(() => import("./components/ProtectedSuperAdminRoute"));
 
 // Cockpit Commercial
 const ProtectedCockpitRoute = lazy(() => import("./components/cockpit/ProtectedCockpitRoute"));
@@ -726,12 +727,12 @@ const App = () => (
           } />
 <Route path="/cockpit/solutions" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
-              <ProtectedCockpitRoute><CockpitSolutions /></ProtectedCockpitRoute>
+              <ProtectedCockpitRoute><ProtectedSuperAdminRoute><CockpitSolutions /></ProtectedSuperAdminRoute></ProtectedCockpitRoute>
             </Suspense>
           } />
           <Route path="/cockpit/solutions/:id" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
-              <ProtectedCockpitRoute><CockpitSolutionDetail /></ProtectedCockpitRoute>
+              <ProtectedCockpitRoute><ProtectedSuperAdminRoute><CockpitSolutionDetail /></ProtectedSuperAdminRoute></ProtectedCockpitRoute>
             </Suspense>
           } />
           <Route path="/cockpit/analytics" element={
@@ -826,14 +827,14 @@ const App = () => (
               <ProtectedVivierRoute><ViviersScoring /></ProtectedVivierRoute>
             </Suspense>
           } />
-          <Route path="/viviers/campaigns" element={
+<Route path="/viviers/campaigns" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-orange-500" /></div>}>
-              <ProtectedVivierRoute><ViviersCampaigns /></ProtectedVivierRoute>
+              <ProtectedVivierRoute><ProtectedSuperAdminRoute><ViviersCampaigns /></ProtectedSuperAdminRoute></ProtectedVivierRoute>
             </Suspense>
           } />
           <Route path="/viviers/campaigns/:slug" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-orange-500" /></div>}>
-              <ProtectedVivierRoute><VivierCampaignDetail /></ProtectedVivierRoute>
+              <ProtectedVivierRoute><ProtectedSuperAdminRoute><VivierCampaignDetail /></ProtectedSuperAdminRoute></ProtectedVivierRoute>
             </Suspense>
           } />
           <Route path="/viviers/lists/:id" element={

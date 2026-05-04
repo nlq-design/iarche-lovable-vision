@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { resolveUserIdFromRequest, assertSuperAdmin } from "../_shared/auth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -65,6 +66,16 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
+
+    // M-sec : résolution userId via JWT puis garde super_admin
+    try {
+      const userId = await resolveUserIdFromRequest(req);
+      await assertSuperAdmin(supabase, userId);
+    } catch (guardResponse) {
+      if (guardResponse instanceof Response) return guardResponse;
+      throw guardResponse;
+    }
+
 
     const { mode = 'preview', batchSize = 1000, cleanupType = 'all' } = await req.json();
     
