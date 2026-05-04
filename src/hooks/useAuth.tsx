@@ -21,6 +21,7 @@ export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,13 +31,15 @@ export const useAuth = () => {
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
-      // Defer admin role check to avoid deadlock inside the listener
+      // Defer role checks to avoid deadlock inside the listener
       if (nextSession?.user) {
+        const authenticatedUserId = nextSession.user.id;
         setTimeout(() => {
-          checkAdminRole(nextSession.user.id);
+          checkRoles(authenticatedUserId);
         }, 0);
       } else {
         setIsAdmin(false);
+        setIsSuperAdmin(false);
         setLoading(false);
       }
     });
@@ -46,7 +49,7 @@ export const useAuth = () => {
       setSession(existing);
       setUser(existing?.user ?? null);
       if (existing?.user) {
-        checkAdminRole(existing.user.id);
+        checkRoles(existing.user.id);
       } else {
         setLoading(false);
       }
@@ -55,7 +58,7 @@ export const useAuth = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const checkAdminRole = async (userId: string) => {
+  const checkRoles = async (authenticatedUserId: string) => {
     try {
       const timeout = new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error('timeout')), 10000)
@@ -63,14 +66,21 @@ export const useAuth = () => {
       const query = supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', userId)
-        .eq('role', 'admin')
-        .maybeSingle();
+        .eq('user_id', authenticatedUserId)
+        .in('role', ['admin', 'super_admin']);
 
       const { data, error } = await Promise.race([query, timeout]);
-      setIsAdmin(!error && data !== null);
+      if (error || !data) {
+        setIsAdmin(false);
+        setIsSuperAdmin(false);
+      } else {
+        const roles = (data as Array<{ role: string }>).map((r) => r.role);
+        setIsAdmin(roles.includes('admin'));
+        setIsSuperAdmin(roles.includes('super_admin'));
+      }
     } catch {
       setIsAdmin(false);
+      setIsSuperAdmin(false);
     }
     setLoading(false);
   };
