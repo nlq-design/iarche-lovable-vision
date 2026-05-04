@@ -54,7 +54,7 @@ export default function AcceptTeamInvitation() {
       if (user) {
         navigate('/cockpit');
       } else {
-        navigate(`/auth/login?email=${encodeURIComponent(invitationEmail ?? '')}`);
+        navigate(`/login?email=${encodeURIComponent(invitationEmail ?? '')}`);
       }
     } catch (e: any) {
       toast.error(e.message ?? "Erreur lors de l'acceptation");
@@ -80,7 +80,7 @@ export default function AcceptTeamInvitation() {
             {error
               ? error
               : invitationEmail
-              ? `Invitation pour ${invitationEmail}`
+              ? `Invitation pour ${invitationEmail}${workspaceName ? ` — ${workspaceName}` : ''}${invitationRole ? ` (${invitationRole})` : ''}`
               : 'Vérification de votre invitation...'}
           </CardDescription>
         </CardHeader>
