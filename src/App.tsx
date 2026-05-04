@@ -97,6 +97,7 @@ const BrochureEditor = lazy(() => import("./pages/admin/BrochureEditor"));
 const AdminAIPrompts = lazy(() => import("./pages/admin/AdminAIPrompts"));
 const AdminAPILibrary = lazy(() => import("./pages/admin/AdminAPILibrary"));
 const ProtectedAdminRoute = lazy(() => import("./components/ProtectedAdminRoute"));
+const ProtectedSuperAdminRoute = lazy(() => import("./components/ProtectedSuperAdminRoute"));
 
 // Cockpit Commercial
 const ProtectedCockpitRoute = lazy(() => import("./components/cockpit/ProtectedCockpitRoute"));
