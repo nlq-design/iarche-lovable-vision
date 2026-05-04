@@ -233,3 +233,21 @@ verify_jwt = true
 
 [functions.lookup-team-invitation]
 verify_jwt = false
+
+[functions.lookup-partner-invitation]
+verify_jwt = false
+
+[functions.revoke-partner-invitation]
+verify_jwt = true
+
+[functions.suspend-partner]
+verify_jwt = true
+
+[functions.reactivate-partner]
+verify_jwt = true
+
+[functions.update-partner-scope]
+verify_jwt = true
+
+[functions.generate-partner-digest]
+verify_jwt = false
