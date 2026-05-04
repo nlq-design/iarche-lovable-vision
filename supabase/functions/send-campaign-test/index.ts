@@ -30,6 +30,15 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // M-sec : résolution userId via JWT puis garde super_admin
+    try {
+      const userId = await resolveUserIdFromRequest(req);
+      await assertSuperAdmin(supabase, userId);
+    } catch (guardResponse) {
+      if (guardResponse instanceof Response) return guardResponse;
+      throw guardResponse;
+    }
+
     const body: SendCampaignTestRequest = await req.json();
     const { campaign_id, recipients, subject, html_content, sender_name, sender_email } = body;
 
