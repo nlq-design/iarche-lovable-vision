@@ -34,7 +34,7 @@ serve(async (req) => {
     if (!["owner", "editor", "viewer"].includes(role)) return json({ error: "Rôle invalide" }, 400);
 
     const { data: isOwner } = await supabase.rpc("has_workspace_role", {
-      _workspace_id: workspace_id, _user_id: authenticatedUserId, _role: "owner",
+      p_workspace_id: workspace_id, p_user_id: authenticatedUserId, p_min_role: "owner",
     });
     if (!isOwner) return json({ error: "Seul un propriétaire peut inviter" }, 403);
 
