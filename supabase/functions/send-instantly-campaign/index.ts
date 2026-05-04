@@ -162,6 +162,16 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    // M-sec : résolution userId via JWT puis garde super_admin
+    try {
+      const userId = await resolveUserIdFromRequest(req);
+      await assertSuperAdmin(supabase, userId);
+    } catch (guardResponse) {
+      if (guardResponse instanceof Response) return guardResponse;
+      throw guardResponse;
+    }
+
+
     const { campaign_id, action = 'status' } = await req.json();
 
     // Get campaign from database
