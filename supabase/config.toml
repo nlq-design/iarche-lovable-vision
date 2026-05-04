@@ -209,3 +209,24 @@ verify_jwt = false
 
 [functions.stripe-cancel]
 verify_jwt = true
+
+[functions.invite-team-member]
+verify_jwt = true
+
+[functions.accept-team-invitation]
+verify_jwt = false
+
+[functions.revoke-team-invitation]
+verify_jwt = true
+
+[functions.change-member-role]
+verify_jwt = true
+
+[functions.suspend-member]
+verify_jwt = true
+
+[functions.reactivate-member]
+verify_jwt = true
+
+[functions.remove-member]
+verify_jwt = true

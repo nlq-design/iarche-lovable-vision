@@ -5386,6 +5386,50 @@ export type Database = {
           },
         ]
       }
+      team_invitations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          role: string
+          token: string
+          workspace_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          role?: string
+          token?: string
+          workspace_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          role?: string
+          token?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_invitations_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       telegram_conversation_context: {
         Row: {
           active_entity_id: string | null
@@ -6841,6 +6885,8 @@ export type Database = {
           invited_by: string | null
           joined_at: string | null
           role: string
+          status: string
+          suspended_at: string | null
           user_id: string
           workspace_id: string
         }
@@ -6848,6 +6894,8 @@ export type Database = {
           invited_by?: string | null
           joined_at?: string | null
           role?: string
+          status?: string
+          suspended_at?: string | null
           user_id: string
           workspace_id: string
         }
@@ -6855,6 +6903,8 @@ export type Database = {
           invited_by?: string | null
           joined_at?: string | null
           role?: string
+          status?: string
+          suspended_at?: string | null
           user_id?: string
           workspace_id?: string
         }

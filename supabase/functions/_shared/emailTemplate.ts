@@ -208,3 +208,28 @@ export function getMagicLinkEmail(magicLink: string, email: string): string {
     getEmailFooter()
   );
 }
+
+// =====================================================================
+// Team invitation (M7) — Workspace member invite email
+// =====================================================================
+export function getTeamInvitationEmail(
+  inviteUrl: string,
+  workspaceName: string,
+  inviterName: string,
+  role: string
+): string {
+  const roleLabel = role === 'owner' ? 'propriétaire' : role === 'editor' ? 'éditeur' : 'lecteur';
+  const content = `
+    ${paragraph(`Bonjour,`)}
+    ${paragraph(`<strong>${escapeHtml(inviterName)}</strong> vous invite à rejoindre l'espace de travail <strong>${escapeHtml(workspaceName)}</strong> sur IArche en tant que <strong>${escapeHtml(roleLabel)}</strong>.`)}
+    ${ctaWrapper(getCtaButton("Accepter l'invitation", inviteUrl, 'primary'))}
+    ${paragraph(`Cette invitation expire dans 7 jours.`)}
+    ${getSignature()}
+    ${fallbackLink(inviteUrl)}
+  `;
+  return wrapEmailContent(
+    getEmailHeader('Invitation à rejoindre une équipe'),
+    content,
+    getEmailFooter()
+  );
+}
