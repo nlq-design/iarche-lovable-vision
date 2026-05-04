@@ -3755,6 +3755,51 @@ export type Database = {
           },
         ]
       }
+      partner_digests: {
+        Row: {
+          content: Json
+          created_at: string
+          id: string
+          partner_id: string | null
+          sent_at: string | null
+          week_start: string
+          workspace_id: string
+        }
+        Insert: {
+          content?: Json
+          created_at?: string
+          id?: string
+          partner_id?: string | null
+          sent_at?: string | null
+          week_start: string
+          workspace_id: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          id?: string
+          partner_id?: string | null
+          sent_at?: string | null
+          week_start?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_digests_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_digests_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partner_documents: {
         Row: {
           category: string
@@ -4163,8 +4208,11 @@ export type Database = {
           partner_subtype: string | null
           partner_type: string
           phone: string | null
+          scope: Json
           slug: string
           specialties: string[] | null
+          status: string
+          suspended_at: string | null
           synthesis_stale: boolean | null
           updated_at: string | null
           user_id: string | null
@@ -4190,8 +4238,11 @@ export type Database = {
           partner_subtype?: string | null
           partner_type: string
           phone?: string | null
+          scope?: Json
           slug: string
           specialties?: string[] | null
+          status?: string
+          suspended_at?: string | null
           synthesis_stale?: boolean | null
           updated_at?: string | null
           user_id?: string | null
@@ -4217,8 +4268,11 @@ export type Database = {
           partner_subtype?: string | null
           partner_type?: string
           phone?: string | null
+          scope?: Json
           slug?: string
           specialties?: string[] | null
+          status?: string
+          suspended_at?: string | null
           synthesis_stale?: boolean | null
           updated_at?: string | null
           user_id?: string | null
@@ -6913,6 +6967,35 @@ export type Database = {
             foreignKeyName: "workspace_members_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspace_partner_settings: {
+        Row: {
+          digest_day: string
+          digest_enabled: boolean
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          digest_day?: string
+          digest_enabled?: boolean
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          digest_day?: string
+          digest_enabled?: boolean
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_partner_settings_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: true
             referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
