@@ -56,6 +56,49 @@ const Onboarding = () => {
         toast.error("Impossible de finaliser l'onboarding");
         return;
       }
+
+      // Si un plan a été choisi à l'inscription, lance le checkout Stripe
+      let pendingPlan: string | null = null;
+      try {
+        pendingPlan = sessionStorage.getItem('iarche_pending_plan');
+      } catch {
+        pendingPlan = null;
+      }
+
+      if (pendingPlan) {
+        try {
+          sessionStorage.removeItem('iarche_pending_plan');
+        } catch {
+          // ignore
+        }
+        const { data: members } = await supabase
+          .from('workspace_members')
+          .select('workspace_id')
+          .eq('user_id', user.id)
+          .order('joined_at', { ascending: true })
+          .limit(1);
+
+        const workspaceId = members?.[0]?.workspace_id;
+        if (workspaceId) {
+          const { data, error: fnErr } = await supabase.functions.invoke(
+            'stripe-checkout-session',
+            {
+              body: {
+                plan_slug: pendingPlan,
+                workspace_id: workspaceId,
+                success_url: `${window.location.origin}/onboarding/payment-success`,
+                cancel_url: `${window.location.origin}/onboarding/payment-cancelled`,
+              },
+            }
+          );
+          if (!fnErr && data?.url) {
+            window.location.href = data.url;
+            return;
+          }
+          toast.error("Impossible d'initier le paiement, vous pourrez réessayer plus tard.");
+        }
+      }
+
       navigate('/cockpit');
     } finally {
       setSubmitting(false);
