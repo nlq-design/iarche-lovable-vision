@@ -230,3 +230,6 @@ verify_jwt = true
 
 [functions.remove-member]
 verify_jwt = true
+
+[functions.lookup-team-invitation]
+verify_jwt = false
