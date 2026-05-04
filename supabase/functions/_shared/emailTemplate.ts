@@ -103,7 +103,108 @@ export function getSignature(): string {
   return `
     <p style="color: ${EMAIL_COLORS.mutedGray}; font-size: 14px; margin-top: 24px;">
       À bientôt,<br>
-      <strong style="color: ${EMAIL_COLORS.nightBlue};">L'équipe IArche</strong>
+      <strong style="color: ${EMAIL_COLORS.nightBlue};">L'équipe IArche</strong><br>
+      <span style="color: ${EMAIL_COLORS.lightGray}; font-size: 12px; font-style: italic;">L'IA se construit avec vous.</span>
     </p>
   `;
+}
+
+// =====================================================================
+// IArche Charter v5 — Auth email renderers (Supabase Auth Hook)
+// Additive only. Do not modify v4 helpers above (backward-compatible).
+// =====================================================================
+
+function escapeHtml(value: string): string {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function paragraph(text: string): string {
+  return `<p style="color: ${EMAIL_COLORS.textGray}; font-size: 15px; margin: 0 0 16px 0;">${text}</p>`;
+}
+
+function ctaWrapper(button: string): string {
+  return `<div style="text-align: center; margin: 28px 0;">${button}</div>`;
+}
+
+function fallbackLink(url: string): string {
+  return `
+    <p style="color: ${EMAIL_COLORS.mutedGray}; font-size: 12px; margin-top: 24px; word-break: break-all;">
+      Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br>
+      <a href="${url}" style="color: ${EMAIL_COLORS.terracotta};">${escapeHtml(url)}</a>
+    </p>
+  `;
+}
+
+export function getSignupConfirmEmail(confirmUrl: string, email: string): string {
+  const content = `
+    ${paragraph(`Bonjour,`)}
+    ${paragraph(`Bienvenue sur IArche. Pour activer votre compte associé à <strong>${escapeHtml(email)}</strong>, confirmez votre adresse email en cliquant sur le bouton ci-dessous.`)}
+    ${ctaWrapper(getCtaButton('Confirmer mon adresse', confirmUrl))}
+    ${paragraph(`Ce lien est valable pendant une durée limitée. Si vous n'êtes pas à l'origine de cette inscription, ignorez simplement ce message.`)}
+    ${getSignature()}
+    ${fallbackLink(confirmUrl)}
+  `;
+  return wrapEmailContent(
+    getEmailHeader('Confirmez votre inscription'),
+    content,
+    getEmailFooter()
+  );
+}
+
+export function getPasswordResetEmail(resetUrl: string, email: string): string {
+  const content = `
+    ${paragraph(`Bonjour,`)}
+    ${paragraph(`Une demande de réinitialisation de mot de passe a été effectuée pour le compte <strong>${escapeHtml(email)}</strong>. Cliquez sur le bouton ci-dessous pour définir un nouveau mot de passe.`)}
+    ${ctaWrapper(getCtaButton('Réinitialiser mon mot de passe', resetUrl))}
+    ${paragraph(`Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet email — votre mot de passe actuel reste inchangé.`)}
+    ${getSignature()}
+    ${fallbackLink(resetUrl)}
+  `;
+  return wrapEmailContent(
+    getEmailHeader('Réinitialisation du mot de passe'),
+    content,
+    getEmailFooter()
+  );
+}
+
+export function getEmailChangeEmail(changeUrl: string, oldEmail: string, newEmail: string): string {
+  const content = `
+    ${paragraph(`Bonjour,`)}
+    ${paragraph(`Une demande de changement d'adresse email a été effectuée pour votre compte IArche.`)}
+    ${getInfoCard(`
+      <p style="margin: 0 0 8px 0; color: ${EMAIL_COLORS.textGray}; font-size: 14px;"><strong>Ancienne adresse :</strong> ${escapeHtml(oldEmail)}</p>
+      <p style="margin: 0; color: ${EMAIL_COLORS.textGray}; font-size: 14px;"><strong>Nouvelle adresse :</strong> ${escapeHtml(newEmail)}</p>
+    `)}
+    ${paragraph(`Confirmez ce changement en cliquant sur le bouton ci-dessous.`)}
+    ${ctaWrapper(getCtaButton('Confirmer le changement', changeUrl))}
+    ${paragraph(`Si vous n'êtes pas à l'origine de cette demande, ignorez ce message et contactez-nous immédiatement.`)}
+    ${getSignature()}
+    ${fallbackLink(changeUrl)}
+  `;
+  return wrapEmailContent(
+    getEmailHeader('Changement d\'adresse email'),
+    content,
+    getEmailFooter()
+  );
+}
+
+export function getMagicLinkEmail(magicLink: string, email: string): string {
+  const content = `
+    ${paragraph(`Bonjour,`)}
+    ${paragraph(`Voici votre lien de connexion sécurisé pour le compte <strong>${escapeHtml(email)}</strong>. Cliquez sur le bouton ci-dessous pour vous connecter à IArche en un clic.`)}
+    ${ctaWrapper(getCtaButton('Me connecter', magicLink))}
+    ${paragraph(`Ce lien est à usage unique et expire rapidement. Si vous n'avez pas demandé cette connexion, ignorez ce message.`)}
+    ${getSignature()}
+    ${fallbackLink(magicLink)}
+  `;
+  return wrapEmailContent(
+    getEmailHeader('Votre lien de connexion'),
+    content,
+    getEmailFooter()
+  );
 }
