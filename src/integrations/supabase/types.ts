@@ -7420,6 +7420,15 @@ export type Database = {
           id: string
         }[]
       }
+      get_workspace_quotas: {
+        Args: { p_workspace_id: string }
+        Returns: {
+          api_name: string
+          current_count: number
+          limit_count: number
+          period_end: string
+        }[]
+      }
       has_cockpit_access: { Args: { user_uuid: string }; Returns: boolean }
       has_partner_access: { Args: { user_uuid: string }; Returns: boolean }
       has_role: {

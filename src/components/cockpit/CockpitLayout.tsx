@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { CockpitSidebar } from './CockpitSidebar';
 import { CockpitHeader } from './CockpitHeader';
+import { SubscriptionGracePeriodBanner } from './billing/SubscriptionGracePeriodBanner';
 
 interface CockpitLayoutProps {
   children: ReactNode;
@@ -15,6 +16,7 @@ export function CockpitLayout({ children }: CockpitLayoutProps) {
         
         <div className="flex-1 flex flex-col min-w-0">
           <CockpitHeader />
+          <SubscriptionGracePeriodBanner />
           
           <main className="flex-1 overflow-auto">
             {children}
