@@ -727,12 +727,12 @@ const App = () => (
           } />
 <Route path="/cockpit/solutions" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
-              <ProtectedCockpitRoute><CockpitSolutions /></ProtectedCockpitRoute>
+              <ProtectedCockpitRoute><ProtectedSuperAdminRoute><CockpitSolutions /></ProtectedSuperAdminRoute></ProtectedCockpitRoute>
             </Suspense>
           } />
           <Route path="/cockpit/solutions/:id" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
-              <ProtectedCockpitRoute><CockpitSolutionDetail /></ProtectedCockpitRoute>
+              <ProtectedCockpitRoute><ProtectedSuperAdminRoute><CockpitSolutionDetail /></ProtectedSuperAdminRoute></ProtectedCockpitRoute>
             </Suspense>
           } />
           <Route path="/cockpit/analytics" element={
