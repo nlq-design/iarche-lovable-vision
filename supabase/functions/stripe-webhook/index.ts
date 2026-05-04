@@ -272,6 +272,183 @@ serve(async (req) => {
             console.error("[stripe-webhook] workspace past_due sync error:", wsErr);
             throw wsErr;
           }
+
+          // Audit trail
+          const { data: wsRow } = await supabase
+            .from("workspaces")
+            .select("id")
+            .eq("stripe_customer_id", customerId)
+            .maybeSingle();
+          if (wsRow?.id) {
+            await supabase.from("subscription_changes").insert({
+              workspace_id: wsRow.id,
+              change_type: "payment_failed",
+              stripe_event_id: event.id,
+              metadata: { invoice_id: invoice.id, amount_due: invoice.amount_due },
+            });
+          }
+        }
+        break;
+      }
+
+      // ===== M5.5 — Additional events =====
+
+      case "customer.subscription.trial_will_end": {
+        const subscription = event.data.object as Stripe.Subscription;
+        const meta = subscription.metadata || {};
+        const workspace_id = meta.workspace_id as string | undefined;
+        if (workspace_id) {
+          const { data: subRow } = await supabase
+            .from("subscriptions")
+            .select("id")
+            .eq("stripe_subscription_id", subscription.id)
+            .maybeSingle();
+          await supabase.from("subscription_changes").insert({
+            workspace_id,
+            subscription_id: subRow?.id ?? null,
+            change_type: "trial_ended",
+            stripe_event_id: event.id,
+            metadata: {
+              trial_end: subscription.trial_end
+                ? new Date(subscription.trial_end * 1000).toISOString()
+                : null,
+            },
+          });
+        }
+        break;
+      }
+
+      case "invoice.created":
+      case "invoice.finalized":
+      case "invoice.paid": {
+        const invoice = event.data.object as Stripe.Invoice;
+        const customerId =
+          typeof invoice.customer === "string"
+            ? invoice.customer
+            : invoice.customer?.id;
+        const subscriptionId =
+          typeof invoice.subscription === "string"
+            ? invoice.subscription
+            : invoice.subscription?.id ?? null;
+
+        // Resolve workspace_id via stripe_customer_id
+        let workspace_id: string | null = null;
+        if (customerId) {
+          const { data: wsRow } = await supabase
+            .from("workspaces")
+            .select("id")
+            .eq("stripe_customer_id", customerId)
+            .maybeSingle();
+          workspace_id = wsRow?.id ?? null;
+        }
+
+        if (!workspace_id || !invoice.id) {
+          console.warn(
+            `[stripe-webhook] ${event.type}: missing workspace_id or invoice.id (customer=${customerId})`,
+          );
+          break;
+        }
+
+        const status = (invoice.status ?? "draft") as string;
+        const paid_at =
+          event.type === "invoice.paid" && invoice.status_transitions?.paid_at
+            ? new Date(invoice.status_transitions.paid_at * 1000).toISOString()
+            : null;
+
+        const { error: invErr } = await supabase.from("invoices").upsert(
+          {
+            workspace_id,
+            stripe_invoice_id: invoice.id,
+            stripe_customer_id: customerId ?? null,
+            stripe_subscription_id: subscriptionId,
+            status,
+            amount_total_cents: invoice.amount_due ?? null,
+            amount_paid_cents: invoice.amount_paid ?? null,
+            currency: (invoice.currency ?? "eur").toLowerCase(),
+            invoice_pdf: invoice.invoice_pdf ?? null,
+            hosted_invoice_url: invoice.hosted_invoice_url ?? null,
+            period_start: invoice.period_start
+              ? new Date(invoice.period_start * 1000).toISOString()
+              : null,
+            period_end: invoice.period_end
+              ? new Date(invoice.period_end * 1000).toISOString()
+              : null,
+            due_date: invoice.due_date
+              ? new Date(invoice.due_date * 1000).toISOString()
+              : null,
+            paid_at,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "stripe_invoice_id" },
+        );
+
+        if (invErr) {
+          console.error(`[stripe-webhook] upsert invoice error (${event.type}):`, invErr);
+          throw invErr;
+        }
+
+        if (event.type === "invoice.paid") {
+          const { data: subRow } = subscriptionId
+            ? await supabase
+                .from("subscriptions")
+                .select("id")
+                .eq("stripe_subscription_id", subscriptionId)
+                .maybeSingle()
+            : { data: null };
+          await supabase.from("subscription_changes").insert({
+            workspace_id,
+            subscription_id: subRow?.id ?? null,
+            change_type: "payment_succeeded",
+            stripe_event_id: event.id,
+            metadata: {
+              invoice_id: invoice.id,
+              amount_paid: invoice.amount_paid,
+            },
+          });
+        }
+        break;
+      }
+
+      case "customer.updated": {
+        const customer = event.data.object as Stripe.Customer;
+        const { error: wsErr } = await supabase
+          .from("workspaces")
+          .update({ updated_at: new Date().toISOString() })
+          .eq("stripe_customer_id", customer.id);
+        if (wsErr) {
+          console.error("[stripe-webhook] customer.updated sync error:", wsErr);
+          throw wsErr;
+        }
+        break;
+      }
+
+      case "payment_method.attached":
+      case "payment_method.detached": {
+        const pm = event.data.object as Stripe.PaymentMethod;
+        const customerId =
+          typeof pm.customer === "string" ? pm.customer : pm.customer?.id ?? null;
+        if (customerId) {
+          const { data: wsRow } = await supabase
+            .from("workspaces")
+            .select("id")
+            .eq("stripe_customer_id", customerId)
+            .maybeSingle();
+          if (wsRow?.id) {
+            await supabase.from("subscription_changes").insert({
+              workspace_id: wsRow.id,
+              change_type:
+                event.type === "payment_method.attached"
+                  ? "payment_method_attached"
+                  : "payment_method_detached",
+              stripe_event_id: event.id,
+              metadata: {
+                payment_method_id: pm.id,
+                type: pm.type,
+                last4: pm.card?.last4 ?? null,
+                brand: pm.card?.brand ?? null,
+              },
+            });
+          }
         }
         break;
       }

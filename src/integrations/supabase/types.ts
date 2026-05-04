@@ -2694,6 +2694,74 @@ export type Database = {
         }
         Relationships: []
       }
+      invoices: {
+        Row: {
+          amount_paid_cents: number | null
+          amount_total_cents: number | null
+          created_at: string
+          currency: string
+          due_date: string | null
+          hosted_invoice_url: string | null
+          id: string
+          invoice_pdf: string | null
+          paid_at: string | null
+          period_end: string | null
+          period_start: string | null
+          status: string
+          stripe_customer_id: string | null
+          stripe_invoice_id: string
+          stripe_subscription_id: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          amount_paid_cents?: number | null
+          amount_total_cents?: number | null
+          created_at?: string
+          currency?: string
+          due_date?: string | null
+          hosted_invoice_url?: string | null
+          id?: string
+          invoice_pdf?: string | null
+          paid_at?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          status: string
+          stripe_customer_id?: string | null
+          stripe_invoice_id: string
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          amount_paid_cents?: number | null
+          amount_total_cents?: number | null
+          created_at?: string
+          currency?: string
+          due_date?: string | null
+          hosted_invoice_url?: string | null
+          id?: string
+          invoice_pdf?: string | null
+          paid_at?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_invoice_id?: string
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       keyword_alias_suggestions: {
         Row: {
           confidence_score: number | null
@@ -5021,8 +5089,60 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_changes: {
+        Row: {
+          change_type: string
+          created_at: string
+          from_plan_slug: string | null
+          id: string
+          metadata: Json
+          stripe_event_id: string | null
+          subscription_id: string | null
+          to_plan_slug: string | null
+          workspace_id: string
+        }
+        Insert: {
+          change_type: string
+          created_at?: string
+          from_plan_slug?: string | null
+          id?: string
+          metadata?: Json
+          stripe_event_id?: string | null
+          subscription_id?: string | null
+          to_plan_slug?: string | null
+          workspace_id: string
+        }
+        Update: {
+          change_type?: string
+          created_at?: string
+          from_plan_slug?: string | null
+          id?: string
+          metadata?: Json
+          stripe_event_id?: string | null
+          subscription_id?: string | null
+          to_plan_slug?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_changes_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_changes_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscriptions: {
         Row: {
+          cancel_at_period_end: boolean
           canceled_at: string | null
           created_at: string
           current_period_end: string | null
@@ -5038,6 +5158,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          cancel_at_period_end?: boolean
           canceled_at?: string | null
           created_at?: string
           current_period_end?: string | null
@@ -5053,6 +5174,7 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          cancel_at_period_end?: boolean
           canceled_at?: string | null
           created_at?: string
           current_period_end?: string | null

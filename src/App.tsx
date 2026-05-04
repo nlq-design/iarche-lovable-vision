@@ -123,6 +123,7 @@ const CockpitPartenaireDetail = lazy(() => import("./pages/cockpit/CockpitParten
 const CockpitImports = lazy(() => import("./pages/cockpit/CockpitImports"));
 const CockpitSettings = lazy(() => import("./pages/cockpit/CockpitSettings"));
 const CockpitMCPSettings = lazy(() => import("./pages/cockpit/CockpitMCPSettings"));
+const CockpitPricing = lazy(() => import("./pages/CockpitPricing"));
 
 // Viviers (Cold Leads)
 const ProtectedVivierRoute = lazy(() => import("./components/viviers/ProtectedVivierRoute"));
@@ -182,6 +183,7 @@ const App = () => (
         <Routes>
           {/* Homepage */}
           <Route path="/" element={<Index />} />
+          <Route path="/cockpit/pricing" element={<CockpitPricing />} />
           
           {/* Redirection 301: /accueil → / */}
           <Route path="/accueil" element={<Navigate to="/" replace />} />
