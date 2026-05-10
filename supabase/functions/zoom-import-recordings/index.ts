@@ -82,7 +82,7 @@ async function zoomGet(url: string, zoomToken: string) {
   return { resp, data, text };
 }
 
-async function probeZoomScopeAccess(zoomToken: string, grantedScopes: string[]) {
+async function probeZoomScopeAccess(zoomToken: string) {
   const today = new Date().toISOString().split('T')[0];
   const probes = [
     { label: 'Utilisateur propriétaire de l\'app Zoom', endpoint: '/users/me/recordings', url: `https://api.zoom.us/v2/users/me/recordings?from=${today}&to=${today}&page_size=1` },
@@ -111,7 +111,7 @@ async function probeZoomScopeAccess(zoomToken: string, grantedScopes: string[]) 
  * 1. GET /users/me/recordings (user-level scope)
  * 2. GET /users (list users) → GET /users/{id}/recordings (admin scope)
  */
-async function listZoomRecordings(zoomToken: string, from: string, to: string, grantedScopes: string[]) {
+async function listZoomRecordings(zoomToken: string, from: string, to: string) {
   const allMeetings: any[] = [];
   const seenIds = new Set<string>();
   const sourceChecks: any[] = [];
@@ -257,7 +257,7 @@ serve(async (req) => {
     if (action === 'check_scopes') {
       try {
         const { token: zoomToken, scopes } = await getZoomAccessToken();
-        const endpointChecks = await probeZoomScopeAccess(zoomToken, scopes);
+        const endpointChecks = await probeZoomScopeAccess(zoomToken);
         const diag = mergeEndpointScopeFindings(diagnoseScopes(scopes), endpointChecks.map((check) => check.zoom_error));
         const blockingChecks = endpointChecks.filter((check) => !check.ok && check.endpoint !== '/accounts/{accountId}/recordings');
         console.log(`[zoom-import] check_scopes → granted=${scopes.length}, missing_required=${diag.missing_required.length}, blocking_checks=${blockingChecks.length}`);
@@ -284,7 +284,7 @@ serve(async (req) => {
 
       console.log(`[zoom-import] Listing recordings from ${from} to ${to} (granted scopes: ${scopes.length}, missing required: ${scopeDiag.missing_required.length})`);
 
-        const listData = await listZoomRecordings(zoomToken, from, to, scopes);
+        const listData = await listZoomRecordings(zoomToken, from, to);
       const effectiveScopeDiag = mergeEndpointScopeFindings(scopeDiag, listData.diagnostic?.source_checks?.map((check: any) => check.zoom_error) || []);
       const meetings = listData.meetings || [];
 
