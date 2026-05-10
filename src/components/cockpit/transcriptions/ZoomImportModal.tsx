@@ -201,7 +201,7 @@ export function ZoomImportModal({ open, onOpenChange, onImportComplete }: ZoomIm
               Vérification des autorisations Zoom...
             </div>
           )}
-          {!isCheckingScopes && scopeCheck && !scopeCheck.ok && (
+          {!isCheckingScopes && scopeCheck && scopeCheck.ok === false && (
             <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-xs space-y-1">
               <p className="font-medium text-destructive flex items-center gap-2">
                 <AlertCircle className="h-4 w-4" /> Connexion Zoom indisponible
