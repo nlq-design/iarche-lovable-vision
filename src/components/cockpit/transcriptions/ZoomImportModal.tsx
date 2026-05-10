@@ -150,10 +150,34 @@ export function ZoomImportModal({ open, onOpenChange, onImportComplete }: ZoomIm
                 </Button>
               </div>
 
+              {warning && (
+                <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 space-y-2">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+                    <div className="space-y-1 text-xs">
+                      <p className="font-medium text-destructive">
+                        Accès aux enregistrements Zoom non autorisé
+                      </p>
+                      <p className="text-muted-foreground">{warning.message}</p>
+                      {warning.required_scopes && warning.required_scopes.length > 0 && (
+                        <ul className="list-disc list-inside text-muted-foreground">
+                          {warning.required_scopes.map((s) => (
+                            <li key={s}><code className="text-[11px]">{s}</code></li>
+                          ))}
+                        </ul>
+                      )}
+                      {warning.zoom_error && (
+                        <p className="text-muted-foreground italic">Zoom: {warning.zoom_error}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="flex-1 overflow-y-auto space-y-2 pr-1">
                 {filteredRecordings.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-8">
-                    Aucun enregistrement trouvé
+                    {warning ? 'Aucun enregistrement accessible (voir avertissement ci-dessus)' : 'Aucun enregistrement trouvé'}
                   </p>
                 ) : (
                   filteredRecordings.map(rec => (
