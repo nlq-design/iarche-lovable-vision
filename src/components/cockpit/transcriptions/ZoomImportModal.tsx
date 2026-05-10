@@ -175,6 +175,52 @@ export function ZoomImportModal({ open, onOpenChange, onImportComplete }: ZoomIm
         </DialogHeader>
 
         <div className="space-y-3 flex-1 overflow-hidden flex flex-col">
+          {/* Bannière préflight scopes Zoom (toujours visible si problème) */}
+          {isCheckingScopes && (
+            <div className="rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground flex items-center gap-2">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              Vérification des autorisations Zoom...
+            </div>
+          )}
+          {!isCheckingScopes && scopeCheck && !scopeCheck.ok && (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-xs space-y-1">
+              <p className="font-medium text-destructive flex items-center gap-2">
+                <AlertCircle className="h-4 w-4" /> Connexion Zoom indisponible
+              </p>
+              <p className="text-muted-foreground">{scopeCheck.error}</p>
+            </div>
+          )}
+          {!isCheckingScopes && scopeCheck?.ok && scopeCheck.ready === false && (
+            <div className="rounded-lg border border-amber-500/40 bg-amber-50 dark:bg-amber-950/20 p-3 text-xs space-y-2">
+              <p className="font-medium text-amber-700 dark:text-amber-400 flex items-center gap-2">
+                <AlertCircle className="h-4 w-4" />
+                Scopes Zoom manquants — l'import risque d'être incomplet
+              </p>
+              <p className="text-muted-foreground">
+                Ajoutez ces scopes à votre app Zoom Server-to-Server OAuth, puis désactivez/réactivez l'app :
+              </p>
+              <ul className="list-disc list-inside space-y-0.5">
+                {scopeCheck.missing_required?.map((s) => (
+                  <li key={s}><code className="text-[11px] text-destructive">{s}</code></li>
+                ))}
+                {scopeCheck.missing_optional?.map((s) => (
+                  <li key={s} className="text-muted-foreground">
+                    <code className="text-[11px]">{s}</code> <span className="text-[10px]">(optionnel — recommandé pour multi-comptes)</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {!isCheckingScopes && scopeCheck?.ok && scopeCheck.ready && (
+            <div className="rounded-lg border border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/20 p-2 text-xs flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              Zoom autorisé — tous les scopes requis sont accordés
+              {scopeCheck.missing_optional && scopeCheck.missing_optional.length > 0 && (
+                <span className="text-muted-foreground ml-1">({scopeCheck.missing_optional.length} scope optionnel manquant)</span>
+              )}
+            </div>
+          )}
+
           {!hasLoaded ? (
             <div className="flex flex-col items-center justify-center py-12 gap-4">
               <p className="text-sm text-muted-foreground text-center">
