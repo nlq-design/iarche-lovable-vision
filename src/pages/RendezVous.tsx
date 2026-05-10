@@ -370,9 +370,65 @@ const RendezVous = () => {
                 </div>
               )}
               
-              <p className="text-sm text-muted-foreground mb-6">
-                Vous allez recevoir un email de confirmation avec une invitation calendrier.
-              </p>
+              {(() => {
+                const start = new Date(selectedSlot!);
+                const end = new Date(start.getTime() + bookingType.duration_minutes * 60000);
+                const fmtUtc = (d: Date) =>
+                  d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+                const title = `${bookingType.name} · IArche`;
+                const details = [
+                  bookingType.description || '',
+                  meetLink ? `Lien visio : ${meetLink}` : '',
+                  zoomPassword ? `Mot de passe : ${zoomPassword}` : '',
+                ].filter(Boolean).join('\n\n');
+                const location = meetingType === 'visio'
+                  ? (meetLink || 'Visioconférence')
+                  : meetingType === 'telephone'
+                  ? 'Appel téléphonique'
+                  : 'Bayonne (adresse communiquée par email)';
+                const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${fmtUtc(start)}/${fmtUtc(end)}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(location)}`;
+                const outlookBase = (host: 'live' | 'office') =>
+                  `https://outlook.${host}.com/calendar/0/deeplink/compose?path=%2Fcalendar%2Faction%2Fcompose&rru=addevent&subject=${encodeURIComponent(title)}&startdt=${encodeURIComponent(start.toISOString())}&enddt=${encodeURIComponent(end.toISOString())}&body=${encodeURIComponent(details)}&location=${encodeURIComponent(location)}`;
+                return (
+                  <div className="mb-6">
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Ajouter à votre agenda :
+                    </p>
+                    <div className="flex flex-wrap gap-2 justify-center">
+                      <a
+                        href={googleUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-border bg-background hover:bg-secondary/50 text-sm font-medium transition-colors"
+                      >
+                        <Calendar className="w-4 h-4" />
+                        Google Agenda
+                      </a>
+                      <a
+                        href={outlookBase('office')}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-border bg-background hover:bg-secondary/50 text-sm font-medium transition-colors"
+                      >
+                        <Calendar className="w-4 h-4" />
+                        Outlook 365
+                      </a>
+                      <a
+                        href={outlookBase('live')}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-border bg-background hover:bg-secondary/50 text-sm font-medium transition-colors"
+                      >
+                        <Calendar className="w-4 h-4" />
+                        Outlook.com
+                      </a>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-3">
+                      Un fichier .ics (Apple Calendar / iCloud / autres) est également joint à l'email de confirmation.
+                    </p>
+                  </div>
+                );
+              })()}
               <GradientLink to="/">Retour à l'accueil</GradientLink>
             </div>
           </section>
