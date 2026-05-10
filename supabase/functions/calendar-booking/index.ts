@@ -1022,7 +1022,11 @@ serve(async (req) => {
         meetLink || undefined,
         zoomPassword || undefined,
         additionalGuests.length > 0 ? additionalGuests : undefined,
-        bookingData.phone || undefined
+        bookingData.phone || undefined,
+        bookingData.email || undefined,
+        bookingData.company || undefined,
+        bookingData.message || undefined,
+        solutionName || undefined
       );
 
       // Send confirmation email with ICS attachment
@@ -1032,8 +1036,8 @@ serve(async (req) => {
 
       // Email subject with solution name if applicable
       const emailSubject = solutionName
-        ? `✅ Confirmation : ${bookingType.name} - ${solutionName} le ${startTime.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}`
-        : `✅ Confirmation : ${bookingType.name} le ${startTime.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}`;
+        ? `Confirmation : ${bookingType.name} - ${solutionName} le ${startTime.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}`
+        : `Confirmation : ${bookingType.name} le ${startTime.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}`;
 
         await resend.emails.send({
           from: 'IArche <contact@iarche.fr>',
