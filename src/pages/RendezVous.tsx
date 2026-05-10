@@ -392,6 +392,38 @@ const RendezVous = () => {
                 const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${fmtUtc(start)}/${fmtUtc(end)}&ctz=${encodeURIComponent(tz)}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(location)}`;
                 const outlookBase = (host: 'live' | 'office') =>
                   `https://outlook.${host}.com/calendar/0/deeplink/compose?path=%2Fcalendar%2Faction%2Fcompose&rru=addevent&subject=${encodeURIComponent(title)}&startdt=${encodeURIComponent(start.toISOString())}&enddt=${encodeURIComponent(end.toISOString())}&body=${encodeURIComponent(details)}&location=${encodeURIComponent(location)}&allday=false`;
+
+                const escapeIcs = (s: string) =>
+                  s.replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;');
+                const icsContent = [
+                  'BEGIN:VCALENDAR',
+                  'VERSION:2.0',
+                  'PRODID:-//IArche//Rendez-vous//FR',
+                  'CALSCALE:GREGORIAN',
+                  'METHOD:PUBLISH',
+                  'BEGIN:VEVENT',
+                  `UID:${fmtUtc(start)}-${Math.random().toString(36).slice(2, 10)}@iarche.fr`,
+                  `DTSTAMP:${fmtUtc(new Date())}`,
+                  `DTSTART:${fmtUtc(start)}`,
+                  `DTEND:${fmtUtc(end)}`,
+                  `SUMMARY:${escapeIcs(title)}`,
+                  `DESCRIPTION:${escapeIcs(details)}`,
+                  `LOCATION:${escapeIcs(location)}`,
+                  'END:VEVENT',
+                  'END:VCALENDAR',
+                ].join('\r\n');
+                const downloadIcs = () => {
+                  const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `iarche-rendez-vous-${fmtUtc(start)}.ics`;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  setTimeout(() => URL.revokeObjectURL(url), 1000);
+                };
+
                 return (
                   <div className="mb-6">
                     <p className="text-sm text-muted-foreground mb-3">
@@ -425,9 +457,17 @@ const RendezVous = () => {
                         <Calendar className="w-4 h-4" />
                         Outlook.com
                       </a>
+                      <button
+                        type="button"
+                        onClick={downloadIcs}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-border bg-background hover:bg-secondary/50 text-sm font-medium transition-colors"
+                      >
+                        <Calendar className="w-4 h-4" />
+                        Télécharger le .ics
+                      </button>
                     </div>
                     <p className="text-xs text-muted-foreground mt-3">
-                      Un fichier .ics (Apple Calendar / iCloud / autres) est également joint à l'email de confirmation.
+                      Le .ics fonctionne avec Apple Calendar, iCloud et la plupart des autres agendas. Il est aussi joint à l'email de confirmation.
                     </p>
                   </div>
                 );
