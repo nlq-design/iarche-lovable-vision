@@ -8,7 +8,16 @@ const corsHeaders = {
 
 const DEFAULT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000001';
 
-async function getZoomAccessToken(): Promise<string> {
+// Scopes requis pour un import complet des enregistrements Zoom
+const REQUIRED_ZOOM_SCOPES = [
+  'cloud_recording:read:list_user_recordings:admin',
+  'user:read:list_users:admin',
+];
+const OPTIONAL_ZOOM_SCOPES = [
+  'cloud_recording:read:list_account_recordings:master',
+];
+
+async function getZoomAccessToken(): Promise<{ token: string; scopes: string[] }> {
   const accountId = Deno.env.get('ZOOM_ACCOUNT_ID');
   const clientId = Deno.env.get('ZOOM_CLIENT_ID');
   const clientSecret = Deno.env.get('ZOOM_CLIENT_SECRET');
@@ -22,7 +31,22 @@ async function getZoomAccessToken(): Promise<string> {
   });
   const data = await response.json();
   if (!data.access_token) throw new Error('Failed to get Zoom access token');
-  return data.access_token;
+  const scopes = typeof data.scope === 'string' ? data.scope.split(/\s+/).filter(Boolean) : [];
+  return { token: data.access_token, scopes };
+}
+
+function diagnoseScopes(grantedScopes: string[]) {
+  const granted = new Set(grantedScopes);
+  const missing_required = REQUIRED_ZOOM_SCOPES.filter((s) => !granted.has(s));
+  const missing_optional = OPTIONAL_ZOOM_SCOPES.filter((s) => !granted.has(s));
+  return {
+    granted_scopes: grantedScopes,
+    required_scopes: REQUIRED_ZOOM_SCOPES,
+    optional_scopes: OPTIONAL_ZOOM_SCOPES,
+    missing_required,
+    missing_optional,
+    ready: missing_required.length === 0,
+  };
 }
 
 async function zoomGet(url: string, zoomToken: string) {
@@ -211,14 +235,31 @@ serve(async (req) => {
     action = body.action || 'list';
 
     // ========================================
-    // ACTION: list
     // ========================================
+    // ACTION: check_scopes (préflight)
+    // ========================================
+    if (action === 'check_scopes') {
+      try {
+        const { scopes } = await getZoomAccessToken();
+        const diag = diagnoseScopes(scopes);
+        console.log(`[zoom-import] check_scopes → granted=${scopes.length}, missing_required=${diag.missing_required.length}`);
+        return new Response(JSON.stringify({ ok: true, ...diag }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      } catch (e: any) {
+        return new Response(JSON.stringify({ ok: false, error: e.message || 'Zoom credentials error' }), {
+          status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
     if (action === 'list') {
-      const zoomToken = await getZoomAccessToken();
+      const { token: zoomToken, scopes } = await getZoomAccessToken();
+      const scopeDiag = diagnoseScopes(scopes);
       const from = body.from || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
       const to = body.to || new Date().toISOString().split('T')[0];
 
-      console.log(`[zoom-import] Listing recordings from ${from} to ${to}`);
+      console.log(`[zoom-import] Listing recordings from ${from} to ${to} (granted scopes: ${scopes.length}, missing required: ${scopeDiag.missing_required.length})`);
 
       const listData = await listZoomRecordings(zoomToken, from, to);
       const meetings = listData.meetings || [];
@@ -261,6 +302,7 @@ serve(async (req) => {
         required_scopes: listData.required_scopes || null,
         zoom_error: listData.zoom_error || null,
         diagnostic: listData.diagnostic || null,
+        scope_check: scopeDiag,
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -274,7 +316,7 @@ serve(async (req) => {
       if (!meetingId) throw new Error('meeting_id required');
 
       console.log(`[zoom-import] Importing recording for meeting ${meetingId}`);
-      const zoomToken = await getZoomAccessToken();
+      const { token: zoomToken } = await getZoomAccessToken();
 
       const recUrl = `https://api.zoom.us/v2/meetings/${meetingId}/recordings`;
       const recResp = await fetch(recUrl, {
