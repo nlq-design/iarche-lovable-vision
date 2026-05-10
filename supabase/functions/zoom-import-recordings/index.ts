@@ -49,9 +49,11 @@ async function listZoomRecordings(zoomToken: string, from: string, to: string) {
     `https://api.zoom.us/v2/users/me/recordings?from=${from}&to=${to}&page_size=100`,
     zoomToken
   );
-  if (userList.resp.ok) return userList.data;
+  if (userList.resp.ok && (userList.data?.meetings?.length || 0) > 0) return userList.data;
 
-  console.warn(`[zoom-import] /users/me/recordings failed (${userList.resp.status}), trying user-list approach`);
+  console.log(
+    `[zoom-import] /users/me/recordings returned ${userList.resp.ok ? '0 meetings' : `HTTP ${userList.resp.status}`}, trying account users`
+  );
 
   // Strategy 2: List users then get recordings per user
   const usersResp = await zoomGet(
@@ -75,7 +77,9 @@ async function listZoomRecordings(zoomToken: string, from: string, to: string) {
       }
     }
 
-    return { meetings: allMeetings, total_records: allMeetings.length };
+    if (allMeetings.length > 0 || userList.resp.ok) {
+      return { meetings: allMeetings, total_records: allMeetings.length };
+    }
   }
 
   // Strategy 3: Account-level recordings (requires master scope)
@@ -86,6 +90,10 @@ async function listZoomRecordings(zoomToken: string, from: string, to: string) {
       zoomToken
     );
     if (accountList.resp.ok) return accountList.data;
+  }
+
+  if (userList.resp.ok || usersResp.resp.ok) {
+    return { meetings: [], total_records: 0 };
   }
 
   const requiredScopes = [
