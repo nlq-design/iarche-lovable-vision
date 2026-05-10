@@ -448,6 +448,29 @@ const RendezVous = () => {
 
                 return (
                   <div className="mb-6">
+                    <details className="mb-4 rounded-md border border-border bg-secondary/30 text-left">
+                      <summary className="cursor-pointer select-none px-4 py-2 text-sm font-medium text-foreground hover:bg-secondary/50 rounded-md">
+                        Aperçu de l'événement envoyé à votre agenda
+                      </summary>
+                      <div className="px-4 py-3 border-t border-border space-y-2 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Titre : </span>
+                          <span className="font-medium text-foreground">{title}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Quand : </span>
+                          <span className="text-foreground">{dateLabel} ({bookingType.duration_minutes} min, fuseau {tz})</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Lieu : </span>
+                          <span className="text-foreground break-all">{location}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground block mb-1">Description :</span>
+                          <pre className="whitespace-pre-wrap font-sans text-xs text-foreground bg-background rounded p-3 border border-border">{details}</pre>
+                        </div>
+                      </div>
+                    </details>
                     <p className="text-sm text-muted-foreground mb-3">
                       Ajouter à votre agenda :
                     </p>
