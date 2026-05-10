@@ -44,42 +44,57 @@ async function zoomGet(url: string, zoomToken: string) {
  * 2. GET /users (list users) → GET /users/{id}/recordings (admin scope)
  */
 async function listZoomRecordings(zoomToken: string, from: string, to: string) {
-  // Strategy 1: Direct user recordings
+  const allMeetings: any[] = [];
+  const seenIds = new Set<string>();
+
+  // Strategy 1: Direct /users/me/recordings
   const userList = await zoomGet(
     `https://api.zoom.us/v2/users/me/recordings?from=${from}&to=${to}&page_size=100`,
     zoomToken
   );
-  if (userList.resp.ok && (userList.data?.meetings?.length || 0) > 0) return userList.data;
-
   console.log(
-    `[zoom-import] /users/me/recordings returned ${userList.resp.ok ? '0 meetings' : `HTTP ${userList.resp.status}`}, trying account users`
+    `[zoom-import] /users/me/recordings → HTTP ${userList.resp.status}, meetings=${userList.data?.meetings?.length ?? 0}`
   );
+  if (userList.resp.ok && userList.data?.meetings) {
+    for (const m of userList.data.meetings) {
+      if (!seenIds.has(String(m.id))) { seenIds.add(String(m.id)); allMeetings.push(m); }
+    }
+  }
 
-  // Strategy 2: List users then get recordings per user
+  // Strategy 2: List account users then per-user recordings (always run to enrich)
   const usersResp = await zoomGet(
     'https://api.zoom.us/v2/users?page_size=300&status=active',
     zoomToken
   );
+  console.log(
+    `[zoom-import] /users → HTTP ${usersResp.resp.status}, users=${usersResp.data?.users?.length ?? 0}` +
+    (!usersResp.resp.ok ? ` err="${usersResp.data?.message || usersResp.text?.slice(0,200)}"` : '')
+  );
 
   if (usersResp.resp.ok && usersResp.data?.users?.length > 0) {
-    const allMeetings: any[] = [];
-
     for (const user of usersResp.data.users) {
       const userRecordings = await zoomGet(
         `https://api.zoom.us/v2/users/${user.id}/recordings?from=${from}&to=${to}&page_size=100`,
         zoomToken
       );
-
+      const count = userRecordings.data?.meetings?.length ?? 0;
+      console.log(
+        `[zoom-import] user ${user.email} → HTTP ${userRecordings.resp.status}, meetings=${count}`
+      );
       if (userRecordings.resp.ok && userRecordings.data?.meetings) {
-        allMeetings.push(...userRecordings.data.meetings);
-      } else {
-        console.warn(`[zoom-import] Could not get recordings for user ${user.email}: ${userRecordings.resp.status}`);
+        for (const m of userRecordings.data.meetings) {
+          if (!seenIds.has(String(m.id))) { seenIds.add(String(m.id)); allMeetings.push(m); }
+        }
       }
     }
+  }
 
-    if (allMeetings.length > 0 || userList.resp.ok) {
-      return { meetings: allMeetings, total_records: allMeetings.length };
-    }
+  if (allMeetings.length > 0) {
+    return { meetings: allMeetings, total_records: allMeetings.length };
+  }
+  if (userList.resp.ok || usersResp.resp.ok) {
+    // APIs OK mais réellement aucun enregistrement cloud sur la période
+    return { meetings: [], total_records: 0 };
   }
 
   // Strategy 3: Account-level recordings (requires master scope)
