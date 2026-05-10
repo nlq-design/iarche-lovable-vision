@@ -41,6 +41,16 @@ interface ZoomListWarning {
   } | null;
 }
 
+interface ZoomEndpointCheck {
+  label: string;
+  endpoint: string;
+  ok: boolean;
+  status: number;
+  recordings_count?: number;
+  users_count?: number;
+  zoom_error?: string | null;
+}
+
 interface ZoomImportModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -55,6 +65,7 @@ interface ScopeCheck {
   optional_scopes?: string[];
   missing_required?: string[];
   missing_optional?: string[];
+  endpoint_checks?: ZoomEndpointCheck[];
   error?: string;
 }
 
@@ -65,6 +76,7 @@ export function ZoomImportModal({ open, onOpenChange, onImportComplete }: ZoomIm
   const [searchQuery, setSearchQuery] = useState('');
   const [hasLoaded, setHasLoaded] = useState(false);
   const [warning, setWarning] = useState<ZoomListWarning | null>(null);
+  const [listDiagnostic, setListDiagnostic] = useState<ZoomListWarning['diagnostic']>(null);
   const [scopeCheck, setScopeCheck] = useState<ScopeCheck | null>(null);
   const [isCheckingScopes, setIsCheckingScopes] = useState(false);
 
@@ -96,6 +108,7 @@ export function ZoomImportModal({ open, onOpenChange, onImportComplete }: ZoomIm
   const loadRecordings = async () => {
     setIsLoading(true);
     setWarning(null);
+    setListDiagnostic(null);
     try {
       const { data, error } = await supabase.functions.invoke('zoom-import-recordings', {
         body: { action: 'list' },
@@ -104,6 +117,7 @@ export function ZoomImportModal({ open, onOpenChange, onImportComplete }: ZoomIm
       setRecordings(data.recordings || []);
       setHasLoaded(true);
       if (data.scope_check) setScopeCheck(data.scope_check);
+      setListDiagnostic(data.diagnostic || null);
       if (data.warning) {
         setWarning({
           message: data.warning,
@@ -163,6 +177,11 @@ export function ZoomImportModal({ open, onOpenChange, onImportComplete }: ZoomIm
     if (minutes < 60) return `${minutes} min`;
     return `${Math.floor(minutes / 60)}h${String(minutes % 60).padStart(2, '0')}`;
   };
+
+  const failedScopeEndpoints = scopeCheck?.endpoint_checks?.filter((check) => !check.ok) || [];
+  const hasMissingRequiredScopes = (scopeCheck?.missing_required?.length || 0) > 0;
+  const hasMissingOptionalScopes = (scopeCheck?.missing_optional?.length || 0) > 0;
+  const shouldShowScopeWarning = !!scopeCheck?.ok && (!scopeCheck.ready || hasMissingOptionalScopes || failedScopeEndpoints.length > 0);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
