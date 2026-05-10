@@ -787,8 +787,6 @@ serve(async (req) => {
           ? `${bookingType.name} - ${solutionName} (${getMeetingTypeLabel(meetingType)})`
           : `${bookingType.name} (${getMeetingTypeLabel(meetingType)})`;
         
-        // Phase 1.5 multi-tenant: always include workspace_id
-        const DEFAULT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000001';
         const { data: newLead } = await supabase
           .from('leads')
           .upsert({
