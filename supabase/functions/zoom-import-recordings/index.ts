@@ -287,10 +287,17 @@ serve(async (req) => {
     // ========================================
     if (action === 'check_scopes') {
       try {
-        const { scopes } = await getZoomAccessToken();
-        const diag = diagnoseScopes(scopes);
-        console.log(`[zoom-import] check_scopes → granted=${scopes.length}, missing_required=${diag.missing_required.length}`);
-        return new Response(JSON.stringify({ ok: true, ...diag }), {
+        const { token: zoomToken, scopes } = await getZoomAccessToken();
+        const endpointChecks = await probeZoomScopeAccess(zoomToken);
+        const diag = mergeEndpointScopeFindings(diagnoseScopes(scopes), endpointChecks.map((check) => check.zoom_error));
+        const blockingChecks = endpointChecks.filter((check) => !check.ok && check.endpoint !== '/accounts/{accountId}/recordings');
+        console.log(`[zoom-import] check_scopes → granted=${scopes.length}, missing_required=${diag.missing_required.length}, blocking_checks=${blockingChecks.length}`);
+        return new Response(JSON.stringify({
+          ok: true,
+          ...diag,
+          ready: diag.ready && blockingChecks.length === 0,
+          endpoint_checks: endpointChecks,
+        }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       } catch (e: any) {
@@ -309,6 +316,7 @@ serve(async (req) => {
       console.log(`[zoom-import] Listing recordings from ${from} to ${to} (granted scopes: ${scopes.length}, missing required: ${scopeDiag.missing_required.length})`);
 
       const listData = await listZoomRecordings(zoomToken, from, to);
+      const effectiveScopeDiag = mergeEndpointScopeFindings(scopeDiag, listData.diagnostic?.source_checks?.map((check: any) => check.zoom_error) || []);
       const meetings = listData.meetings || [];
 
       const { data: webhookTranscriptions } = await supabaseService
@@ -349,7 +357,7 @@ serve(async (req) => {
         required_scopes: listData.required_scopes || null,
         zoom_error: listData.zoom_error || null,
         diagnostic: listData.diagnostic || null,
-        scope_check: scopeDiag,
+        scope_check: effectiveScopeDiag,
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
