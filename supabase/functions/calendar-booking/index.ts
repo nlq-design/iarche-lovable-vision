@@ -884,9 +884,9 @@ serve(async (req) => {
       let eventDescription = `Email: ${bookingData.email}\nEntreprise: ${bookingData.company || 'Non renseignée'}${solutionInfo}${additionalGuests.length > 0 ? `\nParticipants supplémentaires: ${additionalGuests.join(', ')}` : ''}\n\nMessage: ${bookingData.message || 'Aucun'}`;
       
       if (meetingType === 'telephone') {
-        eventDescription = `📞 APPEL TÉLÉPHONIQUE\nNuméro à appeler: ${bookingData.phone || 'Non renseigné'}\n\n${eventDescription}`;
+        eventDescription = `APPEL TÉLÉPHONIQUE\nNuméro à appeler: ${bookingData.phone || 'Non renseigné'}\n\n${eventDescription}`;
       } else if (meetingType === 'presentiel') {
-        eventDescription = `📍 RENDEZ-VOUS EN PRÉSENTIEL\nAdresse: ${IARCHE_ADDRESS}\n\n${eventDescription}`;
+        eventDescription = `RENDEZ-VOUS EN PRÉSENTIEL\nAdresse: ${IARCHE_ADDRESS}\n\n${eventDescription}`;
       } else {
         eventDescription = `Téléphone: ${bookingData.phone || 'Non renseigné'}\n${eventDescription}`;
       }
