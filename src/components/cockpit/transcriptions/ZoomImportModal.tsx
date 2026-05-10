@@ -47,6 +47,17 @@ interface ZoomImportModalProps {
   onImportComplete: () => void;
 }
 
+interface ScopeCheck {
+  ok: boolean;
+  ready?: boolean;
+  granted_scopes?: string[];
+  required_scopes?: string[];
+  optional_scopes?: string[];
+  missing_required?: string[];
+  missing_optional?: string[];
+  error?: string;
+}
+
 export function ZoomImportModal({ open, onOpenChange, onImportComplete }: ZoomImportModalProps) {
   const [recordings, setRecordings] = useState<ZoomRecording[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -54,6 +65,33 @@ export function ZoomImportModal({ open, onOpenChange, onImportComplete }: ZoomIm
   const [searchQuery, setSearchQuery] = useState('');
   const [hasLoaded, setHasLoaded] = useState(false);
   const [warning, setWarning] = useState<ZoomListWarning | null>(null);
+  const [scopeCheck, setScopeCheck] = useState<ScopeCheck | null>(null);
+  const [isCheckingScopes, setIsCheckingScopes] = useState(false);
+
+  // Vérification automatique des scopes Zoom dès l'ouverture du modal
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    (async () => {
+      setIsCheckingScopes(true);
+      try {
+        const { data, error } = await supabase.functions.invoke('zoom-import-recordings', {
+          body: { action: 'check_scopes' },
+        });
+        if (cancelled) return;
+        if (error) throw error;
+        setScopeCheck(data as ScopeCheck);
+        if (data?.ok && !data.ready) {
+          toast.warning(`Zoom : ${data.missing_required?.length ?? 0} scope(s) requis manquant(s)`);
+        }
+      } catch (e: any) {
+        if (!cancelled) setScopeCheck({ ok: false, error: e.message });
+      } finally {
+        if (!cancelled) setIsCheckingScopes(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [open]);
 
   const loadRecordings = async () => {
     setIsLoading(true);
@@ -65,6 +103,7 @@ export function ZoomImportModal({ open, onOpenChange, onImportComplete }: ZoomIm
       if (error) throw error;
       setRecordings(data.recordings || []);
       setHasLoaded(true);
+      if (data.scope_check) setScopeCheck(data.scope_check);
       if (data.warning) {
         setWarning({
           message: data.warning,
