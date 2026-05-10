@@ -8,7 +8,16 @@ const corsHeaders = {
 
 const DEFAULT_WORKSPACE_ID = '00000000-0000-0000-0000-000000000001';
 
-async function getZoomAccessToken(): Promise<string> {
+// Scopes requis pour un import complet des enregistrements Zoom
+const REQUIRED_ZOOM_SCOPES = [
+  'cloud_recording:read:list_user_recordings:admin',
+  'user:read:list_users:admin',
+];
+const OPTIONAL_ZOOM_SCOPES = [
+  'cloud_recording:read:list_account_recordings:master',
+];
+
+async function getZoomAccessToken(): Promise<{ token: string; scopes: string[] }> {
   const accountId = Deno.env.get('ZOOM_ACCOUNT_ID');
   const clientId = Deno.env.get('ZOOM_CLIENT_ID');
   const clientSecret = Deno.env.get('ZOOM_CLIENT_SECRET');
@@ -22,7 +31,22 @@ async function getZoomAccessToken(): Promise<string> {
   });
   const data = await response.json();
   if (!data.access_token) throw new Error('Failed to get Zoom access token');
-  return data.access_token;
+  const scopes = typeof data.scope === 'string' ? data.scope.split(/\s+/).filter(Boolean) : [];
+  return { token: data.access_token, scopes };
+}
+
+function diagnoseScopes(grantedScopes: string[]) {
+  const granted = new Set(grantedScopes);
+  const missing_required = REQUIRED_ZOOM_SCOPES.filter((s) => !granted.has(s));
+  const missing_optional = OPTIONAL_ZOOM_SCOPES.filter((s) => !granted.has(s));
+  return {
+    granted_scopes: grantedScopes,
+    required_scopes: REQUIRED_ZOOM_SCOPES,
+    optional_scopes: OPTIONAL_ZOOM_SCOPES,
+    missing_required,
+    missing_optional,
+    ready: missing_required.length === 0,
+  };
 }
 
 async function zoomGet(url: string, zoomToken: string) {
