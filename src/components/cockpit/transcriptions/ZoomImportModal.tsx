@@ -319,6 +319,29 @@ export function ZoomImportModal({ open, onOpenChange, onImportComplete }: ZoomIm
                 </div>
               )}
 
+              {!warning && listDiagnostic?.source_checks && filteredRecordings.length === 0 && (
+                <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+                  <p className="text-xs font-medium text-foreground flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4" />
+                    Zoom connecté, mais aucun enregistrement accessible sur la période vérifiée
+                  </p>
+                  <div className="space-y-1">
+                    {listDiagnostic.source_checks.map((check) => (
+                      <div key={check.endpoint} className="flex items-start justify-between gap-3 rounded-md border bg-background/60 px-2 py-1.5">
+                        <div className="text-xs">
+                          <p className="font-medium text-foreground">{check.label}</p>
+                          <p className="text-muted-foreground">{check.endpoint}</p>
+                          {check.zoom_error && <p className="text-muted-foreground italic">Zoom: {check.zoom_error}</p>}
+                        </div>
+                        <Badge variant={check.ok ? 'secondary' : 'destructive'} className="shrink-0 text-[11px]">
+                          HTTP {check.status} • {check.recordings_count ?? check.users_count ?? 0}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="flex-1 overflow-y-auto space-y-2 pr-1">
                 {filteredRecordings.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-8">
