@@ -22,6 +22,13 @@ interface ZoomRecording {
   recording_count: number;
 }
 
+interface ZoomListWarning {
+  message: string;
+  error_code: string | null;
+  required_scopes: string[] | null;
+  zoom_error: string | null;
+}
+
 interface ZoomImportModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
