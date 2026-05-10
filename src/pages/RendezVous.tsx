@@ -386,9 +386,12 @@ const RendezVous = () => {
                   : meetingType === 'telephone'
                   ? 'Appel téléphonique'
                   : 'Bayonne (adresse communiquée par email)';
-                const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${fmtUtc(start)}/${fmtUtc(end)}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(location)}`;
+                // Use UTC ISO format (Z suffix) for both providers — they convert to the user's local timezone automatically.
+                // ctz=Europe/Paris forces Google to display the event in Paris time regardless of the viewer's account timezone.
+                const tz = 'Europe/Paris';
+                const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${fmtUtc(start)}/${fmtUtc(end)}&ctz=${encodeURIComponent(tz)}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(location)}`;
                 const outlookBase = (host: 'live' | 'office') =>
-                  `https://outlook.${host}.com/calendar/0/deeplink/compose?path=%2Fcalendar%2Faction%2Fcompose&rru=addevent&subject=${encodeURIComponent(title)}&startdt=${encodeURIComponent(start.toISOString())}&enddt=${encodeURIComponent(end.toISOString())}&body=${encodeURIComponent(details)}&location=${encodeURIComponent(location)}`;
+                  `https://outlook.${host}.com/calendar/0/deeplink/compose?path=%2Fcalendar%2Faction%2Fcompose&rru=addevent&subject=${encodeURIComponent(title)}&startdt=${encodeURIComponent(start.toISOString())}&enddt=${encodeURIComponent(end.toISOString())}&body=${encodeURIComponent(details)}&location=${encodeURIComponent(location)}&allday=false`;
                 return (
                   <div className="mb-6">
                     <p className="text-sm text-muted-foreground mb-3">
