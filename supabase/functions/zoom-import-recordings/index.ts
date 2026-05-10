@@ -88,17 +88,24 @@ async function listZoomRecordings(zoomToken: string, from: string, to: string) {
     if (accountList.resp.ok) return accountList.data;
   }
 
+  const requiredScopes = [
+    'cloud_recording:read:list_user_recordings',
+    'cloud_recording:read:list_user_recordings:admin',
+    'cloud_recording:read:list_account_recordings:master',
+  ];
   const scopeErrorMessage =
-    `Zoom scopes manquants. Ajoutez un des scopes suivants dans votre app Zoom : ` +
-    `cloud_recording:read:list_user_recordings, cloud_recording:read:list_user_recordings:admin, ` +
-    `ou cloud_recording:read:list_account_recordings:master.`;
+    `Accès aux enregistrements Zoom non autorisé. Ajoutez un des scopes suivants dans votre app Zoom Server-to-Server OAuth : ` +
+    requiredScopes.join(', ') + '.';
 
-  console.warn(`[zoom-import] ${scopeErrorMessage} Dernière erreur: ${userList.data?.message || userList.text}`);
+  console.warn(`[zoom-import] ${scopeErrorMessage} Dernière erreur Zoom: ${userList.data?.message || userList.text}`);
 
   return {
     meetings: [],
     total_records: 0,
     warning: scopeErrorMessage,
+    error_code: 'ZOOM_MISSING_RECORDING_SCOPES',
+    required_scopes: requiredScopes,
+    zoom_error: userList.data?.message || userList.text || null,
   };
 }
 
@@ -178,6 +185,9 @@ serve(async (req) => {
         recordings,
         total: listData.total_records || recordings.length,
         warning: listData.warning || null,
+        error_code: listData.error_code || null,
+        required_scopes: listData.required_scopes || null,
+        zoom_error: listData.zoom_error || null,
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });

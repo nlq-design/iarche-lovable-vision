@@ -22,6 +22,13 @@ interface ZoomRecording {
   recording_count: number;
 }
 
+interface ZoomListWarning {
+  message: string;
+  error_code: string | null;
+  required_scopes: string[] | null;
+  zoom_error: string | null;
+}
+
 interface ZoomImportModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -34,9 +41,11 @@ export function ZoomImportModal({ open, onOpenChange, onImportComplete }: ZoomIm
   const [importingIds, setImportingIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [hasLoaded, setHasLoaded] = useState(false);
+  const [warning, setWarning] = useState<ZoomListWarning | null>(null);
 
   const loadRecordings = async () => {
     setIsLoading(true);
+    setWarning(null);
     try {
       const { data, error } = await supabase.functions.invoke('zoom-import-recordings', {
         body: { action: 'list' },
@@ -44,7 +53,15 @@ export function ZoomImportModal({ open, onOpenChange, onImportComplete }: ZoomIm
       if (error) throw error;
       setRecordings(data.recordings || []);
       setHasLoaded(true);
-      if ((data.recordings || []).length === 0) {
+      if (data.warning) {
+        setWarning({
+          message: data.warning,
+          error_code: data.error_code || null,
+          required_scopes: data.required_scopes || null,
+          zoom_error: data.zoom_error || null,
+        });
+        toast.warning(data.warning);
+      } else if ((data.recordings || []).length === 0) {
         toast.info('Aucun enregistrement Zoom trouvé sur les 30 derniers jours');
       }
     } catch (err: any) {
@@ -133,10 +150,34 @@ export function ZoomImportModal({ open, onOpenChange, onImportComplete }: ZoomIm
                 </Button>
               </div>
 
+              {warning && (
+                <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 space-y-2">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+                    <div className="space-y-1 text-xs">
+                      <p className="font-medium text-destructive">
+                        Accès aux enregistrements Zoom non autorisé
+                      </p>
+                      <p className="text-muted-foreground">{warning.message}</p>
+                      {warning.required_scopes && warning.required_scopes.length > 0 && (
+                        <ul className="list-disc list-inside text-muted-foreground">
+                          {warning.required_scopes.map((s) => (
+                            <li key={s}><code className="text-[11px]">{s}</code></li>
+                          ))}
+                        </ul>
+                      )}
+                      {warning.zoom_error && (
+                        <p className="text-muted-foreground italic">Zoom: {warning.zoom_error}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="flex-1 overflow-y-auto space-y-2 pr-1">
                 {filteredRecordings.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-8">
-                    Aucun enregistrement trouvé
+                    {warning ? 'Aucun enregistrement accessible (voir avertissement ci-dessus)' : 'Aucun enregistrement trouvé'}
                   </p>
                 ) : (
                   filteredRecordings.map(rec => (
