@@ -27,6 +27,18 @@ interface ZoomListWarning {
   error_code: string | null;
   required_scopes: string[] | null;
   zoom_error: string | null;
+  diagnostic: {
+    range?: { from: string; to: string };
+    source_checks?: Array<{
+      label: string;
+      endpoint: string;
+      ok: boolean;
+      status: number;
+      recordings_count?: number;
+      users_count?: number;
+      zoom_error?: string | null;
+    }>;
+  } | null;
 }
 
 interface ZoomImportModalProps {
@@ -59,8 +71,9 @@ export function ZoomImportModal({ open, onOpenChange, onImportComplete }: ZoomIm
           error_code: data.error_code || null,
           required_scopes: data.required_scopes || null,
           zoom_error: data.zoom_error || null,
+          diagnostic: data.diagnostic || null,
         });
-        toast.warning(data.warning);
+        toast.warning('Zoom connecté, mais accès incomplet aux enregistrements');
       } else if ((data.recordings || []).length === 0) {
         toast.info('Aucun enregistrement Zoom trouvé sur les 30 derniers jours');
       }
@@ -168,6 +181,21 @@ export function ZoomImportModal({ open, onOpenChange, onImportComplete }: ZoomIm
                       )}
                       {warning.zoom_error && (
                         <p className="text-muted-foreground italic">Zoom: {warning.zoom_error}</p>
+                      )}
+                      {warning.diagnostic?.source_checks && warning.diagnostic.source_checks.length > 0 && (
+                        <div className="pt-1 space-y-1">
+                          {warning.diagnostic.source_checks.map((check) => (
+                            <div key={check.endpoint} className="flex items-start justify-between gap-3 rounded-md border bg-background/60 px-2 py-1.5">
+                              <div>
+                                <p className="font-medium text-foreground">{check.label}</p>
+                                <p className="text-muted-foreground">{check.endpoint}</p>
+                              </div>
+                              <Badge variant={check.ok ? 'secondary' : 'destructive'} className="shrink-0 text-[11px]">
+                                HTTP {check.status} • {check.recordings_count ?? check.users_count ?? 0}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
                       )}
                     </div>
                   </div>
