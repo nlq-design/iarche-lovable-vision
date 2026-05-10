@@ -260,6 +260,7 @@ serve(async (req) => {
         error_code: listData.error_code || null,
         required_scopes: listData.required_scopes || null,
         zoom_error: listData.zoom_error || null,
+        diagnostic: listData.diagnostic || null,
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
