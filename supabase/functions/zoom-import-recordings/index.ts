@@ -46,6 +46,7 @@ async function zoomGet(url: string, zoomToken: string) {
 async function listZoomRecordings(zoomToken: string, from: string, to: string) {
   const allMeetings: any[] = [];
   const seenIds = new Set<string>();
+  const sourceChecks: any[] = [];
 
   // Strategy 1: Direct /users/me/recordings
   const userList = await zoomGet(
@@ -55,6 +56,14 @@ async function listZoomRecordings(zoomToken: string, from: string, to: string) {
   console.log(
     `[zoom-import] /users/me/recordings → HTTP ${userList.resp.status}, meetings=${userList.data?.meetings?.length ?? 0}`
   );
+  sourceChecks.push({
+    label: "Utilisateur propriétaire de l'app Zoom",
+    endpoint: '/users/me/recordings',
+    ok: userList.resp.ok,
+    status: userList.resp.status,
+    recordings_count: userList.data?.meetings?.length ?? 0,
+    zoom_error: userList.resp.ok ? null : userList.data?.message || userList.text || null,
+  });
   if (userList.resp.ok && userList.data?.meetings) {
     for (const m of userList.data.meetings) {
       if (!seenIds.has(String(m.id))) { seenIds.add(String(m.id)); allMeetings.push(m); }
@@ -70,6 +79,15 @@ async function listZoomRecordings(zoomToken: string, from: string, to: string) {
     `[zoom-import] /users → HTTP ${usersResp.resp.status}, users=${usersResp.data?.users?.length ?? 0}` +
     (!usersResp.resp.ok ? ` err="${usersResp.data?.message || usersResp.text?.slice(0,200)}"` : '')
   );
+  const usersError = usersResp.data?.message || usersResp.text || null;
+  sourceChecks.push({
+    label: 'Tous les utilisateurs du compte Zoom',
+    endpoint: '/users',
+    ok: usersResp.resp.ok,
+    status: usersResp.resp.status,
+    users_count: usersResp.data?.users?.length ?? 0,
+    zoom_error: usersResp.resp.ok ? null : usersError,
+  });
 
   if (usersResp.resp.ok && usersResp.data?.users?.length > 0) {
     for (const user of usersResp.data.users) {
@@ -89,26 +107,56 @@ async function listZoomRecordings(zoomToken: string, from: string, to: string) {
     }
   }
 
-  if (allMeetings.length > 0) {
-    return { meetings: allMeetings, total_records: allMeetings.length };
-  }
-  if (userList.resp.ok || usersResp.resp.ok) {
-    // APIs OK mais réellement aucun enregistrement cloud sur la période
-    return { meetings: [], total_records: 0 };
-  }
-
   // Strategy 3: Account-level recordings (requires master scope)
   const accountId = Deno.env.get('ZOOM_ACCOUNT_ID');
+  let accountList: any = null;
   if (accountId) {
-    const accountList = await zoomGet(
+    accountList = await zoomGet(
       `https://api.zoom.us/v2/accounts/${accountId}/recordings?from=${from}&to=${to}&page_size=100`,
       zoomToken
     );
-    if (accountList.resp.ok) return accountList.data;
+    console.log(
+      `[zoom-import] /accounts/{accountId}/recordings → HTTP ${accountList.resp.status}, meetings=${accountList.data?.meetings?.length ?? 0}` +
+      (!accountList.resp.ok ? ` err="${accountList.data?.message || accountList.text?.slice(0,200)}"` : '')
+    );
+    sourceChecks.push({
+      label: 'Enregistrements au niveau du compte Zoom',
+      endpoint: '/accounts/{accountId}/recordings',
+      ok: accountList.resp.ok,
+      status: accountList.resp.status,
+      recordings_count: accountList.data?.meetings?.length ?? 0,
+      zoom_error: accountList.resp.ok ? null : accountList.data?.message || accountList.text || null,
+    });
+    if (accountList.resp.ok && accountList.data?.meetings) {
+      for (const m of accountList.data.meetings) {
+        if (!seenIds.has(String(m.id))) { seenIds.add(String(m.id)); allMeetings.push(m); }
+      }
+    }
+  }
+
+  const diagnostic = { range: { from, to }, source_checks: sourceChecks };
+
+  if (allMeetings.length > 0) {
+    return { meetings: allMeetings, total_records: allMeetings.length, diagnostic };
   }
 
   if (userList.resp.ok || usersResp.resp.ok) {
-    return { meetings: [], total_records: 0 };
+    const missingUserListScope = String(usersError || '').includes('user:read:list_users:admin');
+    if (userList.resp.ok && !usersResp.resp.ok && missingUserListScope) {
+      return {
+        meetings: [],
+        total_records: 0,
+        warning:
+          "Le connecteur Zoom répond, mais il ne voit que l'utilisateur propriétaire de l'app Zoom. Zoom refuse la vérification des autres utilisateurs du compte : le scope user:read:list_users:admin manque. Si l'enregistrement appartient à un autre utilisateur Zoom que ce propriétaire, il restera invisible ici.",
+        error_code: 'ZOOM_USER_LIST_SCOPE_MISSING',
+        required_scopes: ['user:read:list_users:admin', 'cloud_recording:read:list_user_recordings:admin'],
+        zoom_error: usersError,
+        diagnostic,
+      };
+    }
+
+    // APIs OK mais réellement aucun enregistrement cloud accessible sur la période
+    return { meetings: [], total_records: 0, diagnostic };
   }
 
   const requiredScopes = [
@@ -129,6 +177,7 @@ async function listZoomRecordings(zoomToken: string, from: string, to: string) {
     error_code: 'ZOOM_MISSING_RECORDING_SCOPES',
     required_scopes: requiredScopes,
     zoom_error: userList.data?.message || userList.text || null,
+    diagnostic,
   };
 }
 
