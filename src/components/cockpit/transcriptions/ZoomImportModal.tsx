@@ -213,7 +213,7 @@ export function ZoomImportModal({ open, onOpenChange, onImportComplete }: ZoomIm
             <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-xs space-y-2">
               <p className="font-medium text-destructive flex items-center gap-2">
                 <AlertCircle className="h-4 w-4" />
-                Accès Zoom incomplet — l'import peut ne voir qu'une partie des enregistrements
+                Accès Zoom incomplet — l'import ne peut pas vérifier tous les utilisateurs du compte
               </p>
               <p className="text-muted-foreground">
                 Vérification automatique effectuée au lancement. Corrigez les scopes ci-dessous, puis désactivez/réactivez l'app Zoom.
@@ -225,7 +225,7 @@ export function ZoomImportModal({ open, onOpenChange, onImportComplete }: ZoomIm
                   ))}
                   {scopeCheck.missing_optional?.map((s) => (
                     <li key={s} className="text-muted-foreground">
-                      <code className="text-[11px]">{s}</code> <span className="text-[10px]">(recommandé pour les enregistrements multi-comptes)</span>
+                      <code className="text-[11px]">{s}</code>
                     </li>
                   ))}
                 </ul>
@@ -323,7 +323,7 @@ export function ZoomImportModal({ open, onOpenChange, onImportComplete }: ZoomIm
                 <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
                   <p className="text-xs font-medium text-foreground flex items-center gap-2">
                     <AlertCircle className="h-4 w-4" />
-                    Zoom connecté, mais aucun enregistrement accessible sur la période vérifiée
+                    Zoom connecté — aucun enregistrement cloud trouvé sur la période vérifiée
                   </p>
                   <div className="space-y-1">
                     {listDiagnostic.source_checks.map((check) => (
