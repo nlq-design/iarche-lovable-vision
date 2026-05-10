@@ -41,9 +41,11 @@ export function ZoomImportModal({ open, onOpenChange, onImportComplete }: ZoomIm
   const [importingIds, setImportingIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [hasLoaded, setHasLoaded] = useState(false);
+  const [warning, setWarning] = useState<ZoomListWarning | null>(null);
 
   const loadRecordings = async () => {
     setIsLoading(true);
+    setWarning(null);
     try {
       const { data, error } = await supabase.functions.invoke('zoom-import-recordings', {
         body: { action: 'list' },
@@ -51,7 +53,15 @@ export function ZoomImportModal({ open, onOpenChange, onImportComplete }: ZoomIm
       if (error) throw error;
       setRecordings(data.recordings || []);
       setHasLoaded(true);
-      if ((data.recordings || []).length === 0) {
+      if (data.warning) {
+        setWarning({
+          message: data.warning,
+          error_code: data.error_code || null,
+          required_scopes: data.required_scopes || null,
+          zoom_error: data.zoom_error || null,
+        });
+        toast.warning(data.warning);
+      } else if ((data.recordings || []).length === 0) {
         toast.info('Aucun enregistrement Zoom trouvé sur les 30 derniers jours');
       }
     } catch (err: any) {
