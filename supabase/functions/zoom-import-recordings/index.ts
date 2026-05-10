@@ -259,7 +259,7 @@ serve(async (req) => {
         const { token: zoomToken, scopes } = await getZoomAccessToken();
         const endpointChecks = await probeZoomScopeAccess(zoomToken);
         const diag = mergeEndpointScopeFindings(diagnoseScopes(scopes), endpointChecks.map((check) => check.zoom_error));
-        const blockingChecks = endpointChecks.filter((check) => !check.ok && check.endpoint !== '/accounts/{accountId}/recordings');
+        const blockingChecks = endpointChecks.filter((check) => !check.ok);
         console.log(`[zoom-import] check_scopes → granted=${scopes.length}, missing_required=${diag.missing_required.length}, blocking_checks=${blockingChecks.length}`);
         return new Response(JSON.stringify({
           ok: true,
@@ -448,7 +448,6 @@ serve(async (req) => {
       action === 'list' &&
       (
         message.includes('list_user_recordings') ||
-        message.includes('list_account_recordings') ||
         message.includes('Impossible de lister les enregistrements Zoom') ||
         message.includes('Zoom scopes')
       );
