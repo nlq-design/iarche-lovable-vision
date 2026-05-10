@@ -185,6 +185,9 @@ serve(async (req) => {
         recordings,
         total: listData.total_records || recordings.length,
         warning: listData.warning || null,
+        error_code: listData.error_code || null,
+        required_scopes: listData.required_scopes || null,
+        zoom_error: listData.zoom_error || null,
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
