@@ -1081,8 +1081,8 @@ serve(async (req) => {
       // Send admin notification
       // Admin notification subject with solution
       const adminSubject = solutionName
-        ? `📅 Nouveau RDV : ${bookingType.name} - ${solutionName} - ${bookingData.name}`
-        : `📅 Nouveau RDV : ${bookingType.name} - ${bookingData.name}`;
+        ? `Nouveau RDV : ${bookingType.name} - ${solutionName} - ${bookingData.name}`
+        : `Nouveau RDV : ${bookingType.name} - ${bookingData.name}`;
 
       try {
         await resend.emails.send({
