@@ -209,34 +209,47 @@ export function ZoomImportModal({ open, onOpenChange, onImportComplete }: ZoomIm
               <p className="text-muted-foreground">{scopeCheck.error}</p>
             </div>
           )}
-          {!isCheckingScopes && scopeCheck?.ok && scopeCheck.ready === false && (
-            <div className="rounded-lg border border-amber-500/40 bg-amber-50 dark:bg-amber-950/20 p-3 text-xs space-y-2">
-              <p className="font-medium text-amber-700 dark:text-amber-400 flex items-center gap-2">
+          {!isCheckingScopes && shouldShowScopeWarning && (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-xs space-y-2">
+              <p className="font-medium text-destructive flex items-center gap-2">
                 <AlertCircle className="h-4 w-4" />
-                Scopes Zoom manquants — l'import risque d'être incomplet
+                Accès Zoom incomplet — l'import peut ne voir qu'une partie des enregistrements
               </p>
               <p className="text-muted-foreground">
-                Ajoutez ces scopes à votre app Zoom Server-to-Server OAuth, puis désactivez/réactivez l'app :
+                Vérification automatique effectuée au lancement. Corrigez les scopes ci-dessous, puis désactivez/réactivez l'app Zoom.
               </p>
-              <ul className="list-disc list-inside space-y-0.5">
-                {scopeCheck.missing_required?.map((s) => (
-                  <li key={s}><code className="text-[11px] text-destructive">{s}</code></li>
-                ))}
-                {scopeCheck.missing_optional?.map((s) => (
-                  <li key={s} className="text-muted-foreground">
-                    <code className="text-[11px]">{s}</code> <span className="text-[10px]">(optionnel — recommandé pour multi-comptes)</span>
-                  </li>
-                ))}
-              </ul>
+              {(hasMissingRequiredScopes || hasMissingOptionalScopes) && (
+                <ul className="list-disc list-inside space-y-0.5">
+                  {scopeCheck.missing_required?.map((s) => (
+                    <li key={s}><code className="text-[11px] text-destructive">{s}</code></li>
+                  ))}
+                  {scopeCheck.missing_optional?.map((s) => (
+                    <li key={s} className="text-muted-foreground">
+                      <code className="text-[11px]">{s}</code> <span className="text-[10px]">(recommandé pour les enregistrements multi-comptes)</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {failedScopeEndpoints.length > 0 && (
+                <div className="space-y-1 pt-1">
+                  {failedScopeEndpoints.map((check) => (
+                    <div key={check.endpoint} className="flex items-start justify-between gap-3 rounded-md border bg-background/60 px-2 py-1.5">
+                      <div>
+                        <p className="font-medium text-foreground">{check.label}</p>
+                        <p className="text-muted-foreground">{check.endpoint}</p>
+                        {check.zoom_error && <p className="text-muted-foreground italic">Zoom: {check.zoom_error}</p>}
+                      </div>
+                      <Badge variant="destructive" className="shrink-0 text-[11px]">HTTP {check.status}</Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
-          {!isCheckingScopes && scopeCheck?.ok && scopeCheck.ready && (
+          {!isCheckingScopes && scopeCheck?.ok && scopeCheck.ready && !shouldShowScopeWarning && (
             <div className="rounded-lg border border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/20 p-2 text-xs flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
               <CheckCircle2 className="h-3.5 w-3.5" />
               Zoom autorisé — tous les scopes requis sont accordés
-              {scopeCheck.missing_optional && scopeCheck.missing_optional.length > 0 && (
-                <span className="text-muted-foreground ml-1">({scopeCheck.missing_optional.length} scope optionnel manquant)</span>
-              )}
             </div>
           )}
 
