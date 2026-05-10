@@ -41,6 +41,16 @@ interface ZoomListWarning {
   } | null;
 }
 
+interface ZoomEndpointCheck {
+  label: string;
+  endpoint: string;
+  ok: boolean;
+  status: number;
+  recordings_count?: number;
+  users_count?: number;
+  zoom_error?: string | null;
+}
+
 interface ZoomImportModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -55,6 +65,7 @@ interface ScopeCheck {
   optional_scopes?: string[];
   missing_required?: string[];
   missing_optional?: string[];
+  endpoint_checks?: ZoomEndpointCheck[];
   error?: string;
 }
 
@@ -65,6 +76,7 @@ export function ZoomImportModal({ open, onOpenChange, onImportComplete }: ZoomIm
   const [searchQuery, setSearchQuery] = useState('');
   const [hasLoaded, setHasLoaded] = useState(false);
   const [warning, setWarning] = useState<ZoomListWarning | null>(null);
+  const [listDiagnostic, setListDiagnostic] = useState<ZoomListWarning['diagnostic']>(null);
   const [scopeCheck, setScopeCheck] = useState<ScopeCheck | null>(null);
   const [isCheckingScopes, setIsCheckingScopes] = useState(false);
 
@@ -96,6 +108,7 @@ export function ZoomImportModal({ open, onOpenChange, onImportComplete }: ZoomIm
   const loadRecordings = async () => {
     setIsLoading(true);
     setWarning(null);
+    setListDiagnostic(null);
     try {
       const { data, error } = await supabase.functions.invoke('zoom-import-recordings', {
         body: { action: 'list' },
@@ -104,6 +117,7 @@ export function ZoomImportModal({ open, onOpenChange, onImportComplete }: ZoomIm
       setRecordings(data.recordings || []);
       setHasLoaded(true);
       if (data.scope_check) setScopeCheck(data.scope_check);
+      setListDiagnostic(data.diagnostic || null);
       if (data.warning) {
         setWarning({
           message: data.warning,
@@ -164,6 +178,11 @@ export function ZoomImportModal({ open, onOpenChange, onImportComplete }: ZoomIm
     return `${Math.floor(minutes / 60)}h${String(minutes % 60).padStart(2, '0')}`;
   };
 
+  const failedScopeEndpoints = scopeCheck?.endpoint_checks?.filter((check) => !check.ok) || [];
+  const hasMissingRequiredScopes = (scopeCheck?.missing_required?.length || 0) > 0;
+  const hasMissingOptionalScopes = (scopeCheck?.missing_optional?.length || 0) > 0;
+  const shouldShowScopeWarning = !!scopeCheck?.ok && (!scopeCheck.ready || hasMissingOptionalScopes || failedScopeEndpoints.length > 0);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
@@ -182,7 +201,7 @@ export function ZoomImportModal({ open, onOpenChange, onImportComplete }: ZoomIm
               Vérification des autorisations Zoom...
             </div>
           )}
-          {!isCheckingScopes && scopeCheck && !scopeCheck.ok && (
+          {!isCheckingScopes && scopeCheck && scopeCheck.ok === false && (
             <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-xs space-y-1">
               <p className="font-medium text-destructive flex items-center gap-2">
                 <AlertCircle className="h-4 w-4" /> Connexion Zoom indisponible
@@ -190,34 +209,47 @@ export function ZoomImportModal({ open, onOpenChange, onImportComplete }: ZoomIm
               <p className="text-muted-foreground">{scopeCheck.error}</p>
             </div>
           )}
-          {!isCheckingScopes && scopeCheck?.ok && scopeCheck.ready === false && (
-            <div className="rounded-lg border border-amber-500/40 bg-amber-50 dark:bg-amber-950/20 p-3 text-xs space-y-2">
-              <p className="font-medium text-amber-700 dark:text-amber-400 flex items-center gap-2">
+          {!isCheckingScopes && shouldShowScopeWarning && (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-xs space-y-2">
+              <p className="font-medium text-destructive flex items-center gap-2">
                 <AlertCircle className="h-4 w-4" />
-                Scopes Zoom manquants — l'import risque d'être incomplet
+                Accès Zoom incomplet — l'import peut ne voir qu'une partie des enregistrements
               </p>
               <p className="text-muted-foreground">
-                Ajoutez ces scopes à votre app Zoom Server-to-Server OAuth, puis désactivez/réactivez l'app :
+                Vérification automatique effectuée au lancement. Corrigez les scopes ci-dessous, puis désactivez/réactivez l'app Zoom.
               </p>
-              <ul className="list-disc list-inside space-y-0.5">
-                {scopeCheck.missing_required?.map((s) => (
-                  <li key={s}><code className="text-[11px] text-destructive">{s}</code></li>
-                ))}
-                {scopeCheck.missing_optional?.map((s) => (
-                  <li key={s} className="text-muted-foreground">
-                    <code className="text-[11px]">{s}</code> <span className="text-[10px]">(optionnel — recommandé pour multi-comptes)</span>
-                  </li>
-                ))}
-              </ul>
+              {(hasMissingRequiredScopes || hasMissingOptionalScopes) && (
+                <ul className="list-disc list-inside space-y-0.5">
+                  {scopeCheck.missing_required?.map((s) => (
+                    <li key={s}><code className="text-[11px] text-destructive">{s}</code></li>
+                  ))}
+                  {scopeCheck.missing_optional?.map((s) => (
+                    <li key={s} className="text-muted-foreground">
+                      <code className="text-[11px]">{s}</code> <span className="text-[10px]">(recommandé pour les enregistrements multi-comptes)</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {failedScopeEndpoints.length > 0 && (
+                <div className="space-y-1 pt-1">
+                  {failedScopeEndpoints.map((check) => (
+                    <div key={check.endpoint} className="flex items-start justify-between gap-3 rounded-md border bg-background/60 px-2 py-1.5">
+                      <div>
+                        <p className="font-medium text-foreground">{check.label}</p>
+                        <p className="text-muted-foreground">{check.endpoint}</p>
+                        {check.zoom_error && <p className="text-muted-foreground italic">Zoom: {check.zoom_error}</p>}
+                      </div>
+                      <Badge variant="destructive" className="shrink-0 text-[11px]">HTTP {check.status}</Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
-          {!isCheckingScopes && scopeCheck?.ok && scopeCheck.ready && (
+          {!isCheckingScopes && scopeCheck?.ok && scopeCheck.ready && !shouldShowScopeWarning && (
             <div className="rounded-lg border border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/20 p-2 text-xs flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
               <CheckCircle2 className="h-3.5 w-3.5" />
               Zoom autorisé — tous les scopes requis sont accordés
-              {scopeCheck.missing_optional && scopeCheck.missing_optional.length > 0 && (
-                <span className="text-muted-foreground ml-1">({scopeCheck.missing_optional.length} scope optionnel manquant)</span>
-              )}
             </div>
           )}
 
@@ -283,6 +315,29 @@ export function ZoomImportModal({ open, onOpenChange, onImportComplete }: ZoomIm
                         </div>
                       )}
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {!warning && listDiagnostic?.source_checks && filteredRecordings.length === 0 && (
+                <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+                  <p className="text-xs font-medium text-foreground flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4" />
+                    Zoom connecté, mais aucun enregistrement accessible sur la période vérifiée
+                  </p>
+                  <div className="space-y-1">
+                    {listDiagnostic.source_checks.map((check) => (
+                      <div key={check.endpoint} className="flex items-start justify-between gap-3 rounded-md border bg-background/60 px-2 py-1.5">
+                        <div className="text-xs">
+                          <p className="font-medium text-foreground">{check.label}</p>
+                          <p className="text-muted-foreground">{check.endpoint}</p>
+                          {check.zoom_error && <p className="text-muted-foreground italic">Zoom: {check.zoom_error}</p>}
+                        </div>
+                        <Badge variant={check.ok ? 'secondary' : 'destructive'} className="shrink-0 text-[11px]">
+                          HTTP {check.status} • {check.recordings_count ?? check.users_count ?? 0}
+                        </Badge>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}

@@ -49,6 +49,31 @@ function diagnoseScopes(grantedScopes: string[]) {
   };
 }
 
+function extractMissingScopes(zoomError: string | null | undefined): string[] {
+  const match = String(zoomError || '').match(/scopes:\[([^\]]+)\]/i);
+  if (!match?.[1]) return [];
+  return match[1].split(',').map((scope) => scope.trim()).filter(Boolean);
+}
+
+function mergeEndpointScopeFindings(scopeDiag: ReturnType<typeof diagnoseScopes>, endpointErrors: Array<string | null | undefined>) {
+  const endpointMissingScopes = Array.from(new Set(endpointErrors.flatMap(extractMissingScopes)));
+  const missingRequired = Array.from(new Set([
+    ...scopeDiag.missing_required,
+    ...endpointMissingScopes.filter((scope) => REQUIRED_ZOOM_SCOPES.includes(scope)),
+  ]));
+  const missingOptional = Array.from(new Set([
+    ...scopeDiag.missing_optional,
+    ...endpointMissingScopes.filter((scope) => OPTIONAL_ZOOM_SCOPES.includes(scope)),
+  ]));
+
+  return {
+    ...scopeDiag,
+    missing_required: missingRequired,
+    missing_optional: missingOptional,
+    ready: missingRequired.length === 0,
+  };
+}
+
 async function zoomGet(url: string, zoomToken: string) {
   const resp = await fetch(url, {
     headers: { 'Authorization': `Bearer ${zoomToken}` },
@@ -57,6 +82,28 @@ async function zoomGet(url: string, zoomToken: string) {
   let data: any = null;
   try { data = text ? JSON.parse(text) : null; } catch { data = null; }
   return { resp, data, text };
+}
+
+async function probeZoomScopeAccess(zoomToken: string) {
+  const today = new Date().toISOString().split('T')[0];
+  const probes = [
+    { label: 'Utilisateur propriétaire de l\'app Zoom', endpoint: '/users/me/recordings', url: `https://api.zoom.us/v2/users/me/recordings?from=${today}&to=${today}&page_size=1` },
+    { label: 'Tous les utilisateurs du compte Zoom', endpoint: '/users', url: 'https://api.zoom.us/v2/users?page_size=1&status=active' },
+    { label: 'Enregistrements au niveau du compte Zoom', endpoint: '/accounts/{accountId}/recordings', url: `https://api.zoom.us/v2/accounts/${Deno.env.get('ZOOM_ACCOUNT_ID')}/recordings?from=${today}&to=${today}&page_size=1` },
+  ];
+
+  const checks = [];
+  for (const probe of probes) {
+    const result = await zoomGet(probe.url, zoomToken);
+    checks.push({
+      label: probe.label,
+      endpoint: probe.endpoint,
+      ok: result.resp.ok,
+      status: result.resp.status,
+      zoom_error: result.resp.ok ? null : result.data?.message || result.text || null,
+    });
+  }
+  return checks;
 }
 
 /**
@@ -240,10 +287,17 @@ serve(async (req) => {
     // ========================================
     if (action === 'check_scopes') {
       try {
-        const { scopes } = await getZoomAccessToken();
-        const diag = diagnoseScopes(scopes);
-        console.log(`[zoom-import] check_scopes → granted=${scopes.length}, missing_required=${diag.missing_required.length}`);
-        return new Response(JSON.stringify({ ok: true, ...diag }), {
+        const { token: zoomToken, scopes } = await getZoomAccessToken();
+        const endpointChecks = await probeZoomScopeAccess(zoomToken);
+        const diag = mergeEndpointScopeFindings(diagnoseScopes(scopes), endpointChecks.map((check) => check.zoom_error));
+        const blockingChecks = endpointChecks.filter((check) => !check.ok && check.endpoint !== '/accounts/{accountId}/recordings');
+        console.log(`[zoom-import] check_scopes → granted=${scopes.length}, missing_required=${diag.missing_required.length}, blocking_checks=${blockingChecks.length}`);
+        return new Response(JSON.stringify({
+          ok: true,
+          ...diag,
+          ready: diag.ready && blockingChecks.length === 0,
+          endpoint_checks: endpointChecks,
+        }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       } catch (e: any) {
@@ -262,6 +316,7 @@ serve(async (req) => {
       console.log(`[zoom-import] Listing recordings from ${from} to ${to} (granted scopes: ${scopes.length}, missing required: ${scopeDiag.missing_required.length})`);
 
       const listData = await listZoomRecordings(zoomToken, from, to);
+      const effectiveScopeDiag = mergeEndpointScopeFindings(scopeDiag, listData.diagnostic?.source_checks?.map((check: any) => check.zoom_error) || []);
       const meetings = listData.meetings || [];
 
       const { data: webhookTranscriptions } = await supabaseService
@@ -302,7 +357,7 @@ serve(async (req) => {
         required_scopes: listData.required_scopes || null,
         zoom_error: listData.zoom_error || null,
         diagnostic: listData.diagnostic || null,
-        scope_check: scopeDiag,
+        scope_check: { ok: true, ...effectiveScopeDiag },
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
