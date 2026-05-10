@@ -289,7 +289,7 @@ serve(async (req) => {
     if (action === 'check_scopes') {
       try {
         const { token: zoomToken, scopes } = await getZoomAccessToken();
-        const endpointChecks = await probeZoomScopeAccess(zoomToken);
+        const endpointChecks = await probeZoomScopeAccess(zoomToken, scopes);
         const diag = mergeEndpointScopeFindings(diagnoseScopes(scopes), endpointChecks.map((check) => check.zoom_error));
         const blockingChecks = endpointChecks.filter((check) => !check.ok && check.endpoint !== '/accounts/{accountId}/recordings');
         console.log(`[zoom-import] check_scopes → granted=${scopes.length}, missing_required=${diag.missing_required.length}, blocking_checks=${blockingChecks.length}`);
@@ -316,7 +316,7 @@ serve(async (req) => {
 
       console.log(`[zoom-import] Listing recordings from ${from} to ${to} (granted scopes: ${scopes.length}, missing required: ${scopeDiag.missing_required.length})`);
 
-      const listData = await listZoomRecordings(zoomToken, from, to);
+        const listData = await listZoomRecordings(zoomToken, from, to, scopes);
       const effectiveScopeDiag = mergeEndpointScopeFindings(scopeDiag, listData.diagnostic?.source_checks?.map((check: any) => check.zoom_error) || []);
       const meetings = listData.meetings || [];
 
