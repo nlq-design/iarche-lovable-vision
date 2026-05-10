@@ -357,7 +357,7 @@ serve(async (req) => {
         required_scopes: listData.required_scopes || null,
         zoom_error: listData.zoom_error || null,
         diagnostic: listData.diagnostic || null,
-        scope_check: effectiveScopeDiag,
+        scope_check: { ok: true, ...effectiveScopeDiag },
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
