@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { createClient } from 'npm:@supabase/supabase-js@2.39.3';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,9 +13,7 @@ const REQUIRED_ZOOM_SCOPES = [
   'cloud_recording:read:list_user_recordings:admin',
   'user:read:list_users:admin',
 ];
-const OPTIONAL_ZOOM_SCOPES = [
-  'cloud_recording:read:list_account_recordings:master',
-];
+const OPTIONAL_ZOOM_SCOPES: string[] = [];
 
 async function getZoomAccessToken(): Promise<{ token: string; scopes: string[] }> {
   const accountId = Deno.env.get('ZOOM_ACCOUNT_ID');
@@ -89,7 +87,6 @@ async function probeZoomScopeAccess(zoomToken: string) {
   const probes = [
     { label: 'Utilisateur propriétaire de l\'app Zoom', endpoint: '/users/me/recordings', url: `https://api.zoom.us/v2/users/me/recordings?from=${today}&to=${today}&page_size=1` },
     { label: 'Tous les utilisateurs du compte Zoom', endpoint: '/users', url: 'https://api.zoom.us/v2/users?page_size=1&status=active' },
-    { label: 'Enregistrements au niveau du compte Zoom', endpoint: '/accounts/{accountId}/recordings', url: `https://api.zoom.us/v2/accounts/${Deno.env.get('ZOOM_ACCOUNT_ID')}/recordings?from=${today}&to=${today}&page_size=1` },
   ];
 
   const checks = [];
@@ -178,33 +175,6 @@ async function listZoomRecordings(zoomToken: string, from: string, to: string) {
     }
   }
 
-  // Strategy 3: Account-level recordings (requires master scope)
-  const accountId = Deno.env.get('ZOOM_ACCOUNT_ID');
-  let accountList: any = null;
-  if (accountId) {
-    accountList = await zoomGet(
-      `https://api.zoom.us/v2/accounts/${accountId}/recordings?from=${from}&to=${to}&page_size=100`,
-      zoomToken
-    );
-    console.log(
-      `[zoom-import] /accounts/{accountId}/recordings → HTTP ${accountList.resp.status}, meetings=${accountList.data?.meetings?.length ?? 0}` +
-      (!accountList.resp.ok ? ` err="${accountList.data?.message || accountList.text?.slice(0,200)}"` : '')
-    );
-    sourceChecks.push({
-      label: 'Enregistrements au niveau du compte Zoom',
-      endpoint: '/accounts/{accountId}/recordings',
-      ok: accountList.resp.ok,
-      status: accountList.resp.status,
-      recordings_count: accountList.data?.meetings?.length ?? 0,
-      zoom_error: accountList.resp.ok ? null : accountList.data?.message || accountList.text || null,
-    });
-    if (accountList.resp.ok && accountList.data?.meetings) {
-      for (const m of accountList.data.meetings) {
-        if (!seenIds.has(String(m.id))) { seenIds.add(String(m.id)); allMeetings.push(m); }
-      }
-    }
-  }
-
   const diagnostic = { range: { from, to }, source_checks: sourceChecks };
 
   if (allMeetings.length > 0) {
@@ -233,7 +203,6 @@ async function listZoomRecordings(zoomToken: string, from: string, to: string) {
   const requiredScopes = [
     'cloud_recording:read:list_user_recordings',
     'cloud_recording:read:list_user_recordings:admin',
-    'cloud_recording:read:list_account_recordings:master',
   ];
   const scopeErrorMessage =
     `Accès aux enregistrements Zoom non autorisé. Ajoutez un des scopes suivants dans votre app Zoom Server-to-Server OAuth : ` +
@@ -290,7 +259,7 @@ serve(async (req) => {
         const { token: zoomToken, scopes } = await getZoomAccessToken();
         const endpointChecks = await probeZoomScopeAccess(zoomToken);
         const diag = mergeEndpointScopeFindings(diagnoseScopes(scopes), endpointChecks.map((check) => check.zoom_error));
-        const blockingChecks = endpointChecks.filter((check) => !check.ok && check.endpoint !== '/accounts/{accountId}/recordings');
+        const blockingChecks = endpointChecks.filter((check) => !check.ok);
         console.log(`[zoom-import] check_scopes → granted=${scopes.length}, missing_required=${diag.missing_required.length}, blocking_checks=${blockingChecks.length}`);
         return new Response(JSON.stringify({
           ok: true,
@@ -315,7 +284,7 @@ serve(async (req) => {
 
       console.log(`[zoom-import] Listing recordings from ${from} to ${to} (granted scopes: ${scopes.length}, missing required: ${scopeDiag.missing_required.length})`);
 
-      const listData = await listZoomRecordings(zoomToken, from, to);
+        const listData = await listZoomRecordings(zoomToken, from, to);
       const effectiveScopeDiag = mergeEndpointScopeFindings(scopeDiag, listData.diagnostic?.source_checks?.map((check: any) => check.zoom_error) || []);
       const meetings = listData.meetings || [];
 
@@ -479,7 +448,6 @@ serve(async (req) => {
       action === 'list' &&
       (
         message.includes('list_user_recordings') ||
-        message.includes('list_account_recordings') ||
         message.includes('Impossible de lister les enregistrements Zoom') ||
         message.includes('Zoom scopes')
       );
