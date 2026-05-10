@@ -349,7 +349,11 @@ function generateEmailHTML(
   meetLink?: string,
   zoomPassword?: string,
   additionalGuests?: string[],
-  phone?: string
+  phone?: string,
+  email?: string,
+  company?: string,
+  message?: string,
+  solutionName?: string
 ): string {
   const formatDateFr = (date: Date): string => {
     const options: Intl.DateTimeFormatOptions = {
@@ -366,13 +370,52 @@ function generateEmailHTML(
   };
 
   const meetingTypeLabel = getMeetingTypeLabel(meetingType);
-  const locationIcon = meetingType === 'telephone' ? '📞' : meetingType === 'presentiel' ? '📍' : '🎥';
   const locationText = meetingType === 'presentiel' ? IARCHE_ADDRESS : meetingTypeLabel;
 
-  const guestsHtml = additionalGuests && additionalGuests.length > 0 
+  // Durée en minutes
+  const durationMinutes = Math.round((endTime.getTime() - startTime.getTime()) / 60000);
+
+  // ----- Liens d'agenda (Google / Outlook) -----
+  // Format UTC compact YYYYMMDDTHHMMSSZ
+  const fmtUtc = (d: Date): string =>
+    d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+
+  const fullDescriptionLines: string[] = [
+    `Type : ${bookingTypeName}`,
+    solutionName ? `Solution : ${solutionName}` : '',
+    `Date : ${formatDateFr(startTime)} à ${formatTimeFr(startTime)}`,
+    `Durée : ${durationMinutes} minutes`,
+    `Format : ${meetingTypeLabel}`,
+    meetingType === 'presentiel' ? `Adresse : ${IARCHE_ADDRESS}` : '',
+    meetLink ? `Lien visio : ${meetLink}` : '',
+    zoomPassword ? `Mot de passe Zoom : ${zoomPassword}` : '',
+    '',
+    'Vos coordonnées',
+    `Nom : ${name}`,
+    email ? `Email : ${email}` : '',
+    phone ? `Téléphone : ${phone}` : '',
+    company ? `Entreprise : ${company}` : '',
+    additionalGuests && additionalGuests.length > 0
+      ? `Invités supplémentaires : ${additionalGuests.join(', ')}`
+      : '',
+    message ? `Message : ${message}` : '',
+    '',
+    'Contact IArche : nlq@iarche.fr',
+  ].filter(Boolean);
+  const fullDescription = fullDescriptionLines.join('\n');
+
+  const eventTitle = solutionName
+    ? `${bookingTypeName} - ${solutionName} - IArche`
+    : `${bookingTypeName} - IArche`;
+  const eventLocation = meetLink || (meetingType === 'presentiel' ? IARCHE_ADDRESS : meetingTypeLabel);
+
+  const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(eventTitle)}&dates=${fmtUtc(startTime)}/${fmtUtc(endTime)}&details=${encodeURIComponent(fullDescription)}&location=${encodeURIComponent(eventLocation)}`;
+  const outlookUrl = `https://outlook.live.com/calendar/0/deeplink/compose?path=/calendar/action/compose&rru=addevent&subject=${encodeURIComponent(eventTitle)}&startdt=${encodeURIComponent(startTime.toISOString())}&enddt=${encodeURIComponent(endTime.toISOString())}&body=${encodeURIComponent(fullDescription)}&location=${encodeURIComponent(eventLocation)}`;
+
+  const guestsHtml = additionalGuests && additionalGuests.length > 0
     ? `<tr>
         <td style="padding-top: 12px;">
-          <strong style="color: ${EMAIL_COLORS.nightBlue}; font-size: 14px;">👥 Participants invités</strong><br>
+          <strong style="color: ${EMAIL_COLORS.nightBlue}; font-size: 14px;">Participants invités</strong><br>
           <span style="color: ${EMAIL_COLORS.textGray}; font-size: 16px;">${additionalGuests.join(', ')}</span>
         </td>
       </tr>`
@@ -385,7 +428,7 @@ function generateEmailHTML(
         <tr>
           <td style="text-align: center;">
             <a href="${meetLink}" target="_blank" style="display: inline-block; padding: 14px 32px; background-color: ${EMAIL_COLORS.nightBlue}; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px; border-radius: 8px;">
-              🎥 Rejoindre la réunion Visio
+              Rejoindre la réunion visio
             </a>
           </td>
         </tr>
@@ -403,7 +446,7 @@ function generateEmailHTML(
         <tr>
           <td style="padding: 16px; text-align: center;">
             <p style="margin: 0; color: ${EMAIL_COLORS.textGray}; font-size: 14px;">
-              📞 Nous vous appellerons au <strong>${phone || 'numéro que vous avez indiqué'}</strong> à l'heure du rendez-vous.
+              Nous vous appellerons au <strong>${phone || 'numéro que vous avez indiqué'}</strong> à l'heure du rendez-vous.
             </p>
           </td>
         </tr>
@@ -415,17 +458,38 @@ function generateEmailHTML(
         <tr>
           <td style="padding: 16px; text-align: center;">
             <p style="margin: 0; color: ${EMAIL_COLORS.textGray}; font-size: 14px;">
-              📍 Rendez-vous dans nos locaux :<br>
+              Rendez-vous dans nos locaux :<br>
               <strong>${IARCHE_ADDRESS}</strong>
             </p>
             <a href="https://maps.google.com/?q=${encodeURIComponent(IARCHE_ADDRESS)}" target="_blank" style="display: inline-block; margin-top: 12px; padding: 8px 16px; background-color: ${EMAIL_COLORS.nightBlue}; color: #ffffff; text-decoration: none; font-size: 12px; border-radius: 4px;">
-              🗺️ Voir sur Google Maps
+              Voir sur Google Maps
             </a>
           </td>
         </tr>
       </table>
     `;
   }
+
+  const calendarButtonsSection = `
+    <table role="presentation" style="width: 100%; margin-bottom: 16px;">
+      <tr>
+        <td style="text-align: center; padding-bottom: 8px;">
+          <strong style="color: ${EMAIL_COLORS.nightBlue}; font-size: 14px;">Ajouter à votre agenda</strong>
+        </td>
+      </tr>
+      <tr>
+        <td style="text-align: center;">
+          <a href="${googleUrl}" target="_blank" style="display: inline-block; margin: 4px; padding: 10px 18px; background-color: #ffffff; color: ${EMAIL_COLORS.nightBlue}; text-decoration: none; font-size: 13px; font-weight: 500; border: 1px solid ${EMAIL_COLORS.borderGray}; border-radius: 6px;">Google Calendar</a>
+          <a href="${outlookUrl}" target="_blank" style="display: inline-block; margin: 4px; padding: 10px 18px; background-color: #ffffff; color: ${EMAIL_COLORS.nightBlue}; text-decoration: none; font-size: 13px; font-weight: 500; border: 1px solid ${EMAIL_COLORS.borderGray}; border-radius: 6px;">Outlook</a>
+        </td>
+      </tr>
+      <tr>
+        <td style="text-align: center; padding-top: 8px;">
+          <span style="font-size: 12px; color: ${EMAIL_COLORS.mutedGray};">Apple Calendar / iCloud : ouvrez le fichier .ics joint à cet email.</span>
+        </td>
+      </tr>
+    </table>
+  `;
 
   return `
 <!DOCTYPE html>
@@ -444,10 +508,10 @@ function generateEmailHTML(
           <tr>
             <td style="background: linear-gradient(135deg, ${EMAIL_COLORS.nightBlue} 0%, ${EMAIL_COLORS.terracotta} 100%); padding: 32px 40px; text-align: center;">
               <img src="${LOGO_URL}" alt="IArche" style="height: 40px; margin-bottom: 16px;" />
-              <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">Votre rendez-vous est confirmé !</h1>
+              <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">Votre rendez-vous est confirmé</h1>
             </td>
           </tr>
-          
+
           <!-- Content -->
           <tr>
             <td style="padding: 32px 40px;">
@@ -455,7 +519,7 @@ function generateEmailHTML(
                 Bonjour ${name},<br><br>
                 Votre rendez-vous <strong>${bookingTypeName}</strong> a bien été enregistré.
               </p>
-              
+
               <!-- Booking details card -->
               <table role="presentation" style="width: 100%; background-color: ${EMAIL_COLORS.offWhite}; border-radius: 8px; margin-bottom: 24px; border-left: 4px solid ${EMAIL_COLORS.terracotta};">
                 <tr>
@@ -463,19 +527,19 @@ function generateEmailHTML(
                     <table role="presentation" style="width: 100%;">
                       <tr>
                         <td style="padding-bottom: 12px;">
-                          <strong style="color: ${EMAIL_COLORS.nightBlue}; font-size: 14px;">📅 Date</strong><br>
+                          <strong style="color: ${EMAIL_COLORS.nightBlue}; font-size: 14px;">Date</strong><br>
                           <span style="color: ${EMAIL_COLORS.textGray}; font-size: 16px;">${formatDateFr(startTime)}</span>
                         </td>
                       </tr>
                       <tr>
                         <td style="padding-bottom: 12px;">
-                          <strong style="color: ${EMAIL_COLORS.nightBlue}; font-size: 14px;">🕐 Horaire</strong><br>
-                          <span style="color: ${EMAIL_COLORS.textGray}; font-size: 16px;">${formatTimeFr(startTime)} - ${formatTimeFr(endTime)}</span>
+                          <strong style="color: ${EMAIL_COLORS.nightBlue}; font-size: 14px;">Horaire</strong><br>
+                          <span style="color: ${EMAIL_COLORS.textGray}; font-size: 16px;">${formatTimeFr(startTime)} - ${formatTimeFr(endTime)} (${durationMinutes} min)</span>
                         </td>
                       </tr>
                       <tr>
                         <td>
-                          <strong style="color: ${EMAIL_COLORS.nightBlue}; font-size: 14px;">${locationIcon} Format</strong><br>
+                          <strong style="color: ${EMAIL_COLORS.nightBlue}; font-size: 14px;">Format</strong><br>
                           <span style="color: ${EMAIL_COLORS.textGray}; font-size: 16px;">${locationText}</span>
                         </td>
                       </tr>
@@ -484,15 +548,13 @@ function generateEmailHTML(
                   </td>
                 </tr>
               </table>
-              
+
               ${connectionSection}
-              
-              <p style="margin: 0 0 16px; font-size: 14px; line-height: 1.6; color: ${EMAIL_COLORS.mutedGray};">
-                📎 Un fichier .ics est joint à cet email pour ajouter le rendez-vous à votre calendrier.
-              </p>
-              
-              <p style="margin: 0; font-size: 14px; line-height: 1.6; color: ${EMAIL_COLORS.mutedGray};">
-                Si vous avez des questions ou devez modifier votre rendez-vous, n'hésitez pas à nous contacter à <a href="mailto:nlq@iarche.fr" style="color: ${EMAIL_COLORS.terracotta};">nlq@iarche.fr</a>
+
+              ${calendarButtonsSection}
+
+              <p style="margin: 16px 0 0; font-size: 14px; line-height: 1.6; color: ${EMAIL_COLORS.mutedGray};">
+                Si vous avez des questions ou devez modifier votre rendez-vous, contactez-nous à <a href="mailto:nlq@iarche.fr" style="color: ${EMAIL_COLORS.terracotta};">nlq@iarche.fr</a>.
               </p>
             </td>
           </tr>
@@ -822,9 +884,9 @@ serve(async (req) => {
       let eventDescription = `Email: ${bookingData.email}\nEntreprise: ${bookingData.company || 'Non renseignée'}${solutionInfo}${additionalGuests.length > 0 ? `\nParticipants supplémentaires: ${additionalGuests.join(', ')}` : ''}\n\nMessage: ${bookingData.message || 'Aucun'}`;
       
       if (meetingType === 'telephone') {
-        eventDescription = `📞 APPEL TÉLÉPHONIQUE\nNuméro à appeler: ${bookingData.phone || 'Non renseigné'}\n\n${eventDescription}`;
+        eventDescription = `APPEL TÉLÉPHONIQUE\nNuméro à appeler: ${bookingData.phone || 'Non renseigné'}\n\n${eventDescription}`;
       } else if (meetingType === 'presentiel') {
-        eventDescription = `📍 RENDEZ-VOUS EN PRÉSENTIEL\nAdresse: ${IARCHE_ADDRESS}\n\n${eventDescription}`;
+        eventDescription = `RENDEZ-VOUS EN PRÉSENTIEL\nAdresse: ${IARCHE_ADDRESS}\n\n${eventDescription}`;
       } else {
         eventDescription = `Téléphone: ${bookingData.phone || 'Non renseigné'}\n${eventDescription}`;
       }
@@ -960,7 +1022,11 @@ serve(async (req) => {
         meetLink || undefined,
         zoomPassword || undefined,
         additionalGuests.length > 0 ? additionalGuests : undefined,
-        bookingData.phone || undefined
+        bookingData.phone || undefined,
+        bookingData.email || undefined,
+        bookingData.company || undefined,
+        bookingData.message || undefined,
+        solutionName || undefined
       );
 
       // Send confirmation email with ICS attachment
@@ -970,8 +1036,8 @@ serve(async (req) => {
 
       // Email subject with solution name if applicable
       const emailSubject = solutionName
-        ? `✅ Confirmation : ${bookingType.name} - ${solutionName} le ${startTime.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}`
-        : `✅ Confirmation : ${bookingType.name} le ${startTime.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}`;
+        ? `Confirmation : ${bookingType.name} - ${solutionName} le ${startTime.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}`
+        : `Confirmation : ${bookingType.name} le ${startTime.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}`;
 
         await resend.emails.send({
           from: 'IArche <contact@iarche.fr>',
@@ -1015,8 +1081,8 @@ serve(async (req) => {
       // Send admin notification
       // Admin notification subject with solution
       const adminSubject = solutionName
-        ? `📅 Nouveau RDV : ${bookingType.name} - ${solutionName} - ${bookingData.name}`
-        : `📅 Nouveau RDV : ${bookingType.name} - ${bookingData.name}`;
+        ? `Nouveau RDV : ${bookingType.name} - ${solutionName} - ${bookingData.name}`
+        : `Nouveau RDV : ${bookingType.name} - ${bookingData.name}`;
 
       try {
         await resend.emails.send({
