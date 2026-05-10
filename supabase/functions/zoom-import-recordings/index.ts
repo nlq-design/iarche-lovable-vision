@@ -235,14 +235,31 @@ serve(async (req) => {
     action = body.action || 'list';
 
     // ========================================
-    // ACTION: list
     // ========================================
+    // ACTION: check_scopes (préflight)
+    // ========================================
+    if (action === 'check_scopes') {
+      try {
+        const { scopes } = await getZoomAccessToken();
+        const diag = diagnoseScopes(scopes);
+        console.log(`[zoom-import] check_scopes → granted=${scopes.length}, missing_required=${diag.missing_required.length}`);
+        return new Response(JSON.stringify({ ok: true, ...diag }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      } catch (e: any) {
+        return new Response(JSON.stringify({ ok: false, error: e.message || 'Zoom credentials error' }), {
+          status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
     if (action === 'list') {
-      const zoomToken = await getZoomAccessToken();
+      const { token: zoomToken, scopes } = await getZoomAccessToken();
+      const scopeDiag = diagnoseScopes(scopes);
       const from = body.from || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
       const to = body.to || new Date().toISOString().split('T')[0];
 
-      console.log(`[zoom-import] Listing recordings from ${from} to ${to}`);
+      console.log(`[zoom-import] Listing recordings from ${from} to ${to} (granted scopes: ${scopes.length}, missing required: ${scopeDiag.missing_required.length})`);
 
       const listData = await listZoomRecordings(zoomToken, from, to);
       const meetings = listData.meetings || [];
