@@ -13,7 +13,6 @@ const REQUIRED_ZOOM_SCOPES = [
   'cloud_recording:read:list_user_recordings:admin',
   'user:read:list_users:admin',
 ];
-const MASTER_ACCOUNT_RECORDINGS_SCOPE = 'cloud_recording:read:list_account_recordings:master';
 const OPTIONAL_ZOOM_SCOPES: string[] = [];
 
 async function getZoomAccessToken(): Promise<{ token: string; scopes: string[] }> {
@@ -89,10 +88,6 @@ async function probeZoomScopeAccess(zoomToken: string, grantedScopes: string[]) 
     { label: 'Utilisateur propriétaire de l\'app Zoom', endpoint: '/users/me/recordings', url: `https://api.zoom.us/v2/users/me/recordings?from=${today}&to=${today}&page_size=1` },
     { label: 'Tous les utilisateurs du compte Zoom', endpoint: '/users', url: 'https://api.zoom.us/v2/users?page_size=1&status=active' },
   ];
-
-  if (grantedScopes.includes(MASTER_ACCOUNT_RECORDINGS_SCOPE)) {
-    probes.push({ label: 'Enregistrements au niveau du compte Zoom', endpoint: '/accounts/{accountId}/recordings', url: `https://api.zoom.us/v2/accounts/${Deno.env.get('ZOOM_ACCOUNT_ID')}/recordings?from=${today}&to=${today}&page_size=1` });
-  }
 
   const checks = [];
   for (const probe of probes) {
@@ -176,33 +171,6 @@ async function listZoomRecordings(zoomToken: string, from: string, to: string, g
         for (const m of userRecordings.data.meetings) {
           if (!seenIds.has(String(m.id))) { seenIds.add(String(m.id)); allMeetings.push(m); }
         }
-      }
-    }
-  }
-
-  // Strategy 3: Account-level recordings (requires master scope, only available on Zoom master accounts)
-  const accountId = Deno.env.get('ZOOM_ACCOUNT_ID');
-  let accountList: any = null;
-  if (accountId && grantedScopes.includes(MASTER_ACCOUNT_RECORDINGS_SCOPE)) {
-    accountList = await zoomGet(
-      `https://api.zoom.us/v2/accounts/${accountId}/recordings?from=${from}&to=${to}&page_size=100`,
-      zoomToken
-    );
-    console.log(
-      `[zoom-import] /accounts/{accountId}/recordings → HTTP ${accountList.resp.status}, meetings=${accountList.data?.meetings?.length ?? 0}` +
-      (!accountList.resp.ok ? ` err="${accountList.data?.message || accountList.text?.slice(0,200)}"` : '')
-    );
-    sourceChecks.push({
-      label: 'Enregistrements au niveau du compte Zoom',
-      endpoint: '/accounts/{accountId}/recordings',
-      ok: accountList.resp.ok,
-      status: accountList.resp.status,
-      recordings_count: accountList.data?.meetings?.length ?? 0,
-      zoom_error: accountList.resp.ok ? null : accountList.data?.message || accountList.text || null,
-    });
-    if (accountList.resp.ok && accountList.data?.meetings) {
-      for (const m of accountList.data.meetings) {
-        if (!seenIds.has(String(m.id))) { seenIds.add(String(m.id)); allMeetings.push(m); }
       }
     }
   }
