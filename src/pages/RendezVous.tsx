@@ -376,16 +376,38 @@ const RendezVous = () => {
                 const fmtUtc = (d: Date) =>
                   d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
                 const title = `${bookingType.name} · IArche`;
-                const details = [
-                  bookingType.description || '',
-                  meetLink ? `Lien visio : ${meetLink}` : '',
-                  zoomPassword ? `Mot de passe : ${zoomPassword}` : '',
-                ].filter(Boolean).join('\n\n');
+                const dateLabel = format(start, "EEEE d MMMM yyyy 'à' HH:mm", { locale: fr });
+                const meetingTypeLabel =
+                  meetingType === 'visio' ? 'Visioconférence'
+                  : meetingType === 'telephone' ? 'Appel téléphonique'
+                  : 'Rendez-vous en présentiel';
+                const instructions =
+                  meetingType === 'visio'
+                    ? 'Rejoignez la visio via le lien ci-dessous quelques minutes avant l\'heure du rendez-vous.'
+                  : meetingType === 'telephone'
+                    ? `Nous vous appellerons${formData.phone ? ` au ${formData.phone}` : ''} à l'heure du rendez-vous. Merci de rester joignable.`
+                    : 'L\'adresse exacte du rendez-vous vous a été communiquée par email. Présentez-vous 5 minutes avant l\'heure prévue.';
                 const location = meetingType === 'visio'
                   ? (meetLink || 'Visioconférence')
                   : meetingType === 'telephone'
                   ? 'Appel téléphonique'
                   : 'Bayonne (adresse communiquée par email)';
+                const details = [
+                  bookingType.description || '',
+                  `Date : ${dateLabel}`,
+                  `Durée : ${bookingType.duration_minutes} minutes`,
+                  `Format : ${meetingTypeLabel}`,
+                  meetLink ? `Lien visio : ${meetLink}` : '',
+                  zoomPassword ? `Mot de passe : ${zoomPassword}` : '',
+                  meetingType === 'presentiel' ? `Lieu : ${location}` : '',
+                  meetingType === 'telephone' && formData.phone ? `Téléphone : ${formData.phone}` : '',
+                  `Consignes : ${instructions}`,
+                  formData.company ? `Entreprise : ${formData.company}` : '',
+                  additionalGuests.length ? `Invités : ${additionalGuests.join(', ')}` : '',
+                  formData.message ? `Message : ${formData.message}` : '',
+                  '',
+                  'Contact IArche : contact@iarche.fr',
+                ].filter(Boolean).join('\n');
                 // Use UTC ISO format (Z suffix) for both providers — they convert to the user's local timezone automatically.
                 // ctz=Europe/Paris forces Google to display the event in Paris time regardless of the viewer's account timezone.
                 const tz = 'Europe/Paris';
