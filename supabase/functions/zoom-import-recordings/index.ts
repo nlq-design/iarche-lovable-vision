@@ -316,7 +316,7 @@ serve(async (req) => {
       if (!meetingId) throw new Error('meeting_id required');
 
       console.log(`[zoom-import] Importing recording for meeting ${meetingId}`);
-      const zoomToken = await getZoomAccessToken();
+      const { token: zoomToken } = await getZoomAccessToken();
 
       const recUrl = `https://api.zoom.us/v2/meetings/${meetingId}/recordings`;
       const recResp = await fetch(recUrl, {
