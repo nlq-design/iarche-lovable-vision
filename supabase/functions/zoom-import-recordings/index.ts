@@ -392,10 +392,12 @@ serve(async (req) => {
       const leadId = linkedBooking?.lead_id || null;
       const contactName = linkedBooking?.name || topic;
 
+      const userId = (claimsData.claims as any).sub;
       const { data: transcription, error: insertError } = await supabaseService
         .from('voice_transcriptions')
         .insert({
           workspace_id: DEFAULT_WORKSPACE_ID,
+          created_by: userId,
           storage_path: storagePath,
           source: 'zoom_recording',
           lead_id: leadId,
