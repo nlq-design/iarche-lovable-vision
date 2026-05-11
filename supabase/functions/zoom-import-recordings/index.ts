@@ -399,7 +399,7 @@ serve(async (req) => {
           workspace_id: DEFAULT_WORKSPACE_ID,
           created_by: userId,
           storage_path: storagePath,
-          source: 'zoom_recording',
+          source: 'recording',
           lead_id: leadId,
           original_filename: `${topic}.${fileExt}`,
           file_size_bytes: audioBlob.byteLength,
