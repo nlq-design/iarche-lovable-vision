@@ -291,7 +291,7 @@ serve(async (req) => {
       const { data: webhookTranscriptions } = await supabaseService
         .from('voice_transcriptions')
         .select('ai_metadata')
-        .eq('source', 'zoom_recording');
+        .eq('source', 'recording');
 
       const allImportedIds = new Set(
         (webhookTranscriptions || []).map((t: any) => t.ai_metadata?.zoom_meeting_id).filter(Boolean)
