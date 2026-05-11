@@ -291,7 +291,7 @@ serve(async (req) => {
       const { data: webhookTranscriptions } = await supabaseService
         .from('voice_transcriptions')
         .select('ai_metadata')
-        .eq('source', 'zoom_recording');
+        .eq('source', 'recording');
 
       const allImportedIds = new Set(
         (webhookTranscriptions || []).map((t: any) => t.ai_metadata?.zoom_meeting_id).filter(Boolean)
@@ -399,7 +399,7 @@ serve(async (req) => {
           workspace_id: DEFAULT_WORKSPACE_ID,
           created_by: userId,
           storage_path: storagePath,
-          source: 'zoom_recording',
+          source: 'recording',
           lead_id: leadId,
           original_filename: `${topic}.${fileExt}`,
           file_size_bytes: audioBlob.byteLength,
