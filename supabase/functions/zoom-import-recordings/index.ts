@@ -479,38 +479,50 @@ serve(async (req) => {
         );
       }
 
-      const { data: transcription, error: insertError } = await supabaseService
-        .from('voice_transcriptions')
-        .insert({
-          workspace_id: DEFAULT_WORKSPACE_ID,
-          created_by: userId,
-          storage_path: storagePath,
-          source: sourceValue,
-          lead_id: leadId,
-          original_filename: `${topic}.${fileExt}`,
-          file_size_bytes: audioBlob.byteLength,
-          duration_seconds: audioFile.recording_end
-            ? Math.round((new Date(audioFile.recording_end).getTime() - new Date(audioFile.recording_start).getTime()) / 1000)
-            : null,
-          audio_format: fileExt,
-          transcription_date: recData.start_time || new Date().toISOString(),
-          status: 'queued',
-          auto_create_tasks: true,
-          analysis_context: `Enregistrement Zoom importé manuellement : "${topic}" avec ${contactName}.${linkedBooking?.company ? ` Entreprise: ${linkedBooking.company}.` : ''}`,
-          ai_metadata: {
-            autonomy_level: 'N0',
-            validated_by_human: false,
-            validation_required: false,
-            zoom_meeting_id: meetingId,
-            zoom_topic: topic,
-            booking_id: linkedBooking?.id || null,
-            source: 'zoom_manual_import',
-          },
-        })
-        .select('id, status')
-        .single();
+      const insertPayload = {
+        workspace_id: DEFAULT_WORKSPACE_ID,
+        created_by: userId,
+        storage_path: storagePath,
+        source: sourceValue,
+        lead_id: leadId,
+        original_filename: `${topic}.${fileExt}`,
+        file_size_bytes: audioBlob.byteLength,
+        duration_seconds: audioFile.recording_end
+          ? Math.round((new Date(audioFile.recording_end).getTime() - new Date(audioFile.recording_start).getTime()) / 1000)
+          : null,
+        audio_format: fileExt,
+        transcription_date: recData.start_time || new Date().toISOString(),
+        status: 'queued',
+        auto_create_tasks: true,
+        analysis_context: `Enregistrement Zoom importé manuellement : "${topic}" avec ${contactName}.${linkedBooking?.company ? ` Entreprise: ${linkedBooking.company}.` : ''}`,
+        ai_metadata: {
+          autonomy_level: 'N0',
+          validated_by_human: false,
+          validation_required: false,
+          zoom_meeting_id: meetingId,
+          zoom_topic: topic,
+          booking_id: linkedBooking?.id || null,
+          source: 'zoom_manual_import',
+        },
+      };
 
-      if (insertError) throw new Error(`DB insert failed: ${insertError.message}`);
+      const transcription = await retryWithBackoff(
+        'db-insert-transcription',
+        async () => {
+          const { data, error } = await supabaseService
+            .from('voice_transcriptions')
+            .insert(insertPayload)
+            .select('id, status')
+            .single();
+          if (error) {
+            const err: any = new Error(`DB insert failed: ${error.message}`);
+            err.code = (error as any).code;
+            throw err;
+          }
+          return data;
+        },
+        { isRetryable: (e: any) => isTransientPgError(e?.code) },
+      );
 
       console.log(`[zoom-import] ✅ Imported: ${transcription.id}`);
 
