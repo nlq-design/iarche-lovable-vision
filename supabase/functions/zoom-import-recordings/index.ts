@@ -72,6 +72,53 @@ function mergeEndpointScopeFindings(scopeDiag: ReturnType<typeof diagnoseScopes>
   };
 }
 
+// ---------------------------------------------------------------------------
+// Retry with exponential backoff + jitter
+// Used for transient Zoom API failures (429, 5xx, network) and transient
+// DB insert failures (network drop, 5xx Postgrest, deadlocks).
+// Permanent errors (4xx other than 408/425/429, PG constraint violations
+// 22xxx/23xxx/42xxx) are NOT retried — they fail fast.
+// ---------------------------------------------------------------------------
+const TRANSIENT_HTTP_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504]);
+const NON_TRANSIENT_PG_PREFIXES = ['22', '23', '42'];
+
+function isTransientHttpStatus(status: number): boolean {
+  return TRANSIENT_HTTP_STATUSES.has(status) || status >= 500;
+}
+
+function isTransientPgError(code: string | null | undefined): boolean {
+  if (!code) return true; // unknown -> assume transient (network/timeout)
+  return !NON_TRANSIENT_PG_PREFIXES.some((p) => code.startsWith(p));
+}
+
+async function retryWithBackoff<T>(
+  label: string,
+  fn: () => Promise<T>,
+  opts: { retries?: number; baseMs?: number; maxMs?: number; isRetryable?: (err: unknown) => boolean } = {},
+): Promise<T> {
+  const retries = opts.retries ?? 3;
+  const baseMs = opts.baseMs ?? 500;
+  const maxMs = opts.maxMs ?? 8000;
+  const isRetryable = opts.isRetryable ?? (() => true);
+
+  let lastErr: unknown;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      if (attempt === retries || !isRetryable(err)) {
+        console.error(`[retry:${label}] giving up after ${attempt + 1} attempt(s):`, err);
+        throw err;
+      }
+      const delay = Math.min(maxMs, baseMs * 2 ** attempt) + Math.floor(Math.random() * 250);
+      console.warn(`[retry:${label}] attempt ${attempt + 1} failed, retrying in ${delay}ms:`, err instanceof Error ? err.message : err);
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+  throw lastErr;
+}
+
 async function zoomGet(url: string, zoomToken: string) {
   const resp = await fetch(url, {
     headers: { 'Authorization': `Bearer ${zoomToken}` },
@@ -81,6 +128,7 @@ async function zoomGet(url: string, zoomToken: string) {
   try { data = text ? JSON.parse(text) : null; } catch { data = null; }
   return { resp, data, text };
 }
+
 
 async function probeZoomScopeAccess(zoomToken: string) {
   const today = new Date().toISOString().split('T')[0];
