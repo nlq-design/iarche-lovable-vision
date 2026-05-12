@@ -391,16 +391,22 @@ serve(async (req) => {
       const { token: zoomToken } = await getZoomAccessToken();
 
       const recUrl = `https://api.zoom.us/v2/meetings/${meetingId}/recordings`;
-      const recResp = await fetch(recUrl, {
-        headers: { 'Authorization': `Bearer ${zoomToken}` },
-      });
-
-      if (!recResp.ok) {
-        const errText = await recResp.text();
-        throw new Error(`Zoom API error: ${recResp.status} - ${errText}`);
-      }
-
-      const recData = await recResp.json();
+      const recData = await retryWithBackoff(
+        'zoom-get-recordings',
+        async () => {
+          const resp = await fetch(recUrl, {
+            headers: { 'Authorization': `Bearer ${zoomToken}` },
+          });
+          if (!resp.ok) {
+            const errText = await resp.text();
+            const err: any = new Error(`Zoom API error: ${resp.status} - ${errText}`);
+            err.status = resp.status;
+            throw err;
+          }
+          return await resp.json();
+        },
+        { isRetryable: (e: any) => !e?.status || isTransientHttpStatus(e.status) },
+      );
       const topic = recData.topic || 'Réunion Zoom';
       const recordingFiles = recData.recording_files || [];
 
@@ -413,10 +419,20 @@ serve(async (req) => {
       if (!audioFile) throw new Error('No audio file found in this recording');
 
       console.log(`[zoom-import] Downloading ${audioFile.file_extension} (${audioFile.file_size} bytes)`);
-      const downloadResp = await fetch(`${audioFile.download_url}?access_token=${zoomToken}`);
-      if (!downloadResp.ok) throw new Error(`Download failed: ${downloadResp.status}`);
+      const audioBlob = await retryWithBackoff(
+        'zoom-download-audio',
+        async () => {
+          const resp = await fetch(`${audioFile.download_url}?access_token=${zoomToken}`);
+          if (!resp.ok) {
+            const err: any = new Error(`Download failed: ${resp.status}`);
+            err.status = resp.status;
+            throw err;
+          }
+          return await resp.arrayBuffer();
+        },
+        { isRetryable: (e: any) => !e?.status || isTransientHttpStatus(e.status) },
+      );
 
-      const audioBlob = await downloadResp.arrayBuffer();
 
       const fileExt = audioFile.file_extension?.toLowerCase() || 'mp4';
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
