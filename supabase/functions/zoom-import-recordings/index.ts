@@ -393,13 +393,35 @@ serve(async (req) => {
       const contactName = linkedBooking?.name || topic;
 
       const userId = (claimsData.claims as any).sub;
+
+      // Validation amont : le champ `source` doit respecter la contrainte
+      // CHECK `voice_transcriptions_source_check` (valeurs autorisées : 'upload' | 'recording').
+      // Toute valeur hors whitelist est rejetée AVANT l'insert pour éviter une 500 côté DB.
+      const ALLOWED_SOURCES = ['upload', 'recording'] as const;
+      type AllowedSource = typeof ALLOWED_SOURCES[number];
+      const sourceValue: AllowedSource = 'recording';
+      if (!ALLOWED_SOURCES.includes(sourceValue)) {
+        return new Response(
+          JSON.stringify({
+            error: `Invalid source "${sourceValue}". Allowed: ${ALLOWED_SOURCES.join(', ')}`,
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        );
+      }
+      if (!userId) {
+        return new Response(
+          JSON.stringify({ error: 'Missing authenticated user (created_by)' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        );
+      }
+
       const { data: transcription, error: insertError } = await supabaseService
         .from('voice_transcriptions')
         .insert({
           workspace_id: DEFAULT_WORKSPACE_ID,
           created_by: userId,
           storage_path: storagePath,
-          source: 'recording',
+          source: sourceValue,
           lead_id: leadId,
           original_filename: `${topic}.${fileExt}`,
           file_size_bytes: audioBlob.byteLength,
