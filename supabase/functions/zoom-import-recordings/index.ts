@@ -72,6 +72,53 @@ function mergeEndpointScopeFindings(scopeDiag: ReturnType<typeof diagnoseScopes>
   };
 }
 
+// ---------------------------------------------------------------------------
+// Retry with exponential backoff + jitter
+// Used for transient Zoom API failures (429, 5xx, network) and transient
+// DB insert failures (network drop, 5xx Postgrest, deadlocks).
+// Permanent errors (4xx other than 408/425/429, PG constraint violations
+// 22xxx/23xxx/42xxx) are NOT retried — they fail fast.
+// ---------------------------------------------------------------------------
+const TRANSIENT_HTTP_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504]);
+const NON_TRANSIENT_PG_PREFIXES = ['22', '23', '42'];
+
+function isTransientHttpStatus(status: number): boolean {
+  return TRANSIENT_HTTP_STATUSES.has(status) || status >= 500;
+}
+
+function isTransientPgError(code: string | null | undefined): boolean {
+  if (!code) return true; // unknown -> assume transient (network/timeout)
+  return !NON_TRANSIENT_PG_PREFIXES.some((p) => code.startsWith(p));
+}
+
+async function retryWithBackoff<T>(
+  label: string,
+  fn: () => Promise<T>,
+  opts: { retries?: number; baseMs?: number; maxMs?: number; isRetryable?: (err: unknown) => boolean } = {},
+): Promise<T> {
+  const retries = opts.retries ?? 3;
+  const baseMs = opts.baseMs ?? 500;
+  const maxMs = opts.maxMs ?? 8000;
+  const isRetryable = opts.isRetryable ?? (() => true);
+
+  let lastErr: unknown;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      if (attempt === retries || !isRetryable(err)) {
+        console.error(`[retry:${label}] giving up after ${attempt + 1} attempt(s):`, err);
+        throw err;
+      }
+      const delay = Math.min(maxMs, baseMs * 2 ** attempt) + Math.floor(Math.random() * 250);
+      console.warn(`[retry:${label}] attempt ${attempt + 1} failed, retrying in ${delay}ms:`, err instanceof Error ? err.message : err);
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+  throw lastErr;
+}
+
 async function zoomGet(url: string, zoomToken: string) {
   const resp = await fetch(url, {
     headers: { 'Authorization': `Bearer ${zoomToken}` },
@@ -81,6 +128,7 @@ async function zoomGet(url: string, zoomToken: string) {
   try { data = text ? JSON.parse(text) : null; } catch { data = null; }
   return { resp, data, text };
 }
+
 
 async function probeZoomScopeAccess(zoomToken: string) {
   const today = new Date().toISOString().split('T')[0];
@@ -343,16 +391,22 @@ serve(async (req) => {
       const { token: zoomToken } = await getZoomAccessToken();
 
       const recUrl = `https://api.zoom.us/v2/meetings/${meetingId}/recordings`;
-      const recResp = await fetch(recUrl, {
-        headers: { 'Authorization': `Bearer ${zoomToken}` },
-      });
-
-      if (!recResp.ok) {
-        const errText = await recResp.text();
-        throw new Error(`Zoom API error: ${recResp.status} - ${errText}`);
-      }
-
-      const recData = await recResp.json();
+      const recData = await retryWithBackoff(
+        'zoom-get-recordings',
+        async () => {
+          const resp = await fetch(recUrl, {
+            headers: { 'Authorization': `Bearer ${zoomToken}` },
+          });
+          if (!resp.ok) {
+            const errText = await resp.text();
+            const err: any = new Error(`Zoom API error: ${resp.status} - ${errText}`);
+            err.status = resp.status;
+            throw err;
+          }
+          return await resp.json();
+        },
+        { isRetryable: (e: any) => !e?.status || isTransientHttpStatus(e.status) },
+      );
       const topic = recData.topic || 'Réunion Zoom';
       const recordingFiles = recData.recording_files || [];
 
@@ -365,10 +419,20 @@ serve(async (req) => {
       if (!audioFile) throw new Error('No audio file found in this recording');
 
       console.log(`[zoom-import] Downloading ${audioFile.file_extension} (${audioFile.file_size} bytes)`);
-      const downloadResp = await fetch(`${audioFile.download_url}?access_token=${zoomToken}`);
-      if (!downloadResp.ok) throw new Error(`Download failed: ${downloadResp.status}`);
+      const audioBlob = await retryWithBackoff(
+        'zoom-download-audio',
+        async () => {
+          const resp = await fetch(`${audioFile.download_url}?access_token=${zoomToken}`);
+          if (!resp.ok) {
+            const err: any = new Error(`Download failed: ${resp.status}`);
+            err.status = resp.status;
+            throw err;
+          }
+          return await resp.arrayBuffer();
+        },
+        { isRetryable: (e: any) => !e?.status || isTransientHttpStatus(e.status) },
+      );
 
-      const audioBlob = await downloadResp.arrayBuffer();
 
       const fileExt = audioFile.file_extension?.toLowerCase() || 'mp4';
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -415,38 +479,50 @@ serve(async (req) => {
         );
       }
 
-      const { data: transcription, error: insertError } = await supabaseService
-        .from('voice_transcriptions')
-        .insert({
-          workspace_id: DEFAULT_WORKSPACE_ID,
-          created_by: userId,
-          storage_path: storagePath,
-          source: sourceValue,
-          lead_id: leadId,
-          original_filename: `${topic}.${fileExt}`,
-          file_size_bytes: audioBlob.byteLength,
-          duration_seconds: audioFile.recording_end
-            ? Math.round((new Date(audioFile.recording_end).getTime() - new Date(audioFile.recording_start).getTime()) / 1000)
-            : null,
-          audio_format: fileExt,
-          transcription_date: recData.start_time || new Date().toISOString(),
-          status: 'queued',
-          auto_create_tasks: true,
-          analysis_context: `Enregistrement Zoom importé manuellement : "${topic}" avec ${contactName}.${linkedBooking?.company ? ` Entreprise: ${linkedBooking.company}.` : ''}`,
-          ai_metadata: {
-            autonomy_level: 'N0',
-            validated_by_human: false,
-            validation_required: false,
-            zoom_meeting_id: meetingId,
-            zoom_topic: topic,
-            booking_id: linkedBooking?.id || null,
-            source: 'zoom_manual_import',
-          },
-        })
-        .select('id, status')
-        .single();
+      const insertPayload = {
+        workspace_id: DEFAULT_WORKSPACE_ID,
+        created_by: userId,
+        storage_path: storagePath,
+        source: sourceValue,
+        lead_id: leadId,
+        original_filename: `${topic}.${fileExt}`,
+        file_size_bytes: audioBlob.byteLength,
+        duration_seconds: audioFile.recording_end
+          ? Math.round((new Date(audioFile.recording_end).getTime() - new Date(audioFile.recording_start).getTime()) / 1000)
+          : null,
+        audio_format: fileExt,
+        transcription_date: recData.start_time || new Date().toISOString(),
+        status: 'queued',
+        auto_create_tasks: true,
+        analysis_context: `Enregistrement Zoom importé manuellement : "${topic}" avec ${contactName}.${linkedBooking?.company ? ` Entreprise: ${linkedBooking.company}.` : ''}`,
+        ai_metadata: {
+          autonomy_level: 'N0',
+          validated_by_human: false,
+          validation_required: false,
+          zoom_meeting_id: meetingId,
+          zoom_topic: topic,
+          booking_id: linkedBooking?.id || null,
+          source: 'zoom_manual_import',
+        },
+      };
 
-      if (insertError) throw new Error(`DB insert failed: ${insertError.message}`);
+      const transcription = await retryWithBackoff(
+        'db-insert-transcription',
+        async () => {
+          const { data, error } = await supabaseService
+            .from('voice_transcriptions')
+            .insert(insertPayload)
+            .select('id, status')
+            .single();
+          if (error) {
+            const err: any = new Error(`DB insert failed: ${error.message}`);
+            err.code = (error as any).code;
+            throw err;
+          }
+          return data;
+        },
+        { isRetryable: (e: any) => isTransientPgError(e?.code) },
+      );
 
       console.log(`[zoom-import] ✅ Imported: ${transcription.id}`);
 
