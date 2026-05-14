@@ -6691,6 +6691,7 @@ export type Database = {
           duration_seconds: number | null
           file_size_bytes: number | null
           id: string
+          idempotency_key: string | null
           lead_contact_id: string | null
           lead_id: string | null
           llm_model_id: string | null
@@ -6725,6 +6726,7 @@ export type Database = {
           duration_seconds?: number | null
           file_size_bytes?: number | null
           id?: string
+          idempotency_key?: string | null
           lead_contact_id?: string | null
           lead_id?: string | null
           llm_model_id?: string | null
@@ -6759,6 +6761,7 @@ export type Database = {
           duration_seconds?: number | null
           file_size_bytes?: number | null
           id?: string
+          idempotency_key?: string | null
           lead_contact_id?: string | null
           lead_id?: string | null
           llm_model_id?: string | null
