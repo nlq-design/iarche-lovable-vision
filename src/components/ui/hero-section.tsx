@@ -14,13 +14,13 @@ const HeroSection = () => {
   return (
     <div ref={heroRef} className="min-h-screen flex items-center justify-center relative">
       <div className="container text-center z-10 relative px-6 py-20">
-        {/* Logo officiel SVG + Arc décoratif */}
-        <div className="mb-20 md:mb-28 invisible animate-fadeIn [animation-delay:0.1s] flex flex-col items-center">
+        {/* Logo officiel SVG + Arc décoratif - LCP candidate, painted immediately */}
+        <div className="mb-20 md:mb-28 animate-fadeIn flex flex-col items-center">
           <Logo variant="main" size="xl" priority />
           <span className="sr-only">IArche · L'IA se construit avec vous</span>
         </div>
         
-        <h1 className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-8 leading-relaxed invisible animate-fadeIn [animation-delay:0.2s]">
+        <h1 className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-8 leading-relaxed animate-fadeIn">
           L'IA se construit avec vous.
         </h1>
         
