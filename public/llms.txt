@@ -1,0 +1,56 @@
+# IArche
+
+> Cabinet de conseil et d'intégration en intelligence artificielle pour PME et ETI françaises. Audit, développement de solutions IA sur mesure, accompagnement et conformité (IA Act, RGPD).
+
+IArche aide les dirigeants de PME à intégrer concrètement l'IA dans leurs opérations : automatisation, agents conversationnels, RAG documentaire, prospection augmentée, analyse de données. Approche pragmatique, ROI mesurable, souveraineté des données.
+
+## Pages
+
+- [Accueil](/): Présentation d'IArche, vision et services principaux.
+- [Services](/services): Offre complète de conseil et d'intégration IA.
+- [Audit IA](/services/audit): Diagnostic de maturité IA et identification des cas d'usage prioritaires.
+- [Développement IA](/services/developpement): Conception et déploiement de solutions IA sur mesure.
+- [Accompagnement](/services/accompagnement): Formation, conduite du changement et support continu.
+- [Conformité](/services/conformite): Mise en conformité IA Act, RGPD et gouvernance des modèles.
+- [Solutions](/solutions): Produits IA prêts à l'emploi pour PME.
+- [Contact](/contact): Prendre rendez-vous avec un expert IArche.
+- [Actualités](/actualites): Annonces produits et nouveautés.
+- [Articles](/articles): Articles de fond sur l'IA appliquée aux PME.
+- [Cas clients](/cas-clients): Études de cas et retours d'expérience clients.
+- [Livres blancs](/livres-blancs): Guides téléchargeables sur l'IA en entreprise.
+- [Ateliers et webinaires](/ateliers-webinaires): Événements de formation à l'IA.
+- [Newsletter](/newsletter): Inscription à la veille IA mensuelle.
+- [Livre d'or](/livre-or): Témoignages clients.
+
+## Solutions
+
+- [Dialogue Plus](/solutions/dialogue-plus): Agent conversationnel multicanal pour service client et support.
+- [DataLIA](/solutions/datalia): Outil de prospection locale et d'analyse de marché par IA.
+- [Collaboria](/solutions/collaboria): Plateforme collaborative augmentée par IA pour équipes internes.
+- [LexIA](/solutions/lexia): ERP juridique boosté à l'IA pour cabinets d'avocats.
+- [Team 5 Connect](/solutions/team-5-connect): Gestion de flotte véhicule automatisée par IA.
+
+## Articles
+
+- [Qu'est-ce qu'une API](/articles/c-est-quoi-une-api): Explication accessible aux dirigeants non techniques.
+- [LLM, GPT, Claude : comprendre les IA génératives](/articles/llm-gpt-claude-comprendre-les-ia-generatives): Panorama des grands modèles de langage.
+- [RAG : exploiter vos documents internes](/articles/rag-comment-l-ia-peut-exploiter-vos-documents-internes): Comment utiliser ses données métier avec un LLM.
+- [Prompt engineering](/articles/prompt-engineering-poser-les-bonnes-questions-a-l-ia): Bonnes pratiques pour interroger une IA efficacement.
+- [IA Act : ce qui change pour votre entreprise](/articles/ia-act-ce-que-ca-change-pour-votre-entreprise): Synthèse réglementaire pour les PME.
+- [IA locale vs cloud](/articles/ia-locale-vs-cloud-quel-choix-pour-vos-donnees-sensibles): Critères de choix pour les données sensibles.
+- [Combien coûte l'IA pour une PME](/articles/combien-coute-l-ia-pour-une-pme-vraies-reponses): Repères budgétaires concrets.
+- [Les 5 erreurs des PME qui démarrent avec l'IA](/articles/les-5-erreurs-des-pme-qui-demarrent-avec-l-ia): Pièges fréquents à éviter.
+- [IA, ML, Deep Learning : les différences](/articles/ia-machine-learning-deep-learning-les-differences-en-2-minutes): Vocabulaire essentiel.
+- [Pourquoi se former à l'IA quand on dirige une PME](/articles/pourquoi-se-former-a-l-ia-quand-on-dirige-une-pme): Enjeux stratégiques.
+
+## Livres blancs
+
+- [10 cas d'usage IA pour les PME françaises](/livres-blancs/10-cas-d-usage-ia-pour-les-pme-francaises): Guide pratique d'inspiration.
+- [Guide pratique : intégrer l'IA dans une PME](/livres-blancs/guide-pratique-integrer-l-ia-dans-une-pme): Méthodologie pas à pas.
+- [IA et conformité : ce que l'IA Act change pour les PME](/livres-blancs/ia-et-conformite-ce-que-l-ia-act-change-pour-les-pme): Cadre réglementaire opérationnel.
+
+## Optional
+
+- [Mentions légales](/mentions-legales)
+- [Conditions générales](/conditions-generales)
+- [Confidentialité](/confidentialite)
