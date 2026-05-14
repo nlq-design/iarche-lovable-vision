@@ -479,6 +479,11 @@ serve(async (req) => {
         );
       }
 
+      // Idempotency key déterministe : empêche les doublons si l'insert est rejoué
+      // (retries internes, double-clic, ou ré-import du même meeting/fichier).
+      // Basé sur des identifiants stables côté Zoom — indépendant du timestamp local.
+      const idempotencyKey = `zoom:${meetingId}:${audioFile.id ?? audioFile.recording_start ?? storagePath}`;
+
       const insertPayload = {
         workspace_id: DEFAULT_WORKSPACE_ID,
         created_by: userId,
@@ -494,6 +499,7 @@ serve(async (req) => {
         transcription_date: recData.start_time || new Date().toISOString(),
         status: 'queued',
         auto_create_tasks: true,
+        idempotency_key: idempotencyKey,
         analysis_context: `Enregistrement Zoom importé manuellement : "${topic}" avec ${contactName}.${linkedBooking?.company ? ` Entreprise: ${linkedBooking.company}.` : ''}`,
         ai_metadata: {
           autonomy_level: 'N0',
@@ -503,26 +509,53 @@ serve(async (req) => {
           zoom_topic: topic,
           booking_id: linkedBooking?.id || null,
           source: 'zoom_manual_import',
+          idempotency_key: idempotencyKey,
         },
       };
 
-      const transcription = await retryWithBackoff(
-        'db-insert-transcription',
-        async () => {
-          const { data, error } = await supabaseService
-            .from('voice_transcriptions')
-            .insert(insertPayload)
-            .select('id, status')
-            .single();
-          if (error) {
-            const err: any = new Error(`DB insert failed: ${error.message}`);
-            err.code = (error as any).code;
-            throw err;
-          }
-          return data;
-        },
-        { isRetryable: (e: any) => isTransientPgError(e?.code) },
-      );
+      // Pré-check : si la clé existe déjà, on retourne l'existant sans réinsérer.
+      const { data: existing } = await supabaseService
+        .from('voice_transcriptions')
+        .select('id, status')
+        .eq('idempotency_key', idempotencyKey)
+        .maybeSingle();
+
+      let transcription: { id: string; status: string };
+      if (existing) {
+        console.log(`[zoom-import] ♻️ Idempotent hit (${idempotencyKey}) → ${existing.id}`);
+        transcription = existing as { id: string; status: string };
+      } else {
+        transcription = await retryWithBackoff(
+          'db-insert-transcription',
+          async () => {
+            const { data, error } = await supabaseService
+              .from('voice_transcriptions')
+              .insert(insertPayload)
+              .select('id, status')
+              .single();
+            if (error) {
+              // 23505 = unique_violation : un retry précédent a déjà inséré la ligne.
+              // On récupère l'existante au lieu d'échouer.
+              if ((error as any).code === '23505') {
+                const { data: dup } = await supabaseService
+                  .from('voice_transcriptions')
+                  .select('id, status')
+                  .eq('idempotency_key', idempotencyKey)
+                  .maybeSingle();
+                if (dup) {
+                  console.log(`[zoom-import] ♻️ Recovered from unique_violation → ${dup.id}`);
+                  return dup as { id: string; status: string };
+                }
+              }
+              const err: any = new Error(`DB insert failed: ${error.message}`);
+              err.code = (error as any).code;
+              throw err;
+            }
+            return data;
+          },
+          { isRetryable: (e: any) => isTransientPgError(e?.code) },
+        );
+      }
 
       console.log(`[zoom-import] ✅ Imported: ${transcription.id}`);
 
