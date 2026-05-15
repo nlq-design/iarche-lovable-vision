@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS idx_opportunities_workspace_created_at ON opportunities(workspace_id, created_at DESC);
