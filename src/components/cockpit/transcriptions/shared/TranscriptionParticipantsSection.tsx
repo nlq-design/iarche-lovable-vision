@@ -273,6 +273,7 @@ function EntitySearchPopover({
   }, [open]); // eslint-disable-line
 
   return (
+    <>
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" className="h-7 w-7" title="Lier à une entité CRM">
