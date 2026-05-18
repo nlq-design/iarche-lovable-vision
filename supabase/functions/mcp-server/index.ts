@@ -12,6 +12,10 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 
 import { Hono } from 'npm:hono@^4.9.7'
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { AsyncLocalStorage } from "node:async_hooks";
+
+// Per-request auth isolation (fixes globalThis race condition across concurrent MCP calls)
+const authStore = new AsyncLocalStorage<{ workspace_id: string; user_id?: string }>();
 
 // === Zod-compatible shim (schema descriptors only, no validation) ===
 function _sh(base: any) {
@@ -146,7 +150,10 @@ async function authenticateMcpKey(req: Request): Promise<McpAuth> {
 }
 
 // === Helper to get auth context, returns error response if not authed ===
+// Priority: AsyncLocalStorage (per-request, race-safe) → globalThis fallback (defensive)
 function getAuthContext(): { wsId: string; userId?: string } | null {
+  const fromStore = authStore.getStore();
+  if (fromStore?.workspace_id) return { wsId: fromStore.workspace_id, userId: fromStore.user_id };
   const auth = (globalThis as any).__mcpAuth;
   if (!auth?.workspace_id) return null;
   return { wsId: auth.workspace_id, userId: auth.user_id };
@@ -5424,6 +5431,7 @@ app.post("/*", async (c) => {
   const { method, params, id } = body;
 
   // === AUTH GATE: only enforce on tools/call (sensitive ops) ===
+  let requestAuth: { workspace_id: string; user_id?: string } | null = null;
   if (!PUBLIC_MCP_METHODS.has(method)) {
     const auth = await authenticateMcpKey(c.req.raw);
     if (!auth.valid) {
@@ -5432,7 +5440,9 @@ app.post("/*", async (c) => {
         401
       );
     }
-    (globalThis as any).__mcpAuth = { workspace_id: auth.workspace_id, user_id: auth.user_id };
+    requestAuth = { workspace_id: auth.workspace_id!, user_id: auth.user_id };
+    // Defensive fallback (legacy) — primary auth comes from AsyncLocalStorage below
+    (globalThis as any).__mcpAuth = requestAuth;
   }
 
   try {
@@ -5457,7 +5467,8 @@ app.post("/*", async (c) => {
 
     if (method === 'tools/call') {
       const { name, arguments: args } = params || {};
-      const result = await _callTool(name, args);
+      // Run inside AsyncLocalStorage so concurrent requests cannot overwrite each other's auth
+      const result = await authStore.run(requestAuth!, () => _callTool(name, args));
       return c.json({ jsonrpc: '2.0', id, result });
     }
 
