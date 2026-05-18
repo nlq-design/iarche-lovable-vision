@@ -56,6 +56,11 @@ export default function CockpitTranscriptions() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [leadFilter, setLeadFilter] = useState<string>('all');
+  const [projectFilter, setProjectFilter] = useState<string>('all');
+  const [solutionFilter, setSolutionFilter] = useState<string>('all');
+  const [sourceFilter, setSourceFilter] = useState<string>('all');
+  const [linkFilter, setLinkFilter] = useState<string>('all'); // all | linked | unlinked
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [zoomImportOpen, setZoomImportOpen] = useState(false);
   const [isProcessingBatch, setIsProcessingBatch] = useState(false);
