@@ -190,6 +190,20 @@ export default function CockpitTranscriptions() {
 
   const { transcriptions, isLoading, stats, refetch, processTranscription } = useCockpitVoiceTranscriptions();
 
+  // Restore scroll once transcriptions are loaded
+  useEffect(() => {
+    if (scrollRestoredRef.current || isLoading) return;
+    const raw = sessionStorage.getItem(SCROLL_KEY);
+    if (!raw) { scrollRestoredRef.current = true; return; }
+    const top = parseInt(raw, 10);
+    if (!Number.isFinite(top)) { scrollRestoredRef.current = true; return; }
+    requestAnimationFrame(() => {
+      const main = document.querySelector('main.overflow-auto') as HTMLElement | null;
+      if (main) main.scrollTop = top;
+      scrollRestoredRef.current = true;
+    });
+  }, [isLoading, transcriptions.length]);
+
   // Build filter option lists from loaded transcriptions
   const leadOptions = useMemo(() => {
     const map = new Map<string, string>();
