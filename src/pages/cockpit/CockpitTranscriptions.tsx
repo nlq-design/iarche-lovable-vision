@@ -149,6 +149,25 @@ export default function CockpitTranscriptions() {
 
   const { transcriptions, isLoading, stats, refetch, processTranscription } = useCockpitVoiceTranscriptions();
 
+  // Build filter option lists from loaded transcriptions
+  const leadOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    transcriptions.forEach(t => { if (t.lead?.id) map.set(t.lead.id, t.lead.name || 'Sans nom'); });
+    return Array.from(map, ([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
+  }, [transcriptions]);
+
+  const projectOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    transcriptions.forEach(t => { if (t.project?.id) map.set(t.project.id, t.project.name || 'Sans nom'); });
+    return Array.from(map, ([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
+  }, [transcriptions]);
+
+  const solutionOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    transcriptions.forEach(t => { if (t.solution_id && t.solution?.title) map.set(t.solution_id, t.solution.title); });
+    return Array.from(map, ([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
+  }, [transcriptions]);
+
   const filteredTranscriptions = useMemo(() => {
     return transcriptions.filter(t => {
       const searchLower = searchQuery.toLowerCase();
@@ -162,10 +181,29 @@ export default function CockpitTranscriptions() {
         t.lead_contact?.name?.toLowerCase().includes(searchLower);
       
       const matchesStatus = statusFilter === 'all' || t.status === statusFilter;
-      
-      return matchesSearch && matchesStatus;
+      const matchesLead = leadFilter === 'all' || t.lead?.id === leadFilter;
+      const matchesProject = projectFilter === 'all' || t.project?.id === projectFilter;
+      const matchesSolution = solutionFilter === 'all' || t.solution_id === solutionFilter;
+      const matchesSource = sourceFilter === 'all' || t.source === sourceFilter;
+
+      const hasAnyLink = !!(t.lead || t.project || t.solution || t.lead_contact || (t.partners && t.partners.length > 0));
+      const matchesLink = linkFilter === 'all' || (linkFilter === 'linked' ? hasAnyLink : !hasAnyLink);
+
+      return matchesSearch && matchesStatus && matchesLead && matchesProject && matchesSolution && matchesSource && matchesLink;
     });
-  }, [transcriptions, searchQuery, statusFilter]);
+  }, [transcriptions, searchQuery, statusFilter, leadFilter, projectFilter, solutionFilter, sourceFilter, linkFilter]);
+
+  const activeFiltersCount = [statusFilter, leadFilter, projectFilter, solutionFilter, sourceFilter, linkFilter].filter(v => v !== 'all').length + (searchQuery ? 1 : 0);
+
+  const resetFilters = () => {
+    setSearchQuery('');
+    setStatusFilter('all');
+    setLeadFilter('all');
+    setProjectFilter('all');
+    setSolutionFilter('all');
+    setSourceFilter('all');
+    setLinkFilter('all');
+  };
 
   // Selection helpers
   const selectableIds = useMemo(() => new Set(filteredTranscriptions.filter(t => t.status === 'done').map(t => t.id)), [filteredTranscriptions]);
