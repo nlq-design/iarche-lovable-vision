@@ -130,6 +130,18 @@ export default function CockpitTranscriptions() {
     return () => window.removeEventListener('beforeunload', handler);
   }, [isProcessingBatch]);
 
+  // Scroll persistence (save on scroll, restore on mount once data is loaded)
+  const scrollRestoredRef = useRef(false);
+  useEffect(() => {
+    const main = document.querySelector('main.overflow-auto') as HTMLElement | null;
+    if (!main) return;
+    const onScroll = () => {
+      try { sessionStorage.setItem(SCROLL_KEY, String(main.scrollTop)); } catch {}
+    };
+    main.addEventListener('scroll', onScroll, { passive: true });
+    return () => main.removeEventListener('scroll', onScroll);
+  }, []);
+
   const AUDIO_TYPES = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4', 'audio/webm', 'audio/x-m4a', 'audio/flac', 'audio/aac'];
 
   const handleDragEnter = useCallback((e: React.DragEvent) => {
