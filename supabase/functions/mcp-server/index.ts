@@ -12,6 +12,10 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 
 import { Hono } from 'npm:hono@^4.9.7'
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { AsyncLocalStorage } from "node:async_hooks";
+
+// Per-request auth isolation (fixes globalThis race condition across concurrent MCP calls)
+const authStore = new AsyncLocalStorage<{ workspace_id: string; user_id?: string }>();
 
 // === Zod-compatible shim (schema descriptors only, no validation) ===
 function _sh(base: any) {
