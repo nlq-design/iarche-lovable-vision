@@ -150,7 +150,10 @@ async function authenticateMcpKey(req: Request): Promise<McpAuth> {
 }
 
 // === Helper to get auth context, returns error response if not authed ===
+// Priority: AsyncLocalStorage (per-request, race-safe) → globalThis fallback (defensive)
 function getAuthContext(): { wsId: string; userId?: string } | null {
+  const fromStore = authStore.getStore();
+  if (fromStore?.workspace_id) return { wsId: fromStore.workspace_id, userId: fromStore.user_id };
   const auth = (globalThis as any).__mcpAuth;
   if (!auth?.workspace_id) return null;
   return { wsId: auth.workspace_id, userId: auth.user_id };
