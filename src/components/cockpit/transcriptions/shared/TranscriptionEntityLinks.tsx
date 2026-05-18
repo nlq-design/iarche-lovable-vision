@@ -253,6 +253,10 @@ export function TranscriptionEntityLinks({
               ))}
             </SelectContent>
           </Select>
+          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { setShowProjectSelector(false); setCreateProjectOpen(true); }}>
+            <Plus className="h-3 w-3 mr-1" />
+            Nouveau
+          </Button>
           <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setShowProjectSelector(false)}>
             <X className="h-3 w-3" />
           </Button>
