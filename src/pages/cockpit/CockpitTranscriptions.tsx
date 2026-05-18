@@ -51,16 +51,39 @@ const STATUS_ICONS: Record<string, React.ReactNode> = {
   error: <AlertCircle className="h-4 w-4" />,
 };
 
+const PERSIST_KEY = 'cockpit:transcriptions:state';
+const SCROLL_KEY = 'cockpit:transcriptions:scroll';
+
+type PersistedState = {
+  searchQuery: string;
+  statusFilter: string;
+  leadFilter: string;
+  projectFilter: string;
+  solutionFilter: string;
+  sourceFilter: string;
+  linkFilter: string;
+};
+
+function loadPersisted(): Partial<PersistedState> {
+  try {
+    const raw = sessionStorage.getItem(PERSIST_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
 export default function CockpitTranscriptions() {
   const navigate = useNavigate();
+  const persisted = useRef<Partial<PersistedState>>(loadPersisted()).current;
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [leadFilter, setLeadFilter] = useState<string>('all');
-  const [projectFilter, setProjectFilter] = useState<string>('all');
-  const [solutionFilter, setSolutionFilter] = useState<string>('all');
-  const [sourceFilter, setSourceFilter] = useState<string>('all');
-  const [linkFilter, setLinkFilter] = useState<string>('all'); // all | linked | unlinked
+  const [searchQuery, setSearchQuery] = useState(persisted.searchQuery ?? '');
+  const [statusFilter, setStatusFilter] = useState<string>(persisted.statusFilter ?? 'all');
+  const [leadFilter, setLeadFilter] = useState<string>(persisted.leadFilter ?? 'all');
+  const [projectFilter, setProjectFilter] = useState<string>(persisted.projectFilter ?? 'all');
+  const [solutionFilter, setSolutionFilter] = useState<string>(persisted.solutionFilter ?? 'all');
+  const [sourceFilter, setSourceFilter] = useState<string>(persisted.sourceFilter ?? 'all');
+  const [linkFilter, setLinkFilter] = useState<string>(persisted.linkFilter ?? 'all'); // all | linked | unlinked
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [zoomImportOpen, setZoomImportOpen] = useState(false);
   const [isProcessingBatch, setIsProcessingBatch] = useState(false);
@@ -69,6 +92,12 @@ export default function CockpitTranscriptions() {
   const [droppedFiles, setDroppedFiles] = useState<File[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const dragCounterRef = useRef(0);
+
+  // Persist filters to sessionStorage
+  useEffect(() => {
+    const state: PersistedState = { searchQuery, statusFilter, leadFilter, projectFilter, solutionFilter, sourceFilter, linkFilter };
+    try { sessionStorage.setItem(PERSIST_KEY, JSON.stringify(state)); } catch {}
+  }, [searchQuery, statusFilter, leadFilter, projectFilter, solutionFilter, sourceFilter, linkFilter]);
 
   // Block navigation when batch is running
   const isProcessingRef = useRef(isProcessingBatch);
@@ -100,6 +129,18 @@ export default function CockpitTranscriptions() {
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
   }, [isProcessingBatch]);
+
+  // Scroll persistence (save on scroll, restore on mount once data is loaded)
+  const scrollRestoredRef = useRef(false);
+  useEffect(() => {
+    const main = document.querySelector('main.overflow-auto') as HTMLElement | null;
+    if (!main) return;
+    const onScroll = () => {
+      try { sessionStorage.setItem(SCROLL_KEY, String(main.scrollTop)); } catch {}
+    };
+    main.addEventListener('scroll', onScroll, { passive: true });
+    return () => main.removeEventListener('scroll', onScroll);
+  }, []);
 
   const AUDIO_TYPES = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4', 'audio/webm', 'audio/x-m4a', 'audio/flac', 'audio/aac'];
 
@@ -148,6 +189,20 @@ export default function CockpitTranscriptions() {
   }, []);
 
   const { transcriptions, isLoading, stats, refetch, processTranscription } = useCockpitVoiceTranscriptions();
+
+  // Restore scroll once transcriptions are loaded
+  useEffect(() => {
+    if (scrollRestoredRef.current || isLoading) return;
+    const raw = sessionStorage.getItem(SCROLL_KEY);
+    if (!raw) { scrollRestoredRef.current = true; return; }
+    const top = parseInt(raw, 10);
+    if (!Number.isFinite(top)) { scrollRestoredRef.current = true; return; }
+    requestAnimationFrame(() => {
+      const main = document.querySelector('main.overflow-auto') as HTMLElement | null;
+      if (main) main.scrollTop = top;
+      scrollRestoredRef.current = true;
+    });
+  }, [isLoading, transcriptions.length]);
 
   // Build filter option lists from loaded transcriptions
   const leadOptions = useMemo(() => {
