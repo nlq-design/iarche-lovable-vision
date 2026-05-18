@@ -51,16 +51,39 @@ const STATUS_ICONS: Record<string, React.ReactNode> = {
   error: <AlertCircle className="h-4 w-4" />,
 };
 
+const PERSIST_KEY = 'cockpit:transcriptions:state';
+const SCROLL_KEY = 'cockpit:transcriptions:scroll';
+
+type PersistedState = {
+  searchQuery: string;
+  statusFilter: string;
+  leadFilter: string;
+  projectFilter: string;
+  solutionFilter: string;
+  sourceFilter: string;
+  linkFilter: string;
+};
+
+function loadPersisted(): Partial<PersistedState> {
+  try {
+    const raw = sessionStorage.getItem(PERSIST_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
 export default function CockpitTranscriptions() {
   const navigate = useNavigate();
+  const persisted = useRef<Partial<PersistedState>>(loadPersisted()).current;
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [leadFilter, setLeadFilter] = useState<string>('all');
-  const [projectFilter, setProjectFilter] = useState<string>('all');
-  const [solutionFilter, setSolutionFilter] = useState<string>('all');
-  const [sourceFilter, setSourceFilter] = useState<string>('all');
-  const [linkFilter, setLinkFilter] = useState<string>('all'); // all | linked | unlinked
+  const [searchQuery, setSearchQuery] = useState(persisted.searchQuery ?? '');
+  const [statusFilter, setStatusFilter] = useState<string>(persisted.statusFilter ?? 'all');
+  const [leadFilter, setLeadFilter] = useState<string>(persisted.leadFilter ?? 'all');
+  const [projectFilter, setProjectFilter] = useState<string>(persisted.projectFilter ?? 'all');
+  const [solutionFilter, setSolutionFilter] = useState<string>(persisted.solutionFilter ?? 'all');
+  const [sourceFilter, setSourceFilter] = useState<string>(persisted.sourceFilter ?? 'all');
+  const [linkFilter, setLinkFilter] = useState<string>(persisted.linkFilter ?? 'all'); // all | linked | unlinked
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [zoomImportOpen, setZoomImportOpen] = useState(false);
   const [isProcessingBatch, setIsProcessingBatch] = useState(false);
@@ -69,6 +92,12 @@ export default function CockpitTranscriptions() {
   const [droppedFiles, setDroppedFiles] = useState<File[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const dragCounterRef = useRef(0);
+
+  // Persist filters to sessionStorage
+  useEffect(() => {
+    const state: PersistedState = { searchQuery, statusFilter, leadFilter, projectFilter, solutionFilter, sourceFilter, linkFilter };
+    try { sessionStorage.setItem(PERSIST_KEY, JSON.stringify(state)); } catch {}
+  }, [searchQuery, statusFilter, leadFilter, projectFilter, solutionFilter, sourceFilter, linkFilter]);
 
   // Block navigation when batch is running
   const isProcessingRef = useRef(isProcessingBatch);
