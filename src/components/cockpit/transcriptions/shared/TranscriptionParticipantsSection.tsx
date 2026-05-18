@@ -6,6 +6,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
@@ -31,6 +40,7 @@ import {
   MessageSquare,
   Eye,
   ExternalLink,
+  UserPlus,
 } from 'lucide-react';
 import {
   useTranscriptionParticipants,
@@ -42,6 +52,8 @@ import {
   type PresenceStatus,
   type MeetingRole,
 } from '@/hooks/cockpit/useTranscriptionParticipants';
+import { useWorkspaceId } from '@/contexts/WorkspaceContext';
+import { DEFAULT_WORKSPACE_ID } from '@/lib/constants/workspace';
 import type { NormalizedSummary } from './normalizeSummary';
 import { EntityVocabularyEditor } from './EntityVocabularyEditor';
 import { OwnerBadge } from '@/components/cockpit/shared/OwnerBadge';
