@@ -337,6 +337,214 @@ export function TranscriptionEntityLinks({
           }
         </Badge>
       )}
+
+      <QuickCreateLeadDialog
+        open={createLeadOpen}
+        onOpenChange={setCreateLeadOpen}
+        workspaceId={workspaceId}
+        onCreated={(id) => onUpdate({ lead_id: id })}
+      />
+      <QuickCreateProjectDialog
+        open={createProjectOpen}
+        onOpenChange={setCreateProjectOpen}
+        workspaceId={workspaceId}
+        leadId={lead?.id ?? null}
+        onCreated={(id) => onUpdate({ project_id: id })}
+      />
     </div>
+  );
+}
+
+// ============= QUICK CREATE LEAD DIALOG =============
+
+function QuickCreateLeadDialog({
+  open,
+  onOpenChange,
+  workspaceId,
+  onCreated,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  workspaceId: string;
+  onCreated: (id: string) => void;
+}) {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [company, setCompany] = useState('');
+  const [phone, setPhone] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setName('');
+      setEmail('');
+      setCompany('');
+      setPhone('');
+    }
+  }, [open]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    setSaving(true);
+    try {
+      const { data, error } = await supabase
+        .from('leads')
+        .insert({
+          workspace_id: workspaceId,
+          name: name.trim(),
+          email: email.trim() || `${name.trim().toLowerCase().replace(/\s+/g, '.')}@inconnu.local`,
+          phone: phone.trim() || null,
+          company: company.trim() || null,
+          source: 'contact',
+          qualification_status: 'new',
+        })
+        .select('id, name')
+        .single();
+      if (error) throw error;
+      toast.success(`Lead "${data.name}" créé et lié`);
+      onCreated(data.id);
+      onOpenChange(false);
+    } catch (err) {
+      toast.error('Erreur lors de la création', { description: (err as Error).message });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[460px]">
+        <form onSubmit={handleSubmit}>
+          <DialogHeader>
+            <DialogTitle>Nouveau lead</DialogTitle>
+            <DialogDescription>
+              Le lead sera créé et automatiquement lié à cette transcription.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 py-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="ql-name">Nom *</Label>
+              <Input id="ql-name" value={name} onChange={(e) => setName(e.target.value)} required />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="ql-email">Email</Label>
+                <Input id="ql-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="ql-phone">Téléphone</Label>
+                <Input id="ql-phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="ql-company">Entreprise</Label>
+              <Input id="ql-company" value={company} onChange={(e) => setCompany(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Annuler
+            </Button>
+            <Button type="submit" disabled={saving || !name.trim()}>
+              {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Créer et lier
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ============= QUICK CREATE PROJECT DIALOG =============
+
+function QuickCreateProjectDialog({
+  open,
+  onOpenChange,
+  workspaceId,
+  leadId,
+  onCreated,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  workspaceId: string;
+  leadId: string | null;
+  onCreated: (id: string) => void;
+}) {
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setName('');
+      setDescription('');
+    }
+  }, [open]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    setSaving(true);
+    try {
+      const payload: Record<string, unknown> = {
+        workspace_id: workspaceId,
+        name: name.trim(),
+        description: description.trim() || null,
+        status: 'active',
+        health_status: 'on_track',
+      };
+      if (leadId) payload.lead_id = leadId;
+      const { data, error } = await supabase
+        .from('projects')
+        .insert(payload as never)
+        .select('id, name')
+        .single();
+      if (error) throw error;
+      toast.success(`Projet "${data.name}" créé et lié`);
+      onCreated(data.id);
+      onOpenChange(false);
+    } catch (err) {
+      toast.error('Erreur lors de la création', { description: (err as Error).message });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[460px]">
+        <form onSubmit={handleSubmit}>
+          <DialogHeader>
+            <DialogTitle>Nouveau projet</DialogTitle>
+            <DialogDescription>
+              {leadId
+                ? 'Le projet sera créé, rattaché au lead courant, et lié à cette transcription.'
+                : 'Le projet sera créé et lié à cette transcription.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 py-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="qp-name">Nom *</Label>
+              <Input id="qp-name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="Ex: Refonte site web" />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="qp-desc">Description</Label>
+              <Input id="qp-desc" value={description} onChange={(e) => setDescription(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Annuler
+            </Button>
+            <Button type="submit" disabled={saving || !name.trim()}>
+              {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Créer et lier
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
