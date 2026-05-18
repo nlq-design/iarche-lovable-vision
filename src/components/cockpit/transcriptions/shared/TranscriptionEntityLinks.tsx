@@ -146,11 +146,24 @@ export function TranscriptionEntityLinks({
               ))}
             </SelectContent>
           </Select>
+          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { setShowLeadSelector(false); setCreateLeadOpen(true); }}>
+            <Plus className="h-3 w-3 mr-1" />
+            Nouveau
+          </Button>
           <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setShowLeadSelector(false)}>
             <X className="h-3 w-3" />
           </Button>
         </div>
       ) : (
+        <Badge 
+          variant="outline" 
+          className="cursor-pointer hover:bg-muted"
+          onClick={() => setShowLeadSelector(true)}
+        >
+          <UserPlus className="h-3 w-3 mr-1" />
+          Lier à un lead
+        </Badge>
+      )}
         <Badge 
           variant="outline" 
           className="cursor-pointer hover:bg-muted"
