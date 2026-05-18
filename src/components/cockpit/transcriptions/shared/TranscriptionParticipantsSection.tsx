@@ -365,6 +365,8 @@ function ParticipantRow({
   availableSpeakers,
   speakerToParticipant,
   onToggleSpeaker,
+  transcriptionLeadId,
+  transcriptionLeadName,
 }: {
   participant: TranscriptionParticipant;
   onUpdate: (id: string, updates: Partial<TranscriptionParticipant>) => void;
@@ -377,6 +379,8 @@ function ParticipantRow({
   availableSpeakers: string[];
   speakerToParticipant: Record<string, string>;
   onToggleSpeaker: (participantId: string, speaker: string) => void;
+  transcriptionLeadId: string | null;
+  transcriptionLeadName: string | null;
 }) {
   const navigate = useNavigate();
   const { ownerProfile } = useOwnerProfile();
