@@ -164,15 +164,6 @@ export function TranscriptionEntityLinks({
           Lier à un lead
         </Badge>
       )}
-        <Badge 
-          variant="outline" 
-          className="cursor-pointer hover:bg-muted"
-          onClick={() => setShowLeadSelector(true)}
-        >
-          <UserPlus className="h-3 w-3 mr-1" />
-          Lier à un lead
-        </Badge>
-      )}
 
       {/* Contact Link - Only show when lead is linked */}
       {lead && (
