@@ -798,6 +798,8 @@ export function TranscriptionParticipantsSection({
                   availableSpeakers={availableSpeakers}
                   speakerToParticipant={speakerToParticipant}
                   onToggleSpeaker={handleToggleSpeaker}
+                  transcriptionLeadId={transcriptionLeadId}
+                  transcriptionLeadName={transcriptionLeadName}
                 />
               ))}
             </div>
