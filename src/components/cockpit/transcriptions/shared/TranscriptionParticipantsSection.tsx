@@ -514,6 +514,8 @@ function ParticipantRow({
           participant={participant}
           onLink={(type, id, name) => onLink(participant.id, type, id, name)}
           searchEntities={searchEntities}
+          transcriptionLeadId={transcriptionLeadId}
+          transcriptionLeadName={transcriptionLeadName}
         />
 
         {/* Delete */}
