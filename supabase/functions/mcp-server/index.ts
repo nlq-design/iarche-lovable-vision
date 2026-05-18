@@ -5345,7 +5345,7 @@ const _EXPOSED_TOOLS = new Set([
   'get_opportunities', 'upsert_opportunity',
   'get_activity_log', 'create_activity_note',
   'get_tasks', 'create_task', 'update_task',
-  'get_contacts', 'get_lead_contacts',
+  'get_contacts', 'get_lead_contacts', 'create_lead_contact',
   // INTELLIGENCE
   'analyze_pipeline', 'get_forecast', 'audit_crm_quality',
   'get_financial_report', 'simulate_pricing',
