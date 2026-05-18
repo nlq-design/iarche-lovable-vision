@@ -6,6 +6,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
@@ -31,6 +40,7 @@ import {
   MessageSquare,
   Eye,
   ExternalLink,
+  UserPlus,
 } from 'lucide-react';
 import {
   useTranscriptionParticipants,
@@ -42,6 +52,8 @@ import {
   type PresenceStatus,
   type MeetingRole,
 } from '@/hooks/cockpit/useTranscriptionParticipants';
+import { useWorkspaceId } from '@/contexts/WorkspaceContext';
+import { DEFAULT_WORKSPACE_ID } from '@/lib/constants/workspace';
 import type { NormalizedSummary } from './normalizeSummary';
 import { EntityVocabularyEditor } from './EntityVocabularyEditor';
 import { OwnerBadge } from '@/components/cockpit/shared/OwnerBadge';
@@ -60,16 +72,167 @@ function PresenceIcon({ status }: { status: PresenceStatus }) {
 
 // ============= ENTITY SEARCH POPOVER =============
 
+// ============= CREATE CONTACT DIALOG =============
+
+function CreateContactDialog({
+  open,
+  onOpenChange,
+  initialName,
+  transcriptionLeadId,
+  transcriptionLeadName,
+  onCreated,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  initialName: string;
+  transcriptionLeadId: string | null;
+  transcriptionLeadName: string | null;
+  onCreated: (type: LinkedEntityType, id: string, name: string) => void;
+}) {
+  const ctxWorkspaceId = useWorkspaceId();
+  const workspaceId = ctxWorkspaceId ?? DEFAULT_WORKSPACE_ID;
+  // If the transcription is linked to a lead → create a lead_contact attached to it.
+  // Otherwise → create a new lead.
+  const mode: 'lead_contact' | 'lead' = transcriptionLeadId ? 'lead_contact' : 'lead';
+
+  const [name, setName] = useState(initialName);
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [position, setPosition] = useState('');
+  const [company, setCompany] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setName(initialName);
+      setEmail('');
+      setPhone('');
+      setPosition('');
+      setCompany('');
+    }
+  }, [open, initialName]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    setSaving(true);
+    try {
+      if (mode === 'lead_contact' && transcriptionLeadId) {
+        const { data, error } = await supabase
+          .from('lead_contacts')
+          .insert({
+            lead_id: transcriptionLeadId,
+            workspace_id: workspaceId,
+            name: name.trim(),
+            email: email.trim() || null,
+            phone: phone.trim() || null,
+            position: position.trim() || null,
+            is_primary: false,
+          })
+          .select('id, name')
+          .single();
+        if (error) throw error;
+        toast.success(`Contact "${data.name}" créé et lié`);
+        onCreated('lead_contact', data.id, data.name);
+      } else {
+        const { data, error } = await supabase
+          .from('leads')
+          .insert({
+            workspace_id: workspaceId,
+            name: name.trim(),
+            email: email.trim() || `${name.trim().toLowerCase().replace(/\s+/g, '.')}@inconnu.local`,
+            phone: phone.trim() || null,
+            company: company.trim() || null,
+            source: 'contact',
+            qualification_status: 'new',
+          })
+          .select('id, name')
+          .single();
+        if (error) throw error;
+        toast.success(`Lead "${data.name}" créé et lié`);
+        onCreated('lead', data.id, data.name);
+      }
+      onOpenChange(false);
+    } catch (err) {
+      toast.error('Erreur lors de la création', { description: (err as Error).message });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[460px]">
+        <form onSubmit={handleSubmit}>
+          <DialogHeader>
+            <DialogTitle>
+              {mode === 'lead_contact' ? 'Nouveau contact' : 'Nouveau lead'}
+            </DialogTitle>
+            <DialogDescription>
+              {mode === 'lead_contact'
+                ? `Sera ajouté au lead "${transcriptionLeadName ?? ''}" et lié au participant.`
+                : 'Aucun lead rattaché à la transcription : un nouveau lead sera créé et lié au participant.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 py-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="cc-name">Nom *</Label>
+              <Input id="cc-name" value={name} onChange={(e) => setName(e.target.value)} required />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="cc-email">Email</Label>
+                <Input id="cc-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="cc-phone">Téléphone</Label>
+                <Input id="cc-phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+              </div>
+            </div>
+            {mode === 'lead_contact' ? (
+              <div className="space-y-1.5">
+                <Label htmlFor="cc-position">Fonction</Label>
+                <Input id="cc-position" value={position} onChange={(e) => setPosition(e.target.value)} placeholder="Ex: Directeur achats" />
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                <Label htmlFor="cc-company">Entreprise</Label>
+                <Input id="cc-company" value={company} onChange={(e) => setCompany(e.target.value)} />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Annuler
+            </Button>
+            <Button type="submit" disabled={saving || !name.trim()}>
+              {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Créer et lier
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ============= ENTITY SEARCH POPOVER =============
+
 function EntitySearchPopover({
   participant,
   onLink,
   searchEntities,
+  transcriptionLeadId,
+  transcriptionLeadName,
 }: {
   participant: TranscriptionParticipant;
   onLink: (type: LinkedEntityType, id: string, name: string) => void;
   searchEntities: (q: string) => Promise<Array<{ type: LinkedEntityType; id: string; name: string; subtitle?: string }>>;
+  transcriptionLeadId: string | null;
+  transcriptionLeadName: string | null;
 }) {
   const [open, setOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Array<{ type: LinkedEntityType; id: string; name: string; subtitle?: string }>>([]);
   const [loading, setLoading] = useState(false);
@@ -110,6 +273,7 @@ function EntitySearchPopover({
   }, [open]); // eslint-disable-line
 
   return (
+    <>
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" className="h-7 w-7" title="Lier à une entité CRM">
@@ -158,9 +322,32 @@ function EntitySearchPopover({
               </button>
             ))}
           </div>
+          <div className="pt-1 border-t">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="w-full h-8 justify-start text-xs gap-2"
+              onClick={() => { setOpen(false); setCreateOpen(true); }}
+            >
+              <UserPlus className="h-3.5 w-3.5" />
+              {transcriptionLeadId
+                ? `Créer un nouveau contact${transcriptionLeadName ? ` pour "${transcriptionLeadName}"` : ''}`
+                : 'Créer un nouveau lead'}
+            </Button>
+          </div>
         </div>
       </PopoverContent>
     </Popover>
+    <CreateContactDialog
+      open={createOpen}
+      onOpenChange={setCreateOpen}
+      initialName={participant.name}
+      transcriptionLeadId={transcriptionLeadId}
+      transcriptionLeadName={transcriptionLeadName}
+      onCreated={(type, id, name) => onLink(type, id, name)}
+    />
+    </>
   );
 }
 
@@ -178,6 +365,8 @@ function ParticipantRow({
   availableSpeakers,
   speakerToParticipant,
   onToggleSpeaker,
+  transcriptionLeadId,
+  transcriptionLeadName,
 }: {
   participant: TranscriptionParticipant;
   onUpdate: (id: string, updates: Partial<TranscriptionParticipant>) => void;
@@ -190,6 +379,8 @@ function ParticipantRow({
   availableSpeakers: string[];
   speakerToParticipant: Record<string, string>;
   onToggleSpeaker: (participantId: string, speaker: string) => void;
+  transcriptionLeadId: string | null;
+  transcriptionLeadName: string | null;
 }) {
   const navigate = useNavigate();
   const { ownerProfile } = useOwnerProfile();
@@ -323,6 +514,8 @@ function ParticipantRow({
           participant={participant}
           onLink={(type, id, name) => onLink(participant.id, type, id, name)}
           searchEntities={searchEntities}
+          transcriptionLeadId={transcriptionLeadId}
+          transcriptionLeadName={transcriptionLeadName}
         />
 
         {/* Delete */}
@@ -605,6 +798,8 @@ export function TranscriptionParticipantsSection({
                   availableSpeakers={availableSpeakers}
                   speakerToParticipant={speakerToParticipant}
                   onToggleSpeaker={handleToggleSpeaker}
+                  transcriptionLeadId={transcriptionLeadId}
+                  transcriptionLeadName={transcriptionLeadName}
                 />
               ))}
             </div>
