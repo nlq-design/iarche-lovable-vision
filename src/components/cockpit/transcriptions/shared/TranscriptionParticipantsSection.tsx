@@ -232,6 +232,7 @@ function EntitySearchPopover({
   transcriptionLeadName: string | null;
 }) {
   const [open, setOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Array<{ type: LinkedEntityType; id: string; name: string; subtitle?: string }>>([]);
   const [loading, setLoading] = useState(false);
