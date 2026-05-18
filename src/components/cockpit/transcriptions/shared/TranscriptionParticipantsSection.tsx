@@ -321,9 +321,32 @@ function EntitySearchPopover({
               </button>
             ))}
           </div>
+          <div className="pt-1 border-t">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="w-full h-8 justify-start text-xs gap-2"
+              onClick={() => { setOpen(false); setCreateOpen(true); }}
+            >
+              <UserPlus className="h-3.5 w-3.5" />
+              {transcriptionLeadId
+                ? `Créer un nouveau contact${transcriptionLeadName ? ` pour "${transcriptionLeadName}"` : ''}`
+                : 'Créer un nouveau lead'}
+            </Button>
+          </div>
         </div>
       </PopoverContent>
     </Popover>
+    <CreateContactDialog
+      open={createOpen}
+      onOpenChange={setCreateOpen}
+      initialName={participant.name}
+      transcriptionLeadId={transcriptionLeadId}
+      transcriptionLeadName={transcriptionLeadName}
+      onCreated={(type, id, name) => onLink(type, id, name)}
+    />
+    </>
   );
 }
 
