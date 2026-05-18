@@ -98,6 +98,10 @@ export function TranscriptionEntityLinks({
   const [showContactSelector, setShowContactSelector] = useState(false);
   const [showProjectSelector, setShowProjectSelector] = useState(false);
   const [showSolutionSelector, setShowSolutionSelector] = useState(false);
+  const [createLeadOpen, setCreateLeadOpen] = useState(false);
+  const [createProjectOpen, setCreateProjectOpen] = useState(false);
+  const ctxWorkspaceId = useWorkspaceId();
+  const workspaceId = ctxWorkspaceId ?? DEFAULT_WORKSPACE_ID;
 
   const handleNavigate = (path: string) => {
     onClose?.();
