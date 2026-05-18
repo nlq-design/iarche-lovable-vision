@@ -1538,6 +1538,47 @@ mcpServer.registerTool(
 );
 
 // ============================================================
+// TOOL 32b: create_lead_contact
+// ============================================================
+mcpServer.registerTool(
+  "create_lead_contact",
+  {
+    title: "Create Lead Contact",
+    description: "Créer un contact (interlocuteur) rattaché à un lead existant.",
+    inputSchema: {
+      lead_id: z.string().uuid().describe("UUID du lead parent"),
+      name: z.string().describe("Nom complet du contact"),
+      email: z.string().optional().describe("Email"),
+      phone: z.string().optional().describe("Téléphone"),
+      position: z.string().optional().describe("Fonction / poste"),
+      is_primary: z.boolean().optional().describe("Marquer comme contact principal"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+
+    const { data, error } = await supabaseAdmin
+      .from("lead_contacts")
+      .insert({
+        workspace_id: ctx.wsId,
+        lead_id: params.lead_id,
+        name: params.name,
+        email: params.email || null,
+        phone: params.phone || null,
+        position: params.position || null,
+        is_primary: params.is_primary ?? false,
+      })
+      .select("id, lead_id, name, email, phone, position, is_primary")
+      .single();
+
+    if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ success: true, lead_contact: data }) }] };
+  }
+);
+
+
+// ============================================================
 // TOOL 33: get_ai_prompts
 // ============================================================
 mcpServer.registerTool(
@@ -5304,7 +5345,7 @@ const _EXPOSED_TOOLS = new Set([
   'get_opportunities', 'upsert_opportunity',
   'get_activity_log', 'create_activity_note',
   'get_tasks', 'create_task', 'update_task',
-  'get_contacts', 'get_lead_contacts',
+  'get_contacts', 'get_lead_contacts', 'create_lead_contact',
   // INTELLIGENCE
   'analyze_pipeline', 'get_forecast', 'audit_crm_quality',
   'get_financial_report', 'simulate_pricing',
