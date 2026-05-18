@@ -56,6 +56,11 @@ export default function CockpitTranscriptions() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [leadFilter, setLeadFilter] = useState<string>('all');
+  const [projectFilter, setProjectFilter] = useState<string>('all');
+  const [solutionFilter, setSolutionFilter] = useState<string>('all');
+  const [sourceFilter, setSourceFilter] = useState<string>('all');
+  const [linkFilter, setLinkFilter] = useState<string>('all'); // all | linked | unlinked
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [zoomImportOpen, setZoomImportOpen] = useState(false);
   const [isProcessingBatch, setIsProcessingBatch] = useState(false);
@@ -144,6 +149,25 @@ export default function CockpitTranscriptions() {
 
   const { transcriptions, isLoading, stats, refetch, processTranscription } = useCockpitVoiceTranscriptions();
 
+  // Build filter option lists from loaded transcriptions
+  const leadOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    transcriptions.forEach(t => { if (t.lead?.id) map.set(t.lead.id, t.lead.name || 'Sans nom'); });
+    return Array.from(map, ([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
+  }, [transcriptions]);
+
+  const projectOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    transcriptions.forEach(t => { if (t.project?.id) map.set(t.project.id, t.project.name || 'Sans nom'); });
+    return Array.from(map, ([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
+  }, [transcriptions]);
+
+  const solutionOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    transcriptions.forEach(t => { if (t.solution_id && t.solution?.title) map.set(t.solution_id, t.solution.title); });
+    return Array.from(map, ([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
+  }, [transcriptions]);
+
   const filteredTranscriptions = useMemo(() => {
     return transcriptions.filter(t => {
       const searchLower = searchQuery.toLowerCase();
@@ -157,10 +181,29 @@ export default function CockpitTranscriptions() {
         t.lead_contact?.name?.toLowerCase().includes(searchLower);
       
       const matchesStatus = statusFilter === 'all' || t.status === statusFilter;
-      
-      return matchesSearch && matchesStatus;
+      const matchesLead = leadFilter === 'all' || t.lead?.id === leadFilter;
+      const matchesProject = projectFilter === 'all' || t.project?.id === projectFilter;
+      const matchesSolution = solutionFilter === 'all' || t.solution_id === solutionFilter;
+      const matchesSource = sourceFilter === 'all' || t.source === sourceFilter;
+
+      const hasAnyLink = !!(t.lead || t.project || t.solution || t.lead_contact || (t.partners && t.partners.length > 0));
+      const matchesLink = linkFilter === 'all' || (linkFilter === 'linked' ? hasAnyLink : !hasAnyLink);
+
+      return matchesSearch && matchesStatus && matchesLead && matchesProject && matchesSolution && matchesSource && matchesLink;
     });
-  }, [transcriptions, searchQuery, statusFilter]);
+  }, [transcriptions, searchQuery, statusFilter, leadFilter, projectFilter, solutionFilter, sourceFilter, linkFilter]);
+
+  const activeFiltersCount = [statusFilter, leadFilter, projectFilter, solutionFilter, sourceFilter, linkFilter].filter(v => v !== 'all').length + (searchQuery ? 1 : 0);
+
+  const resetFilters = () => {
+    setSearchQuery('');
+    setStatusFilter('all');
+    setLeadFilter('all');
+    setProjectFilter('all');
+    setSolutionFilter('all');
+    setSourceFilter('all');
+    setLinkFilter('all');
+  };
 
   // Selection helpers
   const selectableIds = useMemo(() => new Set(filteredTranscriptions.filter(t => t.status === 'done').map(t => t.id)), [filteredTranscriptions]);
@@ -380,29 +423,93 @@ export default function CockpitTranscriptions() {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              placeholder="Rechercher..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 h-8 text-sm"
-            />
+        <div className="space-y-2">
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8 h-8 text-sm"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-[150px] h-8 text-sm">
+                <SelectValue placeholder="Statut" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les statuts</SelectItem>
+                {TRANSCRIPTION_STATUSES.map(status => (
+                  <SelectItem key={status.value} value={status.value}>{status.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full sm:w-[160px] h-8 text-sm">
-              <SelectValue placeholder="Tous les statuts" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tous les statuts</SelectItem>
-              {TRANSCRIPTION_STATUSES.map(status => (
-                <SelectItem key={status.value} value={status.value}>
-                  {status.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex flex-wrap gap-2">
+            <Select value={linkFilter} onValueChange={setLinkFilter}>
+              <SelectTrigger className="w-[160px] h-8 text-sm">
+                <SelectValue placeholder="Liaison" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Toutes (liaison)</SelectItem>
+                <SelectItem value="linked">Rattachées</SelectItem>
+                <SelectItem value="unlinked">Non liées</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={leadFilter} onValueChange={setLeadFilter}>
+              <SelectTrigger className="w-[180px] h-8 text-sm">
+                <SelectValue placeholder="Lead" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les leads</SelectItem>
+                {leadOptions.map(o => (
+                  <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={projectFilter} onValueChange={setProjectFilter}>
+              <SelectTrigger className="w-[180px] h-8 text-sm">
+                <SelectValue placeholder="Projet" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les projets</SelectItem>
+                {projectOptions.map(o => (
+                  <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={solutionFilter} onValueChange={setSolutionFilter}>
+              <SelectTrigger className="w-[180px] h-8 text-sm">
+                <SelectValue placeholder="Solution" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Toutes les solutions</SelectItem>
+                {solutionOptions.map(o => (
+                  <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={sourceFilter} onValueChange={setSourceFilter}>
+              <SelectTrigger className="w-[150px] h-8 text-sm">
+                <SelectValue placeholder="Source" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Toutes sources</SelectItem>
+                <SelectItem value="upload">Import</SelectItem>
+                <SelectItem value="recording">Enregistrement</SelectItem>
+              </SelectContent>
+            </Select>
+            {activeFiltersCount > 0 && (
+              <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={resetFilters}>
+                <X className="h-3.5 w-3.5 mr-1" />
+                Réinitialiser ({activeFiltersCount})
+              </Button>
+            )}
+            <div className="ml-auto text-xs text-muted-foreground self-center">
+              {filteredTranscriptions.length} / {transcriptions.length} résultat{transcriptions.length > 1 ? 's' : ''}
+            </div>
+          </div>
         </div>
 
         {/* Select all / Selection toolbar */}
