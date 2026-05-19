@@ -145,14 +145,16 @@ export async function buildMaxContext(
   }
 
   // ===== PRIORITY 4.5: RAG chunks liés à l'entité (transcriptions, notes, summaries) =====
-  const ragChunks = await fetchEntityRagChunks(supabase, entityType, entityId, workspaceId);
-  if (ragChunks) {
+  const ragResult = await fetchEntityRagChunks(supabase, entityType, entityId, workspaceId);
+  const ragChunks: RagChunkDebug[] = ragResult?.debug ?? [];
+  if (ragResult?.block) {
     sections.push({
       name: 'rag_chunks',
-      content: ragChunks,
+      content: ragResult.block,
       priority: 4.5,
     });
   }
+
 
   // ===== PRIORITY 5: Transcription summaries =====
   if (includeTranscriptions) {
