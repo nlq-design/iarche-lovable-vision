@@ -503,6 +503,26 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
 
         {/* FOOTER — actions */}
         <div className="border-t bg-background px-6 py-3 space-y-2">
+          {/* Aperçu des changements à appliquer */}
+          {hasUpdates && !hasValidationErrors && (
+            <div className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 space-y-1.5">
+              <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-primary">
+                <Pencil className="h-3 w-3" />
+                Aperçu — {changePreview.length} changement{changePreview.length > 1 ? 's' : ''} sur {entityRef}
+              </div>
+              <div className="space-y-1">
+                {changePreview.map((c) => (
+                  <div key={c.field} className="flex items-center gap-2 text-xs">
+                    <span className="text-muted-foreground w-16 shrink-0">{c.label}</span>
+                    <span className="text-muted-foreground line-through truncate max-w-[35%]">{c.before}</span>
+                    <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
+                    <span className="font-medium text-foreground truncate">{c.after}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <Button
             className="w-full"
             size="sm"
