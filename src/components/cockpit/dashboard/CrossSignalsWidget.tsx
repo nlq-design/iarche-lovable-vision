@@ -67,7 +67,8 @@ export function CrossSignalsWidget({ signals, isLoading, navigate }: CrossSignal
                 </div>
               );
             })}
-          </div>
+            </div>
+          </ScrollArea>
         </CardContent>
       </Card>
       <AIActionDrawer snapshot={selected} open={!!selected} onOpenChange={(o) => !o && setSelected(null)} />
