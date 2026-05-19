@@ -193,18 +193,62 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
   const pendingUpdates = buildStructuredUpdates();
   const hasUpdates = Object.keys(pendingUpdates).length > 0;
 
-  // Label dynamique du CTA primaire
-  const primaryCtaLabel = useMemo(() => {
-    if (hasValidationErrors) return 'Corriger les erreurs avant d\'enregistrer';
-    if (hasUpdates) {
-      const parts: string[] = [];
-      if (pendingUpdates.new_amount) parts.push(`montant à ${formatCurrency(pendingUpdates.new_amount as number)}`);
-      if (pendingUpdates.new_deadline) parts.push(`deadline ${format(new Date(pendingUpdates.new_deadline as string), 'dd MMM', { locale: fr })}`);
-      if (pendingUpdates.new_contact) parts.push('contact');
-      return `Mettre à jour ${parts.join(' · ')}`;
+  // Libellé entité (ex: "l'opportunité R'U'SAFE", "le lead Parham")
+  const entityTypeLabel = useMemo(() => {
+    switch (snapshot?.entity_type) {
+      case 'opportunity': return "l'opportunité";
+      case 'lead': return 'le lead';
+      case 'project': return 'le projet';
+      case 'contact': return 'le contact';
+      default: return null;
     }
-    return 'Marquer comme traité';
-  }, [hasUpdates, pendingUpdates, hasValidationErrors]);
+  }, [snapshot?.entity_type]);
+
+  const entityDisplayName = entity?.name?.trim() || snapshot?.entity_name?.trim() || '';
+  const entityRef = entityTypeLabel
+    ? `${entityTypeLabel}${entityDisplayName ? ` ${entityDisplayName}` : ''}`
+    : entityDisplayName || 'cette action';
+
+  // Aperçu structuré des changements (diff before → after)
+  const changePreview = useMemo(() => {
+    if (!hasUpdates) return [];
+    const rows: Array<{ field: string; label: string; before: string; after: string }> = [];
+    if (pendingUpdates.new_amount !== undefined) {
+      rows.push({
+        field: 'amount',
+        label: 'Montant',
+        before: entity?.amount != null ? formatCurrency(entity.amount) : '—',
+        after: formatCurrency(pendingUpdates.new_amount as number),
+      });
+    }
+    if (pendingUpdates.new_deadline !== undefined) {
+      rows.push({
+        field: 'deadline',
+        label: 'Échéance',
+        before: entity?.deadline ? format(new Date(entity.deadline), 'dd MMM yyyy', { locale: fr }) : '—',
+        after: format(new Date(pendingUpdates.new_deadline as string), 'dd MMM yyyy', { locale: fr }),
+      });
+    }
+    if (pendingUpdates.new_contact !== undefined) {
+      rows.push({
+        field: 'contact',
+        label: 'Contact',
+        before: entity?.contact || '—',
+        after: pendingUpdates.new_contact as string,
+      });
+    }
+    return rows;
+  }, [hasUpdates, pendingUpdates, entity]);
+
+  // Label dynamique du CTA primaire — reflète l'entité + le nombre de changements
+  const primaryCtaLabel = useMemo(() => {
+    if (hasValidationErrors) return "Corriger les erreurs avant d'enregistrer";
+    if (hasUpdates) {
+      const n = changePreview.length;
+      return `Appliquer ${n} changement${n > 1 ? 's' : ''} à ${entityRef}`;
+    }
+    return entityTypeLabel ? `Marquer traité sur ${entityRef}` : 'Marquer comme traité';
+  }, [hasUpdates, hasValidationErrors, changePreview.length, entityRef, entityTypeLabel]);
 
   const handlePrimaryCta = () => {
     if (hasValidationErrors) {
@@ -459,6 +503,26 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
 
         {/* FOOTER — actions */}
         <div className="border-t bg-background px-6 py-3 space-y-2">
+          {/* Aperçu des changements à appliquer */}
+          {hasUpdates && !hasValidationErrors && (
+            <div className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 space-y-1.5">
+              <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-primary">
+                <Pencil className="h-3 w-3" />
+                Aperçu — {changePreview.length} changement{changePreview.length > 1 ? 's' : ''} sur {entityRef}
+              </div>
+              <div className="space-y-1">
+                {changePreview.map((c) => (
+                  <div key={c.field} className="flex items-center gap-2 text-xs">
+                    <span className="text-muted-foreground w-16 shrink-0">{c.label}</span>
+                    <span className="text-muted-foreground line-through truncate max-w-[35%]">{c.before}</span>
+                    <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
+                    <span className="font-medium text-foreground truncate">{c.after}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <Button
             className="w-full"
             size="sm"
