@@ -250,6 +250,43 @@ export async function buildMaxContext(
 
 // ============= SPECIALIZED FETCHERS =============
 
+async function fetchEntityRagChunks(
+  supabase: SupabaseClient,
+  entityType: string,
+  entityId: string,
+  workspaceId: string,
+): Promise<string | null> {
+  try {
+    const { data, error } = await supabase.rpc('match_entity_resources', {
+      p_entity_type: entityType,
+      p_entity_id: entityId,
+      p_workspace_id: workspaceId,
+      p_limit: 12,
+      p_types: null,
+    });
+    if (error) {
+      console.warn('[context-maximizer] match_entity_resources error:', error.message);
+      return null;
+    }
+    if (!data?.length) return null;
+
+    let block = '\n## 🧠 Extraits CRM pertinents (RAG)\n';
+    for (const c of data as any[]) {
+      const date = c.source_date ? formatDateFR(c.source_date) : '';
+      const weight = c.temporal_weight ? ` · poids ${Number(c.temporal_weight).toFixed(2)}` : '';
+      const title = c.resource_title || c.resource_type;
+      block += `\n### [${c.resource_type}] ${title}${date ? ` — ${date}` : ''}${weight}\n`;
+      const chunk = (c.content_chunk || '').toString().trim();
+      if (chunk) block += `${chunk.substring(0, 1500)}\n`;
+    }
+    return block;
+  } catch (e) {
+    console.warn('[context-maximizer] RAG chunks fetch exception:', e);
+    return null;
+  }
+}
+
+
 async function fetchTranscriptionSummaries(
   supabase: SupabaseClient,
   entityType: string,
