@@ -463,6 +463,30 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
 
             <Separator />
 
+            {/* BROUILLON IA — pré-génération d'artefacts (Étape 2.3 Vague 2) */}
+            <ArtifactSection
+              artifact={row?.artifact ?? null}
+              status={row?.artifact_status ?? 'none'}
+              generating={generateArtifact.isPending}
+              onGenerate={() => generateArtifact.mutate(false)}
+              onRegenerate={() => generateArtifact.mutate(true)}
+              onOpen={() => {
+                const a = row?.artifact;
+                if (!a) return;
+                setEditedArtifact({
+                  subject: String(a.subject || ''),
+                  body: String(a.body || ''),
+                  cta: String(a.cta || ''),
+                  title: String(a.title || ''),
+                  content: String(a.content || ''),
+                });
+                setArtifactModalOpen(true);
+              }}
+            />
+
+            <Separator />
+
+
             {/* CHAMPS STRUCTURÉS — pré-remplis */}
             {snapshot.entity_type && snapshot.entity_id && (
               <div>
