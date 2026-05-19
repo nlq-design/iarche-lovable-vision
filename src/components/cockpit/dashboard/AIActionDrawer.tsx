@@ -245,25 +245,24 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
               </div>
             )}
 
-            {/* TIMELINE — contexte (en haut, mémoire active) */}
+            {/* HISTORIQUE — timeline unifiée cliquable (notes + updates + statuts) */}
             <div>
               <Label className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1.5 mb-2">
-                <MessageSquare className="h-3 w-3" /> Contexte ({notes.length})
+                <MessageSquare className="h-3 w-3" /> Historique ({notes.length})
               </Label>
 
-              {notes.length > 0 && (
-                <div className="space-y-1.5 mb-2 max-h-48 overflow-y-auto">
+              {notes.length > 0 ? (
+                <div className="space-y-1.5 mb-2 max-h-64 overflow-y-auto">
                   {[...notes].reverse().map((note, i) => (
-                    <div key={i} className="bg-muted/40 rounded-md p-2 text-xs">
-                      <p className="leading-relaxed whitespace-pre-wrap">{note.text}</p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">
-                        {note.by && <span>{note.by} · </span>}
-                        {formatDistanceToNow(new Date(note.at), { addSuffix: true, locale: fr })}
-                      </p>
-                    </div>
+                    <TimelineEntry key={`${note.at}-${i}`} note={note} />
                   ))}
                 </div>
+              ) : (
+                <p className="text-[11px] text-muted-foreground italic mb-2">
+                  Aucune action enregistrée. Vos notes et modifications apparaîtront ici.
+                </p>
               )}
+
 
               <Textarea
                 value={noteText}
