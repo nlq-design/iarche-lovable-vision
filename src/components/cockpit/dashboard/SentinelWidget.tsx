@@ -48,19 +48,20 @@ export function SentinelCardWidget({ alerts, lastFetched }: { alerts: SentinelAl
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0 px-3 pb-2">
-          <div className="space-y-1">
-            {alerts.slice(0, 3).map(alert => (
-              <button key={alert.id}
-                className={cn("w-full text-left flex items-start gap-2 p-1.5 rounded text-xs hover:bg-muted/50 transition-colors",
-                  alert.severity === 'critical' ? "text-destructive" : "text-muted-foreground"
-                )}
-                onClick={() => setSelected(alertToSnapshot(alert))}>
-                {alert.severity === 'critical' ? <XCircle className="h-3 w-3 mt-0.5 flex-shrink-0" /> : <AlertTriangle className="h-3 w-3 mt-0.5 flex-shrink-0 text-amber-500" />}
-                <span className="truncate">{alert.entity_name}: {alert.question}</span>
-              </button>
-            ))}
-            {alerts.length > 3 && <p className="text-[10px] text-muted-foreground text-center">+{alerts.length - 3} autres</p>}
-          </div>
+          <ScrollArea className="max-h-[260px] pr-2">
+            <div className="space-y-1">
+              {alerts.map(alert => (
+                <button key={alert.id}
+                  className={cn("w-full text-left flex items-start gap-2 p-1.5 rounded text-xs hover:bg-muted/50 transition-colors",
+                    alert.severity === 'critical' ? "text-destructive" : "text-muted-foreground"
+                  )}
+                  onClick={() => setSelected(alertToSnapshot(alert))}>
+                  {alert.severity === 'critical' ? <XCircle className="h-3 w-3 mt-0.5 flex-shrink-0" /> : <AlertTriangle className="h-3 w-3 mt-0.5 flex-shrink-0 text-amber-500" />}
+                  <span className="truncate">{alert.entity_name}: {alert.question}</span>
+                </button>
+              ))}
+            </div>
+          </ScrollArea>
         </CardContent>
       </Card>
       <AIActionDrawer snapshot={selected} open={!!selected} onOpenChange={(o) => !o && setSelected(null)} />

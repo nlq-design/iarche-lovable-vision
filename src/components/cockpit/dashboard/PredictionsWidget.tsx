@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 import { Eye, TrendingDown, TrendingUp } from 'lucide-react';
 import { Prediction } from '@/hooks/cockpit/useCockpitIntelligence';
 import { cn } from '@/lib/utils';
@@ -23,11 +25,13 @@ export function PredictionsWidget({ predictions, isLoading }: PredictionsWidgetP
         <CardHeader className="pb-1 pt-3 px-3">
           <CardTitle className="text-xs font-semibold uppercase tracking-wider text-cyan-600 dark:text-cyan-400 flex items-center gap-1.5">
             <Eye className="h-3.5 w-3.5" /> Prédictions 7j
+            <Badge variant="outline" className="text-[9px] px-1 py-0 ml-auto">{predictions.length}</Badge>
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0 px-3 pb-2">
-          <div className="space-y-1.5">
-            {predictions.slice(0, 4).map((pred, i) => {
+          <ScrollArea className="max-h-[280px] pr-2">
+            <div className="space-y-1.5">
+              {predictions.map((pred, i) => {
               const snapshot: AIActionSnapshot = {
                 signature: computeAIActionSignature({
                   source: 'prediction',
@@ -66,7 +70,8 @@ export function PredictionsWidget({ predictions, isLoading }: PredictionsWidgetP
                 </div>
               );
             })}
-          </div>
+            </div>
+          </ScrollArea>
         </CardContent>
       </Card>
       <AIActionDrawer snapshot={selected} open={!!selected} onOpenChange={(o) => !o && setSelected(null)} />

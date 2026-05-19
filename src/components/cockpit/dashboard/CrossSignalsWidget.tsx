@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Crosshair } from 'lucide-react';
 import { CrossSignal } from '@/hooks/cockpit/useCockpitIntelligence';
 import { cn } from '@/lib/utils';
@@ -24,11 +26,13 @@ export function CrossSignalsWidget({ signals, isLoading, navigate }: CrossSignal
         <CardHeader className="pb-1 pt-3 px-3">
           <CardTitle className="text-xs font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-400 flex items-center gap-1.5">
             <Crosshair className="h-3.5 w-3.5" /> Signaux Croisés
+            <Badge variant="outline" className="text-[9px] px-1 py-0 ml-auto">{signals.length}</Badge>
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0 px-3 pb-2">
-          <div className="space-y-1.5">
-            {signals.slice(0, 4).map((signal, i) => {
+          <ScrollArea className="max-h-[280px] pr-2">
+            <div className="space-y-1.5">
+              {signals.map((signal, i) => {
               const snapshot: AIActionSnapshot = {
                 signature: computeAIActionSignature({
                   source: 'cross_signal',
@@ -63,7 +67,8 @@ export function CrossSignalsWidget({ signals, isLoading, navigate }: CrossSignal
                 </div>
               );
             })}
-          </div>
+            </div>
+          </ScrollArea>
         </CardContent>
       </Card>
       <AIActionDrawer snapshot={selected} open={!!selected} onOpenChange={(o) => !o && setSelected(null)} />
