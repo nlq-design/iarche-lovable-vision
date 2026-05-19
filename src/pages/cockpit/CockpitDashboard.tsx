@@ -426,7 +426,7 @@ export default function CockpitDashboard() {
 
             {/* ─── COL 2: Signaux Croisés + Pipeline + Prédictions ─── */}
             <div className="lg:col-span-4 flex flex-col gap-3">
-              <CrossSignalsWidget signals={intelligence?.cross_signals} embeddingSignals={raw?.cross_signals_db} isLoading={intelLoading} navigate={navigate} />
+              <CrossSignalsWidget signals={intelligence?.cross_signals} embeddingSignals={crossSignalsDb ?? raw?.cross_signals_db} isLoading={intelLoading && crossSignalsLoading} navigate={navigate} />
 
               {/* Pipeline */}
               <Card className="cursor-pointer hover:border-primary/30 transition-colors" onClick={() => navigate('/cockpit/pipeline')}>
