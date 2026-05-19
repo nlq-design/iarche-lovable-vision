@@ -93,6 +93,7 @@ export interface IntelligenceRawData {
     risk_level: string;
     recommended_action: string;
   }>;
+  cross_signals_db?: CrossSignalDB[];
 }
 
 export interface IntelligenceResult {
