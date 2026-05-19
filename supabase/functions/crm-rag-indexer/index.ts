@@ -619,9 +619,10 @@ async function indexLead(
       parent_resource_id: l.id,
       metadata: { kind: "lead_summary", title, slug },
     }));
+    const safeRows = deepSanitizeStrings(rows);
     const { error: upErr } = await supabase
       .from("resource_embeddings")
-      .upsert(rows, { onConflict: "resource_id,chunk_index" });
+      .upsert(safeRows, { onConflict: "resource_id,chunk_index" });
     if (upErr) throw pgError("indexLead.upsert", { table: "resource_embeddings", resource_type: "lead_summary", resource_id: l.id, workspace_id: l.workspace_id, batch_size: rows.length }, upErr);
     total += rows.length;
   }
