@@ -182,6 +182,16 @@ async function backfill(
     return await genericBackfill(supabase, req, "opportunities", "opportunity", indexOpportunity);
   }
 
+  if (req.resource_type === "entity_note" || req.resource_type === "entity_context_note") {
+    return await genericBackfill(supabase, req, "entity_context_notes", "entity_note",
+      (s, id) => indexEntityNote(s, "entity_context_notes", id));
+  }
+
+  if (req.resource_type === "project_note") {
+    return await genericBackfill(supabase, req, "project_notes", "project_note",
+      (s, id) => indexEntityNote(s, "project_notes", id));
+  }
+
   throw new Error(`Backfill not implemented for: ${req.resource_type}`);
 }
 
