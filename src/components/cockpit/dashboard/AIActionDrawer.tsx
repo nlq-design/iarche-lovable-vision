@@ -607,15 +607,33 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
                 </Button>
               </PopoverContent>
             </Popover>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="text-muted-foreground hover:text-destructive"
-              onClick={() => updateStatus.mutate({ status: 'dismissed' })}
-              disabled={updateStatus.isPending}
-            >
-              <XCircle className="h-3.5 w-3.5 mr-1.5" /> Pas pertinent
-            </Button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-muted-foreground hover:text-destructive"
+                  disabled={updateStatus.isPending}
+                >
+                  <XCircle className="h-3.5 w-3.5 mr-1.5" /> Pas pertinent
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-72 p-3 space-y-2" align="end">
+                <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  Motif (optionnel — logué dans l'historique)
+                </Label>
+                <Textarea
+                  value={dismissReason}
+                  onChange={(e) => setDismissReason(e.target.value)}
+                  placeholder="Ex: déjà traité hors plateforme, info obsolète..."
+                  rows={2}
+                  className="text-xs resize-none"
+                />
+                <Button size="sm" variant="destructive" className="w-full" onClick={handleDismiss}>
+                  <XCircle className="h-3.5 w-3.5 mr-1.5" /> Confirmer l'ignorance
+                </Button>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
       </SheetContent>
