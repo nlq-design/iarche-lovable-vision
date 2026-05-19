@@ -99,6 +99,13 @@ const ALERT_TEMPLATES: Record<string, (a: RawAnomaly) => { question: string; det
     question: `Spécification "${a.entity_name}" en brouillon depuis ${a.days_inactive}j`,
     detail: `Finaliser ou archiver pour libérer le pipeline`,
   }),
+};
+
+function isValidEmail(e?: string | null): boolean {
+  if (!e) return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+}
+
 
 function formatAnomaly(anomaly: RawAnomaly): SentinelAlert {
   const template = ALERT_TEMPLATES[anomaly.rule_type];
