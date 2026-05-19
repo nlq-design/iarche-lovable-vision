@@ -1477,6 +1477,8 @@ export interface TraceCtx {
   entityType: string | null;
   entityId: string | null;
   sink: string[];
+  noCache?: boolean;
+  cacheInfo?: null | { hit: boolean; similarity?: number; ageSeconds?: number; fingerprintMatch?: boolean };
 }
 
 function daysBetween(dateStr: string): number {
