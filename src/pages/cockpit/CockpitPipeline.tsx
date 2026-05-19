@@ -233,8 +233,10 @@ const CockpitPipeline = () => {
                             draggable
                             onDragStart={(e) => handleDragStart(e, opp.id)}
                             onClick={() => handleCardClick(opp)}
-                            className={`p-2.5 rounded-md border bg-background hover:bg-muted/50 cursor-pointer active:cursor-grabbing transition-colors ${
+                            className={`p-2.5 rounded-md border bg-background hover:bg-muted/50 cursor-pointer active:cursor-grabbing transition-all ${
                               isStagnant ? 'border-amber-400 bg-amber-50/30 dark:bg-amber-950/20' : ''
+                            } ${
+                              focusId === opp.id ? 'ring-2 ring-primary ring-offset-2 shadow-lg scale-[1.02]' : ''
                             }`}
                           >
                             <div className="flex items-start gap-2">
