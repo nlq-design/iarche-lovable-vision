@@ -16,6 +16,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
@@ -27,7 +28,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import {
   CheckCircle2, Clock, XCircle, ExternalLink, Send, Calendar,
   Euro, User, Loader2, MessageSquare, Sparkles, Lightbulb,
-  Pencil, Activity, ChevronDown, ChevronRight,
+  Pencil, Activity, ChevronDown, ChevronRight, Wand2, Mail, Copy,
 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { toast } from 'sonner';
