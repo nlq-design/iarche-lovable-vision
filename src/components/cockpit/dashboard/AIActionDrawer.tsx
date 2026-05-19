@@ -204,7 +204,7 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
     }
   }, [snapshot?.entity_type]);
 
-  const entityDisplayName = entity?.name?.trim() || snapshot?.entity_label?.trim() || '';
+  const entityDisplayName = entity?.name?.trim() || snapshot?.entity_name?.trim() || '';
   const entityRef = entityTypeLabel
     ? `${entityTypeLabel}${entityDisplayName ? ` ${entityDisplayName}` : ''}`
     : entityDisplayName || 'cette action';
