@@ -629,3 +629,50 @@ export function formatContextSummary(result: MaxContextResult): string {
   }
   return lines.join('\n');
 }
+
+// ============= TRACE PERSISTENCE =============
+
+export interface ContextTraceMeta {
+  workspaceId: string;
+  userId: string | null;
+  mode: string;
+  entityType?: string | null;
+  entityId?: string | null;
+}
+
+/**
+ * Persiste une trace de contexte IA dans `ai_context_traces`.
+ * Retourne l'id de trace, ou null en cas d'échec (jamais bloquant).
+ */
+export async function recordContextTrace(
+  supabase: SupabaseClient,
+  meta: ContextTraceMeta,
+  ctx: MaxContextResult,
+): Promise<string | null> {
+  try {
+    const { data, error } = await supabase
+      .from('ai_context_traces')
+      .insert({
+        workspace_id: meta.workspaceId,
+        user_id: meta.userId,
+        mode: meta.mode,
+        entity_type: meta.entityType ?? null,
+        entity_id: meta.entityId ?? null,
+        estimated_tokens: ctx.estimatedTokens,
+        token_budget: ctx.tokenBudget,
+        breakdown: ctx.breakdown,
+        rag_chunks: ctx.ragChunks,
+        warnings: ctx.warnings,
+      })
+      .select('id')
+      .maybeSingle();
+    if (error) {
+      console.warn('[context-maximizer] trace insert error:', error.message);
+      return null;
+    }
+    return (data as { id: string } | null)?.id ?? null;
+  } catch (e) {
+    console.warn('[context-maximizer] trace exception:', e);
+    return null;
+  }
+}
