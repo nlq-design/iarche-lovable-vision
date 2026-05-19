@@ -157,8 +157,36 @@ export function useAIAction(snapshot: AIActionSnapshot | null) {
     return data as unknown as AIActionRow;
   };
 
+  /** Append d'une entrée d'historique au tableau user_notes. */
+  const appendHistory = async (
+    row: AIActionRow,
+    entry: Omit<AIActionNote, 'at' | 'by'> & { by?: string },
+  ): Promise<void> => {
+    const newEntry: AIActionNote = {
+      at: new Date().toISOString(),
+      by: entry.by ?? user?.email ?? user?.id ?? 'user',
+      kind: entry.kind ?? 'note',
+      text: entry.text,
+      meta: entry.meta,
+    };
+    const notes = [...(row.user_notes || []), newEntry];
+    const { error } = await supabase
+      .from('ai_actions')
+      .update({ user_notes: notes as never })
+      .eq('id', row.id);
+    if (error) throw error;
+  };
+
+  const statusLabelsFr: Record<AIActionStatus, string> = {
+    pending: 'Réouvert',
+    acknowledged: 'Marqué comme vu',
+    snoozed: 'Reporté',
+    done: 'Marqué traité',
+    dismissed: 'Marqué non pertinent',
+  };
+
   const updateStatus = useMutation({
-    mutationFn: async (params: { status: AIActionStatus; snoozeDays?: number }) => {
+    mutationFn: async (params: { status: AIActionStatus; snoozeDays?: number; silent?: boolean }) => {
       const row = await ensureRow();
       const patch: Record<string, unknown> = { status: params.status };
       if (params.status === 'snoozed' && params.snoozeDays) {
@@ -171,18 +199,23 @@ export function useAIAction(snapshot: AIActionSnapshot | null) {
       }
       const { error } = await supabase.from('ai_actions').update(patch).eq('id', row.id);
       if (error) throw error;
+
+      // Trace dans l'historique (sauf auto-acknowledge silencieux)
+      if (!params.silent) {
+        const label = params.status === 'snoozed' && params.snoozeDays
+          ? `Reporté de ${params.snoozeDays}j`
+          : statusLabelsFr[params.status];
+        await appendHistory(row, {
+          kind: 'status',
+          text: label,
+          meta: { status: params.status, snoozeDays: params.snoozeDays },
+        });
+      }
     },
     onSuccess: (_data, params) => {
       queryClient.invalidateQueries({ queryKey: ['ai-action', workspaceId, signature] });
       queryClient.invalidateQueries({ queryKey: ['ai-actions-active', workspaceId] });
-      const labels: Record<AIActionStatus, string> = {
-        pending: 'Réouvert',
-        acknowledged: 'Marqué comme vu',
-        snoozed: `Reporté de ${params.snoozeDays || 1}j`,
-        done: 'Traité',
-        dismissed: 'Ignoré',
-      };
-      toast.success(labels[params.status]);
+      if (!params.silent) toast.success(statusLabelsFr[params.status]);
     },
     onError: (e: Error) => toast.error(`Erreur: ${e.message}`),
   });
@@ -191,14 +224,7 @@ export function useAIAction(snapshot: AIActionSnapshot | null) {
     mutationFn: async (text: string) => {
       if (!text.trim()) return;
       const row = await ensureRow();
-      const newNote: AIActionNote = {
-        at: new Date().toISOString(),
-        by: user?.email ?? user?.id ?? 'user',
-        text: text.trim(),
-      };
-      const notes = [...(row.user_notes || []), newNote];
-      const { error } = await supabase.from('ai_actions').update({ user_notes: notes as never }).eq('id', row.id);
-      if (error) throw error;
+      await appendHistory(row, { kind: 'note', text: text.trim() });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ai-action', workspaceId, signature] });
@@ -211,7 +237,8 @@ export function useAIAction(snapshot: AIActionSnapshot | null) {
   const applyStructuredUpdate = useMutation({
     mutationFn: async (params: { updates: AIActionStructuredUpdates; pushToEntity?: boolean }) => {
       const row = await ensureRow();
-      const merged = { ...(row.structured_updates || {}), ...params.updates };
+      const previous = row.structured_updates || {};
+      const merged = { ...previous, ...params.updates };
       const { error } = await supabase
         .from('ai_actions')
         .update({ structured_updates: merged as never })
@@ -246,6 +273,20 @@ export function useAIAction(snapshot: AIActionSnapshot | null) {
           }
         }
       }
+
+      // Trace structurée : on conserve before/after pour chaque champ modifié
+      const changes: Array<{ field: string; before: unknown; after: unknown }> = [];
+      for (const [k, v] of Object.entries(params.updates)) {
+        changes.push({ field: k, before: previous[k] ?? null, after: v });
+      }
+      const summary = changes
+        .map((c) => `${c.field.replace('new_', '')}: ${formatChangeValue(c.after)}`)
+        .join(' · ');
+      await appendHistory(row, {
+        kind: 'update',
+        text: summary,
+        meta: { changes, pushed: !!params.pushToEntity },
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ai-action', workspaceId, signature] });
