@@ -1245,7 +1245,21 @@ ${activeAIActions.map((a: any) => {
     j30: snapByDate[dateJ30] || null,
   };
 
-  const enrichedLlmContext = llmContext + consulteEnrichment + sentinelBlock + temporalBlock + userFeedbackContext;
+  // === CROSS-SIGNALS — connexions sémantiques (embeddings) pré-calculées ===
+  const { data: crossSignalsRows } = await supabase
+    .from('ai_cross_signals')
+    .select('signal_type, title, narrative, score, entities, severity, evidence')
+    .eq('workspace_id', workspaceId)
+    .eq('status', 'active')
+    .gte('expires_at', new Date().toISOString())
+    .order('score', { ascending: false })
+    .limit(10);
+
+  const crossSignalsBlock = (crossSignalsRows || []).length > 0
+    ? `\n\n--- CONNEXIONS CROISÉES (embeddings) ---\nCes connexions ont été détectées par similarité sémantique entre entités CRM (leads/partners/solutions/opportunités). Chaque signal cite ≥2 entités liées. INTÈGRE-LES OBLIGATOIREMENT dans tes cross_signals en citant explicitement les entités sources et leur rôle (cible, expert recommandé, etc.).\n\n${(crossSignalsRows || []).map((s: any, i: number) => `${i + 1}. [${s.severity.toUpperCase()}/${s.signal_type}] ${s.title}\n   → ${s.narrative}\n   → Entités: ${(s.entities || []).map((e: any) => `${e.type}:${e.id.slice(0,8)}(${e.name}${e.role ? ', ' + e.role : ''})`).join(' | ')}`).join('\n\n')}\n--- FIN CONNEXIONS CROISÉES ---`
+    : '';
+
+  const enrichedLlmContext = llmContext + consulteEnrichment + sentinelBlock + temporalBlock + crossSignalsBlock + userFeedbackContext;
 
   // Load prompt from DB
   const prompt = await loadPrompt(supabase, "cockpit-intelligence-aggregator", {
