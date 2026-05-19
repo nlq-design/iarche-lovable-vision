@@ -39,8 +39,88 @@ interface IndexRequest {
   limit?: number;
 }
 
+// ─── Telemetry ──────────────────────────────────────────────────────────────
+
+type LogCtx = Record<string, unknown>;
+let CURRENT_REQUEST_ID = "";
+
+function newRequestId(): string {
+  return `rag_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function logEvent(level: "info" | "warn" | "error", event: string, ctx: LogCtx = {}) {
+  const payload = { ts: new Date().toISOString(), req: CURRENT_REQUEST_ID, level, event, ...ctx };
+  const line = `[crm-rag-indexer] ${event} ${JSON.stringify(payload)}`;
+  if (level === "error") console.error(line);
+  else if (level === "warn") console.warn(line);
+  else console.log(line);
+}
+
+/**
+ * Normalize any thrown value (PostgrestError, Error, unknown) into a structured payload.
+ * PostgrestError fields: code, message, details, hint.
+ */
+function normalizeError(err: unknown): {
+  message: string;
+  code?: string;
+  details?: string;
+  hint?: string;
+  stack?: string;
+} {
+  if (!err) return { message: "unknown error" };
+  if (err instanceof Error) {
+    const e = err as Error & { code?: string; details?: string; hint?: string };
+    return {
+      message: e.message,
+      code: e.code,
+      details: e.details,
+      hint: e.hint,
+      stack: e.stack,
+    };
+  }
+  if (typeof err === "object") {
+    const e = err as Record<string, unknown>;
+    return {
+      message: typeof e.message === "string" ? e.message : JSON.stringify(err),
+      code: e.code != null ? String(e.code) : undefined,
+      details: e.details != null ? String(e.details) : undefined,
+      hint: e.hint != null ? String(e.hint) : undefined,
+    };
+  }
+  return { message: String(err) };
+}
+
+/**
+ * Wrap a PostgrestError into a logged + structured Error.
+ * Use after `const { error } = await supabase...` checks.
+ */
+function pgError(op: string, ctx: LogCtx, error: unknown): Error {
+  const n = normalizeError(error);
+  const fullCtx = { op, ...ctx, code: n.code, message: n.message, details: n.details, hint: n.hint };
+  logEvent("error", "postgrest_error", fullCtx);
+  const err = new Error(
+    `[${op}] ${n.message}${n.code ? ` (code=${n.code})` : ""}${n.details ? ` | details=${n.details}` : ""}${n.hint ? ` | hint=${n.hint}` : ""}`,
+  );
+  (err as Error & { code?: string; details?: string; hint?: string; op?: string; ctx?: LogCtx }).code = n.code;
+  (err as Error & { details?: string }).details = n.details;
+  (err as Error & { hint?: string }).hint = n.hint;
+  (err as Error & { op?: string }).op = op;
+  (err as Error & { ctx?: LogCtx }).ctx = ctx;
+  return err;
+}
+
+function serializeError(err: unknown): string {
+  const n = normalizeError(err);
+  const parts = [n.message, n.code && `code=${n.code}`, n.details && `details=${n.details}`, n.hint && `hint=${n.hint}`]
+    .filter(Boolean);
+  return parts.join(" | ");
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  CURRENT_REQUEST_ID = newRequestId();
+  const startedAt = Date.now();
 
   try {
     const supabase = createClient(
@@ -51,36 +131,56 @@ serve(async (req) => {
     const body = (await req.json().catch(() => ({}))) as IndexRequest;
     const task = body.task ?? "index";
 
+    logEvent("info", "request_received", {
+      task,
+      resource_type: body.resource_type,
+      resource_id: body.resource_id,
+      workspace_id: body.workspace_id,
+      limit: body.limit,
+    });
+
     if (!body.resource_type) {
-      return json({ error: "resource_type is required" }, 400);
+      return json({ error: "resource_type is required", request_id: CURRENT_REQUEST_ID }, 400);
     }
 
     if (task === "backfill") {
       const result = await backfill(supabase, body);
-      return json(result);
+      logEvent("info", "request_done", { task, duration_ms: Date.now() - startedAt, ...summarizeResult(result) });
+      return json({ ...result, request_id: CURRENT_REQUEST_ID });
     }
 
     if (!body.resource_id) {
-      return json({ error: "resource_id is required for task=index" }, 400);
+      return json({ error: "resource_id is required for task=index", request_id: CURRENT_REQUEST_ID }, 400);
     }
 
     const result = await indexOne(supabase, body.resource_type, body.resource_id);
-    return json(result);
+    logEvent("info", "request_done", { task, duration_ms: Date.now() - startedAt, ...summarizeResult(result) });
+    return json({ ...result, request_id: CURRENT_REQUEST_ID });
   } catch (err) {
-    console.error("[crm-rag-indexer] fatal", err);
-    return json({ error: serializeError(err) }, 500);
+    const n = normalizeError(err);
+    logEvent("error", "request_failed", {
+      duration_ms: Date.now() - startedAt,
+      message: n.message,
+      code: n.code,
+      details: n.details,
+      hint: n.hint,
+      op: (err as { op?: string })?.op,
+      ctx: (err as { ctx?: LogCtx })?.ctx,
+    });
+    return json({ error: serializeError(err), request_id: CURRENT_REQUEST_ID }, 500);
   }
 });
 
-function serializeError(err: unknown): string {
-  if (err instanceof Error) return err.message;
-  if (err && typeof err === "object") {
-    const e = err as Record<string, unknown>;
-    const parts = [e.message, e.code, e.details, e.hint].filter(Boolean).map(String);
-    if (parts.length) return parts.join(" | ");
-    try { return JSON.stringify(err); } catch { return String(err); }
-  }
-  return String(err);
+function summarizeResult(r: unknown): LogCtx {
+  if (!r || typeof r !== "object") return {};
+  const x = r as Record<string, unknown>;
+  return {
+    processed: x.processed,
+    ok: x.ok,
+    failed: x.failed,
+    total_chunks: x.total_chunks,
+    chunks: x.chunks,
+  };
 }
 
 function json(payload: unknown, status = 200) {
