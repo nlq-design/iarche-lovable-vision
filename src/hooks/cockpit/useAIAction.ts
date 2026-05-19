@@ -15,10 +15,14 @@ import { toast } from 'sonner';
 export type AIActionSource = 'top_action' | 'cross_signal' | 'sentinel' | 'prediction';
 export type AIActionStatus = 'pending' | 'acknowledged' | 'snoozed' | 'done' | 'dismissed';
 
+export type AIActionNoteKind = 'note' | 'status' | 'update';
+
 export interface AIActionNote {
   at: string;
   by?: string;
   text: string;
+  kind?: AIActionNoteKind;
+  meta?: Record<string, unknown>;
 }
 
 export interface AIActionStructuredUpdates {
