@@ -62,7 +62,43 @@ const ALERT_TEMPLATES: Record<string, (a: RawAnomaly) => { question: string; det
     question: `Projet actif "${a.entity_name}" inactif depuis ${a.days_inactive}j`,
     detail: `Aucune activité depuis ${a.days_inactive} jours — vérifier l'avancement`,
   }),
-};
+  // === v2.1 — Nouvelles règles ===
+  risk_opportunity_zombie: (a) => ({
+    question: `Opportunité "${a.entity_name}" zombie (stage ${a.stage} stagnant ${a.days_inactive}j)`,
+    detail: `Sans mouvement depuis ${a.days_inactive}j — décider next-step ou disqualifier`,
+  }),
+  overdue_opp_close_date: (a) => ({
+    question: `Opportunité "${a.entity_name}" : date de closing dépassée`,
+    detail: `Stage ${a.stage} — reprogrammer la date ou conclure`,
+  }),
+  risk_project_over_budget: (a) => ({
+    question: `Projet "${a.entity_name}" : budget consommé à ${a.days_inactive}%`,
+    detail: `Risque de dépassement — arbitrer scope ou réviser budget`,
+  }),
+  incomplete_lead_invalid_email: (a) => ({
+    question: `Lead "${a.entity_name}" : email invalide`,
+    detail: `Format incorrect — corriger pour pouvoir relancer`,
+  }),
+  duplicate_lead: (a) => ({
+    question: `Doublon potentiel détecté pour "${a.entity_name}"`,
+    detail: `Plusieurs leads avec le même email — fusionner ou écarter`,
+  }),
+  risk_booking_no_prep: (a) => ({
+    question: `RDV "${a.entity_name}" dans ${a.days_inactive}h sans préparation`,
+    detail: `Aucune note ou briefing — préparer avant l'échange`,
+  }),
+  imbalance_pipeline_stage: (a) => ({
+    question: `Pipeline déséquilibré : ${a.days_inactive}% des opportunités au stage "${a.stage}"`,
+    detail: `Concentration anormale — accélérer la conversion en aval`,
+  }),
+  inactivity_client_post_delivery: (a) => ({
+    question: `Client "${a.entity_name}" sans touchpoint depuis livraison`,
+    detail: `Projet livré il y a ${a.days_inactive}j — opportunité de cross/up-sell`,
+  }),
+  risk_specification_stale: (a) => ({
+    question: `Spécification "${a.entity_name}" en brouillon depuis ${a.days_inactive}j`,
+    detail: `Finaliser ou archiver pour libérer le pipeline`,
+  }),
 
 function formatAnomaly(anomaly: RawAnomaly): SentinelAlert {
   const template = ALERT_TEMPLATES[anomaly.rule_type];
