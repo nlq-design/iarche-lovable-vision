@@ -29,7 +29,7 @@ export function StagnantWidget({ onSuggestFollowUp, suggestNextStep }: StagnantW
         .lt('updated_at', ago.toISOString())
         .not('stage', 'in', '(closed_won,closed_lost)')
         .order('updated_at', { ascending: true })
-        .limit(5);
+        .limit(50);
       return data || [];
     },
     staleTime: 30_000,
