@@ -5467,9 +5467,27 @@ app.post("/*", async (c) => {
 
     if (method === 'tools/call') {
       const { name, arguments: args } = params || {};
-      // Run inside AsyncLocalStorage so concurrent requests cannot overwrite each other's auth
-      const result = await authStore.run(requestAuth!, () => _callTool(name, args));
-      return c.json({ jsonrpc: '2.0', id, result });
+      const startedAt = Date.now();
+      try {
+        const result = await authStore.run(requestAuth!, () => _callTool(name, args));
+        _supabase.from('mcp_request_logs').insert({
+          workspace_id: requestAuth!.workspace_id,
+          tool_name: name,
+          status: 'ok',
+          duration_ms: Date.now() - startedAt,
+        }).then(() => {}, () => {});
+        return c.json({ jsonrpc: '2.0', id, result });
+      } catch (toolErr: any) {
+        _supabase.from('mcp_request_logs').insert({
+          workspace_id: requestAuth!.workspace_id,
+          tool_name: name,
+          status: 'error',
+          error_code: -32603,
+          error_message: String(toolErr?.message || toolErr).slice(0, 500),
+          duration_ms: Date.now() - startedAt,
+        }).then(() => {}, () => {});
+        throw toolErr;
+      }
     }
 
     return c.json({ jsonrpc: '2.0', id, error: { code: -32601, message: `Method "${method}" not supported` } });
