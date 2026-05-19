@@ -66,6 +66,8 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
   const [newContact, setNewContact] = useState('');
   const [historyFilter, setHistoryFilter] = useState<'all' | 'status'>('all');
   const [dismissReason, setDismissReason] = useState('');
+  const [artifactModalOpen, setArtifactModalOpen] = useState(false);
+  const [editedArtifact, setEditedArtifact] = useState<Record<string, string>>({});
 
   const currentStatus = row?.status ?? 'pending';
   const notes = row?.user_notes ?? [];
