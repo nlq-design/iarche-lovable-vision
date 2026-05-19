@@ -239,6 +239,11 @@ export type Database = {
       ai_actions: {
         Row: {
           action_text: string
+          artifact: Json | null
+          artifact_generated_at: string | null
+          artifact_model: string | null
+          artifact_status: string | null
+          artifact_type: string | null
           completed_at: string | null
           created_at: string
           entity_id: string | null
@@ -260,6 +265,11 @@ export type Database = {
         }
         Insert: {
           action_text: string
+          artifact?: Json | null
+          artifact_generated_at?: string | null
+          artifact_model?: string | null
+          artifact_status?: string | null
+          artifact_type?: string | null
           completed_at?: string | null
           created_at?: string
           entity_id?: string | null
@@ -281,6 +291,11 @@ export type Database = {
         }
         Update: {
           action_text?: string
+          artifact?: Json | null
+          artifact_generated_at?: string | null
+          artifact_model?: string | null
+          artifact_status?: string | null
+          artifact_type?: string | null
           completed_at?: string | null
           created_at?: string
           entity_id?: string | null
@@ -7308,6 +7323,11 @@ export type Database = {
         }
         Returns: {
           action_text: string
+          artifact: Json | null
+          artifact_generated_at: string | null
+          artifact_model: string | null
+          artifact_status: string | null
+          artifact_type: string | null
           completed_at: string | null
           created_at: string
           entity_id: string | null

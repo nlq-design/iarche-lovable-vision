@@ -33,6 +33,22 @@ export interface AIActionStructuredUpdates {
   [key: string]: unknown;
 }
 
+export type AIActionArtifactType = 'email' | 'note' | 'proposal' | 'task_brief';
+export type AIActionArtifactStatus = 'none' | 'generating' | 'ready' | 'edited' | 'sent' | 'failed';
+
+export interface AIActionArtifact {
+  type: AIActionArtifactType;
+  subject?: string;
+  body?: string;
+  cta?: string;
+  title?: string;
+  content?: string;
+  recipient_email?: string | null;
+  recipient_name?: string | null;
+  generated_at?: string;
+  [key: string]: unknown;
+}
+
 export interface AIActionRow {
   id: string;
   workspace_id: string;
@@ -53,6 +69,11 @@ export interface AIActionRow {
   created_at: string;
   updated_at: string;
   completed_at: string | null;
+  artifact: AIActionArtifact | null;
+  artifact_type: AIActionArtifactType | null;
+  artifact_status: AIActionArtifactStatus;
+  artifact_generated_at: string | null;
+  artifact_model: string | null;
 }
 
 export interface AIActionSnapshot {
@@ -359,12 +380,68 @@ export function useAIAction(snapshot: AIActionSnapshot | null) {
     onError: (e: Error) => toast.error(`Erreur: ${e.message}`),
   });
 
+  // === ARTEFACTS (Étape 2.3 Vague 2) ===
+  const generateArtifact = useMutation({
+    mutationFn: async (force: boolean = false): Promise<AIActionArtifact> => {
+      const row = await ensureRow();
+      const { data, error } = await supabase.functions.invoke('ai-action-artifact-generator', {
+        body: { ai_action_id: row.id, force },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data.artifact as AIActionArtifact;
+    },
+    onSuccess: (artifact) => {
+      queryClient.invalidateQueries({ queryKey: ['ai-action', workspaceId, signature] });
+      toast.success(artifact.type === 'email' ? 'Brouillon email généré' : 'Brouillon note généré');
+    },
+    onError: (e: Error) => toast.error(`Génération échouée : ${e.message}`),
+  });
+
+  const saveArtifactEdit = useMutation({
+    mutationFn: async (artifact: AIActionArtifact) => {
+      const row = await ensureRow();
+      const { error } = await supabase
+        .from('ai_actions')
+        .update({ artifact: artifact as never, artifact_status: 'edited' })
+        .eq('id', row.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ai-action', workspaceId, signature] });
+      toast.success('Brouillon enregistré');
+    },
+    onError: (e: Error) => toast.error(`Erreur : ${e.message}`),
+  });
+
+  const markArtifactSent = useMutation({
+    mutationFn: async () => {
+      const row = await ensureRow();
+      const { error } = await supabase
+        .from('ai_actions')
+        .update({ artifact_status: 'sent' })
+        .eq('id', row.id);
+      if (error) throw error;
+      await appendHistory(row, {
+        kind: 'status',
+        text: 'Brouillon copié/envoyé manuellement',
+        meta: { artifact_event: 'sent' },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ai-action', workspaceId, signature] });
+    },
+  });
+
   return {
     row: query.data,
     isLoading: query.isLoading,
     updateStatus,
     addNote,
     applyStructuredUpdate,
+    generateArtifact,
+    saveArtifactEdit,
+    markArtifactSent,
   };
 }
 
