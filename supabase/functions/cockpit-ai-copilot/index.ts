@@ -1464,11 +1464,20 @@ ${activeAIActions.map((a: any) => {
 // HELPERS
 // =============================================================================
 
+export interface TraceCtx {
+  workspaceId: string;
+  userId: string | null;
+  mode: string;
+  entityType: string | null;
+  entityId: string | null;
+  sink: string[];
+}
+
 function daysBetween(dateStr: string): number {
   return Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000);
 }
 
-async function collectEntityContext(supabase: any, entityType: string, entityId: string): Promise<string> {
+async function collectEntityContext(supabase: any, entityType: string, entityId: string, traceCtx?: TraceCtx): Promise<string> {
   // Use context-maximizer for rich 128k-aware context assembly
   try {
     const maxCtx = await buildMaxContext(supabase, {
@@ -1479,9 +1488,22 @@ async function collectEntityContext(supabase: any, entityType: string, entityId:
       includeTranscriptions: true,
       includeDocuments: true,
       includeEmails: true,
+      workspaceId: traceCtx?.workspaceId,
     });
-    
+
     console.log(`[cockpit-copilot] ${formatContextSummary(maxCtx)}`);
+
+    if (traceCtx) {
+      const id = await recordContextTrace(supabase, {
+        workspaceId: traceCtx.workspaceId,
+        userId: traceCtx.userId,
+        mode: traceCtx.mode,
+        entityType,
+        entityId,
+      }, maxCtx);
+      if (id) traceCtx.sink.push(id);
+    }
+
     
     const tableMap: Record<string, string> = { lead: "leads", opportunity: "opportunities", project: "projects" };
     const table = tableMap[entityType];
