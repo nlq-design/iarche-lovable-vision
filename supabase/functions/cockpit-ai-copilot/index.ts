@@ -1427,6 +1427,7 @@ ${activeAIActions.map((a: any) => {
       win_rate: winRate,
       scoring: (scoringResult.scores || []).slice(0, 10),
       temporal_deltas: temporalDeltas,
+      cross_signals_db: crossSignalsRows || [],
     },
   };
 }
