@@ -46,7 +46,7 @@ export function TopActionsWidget({ actions, isLoading }: TopActionsWidgetProps) 
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0 px-3 pb-2">
-          <ScrollArea className="max-h-[320px] pr-2">
+          <ScrollArea className="h-[320px] pr-2">
             <div className="space-y-1.5">
               {actions.map((action, i) => {
               const cfg = urgencyConfig[action.urgency] || urgencyConfig.medium;

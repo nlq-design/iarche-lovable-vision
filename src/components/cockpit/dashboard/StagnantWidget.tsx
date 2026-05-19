@@ -46,7 +46,7 @@ export function StagnantWidget({ onSuggestFollowUp, suggestNextStep }: StagnantW
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-0 px-3 pb-2">
-        <ScrollArea className="max-h-[280px] pr-2">
+        <ScrollArea className="h-[280px] pr-2">
           {stagnant.map((opp: any) => (
             <div key={opp.id} className="flex items-center justify-between py-1.5 px-1.5 rounded transition-colors group">
               <div className="min-w-0 cursor-pointer hover:bg-muted/50 flex-1" onClick={() => navigate('/cockpit/pipeline')}>
