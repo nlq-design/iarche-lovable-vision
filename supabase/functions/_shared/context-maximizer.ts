@@ -261,8 +261,11 @@ export async function buildMaxContext(
     estimatedTokens: totalTokens,
     breakdown,
     warnings,
+    ragChunks,
+    tokenBudget,
   };
 }
+
 
 // ============= SPECIALIZED FETCHERS =============
 
