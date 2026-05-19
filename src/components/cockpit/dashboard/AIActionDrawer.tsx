@@ -62,10 +62,10 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
   const currentStatus = row?.status ?? 'pending';
   const notes = row?.user_notes ?? [];
 
-  // Auto-acknowledge à l'ouverture (1 fois, si encore pending)
+  // Auto-acknowledge silencieux à l'ouverture (1 fois, si encore pending)
   useEffect(() => {
     if (open && row && currentStatus === 'pending' && !updateStatus.isPending) {
-      updateStatus.mutate({ status: 'acknowledged' });
+      updateStatus.mutate({ status: 'acknowledged', silent: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, row?.id]);
