@@ -147,6 +147,9 @@ serve(async (req) => {
       (result as Record<string, unknown>).trace_id = traceCtx.sink[0];
       (result as Record<string, unknown>).trace_ids = traceCtx.sink;
     }
+    if (result && typeof result === "object" && traceCtx.cacheInfo) {
+      (result as Record<string, unknown>).cache = traceCtx.cacheInfo;
+    }
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
