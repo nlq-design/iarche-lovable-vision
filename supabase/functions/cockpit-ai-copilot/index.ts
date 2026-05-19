@@ -17,6 +17,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { extractStructured, callLLM } from "../_shared/ai-client.ts";
 import { loadPrompt } from "../_shared/prompt-loader.ts";
 import { buildMaxContext, formatContextSummary, recordContextTrace } from "../_shared/context-maximizer.ts";
+import { buildContextFingerprint, lookupCache, storeCache } from "../_shared/semantic-cache.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
