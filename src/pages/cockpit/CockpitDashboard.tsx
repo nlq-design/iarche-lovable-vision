@@ -23,6 +23,7 @@ import {
 import { useDashboardRealtime } from '@/hooks/cockpit/useDashboardRealtime';
 import { useCockpitAICopilot } from '@/hooks/cockpit/useCockpitAICopilot';
 import { useCockpitIntelligence } from '@/hooks/cockpit/useCockpitIntelligence';
+import { useCrossSignals } from '@/hooks/cockpit/useCrossSignals';
 import { useAISentinel } from '@/hooks/cockpit/useAISentinel';
 import { useAutoConsulte } from '@/hooks/cockpit/useAutoConsulte';
 import { CreateTaskDialog } from '@/components/cockpit/dialogs';
