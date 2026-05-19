@@ -5,7 +5,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Crosshair, Network } from 'lucide-react';
 import { CrossSignal, CrossSignalDB } from '@/hooks/cockpit/useCockpitIntelligence';
 import { cn } from '@/lib/utils';
-import { entityRoute } from './helpers';
+import { safeNavigateToEntity } from './helpers';
 import { AIActionDrawer } from './AIActionDrawer';
 import { computeAIActionSignature, type AIActionSnapshot } from '@/hooks/cockpit/useAIAction';
 
