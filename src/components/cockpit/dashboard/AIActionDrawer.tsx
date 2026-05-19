@@ -279,8 +279,22 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
     }
   };
 
-  const handleSnooze = (days: number) => {
-    updateStatus.mutate({ status: 'snoozed', snoozeDays: days });
+  const handleSnooze = (days: number, reason?: string) => {
+    updateStatus.mutate({
+      status: 'snoozed',
+      snoozeDays: days,
+      actor: 'user',
+      reason: reason || `Reporté de ${days} jour${days > 1 ? 's' : ''} par l'utilisateur`,
+    });
+  };
+
+  const handleDismiss = () => {
+    updateStatus.mutate({
+      status: 'dismissed',
+      actor: 'user',
+      reason: dismissReason.trim() || 'Action jugée non pertinente (aucun motif précisé)',
+    });
+    setDismissReason('');
   };
 
   return (
