@@ -256,7 +256,7 @@ async function backfill(
       .limit(1000);
     if (req.workspace_id) q = q.eq("workspace_id", req.workspace_id);
     const { data: rows, error } = await q;
-    if (error) throw error;
+    if (error) throw pgError("backfill.list_sources", { table: "voice_transcriptions", workspace_id: req.workspace_id }, error);
 
     const toProcess = (rows ?? [])
       .filter((r) => !indexedIds.has((r as { id: string }).id))
