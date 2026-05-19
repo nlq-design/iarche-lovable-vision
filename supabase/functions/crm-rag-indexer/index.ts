@@ -394,7 +394,7 @@ async function indexTranscription(
     )
     .eq("id", transcriptionId)
     .maybeSingle();
-  if (error) throw error;
+  if (error) throw pgError("indexTranscription.select", { table: "voice_transcriptions", resource_id: transcriptionId }, error);
   if (!data) throw new Error(`Transcription ${transcriptionId} not found`);
 
   const t = data as {
