@@ -462,11 +462,14 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
           <Button
             className="w-full"
             size="sm"
+            variant={hasValidationErrors ? 'outline' : 'default'}
             onClick={handlePrimaryCta}
-            disabled={updateStatus.isPending || applyStructuredUpdate.isPending}
+            disabled={updateStatus.isPending || applyStructuredUpdate.isPending || hasValidationErrors}
           >
             {(updateStatus.isPending || applyStructuredUpdate.isPending) ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : hasValidationErrors ? (
+              <span className="text-destructive">{primaryCtaLabel}</span>
             ) : hasUpdates ? (
               primaryCtaLabel
             ) : (
