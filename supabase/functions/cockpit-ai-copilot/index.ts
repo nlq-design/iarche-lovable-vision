@@ -189,10 +189,58 @@ async function suggestTasks(supabase: any, workspaceId: string, entityType?: str
     context = await collectGlobalContext(supabase, workspaceId);
   }
 
-
   const prompt = await loadPrompt(supabase, "copilot-suggest-tasks", {
     system_prompt: `Tu es un assistant commercial expert. Suggère 3-5 tâches actionnables. Réponds en français.`,
   });
+
+  // ─── M6 Semantic Cache (entity-scoped only) ──────────────────────────────
+  const cacheable = !!(entityType && entityId && workspaceId);
+  let fingerprint = '';
+  const cacheKey = cacheable ? `suggest_tasks:${entityType}:${entityId}` : '';
+
+  if (cacheable) {
+    // Fetch entity updated_at to feed fingerprint (cheap)
+    const tableMap: Record<string, string> = {
+      lead: 'leads', opportunity: 'opportunities', project: 'projects',
+    };
+    const tbl = tableMap[entityType!];
+    let entityUpdatedAt: string | null = null;
+    if (tbl) {
+      const { data: row } = await supabase.from(tbl).select('updated_at').eq('id', entityId).maybeSingle();
+      entityUpdatedAt = row?.updated_at ?? null;
+    }
+    fingerprint = await buildContextFingerprint({
+      entityUpdatedAt,
+      ragChunksCount: 0, // captured implicitly via entityUpdatedAt
+      promptVersion: (prompt as any)?.version ?? null,
+      extra: { entityType, ctxLen: context.length },
+    });
+
+    if (traceCtx && !traceCtx.noCache) {
+      const hit = await lookupCache({
+        supabase, workspaceId, cacheKey,
+        queryText: context, fingerprint,
+      });
+      if (hit.hit) {
+        console.log(`[suggest-tasks] cache HIT sim=${hit.similarity.toFixed(3)} age=${hit.ageSeconds}s fp=${hit.fingerprintMatch}`);
+        traceCtx.cacheInfo = {
+          hit: true, similarity: hit.similarity,
+          ageSeconds: hit.ageSeconds, fingerprintMatch: hit.fingerprintMatch,
+        };
+        if (traceCtx.sink[0]) {
+          supabase.from('ai_context_traces')
+            .update({ cache_status: 'hit', cache_similarity: hit.similarity, cache_age_seconds: hit.ageSeconds })
+            .eq('id', traceCtx.sink[0])
+            .then(() => {});
+        }
+        return hit.response as any;
+      }
+      traceCtx.cacheInfo = { hit: false };
+    } else if (traceCtx?.noCache) {
+      traceCtx.cacheInfo = { hit: false };
+    }
+  }
+  // ──────────────────────────────────────────────────────────────────────────
 
   const suggestions = await extractStructured<{
     suggestions: Array<{
@@ -242,7 +290,19 @@ async function suggestTasks(supabase: any, workspaceId: string, entityType?: str
     { functionName: FUNCTION_NAME, workspaceId }
   );
 
-  return { suggestions: suggestions?.suggestions || [] };
+  const result = { suggestions: suggestions?.suggestions || [] };
+
+  if (cacheable && traceCtx && !traceCtx.noCache) {
+    storeCache({
+      supabase, workspaceId, cacheKey,
+      queryText: context, fingerprint,
+      response: result,
+      model: 'google/gemini-2.5-flash',
+      promptVersion: (prompt as any)?.version ?? null,
+    }).then(() => {});
+  }
+
+  return result;
 }
 
 // =============================================================================
