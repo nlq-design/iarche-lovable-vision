@@ -541,7 +541,7 @@ async function indexLead(
   if (error) throw pgError("indexLead.select", { table: "leads", resource_id: leadId }, error);
   if (!data) throw new Error(`Lead ${leadId} not found`);
 
-  const l = data as {
+  const raw = data as {
     id: string;
     workspace_id: string | null;
     name: string | null;
@@ -555,6 +555,19 @@ async function indexLead(
     slug: string | null;
     updated_at: string | null;
     created_at: string | null;
+  };
+  // Sanitisation systématique des champs textuels (lone surrogates -> 22P02)
+  const clean = (v: string | null) => (v ? stripLoneSurrogates(v) : v);
+  const l = {
+    ...raw,
+    name: clean(raw.name),
+    company: clean(raw.company),
+    position: clean(raw.position),
+    industry: clean(raw.industry),
+    ai_documents_summary: clean(raw.ai_documents_summary),
+    message: clean(raw.message),
+    source_context: clean(raw.source_context),
+    status: clean(raw.status),
   };
   if (!l.workspace_id) throw new Error(`Lead ${leadId} has no workspace_id`);
 
