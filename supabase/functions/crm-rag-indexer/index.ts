@@ -89,8 +89,13 @@ async function indexOne(
   switch (resourceType) {
     case "transcription_chunk":
     case "transcription_summary":
-    case "voice_transcription": // alias trigger
+    case "voice_transcription":
       return await indexTranscription(supabase, resourceId);
+    case "lead_summary":
+    case "lead":
+      return await indexLead(supabase, resourceId);
+    case "opportunity":
+      return await indexOpportunity(supabase, resourceId);
     default:
       throw new Error(`Unsupported resource_type: ${resourceType}`);
   }
