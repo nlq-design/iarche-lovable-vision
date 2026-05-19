@@ -14,6 +14,21 @@ import { cn } from '@/lib/utils';
 import { navigateToEntity } from './helpers';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { AIActionDrawer } from './AIActionDrawer';
+import { computeAIActionSignature, type AIActionSnapshot } from '@/hooks/cockpit/useAIAction';
+
+function alertToSnapshot(alert: SentinelAlert): AIActionSnapshot {
+  return {
+    signature: computeAIActionSignature({ source: 'sentinel', alert_id: alert.id, action_text: alert.question }),
+    source: 'sentinel',
+    entity_type: alert.entity_type,
+    entity_id: alert.entity_id,
+    entity_name: alert.entity_name,
+    action_text: alert.question,
+    reasoning: alert.detail,
+    urgency: alert.severity === 'critical' ? 'critical' : alert.severity === 'warning' ? 'high' : 'medium',
+  };
+}
 
 // ─── Sentinel Card (in-grid) ───
 export function SentinelCardWidget({ alerts, lastFetched }: { alerts: SentinelAlert[]; lastFetched: Date | null }) {
