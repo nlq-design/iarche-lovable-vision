@@ -372,40 +372,77 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
                 </Label>
                 <div className="space-y-2">
                   {(snapshot.entity_type === 'opportunity') && (
-                    <div className="flex items-center gap-2">
-                      <Euro className={cn('h-3.5 w-3.5 shrink-0', missingField === 'amount' ? 'text-primary' : 'text-muted-foreground')} />
-                      <Input
-                        type="number"
-                        value={newAmount}
-                        onChange={(e) => setNewAmount(e.target.value)}
-                        placeholder={entity?.amount ? `Actuel: ${entity.amount} €` : 'Montant (€)'}
-                        autoFocus={missingField === 'amount'}
-                        className={cn('h-8 text-xs', missingField === 'amount' && 'border-primary')}
-                      />
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <Euro className={cn('h-3.5 w-3.5 shrink-0',
+                          validationErrors.amount ? 'text-destructive'
+                            : missingField === 'amount' ? 'text-primary' : 'text-muted-foreground')} />
+                        <Input
+                          type="text"
+                          inputMode="decimal"
+                          value={newAmount}
+                          onChange={(e) => setNewAmount(e.target.value)}
+                          placeholder={entity?.amount ? `Actuel: ${entity.amount} €` : 'Montant (€)'}
+                          autoFocus={missingField === 'amount'}
+                          aria-invalid={!!validationErrors.amount}
+                          className={cn(
+                            'h-8 text-xs',
+                            validationErrors.amount ? 'border-destructive focus-visible:ring-destructive'
+                              : missingField === 'amount' && 'border-primary',
+                          )}
+                        />
+                      </div>
+                      {validationErrors.amount && (
+                        <p className="text-[10px] text-destructive mt-1 ml-5.5 pl-1">{validationErrors.amount}</p>
+                      )}
                     </div>
                   )}
                   {(snapshot.entity_type === 'opportunity' || snapshot.entity_type === 'project') && (
-                    <div className="flex items-center gap-2">
-                      <Calendar className={cn('h-3.5 w-3.5 shrink-0', missingField === 'deadline' ? 'text-primary' : 'text-muted-foreground')} />
-                      <Input
-                        type="date"
-                        value={newDeadline}
-                        onChange={(e) => setNewDeadline(e.target.value)}
-                        autoFocus={missingField === 'deadline'}
-                        className={cn('h-8 text-xs', missingField === 'deadline' && 'border-primary')}
-                      />
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <Calendar className={cn('h-3.5 w-3.5 shrink-0',
+                          validationErrors.deadline ? 'text-destructive'
+                            : missingField === 'deadline' ? 'text-primary' : 'text-muted-foreground')} />
+                        <Input
+                          type="date"
+                          value={newDeadline}
+                          onChange={(e) => setNewDeadline(e.target.value)}
+                          autoFocus={missingField === 'deadline'}
+                          aria-invalid={!!validationErrors.deadline}
+                          className={cn(
+                            'h-8 text-xs',
+                            validationErrors.deadline ? 'border-destructive focus-visible:ring-destructive'
+                              : missingField === 'deadline' && 'border-primary',
+                          )}
+                        />
+                      </div>
+                      {validationErrors.deadline && (
+                        <p className="text-[10px] text-destructive mt-1 pl-1">{validationErrors.deadline}</p>
+                      )}
                     </div>
                   )}
                   {snapshot.entity_type === 'lead' && (
-                    <div className="flex items-center gap-2">
-                      <User className={cn('h-3.5 w-3.5 shrink-0', missingField === 'contact' ? 'text-primary' : 'text-muted-foreground')} />
-                      <Input
-                        value={newContact}
-                        onChange={(e) => setNewContact(e.target.value)}
-                        placeholder={entity?.contact ? `Actuel: ${entity.contact}` : 'Téléphone ou email'}
-                        autoFocus={missingField === 'contact'}
-                        className={cn('h-8 text-xs', missingField === 'contact' && 'border-primary')}
-                      />
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <User className={cn('h-3.5 w-3.5 shrink-0',
+                          validationErrors.contact ? 'text-destructive'
+                            : missingField === 'contact' ? 'text-primary' : 'text-muted-foreground')} />
+                        <Input
+                          value={newContact}
+                          onChange={(e) => setNewContact(e.target.value)}
+                          placeholder={entity?.contact ? `Actuel: ${entity.contact}` : 'Téléphone ou email'}
+                          autoFocus={missingField === 'contact'}
+                          aria-invalid={!!validationErrors.contact}
+                          className={cn(
+                            'h-8 text-xs',
+                            validationErrors.contact ? 'border-destructive focus-visible:ring-destructive'
+                              : missingField === 'contact' && 'border-primary',
+                          )}
+                        />
+                      </div>
+                      {validationErrors.contact && (
+                        <p className="text-[10px] text-destructive mt-1 pl-1">{validationErrors.contact}</p>
+                      )}
                     </div>
                   )}
                 </div>
