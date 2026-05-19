@@ -169,7 +169,70 @@ async function backfill(
     };
   }
 
+  if (req.resource_type === "lead_summary" || req.resource_type === "lead") {
+    return await genericBackfill(supabase, req, "leads", "lead_summary", indexLead);
+  }
+
+  if (req.resource_type === "opportunity") {
+    return await genericBackfill(supabase, req, "opportunities", "opportunity", indexOpportunity);
+  }
+
   throw new Error(`Backfill not implemented for: ${req.resource_type}`);
+}
+
+async function genericBackfill(
+  supabase: ReturnType<typeof createClient>,
+  req: IndexRequest,
+  table: string,
+  embeddingType: string,
+  handler: (s: ReturnType<typeof createClient>, id: string) => Promise<{ chunks: number }>,
+) {
+  const limit = req.limit ?? 1000;
+  const indexedIds = new Set<string>();
+  const PAGE = 1000;
+  for (let offset = 0; ; offset += PAGE) {
+    const { data: page, error } = await supabase
+      .from("resource_embeddings")
+      .select("parent_resource_id")
+      .eq("resource_type", embeddingType)
+      .not("parent_resource_id", "is", null)
+      .range(offset, offset + PAGE - 1);
+    if (error) throw error;
+    if (!page || page.length === 0) break;
+    for (const r of page) {
+      const id = (r as { parent_resource_id: string }).parent_resource_id;
+      if (id) indexedIds.add(id);
+    }
+    if (page.length < PAGE) break;
+  }
+
+  let q = supabase.from(table).select("id, workspace_id").limit(1000);
+  if (req.workspace_id) q = q.eq("workspace_id", req.workspace_id);
+  const { data: rows, error } = await q;
+  if (error) throw error;
+
+  const toProcess = (rows ?? [])
+    .filter((r) => !indexedIds.has((r as { id: string }).id))
+    .slice(0, limit);
+
+  const results: { id: string; ok: boolean; chunks?: number; error?: string }[] = [];
+  for (const row of toProcess) {
+    const id = (row as { id: string }).id;
+    try {
+      const r = await handler(supabase, id);
+      results.push({ id, ok: true, chunks: r.chunks });
+    } catch (e) {
+      results.push({ id, ok: false, error: e instanceof Error ? e.message : String(e) });
+    }
+  }
+  return {
+    task: "backfill",
+    resource_type: req.resource_type,
+    processed: results.length,
+    ok: results.filter((r) => r.ok).length,
+    failed: results.filter((r) => !r.ok).length,
+    total_chunks: results.reduce((s, r) => s + (r.chunks ?? 0), 0),
+  };
 }
 
 // ─── Handler : transcription ────────────────────────────────────────────────
