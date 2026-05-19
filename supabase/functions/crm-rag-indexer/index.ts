@@ -717,7 +717,7 @@ async function indexEntityNote(
     ? "id, workspace_id, project_id, title, content, note_type, tags, updated_at, created_at"
     : "id, workspace_id, entity_type, entity_id, content, updated_at, created_at";
   const { data, error } = await supabase.from(table).select(cols).eq("id", noteId).maybeSingle();
-  if (error) throw error;
+  if (error) throw pgError("indexEntityNote.select", { table, resource_id: noteId }, error);
   if (!data) throw new Error(`Note ${noteId} not found in ${table}`);
   const n = data as Record<string, unknown>;
   const workspaceId = n.workspace_id as string | null;
