@@ -63,7 +63,7 @@ serve(async (req) => {
         generated_date: today,
         intelligence: intelligenceResult.intelligence,
         raw_data: intelligenceResult.raw,
-        consulte_count: intelligenceResult.raw?.stale_count || 0,
+        consulte_count: intelligenceResult.raw?.consulte_injected_count ?? 0,
         generation_ms: generationMs,
       })
       .select("id")
