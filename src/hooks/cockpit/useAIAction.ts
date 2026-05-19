@@ -33,6 +33,22 @@ export interface AIActionStructuredUpdates {
   [key: string]: unknown;
 }
 
+export type AIActionArtifactType = 'email' | 'note' | 'proposal' | 'task_brief';
+export type AIActionArtifactStatus = 'none' | 'generating' | 'ready' | 'edited' | 'sent' | 'failed';
+
+export interface AIActionArtifact {
+  type: AIActionArtifactType;
+  subject?: string;
+  body?: string;
+  cta?: string;
+  title?: string;
+  content?: string;
+  recipient_email?: string | null;
+  recipient_name?: string | null;
+  generated_at?: string;
+  [key: string]: unknown;
+}
+
 export interface AIActionRow {
   id: string;
   workspace_id: string;
@@ -53,6 +69,11 @@ export interface AIActionRow {
   created_at: string;
   updated_at: string;
   completed_at: string | null;
+  artifact: AIActionArtifact | null;
+  artifact_type: AIActionArtifactType | null;
+  artifact_status: AIActionArtifactStatus;
+  artifact_generated_at: string | null;
+  artifact_model: string | null;
 }
 
 export interface AIActionSnapshot {
