@@ -68,9 +68,20 @@ serve(async (req) => {
     return json(result);
   } catch (err) {
     console.error("[crm-rag-indexer] fatal", err);
-    return json({ error: err instanceof Error ? err.message : String(err) }, 500);
+    return json({ error: serializeError(err) }, 500);
   }
 });
+
+function serializeError(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (err && typeof err === "object") {
+    const e = err as Record<string, unknown>;
+    const parts = [e.message, e.code, e.details, e.hint].filter(Boolean).map(String);
+    if (parts.length) return parts.join(" | ");
+    try { return JSON.stringify(err); } catch { return String(err); }
+  }
+  return String(err);
+}
 
 function json(payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), {
