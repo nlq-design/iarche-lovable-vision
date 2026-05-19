@@ -444,6 +444,52 @@ serve(async (req) => {
     const alerts: SentinelAlert[] = anomalies.slice(0, 15).map(formatAnomaly);
 
     // ============================================================
+    // PHASE 2b: Persist alerts to ai_sentinel_alerts (v2.1)
+    // Stratégie : delete unresolved → insert fresh (cache rafraîchi).
+    // L'historique des alertes résolues (resolved_at NOT NULL) est conservé.
+    // ============================================================
+    try {
+      await supabase
+        .from("ai_sentinel_alerts")
+        .delete()
+        .eq("workspace_id", ws.id)
+        .is("resolved_at", null);
+
+      const rows = anomalies.slice(0, 15).map((a) => {
+        const formatted = ALERT_TEMPLATES[a.rule_type]
+          ? ALERT_TEMPLATES[a.rule_type](a)
+          : { question: a.raw_issue, detail: "" };
+        return {
+          workspace_id: ws.id,
+          severity: a.severity,
+          category: a.category,
+          title: formatted.question,
+          description: formatted.detail,
+          entity_type: a.entity_type,
+          entity_id: a.entity_id === ws.id ? null : a.entity_id,
+          ai_metadata: {
+            rule_type: a.rule_type,
+            entity_name: a.entity_name,
+            stage: a.stage,
+            days_inactive: a.days_inactive,
+            scan_version: "2.1",
+          },
+        };
+      });
+
+      if (rows.length > 0) {
+        const { error: insertErr } = await supabase
+          .from("ai_sentinel_alerts")
+          .insert(rows);
+        if (insertErr) console.error("[sentinel] persist error:", insertErr);
+        else console.log(`[sentinel] Persisted ${rows.length} alerts to ai_sentinel_alerts`);
+      }
+    } catch (persistErr) {
+      console.error("[sentinel] Persist phase failed:", persistErr);
+    }
+
+
+    // ============================================================
     // PHASE 3: Create Action Proposals for critical/warning anomalies
     // ============================================================
     const PROPOSAL_TEMPLATES: Record<string, (a: RawAnomaly) => {
