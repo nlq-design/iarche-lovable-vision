@@ -357,8 +357,11 @@ export default function CockpitDashboard() {
                       </Button>
                     </div>
                   ) : (
-                    <div className="space-y-0.5">{todayTasks.map(task => <TaskRow key={task.id} task={task} navigate={navigate} />)}</div>
+                    <ScrollArea className="h-[260px] pr-2">
+                      <div className="space-y-0.5">{todayTasks.map(task => <TaskRow key={task.id} task={task} navigate={navigate} />)}</div>
+                    </ScrollArea>
                   )}
+
                 </CardContent>
               </Card>
 
@@ -384,19 +387,22 @@ export default function CockpitDashboard() {
                       )}
                     </div>
                   ) : (
-                    <div className="space-y-1">
-                      {todayBookings.slice(0, 4).map((b: any) => (
-                        <div key={b.id} className="flex items-center justify-between py-1.5 px-1 rounded hover:bg-muted/50 transition-colors cursor-pointer"
-                          onClick={() => navigate('/cockpit/agenda')}>
-                          <div className="min-w-0">
-                            <p className="text-xs font-medium truncate">{b.name}</p>
-                            <p className="text-[10px] text-muted-foreground truncate">{b.company || b.email}</p>
+                    <ScrollArea className="h-[200px] pr-2">
+                      <div className="space-y-1">
+                        {todayBookings.map((b: any) => (
+                          <div key={b.id} className="flex items-center justify-between py-1.5 px-1 rounded hover:bg-muted/50 transition-colors cursor-pointer"
+                            onClick={() => navigate('/cockpit/agenda')}>
+                            <div className="min-w-0">
+                              <p className="text-xs font-medium truncate">{b.name}</p>
+                              <p className="text-[10px] text-muted-foreground truncate">{b.company || b.email}</p>
+                            </div>
+                            <Badge variant="outline" className="text-[10px] font-mono">{format(new Date(b.start_time), 'HH:mm')}</Badge>
                           </div>
-                          <Badge variant="outline" className="text-[10px] font-mono">{format(new Date(b.start_time), 'HH:mm')}</Badge>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
                   )}
+
                 </CardContent>
               </Card>
 
@@ -580,26 +586,29 @@ export default function CockpitDashboard() {
                   {recentTranscriptions.length === 0 ? (
                     <p className="text-xs text-muted-foreground py-3 text-center">Aucune transcription récente</p>
                   ) : (
-                    <div className="space-y-1">
-                      {recentTranscriptions.map((t: any) => (
-                        <div key={t.id}
-                          className="flex items-start gap-2 py-1.5 px-1.5 rounded hover:bg-muted/50 transition-colors cursor-pointer"
-                          onClick={() => navigate(`/cockpit/transcriptions/${t.id}`)}>
-                          <Mic className={cn("h-3.5 w-3.5 mt-0.5 flex-shrink-0",
-                            t.status === 'done' ? 'text-emerald-500' : t.status === 'error' ? 'text-destructive' : 'text-primary'
-                          )} />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium truncate">{t.title || t.summary?.title || t.original_filename || 'Sans titre'}</p>
-                            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                              {t.lead?.name && <span className="truncate">🎯 {t.lead.name}</span>}
-                              {t.project?.name && <span className="truncate">📁 {t.project.name}</span>}
-                              <span>{formatDistanceToNow(new Date(t.created_at), { addSuffix: true, locale: fr })}</span>
+                    <ScrollArea className="h-[280px] pr-2">
+                      <div className="space-y-1">
+                        {recentTranscriptions.map((t: any) => (
+                          <div key={t.id}
+                            className="flex items-start gap-2 py-1.5 px-1.5 rounded hover:bg-muted/50 transition-colors cursor-pointer"
+                            onClick={() => navigate(`/cockpit/transcriptions/${t.id}`)}>
+                            <Mic className={cn("h-3.5 w-3.5 mt-0.5 flex-shrink-0",
+                              t.status === 'done' ? 'text-emerald-500' : t.status === 'error' ? 'text-destructive' : 'text-primary'
+                            )} />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium truncate">{t.title || t.summary?.title || t.original_filename || 'Sans titre'}</p>
+                              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                                {t.lead?.name && <span className="truncate">🎯 {t.lead.name}</span>}
+                                {t.project?.name && <span className="truncate">📁 {t.project.name}</span>}
+                                <span>{formatDistanceToNow(new Date(t.created_at), { addSuffix: true, locale: fr })}</span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
                   )}
+
                 </CardContent>
               </Card>
 
@@ -617,32 +626,35 @@ export default function CockpitDashboard() {
                   {recentProjects.length === 0 ? (
                     <p className="text-xs text-muted-foreground py-3 text-center">Aucun projet actif</p>
                   ) : (
-                    <div className="space-y-1">
-                      {recentProjects.map((p: any) => (
-                        <div key={p.id}
-                          className="flex items-center justify-between py-1.5 px-1.5 rounded hover:bg-muted/50 transition-colors cursor-pointer"
-                          onClick={() => navigate(`/cockpit/projects`)}>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-xs font-medium truncate">{p.name}</p>
-                            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                              {p.leads?.name && <span className="truncate">🎯 {p.leads.name}</span>}
-                              {p.budget_amount > 0 && <span>{formatCurrency(p.budget_amount)}</span>}
+                    <ScrollArea className="h-[260px] pr-2">
+                      <div className="space-y-1">
+                        {recentProjects.map((p: any) => (
+                          <div key={p.id}
+                            className="flex items-center justify-between py-1.5 px-1.5 rounded hover:bg-muted/50 transition-colors cursor-pointer"
+                            onClick={() => navigate(`/cockpit/projects`)}>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-medium truncate">{p.name}</p>
+                              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                                {p.leads?.name && <span className="truncate">🎯 {p.leads.name}</span>}
+                                {p.budget_amount > 0 && <span>{formatCurrency(p.budget_amount)}</span>}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              {p.health_status && (
+                                <span className="text-[10px]">
+                                  {p.health_status === 'on_track' ? '🟢' : p.health_status === 'at_risk' ? '🟡' : '🔴'}
+                                </span>
+                              )}
+                              <Badge variant="outline" className="text-[9px] px-1 py-0 capitalize">{p.status}</Badge>
                             </div>
                           </div>
-                          <div className="flex items-center gap-1 flex-shrink-0">
-                            {p.health_status && (
-                              <span className="text-[10px]">
-                                {p.health_status === 'on_track' ? '🟢' : p.health_status === 'at_risk' ? '🟡' : '🔴'}
-                              </span>
-                            )}
-                            <Badge variant="outline" className="text-[9px] px-1 py-0 capitalize">{p.status}</Badge>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
                   )}
                 </CardContent>
               </Card>
+
 
               {/* Activity Feed */}
               <Card className="flex-1 min-h-0">
@@ -652,7 +664,7 @@ export default function CockpitDashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0 px-3 pb-2">
-                  <ScrollArea className="max-h-[300px]">
+                  <ScrollArea className="h-[300px] pr-2">
                     {activitiesLoading ? (
                       <div className="space-y-2">{[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-10 w-full" />)}</div>
                     ) : meaningfulActivities.length === 0 ? (
