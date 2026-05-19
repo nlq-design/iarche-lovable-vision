@@ -1096,6 +1096,32 @@ ${(partners || []).map((p: any) => {
 ${(recentActivity || []).slice(0, 15).map((a: any) => `- ${a.created_at?.slice(0, 10)}: ${a.activity_type} ${a.entity_type}${a.title ? ` — ${a.title}` : ""}${a.is_ai_generated ? " [IA]" : ""}`).join("\n") || "Aucune"}
 `;
 
+  // === FEEDBACK BOUCLE — ai_actions actives (contexte utilisateur sur les éléments IA précédents) ===
+  const { data: activeAIActions } = await supabase
+    .from('ai_actions')
+    .select('source, action_text, status, snooze_until, user_notes, structured_updates, entity_name, updated_at')
+    .eq('workspace_id', workspaceId)
+    .not('status', 'in', '(done,dismissed)')
+    .gte('updated_at', sevenDaysAgo)
+    .order('updated_at', { ascending: false })
+    .limit(30);
+
+  const userFeedbackContext = (activeAIActions && activeAIActions.length > 0)
+    ? `\n\n--- FEEDBACK UTILISATEUR (boucle d'apprentissage) ---
+Ces éléments IA précédents ont été enrichis par l'utilisateur. Tu dois en tenir compte : ne PAS répéter une action déjà reportée, intégrer les nouvelles infos (deadline, montant, contact) dans tes suggestions, fusionner ou affiner plutôt que dupliquer.
+
+${activeAIActions.map((a: any) => {
+  const notes = Array.isArray(a.user_notes) && a.user_notes.length > 0
+    ? `\n  Notes: ${a.user_notes.map((n: any) => `"${n.text}"`).join(' | ')}` : '';
+  const updates = a.structured_updates && Object.keys(a.structured_updates).length > 0
+    ? `\n  Mises à jour: ${JSON.stringify(a.structured_updates)}` : '';
+  const snoozeInfo = a.snooze_until ? ` [reporté jusqu'au ${a.snooze_until.slice(0, 10)}]` : '';
+  return `- [${a.source}/${a.status}${snoozeInfo}] ${a.entity_name || ''}: "${a.action_text}"${notes}${updates}`;
+}).join('\n')}
+--- FIN FEEDBACK ---`
+    : '';
+
+
   // === ENRICHISSEMENT CONSULTE : Synthèses 360° des entités actives ===
   const consulteSections: string[] = [];
 
@@ -1134,7 +1160,7 @@ ${(recentActivity || []).slice(0, 15).map((a: any) => `- ${a.created_at?.slice(0
     ? `\n\n--- CONTEXTE ENRICHI (Synthèses Consulte 360°) ---\nCes synthèses ont été générées par le module Consulte à partir de l'ensemble des données CRM, transcriptions, documents et historique de chaque entité. Elles sont plus riches et complètes que les données SQL brutes ci-dessus. PRIORISE ces synthèses pour tes analyses.\n\n${consulteContext}\n--- FIN CONTEXTE ENRICHI ---`
     : '';
 
-  const enrichedLlmContext = llmContext + consulteEnrichment;
+  const enrichedLlmContext = llmContext + consulteEnrichment + userFeedbackContext;
 
   // Load prompt from DB
   const prompt = await loadPrompt(supabase, "cockpit-intelligence-aggregator", {
