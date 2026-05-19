@@ -29,8 +29,8 @@ import { CreateTaskDialog } from '@/components/cockpit/dialogs';
 import { HarvestInterviewPanel } from '@/components/cockpit/HarvestInterviewPanel';
 import { ActionProposalsList } from '@/components/cockpit/ActionProposalsList';
 import {
-  TopActionsWidget, CrossSignalsWidget, PredictionsWidget,
-  SentinelCardWidget, SentinelButton, StagnantWidget,
+ TopActionsWidget, CrossSignalsWidget, PredictionsWidget,
+ SentinelCardWidget, SentinelButton, StagnantWidget, TrendDeltaWidget,
   TaskRow, MiniStat, ActivityIcon,
   getSmartHeadline, formatCurrency, STAGE_COLORS,
   navigateToEntity,
