@@ -776,7 +776,7 @@ async function indexEntityNote(
     const { error: upErr } = await supabase
       .from("resource_embeddings")
       .upsert(rows, { onConflict: "resource_id,chunk_index" });
-    if (upErr) throw upErr;
+    if (upErr) throw pgError("indexEntityNote.upsert", { table: "resource_embeddings", resource_type: embeddingType, resource_id: noteId, workspace_id: workspaceId, source_table: table, batch_size: rows.length }, upErr);
     total += rows.length;
   }
   return { note_id: noteId, chunks: total };
