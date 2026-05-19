@@ -22,13 +22,13 @@ export function useEntitySnapshot(entityType?: string | null, entityId?: string 
       if (entityType === 'opportunity') {
         const { data } = await supabase
           .from('opportunities')
-          .select('name, value_amount, expected_close_date, stage')
+          .select('title, value_amount, expected_close_date, stage')
           .eq('id', entityId)
           .maybeSingle();
         if (!data) return null;
         return {
-          name: data.name,
-          amount: data.value_amount,
+          name: data.title,
+          amount: data.value_amount ? Number(data.value_amount) : null,
           deadline: data.expected_close_date,
           stage: data.stage,
         };
