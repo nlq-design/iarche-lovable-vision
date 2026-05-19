@@ -27,12 +27,13 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import {
   CheckCircle2, Clock, XCircle, ExternalLink, Send, Calendar,
   Euro, User, Loader2, MessageSquare, Sparkles, Lightbulb,
+  Pencil, Activity, ChevronDown, ChevronRight,
 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { entityRoute, formatCurrency, STAGE_LABELS } from './helpers';
-import { useAIAction, type AIActionSnapshot, type AIActionStatus } from '@/hooks/cockpit/useAIAction';
+import { useAIAction, type AIActionSnapshot, type AIActionStatus, type AIActionNote } from '@/hooks/cockpit/useAIAction';
 import { useEntitySnapshot } from '@/hooks/cockpit/useEntitySnapshot';
 
 interface AIActionDrawerProps {
