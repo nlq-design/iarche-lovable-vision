@@ -96,6 +96,11 @@ async function indexOne(
       return await indexLead(supabase, resourceId);
     case "opportunity":
       return await indexOpportunity(supabase, resourceId);
+    case "entity_note":
+    case "entity_context_note":
+      return await indexEntityNote(supabase, "entity_context_notes", resourceId);
+    case "project_note":
+      return await indexEntityNote(supabase, "project_notes", resourceId);
     default:
       throw new Error(`Unsupported resource_type: ${resourceType}`);
   }
