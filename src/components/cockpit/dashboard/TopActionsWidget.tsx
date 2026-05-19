@@ -42,11 +42,13 @@ export function TopActionsWidget({ actions, isLoading }: TopActionsWidgetProps) 
         <CardHeader className="pb-1 pt-3 px-3">
           <CardTitle className="text-xs font-semibold uppercase tracking-wider text-primary flex items-center gap-1.5">
             <Zap className="h-3.5 w-3.5" /> Actions Prioritaires
+            <Badge variant="outline" className="text-[9px] px-1 py-0 ml-auto">{actions.length}</Badge>
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0 px-3 pb-2">
-          <div className="space-y-1.5">
-            {actions.slice(0, 5).map((action, i) => {
+          <ScrollArea className="max-h-[320px] pr-2">
+            <div className="space-y-1.5">
+              {actions.map((action, i) => {
               const cfg = urgencyConfig[action.urgency] || urgencyConfig.medium;
               const snapshot: AIActionSnapshot = {
                 signature: computeAIActionSignature({
