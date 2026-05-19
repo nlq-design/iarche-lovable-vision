@@ -27,12 +27,13 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import {
   CheckCircle2, Clock, XCircle, ExternalLink, Send, Calendar,
   Euro, User, Loader2, MessageSquare, Sparkles, Lightbulb,
+  Pencil, Activity, ChevronDown, ChevronRight,
 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { entityRoute, formatCurrency, STAGE_LABELS } from './helpers';
-import { useAIAction, type AIActionSnapshot, type AIActionStatus } from '@/hooks/cockpit/useAIAction';
+import { useAIAction, type AIActionSnapshot, type AIActionStatus, type AIActionNote } from '@/hooks/cockpit/useAIAction';
 import { useEntitySnapshot } from '@/hooks/cockpit/useEntitySnapshot';
 
 interface AIActionDrawerProps {
@@ -62,10 +63,10 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
   const currentStatus = row?.status ?? 'pending';
   const notes = row?.user_notes ?? [];
 
-  // Auto-acknowledge à l'ouverture (1 fois, si encore pending)
+  // Auto-acknowledge silencieux à l'ouverture (1 fois, si encore pending)
   useEffect(() => {
     if (open && row && currentStatus === 'pending' && !updateStatus.isPending) {
-      updateStatus.mutate({ status: 'acknowledged' });
+      updateStatus.mutate({ status: 'acknowledged', silent: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, row?.id]);
@@ -245,25 +246,24 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
               </div>
             )}
 
-            {/* TIMELINE — contexte (en haut, mémoire active) */}
+            {/* HISTORIQUE — timeline unifiée cliquable (notes + updates + statuts) */}
             <div>
               <Label className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1.5 mb-2">
-                <MessageSquare className="h-3 w-3" /> Contexte ({notes.length})
+                <MessageSquare className="h-3 w-3" /> Historique ({notes.length})
               </Label>
 
-              {notes.length > 0 && (
-                <div className="space-y-1.5 mb-2 max-h-48 overflow-y-auto">
+              {notes.length > 0 ? (
+                <div className="space-y-1.5 mb-2 max-h-64 overflow-y-auto">
                   {[...notes].reverse().map((note, i) => (
-                    <div key={i} className="bg-muted/40 rounded-md p-2 text-xs">
-                      <p className="leading-relaxed whitespace-pre-wrap">{note.text}</p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">
-                        {note.by && <span>{note.by} · </span>}
-                        {formatDistanceToNow(new Date(note.at), { addSuffix: true, locale: fr })}
-                      </p>
-                    </div>
+                    <TimelineEntry key={`${note.at}-${i}`} note={note} />
                   ))}
                 </div>
+              ) : (
+                <p className="text-[11px] text-muted-foreground italic mb-2">
+                  Aucune action enregistrée. Vos notes et modifications apparaîtront ici.
+                </p>
               )}
+
 
               <Textarea
                 value={noteText}
@@ -405,5 +405,94 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
         </div>
       </SheetContent>
     </Sheet>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TimelineEntry — entrée d'historique cliquable (notes + statuts + updates)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const fieldLabelsFr: Record<string, string> = {
+  new_deadline: 'Échéance',
+  new_amount: 'Montant',
+  new_contact: 'Contact',
+  new_stage: 'Stage',
+};
+
+function formatFieldValue(field: string, value: unknown): string {
+  if (value == null || value === '') return '—';
+  if (field === 'new_amount' && typeof value === 'number') return formatCurrency(value);
+  if (field === 'new_deadline' && typeof value === 'string') {
+    try { return format(new Date(value), 'dd MMM yyyy', { locale: fr }); } catch { return String(value); }
+  }
+  if (field === 'new_stage' && typeof value === 'string') return STAGE_LABELS[value] || value;
+  return String(value);
+}
+
+function TimelineEntry({ note }: { note: AIActionNote }) {
+  const [expanded, setExpanded] = useState(false);
+  const kind = note.kind ?? 'note';
+  const changes = (note.meta?.changes as Array<{ field: string; before: unknown; after: unknown }>) || [];
+  const hasDetails = kind === 'update' && changes.length > 0;
+
+  const config = {
+    note: { icon: MessageSquare, color: 'text-muted-foreground', bg: 'bg-muted/40', label: 'Note' },
+    status: { icon: Activity, color: 'text-blue-500', bg: 'bg-blue-500/5 border-blue-500/20', label: 'Statut' },
+    update: { icon: Pencil, color: 'text-primary', bg: 'bg-primary/5 border-primary/20', label: 'Mise à jour' },
+  }[kind];
+
+  const Icon = config.icon;
+
+  return (
+    <div
+      className={cn(
+        'rounded-md border p-2 text-xs transition-colors',
+        config.bg,
+        hasDetails && 'cursor-pointer hover:bg-primary/10',
+      )}
+      onClick={hasDetails ? () => setExpanded((v) => !v) : undefined}
+    >
+      <div className="flex items-start gap-2">
+        <Icon className={cn('h-3.5 w-3.5 shrink-0 mt-0.5', config.color)} />
+        <div className="flex-1 min-w-0">
+          <p className="leading-relaxed whitespace-pre-wrap break-words">{note.text}</p>
+          <p className="text-[10px] text-muted-foreground mt-0.5">
+            <span className="font-medium">{config.label}</span>
+            {note.by && <span> · {note.by}</span>}
+            <span> · {formatDistanceToNow(new Date(note.at), { addSuffix: true, locale: fr })}</span>
+            <span className="ml-1 opacity-60">({format(new Date(note.at), 'dd/MM HH:mm', { locale: fr })})</span>
+          </p>
+
+          {expanded && hasDetails && (
+            <div className="mt-2 pt-2 border-t border-border/40 space-y-1">
+              {changes.map((c, i) => (
+                <div key={i} className="flex items-baseline gap-1 text-[11px]">
+                  <span className="font-medium text-muted-foreground w-16 shrink-0">
+                    {fieldLabelsFr[c.field] || c.field}
+                  </span>
+                  <span className="text-muted-foreground line-through opacity-70">
+                    {formatFieldValue(c.field, c.before)}
+                  </span>
+                  <ChevronRight className="h-3 w-3 text-muted-foreground/60" />
+                  <span className="font-medium text-foreground">
+                    {formatFieldValue(c.field, c.after)}
+                  </span>
+                </div>
+              ))}
+              {note.meta?.pushed && (
+                <p className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-1">
+                  Synchronisé vers l'entité
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+        {hasDetails && (
+          <ChevronDown
+            className={cn('h-3 w-3 text-muted-foreground shrink-0 mt-1 transition-transform', expanded && 'rotate-180')}
+          />
+        )}
+      </div>
+    </div>
   );
 }
