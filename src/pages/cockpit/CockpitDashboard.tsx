@@ -63,6 +63,7 @@ export default function CockpitDashboard() {
 
   // ─── UNIFIED INTELLIGENCE ───
   const { data: intel, isLoading: intelLoading, refresh: refreshIntel } = useCockpitIntelligence();
+  const { data: crossSignalsDb, isLoading: crossSignalsLoading } = useCrossSignals();
 
   // ─── Other AI hooks ───
   const { suggestNextStep, suggestTasks } = useCockpitAICopilot();
