@@ -1,6 +1,6 @@
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { Card } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton as _Skeleton } from '@/components/ui/skeleton';
 import { LoadingState, EmptyState } from '../common';
 
 interface TemporalDeltas {
