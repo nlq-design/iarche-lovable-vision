@@ -249,6 +249,185 @@ serve(async (req) => {
       });
     }
 
+    // ============================================================
+    // PHASE 1b: Extended rules v2.1 — 11 new SQL-based signals
+    // ============================================================
+    const twentyOneDaysAgo = new Date(now.getTime() - 21 * 24 * 60 * 60 * 1000).toISOString();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const fourteenDaysAgoIso = fourteenDaysAgo;
+    const todayIso = now.toISOString().slice(0, 10);
+    const in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString();
+
+    const ACTIVE_OPP_STAGES = ["qualified", "proposal", "negotiation", "discovery"];
+
+    const [
+      { data: zombieOpps },
+      { data: overdueOpps },
+      { data: allLeadsForDupAndEmail },
+      { data: nearBookings },
+      { data: activeOppsForBalance },
+      { data: staleSpecs },
+      { data: overBudgetProjects },
+      { data: deliveredProjects },
+    ] = await Promise.all([
+      supabase.from("opportunities").select("id, title, stage, updated_at")
+        .eq("workspace_id", ws.id).in("stage", ACTIVE_OPP_STAGES)
+        .lt("updated_at", twentyOneDaysAgo).limit(5),
+      supabase.from("opportunities").select("id, title, stage, expected_close_date")
+        .eq("workspace_id", ws.id).in("stage", ACTIVE_OPP_STAGES)
+        .not("expected_close_date", "is", null).lt("expected_close_date", todayIso).limit(5),
+      supabase.from("leads").select("id, name, company, email")
+        .eq("workspace_id", ws.id).not("email", "is", null).limit(500),
+      supabase.from("bookings").select("id, name, company, start_time, status")
+        .eq("workspace_id", ws.id).gte("start_time", now.toISOString()).lt("start_time", in24h)
+        .neq("status", "cancelled").limit(10),
+      supabase.from("opportunities").select("stage")
+        .eq("workspace_id", ws.id).in("stage", ACTIVE_OPP_STAGES).limit(500),
+      supabase.from("specifications").select("id, title, status, updated_at, version")
+        .eq("workspace_id", ws.id).eq("status", "draft")
+        .lt("updated_at", fourteenDaysAgoIso).limit(5),
+      supabase.from("projects").select("id, name, budget_amount, consumed_amount, status")
+        .eq("workspace_id", ws.id).in("status", ["active", "planning"])
+        .not("budget_amount", "is", null).gt("budget_amount", 0).limit(100),
+      supabase.from("projects").select("id, name, status, updated_at, lead_id")
+        .eq("workspace_id", ws.id).in("status", ["completed", "delivered"])
+        .lt("updated_at", thirtyDaysAgo).limit(10),
+    ]);
+
+    // 1. Opportunités zombies
+    for (const o of zombieOpps || []) {
+      const days = Math.floor((now.getTime() - new Date(o.updated_at).getTime()) / 86400000);
+      anomalies.push({
+        category: "inactivity", severity: "warning", rule_type: "risk_opportunity_zombie",
+        entity_type: "opportunity", entity_id: o.id,
+        entity_name: o.title || "Opportunité",
+        raw_issue: `Opportunité stagnante depuis ${days}j en stage "${o.stage}"`,
+        stage: o.stage, days_inactive: days,
+      });
+    }
+
+    // 2. Opportunités avec date de closing dépassée
+    for (const o of overdueOpps || []) {
+      anomalies.push({
+        category: "overdue", severity: "critical", rule_type: "overdue_opp_close_date",
+        entity_type: "opportunity", entity_id: o.id,
+        entity_name: o.title || "Opportunité",
+        raw_issue: `Date de closing ${o.expected_close_date} dépassée`,
+        stage: o.stage,
+      });
+    }
+
+    // 3. Leads emails invalides + détection doublons
+    const validLeads = (allLeadsForDupAndEmail || []).filter((l: any) => l.email);
+    for (const l of validLeads) {
+      if (!isValidEmail(l.email)) {
+        anomalies.push({
+          category: "incomplete", severity: "warning", rule_type: "incomplete_lead_invalid_email",
+          entity_type: "lead", entity_id: l.id,
+          entity_name: l.company || l.name || "Lead",
+          raw_issue: `Email invalide: ${l.email}`,
+        });
+      }
+    }
+    // Doublons par email normalisé
+    const emailGroups = new Map<string, any[]>();
+    for (const l of validLeads) {
+      if (!isValidEmail(l.email)) continue;
+      const key = (l.email as string).toLowerCase().trim();
+      if (!emailGroups.has(key)) emailGroups.set(key, []);
+      emailGroups.get(key)!.push(l);
+    }
+    let dupCount = 0;
+    for (const [, group] of emailGroups) {
+      if (group.length > 1 && dupCount < 5) {
+        const primary = group[0];
+        anomalies.push({
+          category: "duplicate", severity: "warning", rule_type: "duplicate_lead",
+          entity_type: "lead", entity_id: primary.id,
+          entity_name: primary.company || primary.name || "Lead",
+          raw_issue: `${group.length} leads partagent l'email ${primary.email}`,
+        });
+        dupCount++;
+      }
+    }
+
+    // 4. RDV imminents sans préparation (proxy : pas de note récente liée)
+    for (const b of nearBookings || []) {
+      const hoursUntil = Math.max(1, Math.round((new Date(b.start_time).getTime() - now.getTime()) / 3600000));
+      anomalies.push({
+        category: "risk", severity: hoursUntil <= 6 ? "critical" : "warning",
+        rule_type: "risk_booking_no_prep",
+        entity_type: "booking", entity_id: b.id,
+        entity_name: (b.company ? `${b.name} (${b.company})` : b.name) || "RDV",
+        raw_issue: `RDV dans ${hoursUntil}h sans préparation`,
+        days_inactive: hoursUntil,
+      });
+    }
+
+    // 5. Pipeline déséquilibré (>60% d'opps actives sur 1 stage)
+    if ((activeOppsForBalance?.length || 0) >= 5) {
+      const stageCounts = new Map<string, number>();
+      for (const o of activeOppsForBalance!) {
+        stageCounts.set(o.stage, (stageCounts.get(o.stage) || 0) + 1);
+      }
+      const total = activeOppsForBalance!.length;
+      for (const [stage, count] of stageCounts) {
+        const pct = Math.round((count / total) * 100);
+        if (pct >= 60) {
+          anomalies.push({
+            category: "imbalance", severity: "warning", rule_type: "imbalance_pipeline_stage",
+            entity_type: "workspace", entity_id: ws.id,
+            entity_name: "Pipeline",
+            raw_issue: `${pct}% des opportunités actives au stage ${stage}`,
+            stage, days_inactive: pct,
+          });
+          break;
+        }
+      }
+    }
+
+    // 6. Spécifications en brouillon stagnant
+    for (const s of staleSpecs || []) {
+      const days = Math.floor((now.getTime() - new Date(s.updated_at).getTime()) / 86400000);
+      anomalies.push({
+        category: "inactivity", severity: "info", rule_type: "risk_specification_stale",
+        entity_type: "specification", entity_id: s.id,
+        entity_name: s.title || `Spec ${s.version || ""}`,
+        raw_issue: `Brouillon de spec depuis ${days}j`,
+        days_inactive: days,
+      });
+    }
+
+    // 7. Projets en dépassement budget (consommé > 80%)
+    for (const p of overBudgetProjects || []) {
+      const budget = Number(p.budget_amount || 0);
+      const consumed = Number(p.consumed_amount || 0);
+      if (budget <= 0) continue;
+      const pct = Math.round((consumed / budget) * 100);
+      if (pct >= 80) {
+        anomalies.push({
+          category: "risk", severity: pct >= 100 ? "critical" : "warning",
+          rule_type: "risk_project_over_budget",
+          entity_type: "project", entity_id: p.id,
+          entity_name: p.name || "Projet",
+          raw_issue: `Budget consommé à ${pct}% (${consumed}/${budget})`,
+          days_inactive: pct,
+        });
+      }
+    }
+
+    // 8. Clients livrés sans touchpoint > 30j (cross/up-sell opportunity)
+    for (const p of deliveredProjects || []) {
+      const days = Math.floor((now.getTime() - new Date(p.updated_at).getTime()) / 86400000);
+      anomalies.push({
+        category: "inactivity", severity: "info", rule_type: "inactivity_client_post_delivery",
+        entity_type: "project", entity_id: p.id,
+        entity_name: p.name || "Projet livré",
+        raw_issue: `Projet livré, aucun contact depuis ${days}j`,
+        days_inactive: days,
+      });
+    }
+
     if (!anomalies.length) {
       return new Response(JSON.stringify({ alerts: [], total: 0 }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -257,12 +436,12 @@ serve(async (req) => {
 
     // ============================================================
     // PHASE 2: Direct formatting (no LLM)
-    // Sort by severity, cap at 8
+    // Sort by severity, cap at 15 (v2.1 — élargi de 8 → 15)
     // ============================================================
     const severityOrder = { critical: 0, warning: 1, info: 2 };
     anomalies.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
 
-    const alerts: SentinelAlert[] = anomalies.slice(0, 8).map(formatAnomaly);
+    const alerts: SentinelAlert[] = anomalies.slice(0, 15).map(formatAnomaly);
 
     // ============================================================
     // PHASE 3: Create Action Proposals for critical/warning anomalies
