@@ -323,7 +323,7 @@ async function genericBackfill(
       .eq("resource_type", embeddingType)
       .not("parent_resource_id", "is", null)
       .range(offset, offset + PAGE - 1);
-    if (error) throw error;
+    if (error) throw pgError("backfill.list_indexed", { table: "resource_embeddings", resource_type: embeddingType, offset, workspace_id: req.workspace_id }, error);
     if (!page || page.length === 0) break;
     for (const r of page) {
       const id = (r as { parent_resource_id: string }).parent_resource_id;
