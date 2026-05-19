@@ -79,6 +79,13 @@ function slugifyShort(text: string): string {
     .slice(0, 80);
 }
 
+/** Formate une valeur de change pour affichage compact dans le résumé d'historique. */
+function formatChangeValue(v: unknown): string {
+  if (v == null) return '—';
+  if (typeof v === 'number') return new Intl.NumberFormat('fr-FR').format(v);
+  return String(v);
+}
+
 /**
  * Calcule une signature stable d'un élément IA.
  * top_action / prediction → source::entity_type::entity_id::slug(action)
