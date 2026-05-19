@@ -17,6 +17,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { extractStructured, callLLM } from "../_shared/ai-client.ts";
 import { loadPrompt } from "../_shared/prompt-loader.ts";
 import { buildMaxContext, formatContextSummary, recordContextTrace } from "../_shared/context-maximizer.ts";
+import { buildContextFingerprint, lookupCache, storeCache } from "../_shared/semantic-cache.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -106,6 +107,8 @@ serve(async (req) => {
       entityType: entityType ?? null,
       entityId: entityId ?? null,
       sink: [] as string[],
+      noCache: body?.no_cache === true,
+      cacheInfo: null as null | { hit: boolean; similarity?: number; ageSeconds?: number; fingerprintMatch?: boolean },
     };
 
     switch (mode) {
@@ -143,6 +146,9 @@ serve(async (req) => {
     if (result && typeof result === "object" && traceCtx.sink.length > 0) {
       (result as Record<string, unknown>).trace_id = traceCtx.sink[0];
       (result as Record<string, unknown>).trace_ids = traceCtx.sink;
+    }
+    if (result && typeof result === "object" && traceCtx.cacheInfo) {
+      (result as Record<string, unknown>).cache = traceCtx.cacheInfo;
     }
 
     return new Response(JSON.stringify(result), {
@@ -392,6 +398,7 @@ async function suggestNextStep(supabase: any, entityId: string, traceCtx?: Trace
 
   // Use context-maximizer for rich context (Axe 3: multi-pass unified)
   let richContext = '';
+  let ragChunksCount = 0;
   try {
     const leadId = opp.lead_id;
     if (leadId) {
@@ -406,6 +413,7 @@ async function suggestNextStep(supabase: any, entityId: string, traceCtx?: Trace
         workspaceId: opp.workspace_id,
       });
       richContext = maxCtx.blocks;
+      ragChunksCount = (maxCtx.ragChunks ?? []).length;
       console.log(`[next-step] ${formatContextSummary(maxCtx)}`);
       if (traceCtx) {
         const id = await recordContextTrace(supabase, {
@@ -414,6 +422,7 @@ async function suggestNextStep(supabase: any, entityId: string, traceCtx?: Trace
           mode: traceCtx.mode,
           entityType: 'lead',
           entityId: leadId,
+          cacheStatus: traceCtx.noCache ? 'bypass' : 'miss',
         }, maxCtx);
         if (id) traceCtx.sink.push(id);
       }
@@ -459,6 +468,50 @@ ${richContext}
     system_prompt: `Tu es un expert en vente B2B. Recommande la prochaine action. Réponds en français.`,
   });
 
+  // ─── M6 Semantic Cache lookup ─────────────────────────────────────────────
+  const cacheKey = `next_step:opportunity:${entityId}`;
+  const lastActivityId = activity?.[0]?.created_at ?? null;
+  const fingerprint = await buildContextFingerprint({
+    entityUpdatedAt: opp.updated_at,
+    ragChunksCount,
+    lastActivityId,
+    promptVersion: (nextStepPrompt as any)?.version ?? null,
+    extra: { stage: opp.stage, tasks: tasks?.length ?? 0 },
+  });
+
+  if (traceCtx && !traceCtx.noCache && opp.workspace_id) {
+    const hit = await lookupCache({
+      supabase,
+      workspaceId: opp.workspace_id,
+      cacheKey,
+      queryText: context,
+      fingerprint,
+    });
+    if (hit.hit) {
+      console.log(`[next-step] cache HIT sim=${hit.similarity.toFixed(3)} age=${hit.ageSeconds}s fp=${hit.fingerprintMatch}`);
+      traceCtx.cacheInfo = {
+        hit: true,
+        similarity: hit.similarity,
+        ageSeconds: hit.ageSeconds,
+        fingerprintMatch: hit.fingerprintMatch,
+      };
+      // Backfill cache columns on the just-inserted trace
+      if (traceCtx.sink[0]) {
+        supabase.from('ai_context_traces')
+          .update({
+            cache_status: 'hit',
+            cache_similarity: hit.similarity,
+            cache_age_seconds: hit.ageSeconds,
+          })
+          .eq('id', traceCtx.sink[0])
+          .then(() => {});
+      }
+      return { ...(hit.response as any), opportunity: { id: opp.id, title: opp.title, stage: opp.stage } };
+    }
+    traceCtx.cacheInfo = { hit: false };
+  }
+  // ──────────────────────────────────────────────────────────────────────────
+
   const suggestion = await extractStructured<{
     next_action: string; action_type: string; reasoning: string;
     suggested_stage: string | null; urgency: string; talking_points: string[];
@@ -486,6 +539,20 @@ ${richContext}
     },
     { functionName: FUNCTION_NAME, workspaceId: opp.workspace_id }
   );
+
+  // Persist in cache (best-effort)
+  if (traceCtx && !traceCtx.noCache && opp.workspace_id && suggestion) {
+    storeCache({
+      supabase,
+      workspaceId: opp.workspace_id,
+      cacheKey,
+      queryText: context,
+      fingerprint,
+      response: { suggestion },
+      model: 'google/gemini-2.5-flash',
+      promptVersion: (nextStepPrompt as any)?.version ?? null,
+    }).then(() => {});
+  }
 
   return { suggestion, opportunity: { id: opp.id, title: opp.title, stage: opp.stage } };
 }
@@ -1471,6 +1538,8 @@ export interface TraceCtx {
   entityType: string | null;
   entityId: string | null;
   sink: string[];
+  noCache?: boolean;
+  cacheInfo?: null | { hit: boolean; similarity?: number; ageSeconds?: number; fingerprintMatch?: boolean };
 }
 
 function daysBetween(dateStr: string): number {

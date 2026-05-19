@@ -382,6 +382,9 @@ export type Database = {
       ai_context_traces: {
         Row: {
           breakdown: Json
+          cache_age_seconds: number | null
+          cache_similarity: number | null
+          cache_status: string | null
           created_at: string
           entity_id: string | null
           entity_type: string | null
@@ -396,6 +399,9 @@ export type Database = {
         }
         Insert: {
           breakdown?: Json
+          cache_age_seconds?: number | null
+          cache_similarity?: number | null
+          cache_status?: string | null
           created_at?: string
           entity_id?: string | null
           entity_type?: string | null
@@ -410,6 +416,9 @@ export type Database = {
         }
         Update: {
           breakdown?: Json
+          cache_age_seconds?: number | null
+          cache_similarity?: number | null
+          cache_status?: string | null
           created_at?: string
           entity_id?: string | null
           entity_type?: string | null
@@ -681,6 +690,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      ai_semantic_cache: {
+        Row: {
+          cache_key: string
+          context_fingerprint: string
+          created_at: string
+          expires_at: string
+          hit_count: number
+          id: string
+          last_hit_at: string | null
+          model: string | null
+          prompt_version: string | null
+          query_embedding: string
+          response: Json
+          workspace_id: string
+        }
+        Insert: {
+          cache_key: string
+          context_fingerprint: string
+          created_at?: string
+          expires_at?: string
+          hit_count?: number
+          id?: string
+          last_hit_at?: string | null
+          model?: string | null
+          prompt_version?: string | null
+          query_embedding: string
+          response: Json
+          workspace_id: string
+        }
+        Update: {
+          cache_key?: string
+          context_fingerprint?: string
+          created_at?: string
+          expires_at?: string
+          hit_count?: number
+          id?: string
+          last_hit_at?: string | null
+          model?: string | null
+          prompt_version?: string | null
+          query_embedding?: string
+          response?: Json
+          workspace_id?: string
+        }
+        Relationships: []
       }
       ai_sentinel_alerts: {
         Row: {
@@ -7476,6 +7530,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      bump_semantic_cache_hit: { Args: { p_id: string }; Returns: undefined }
       can_access_entity_workspace: {
         Args: { p_user_id: string; p_workspace_id: string }
         Returns: boolean
@@ -7949,6 +8004,24 @@ export type Database = {
           similarity: number
         }[]
       }
+      match_semantic_cache: {
+        Args: {
+          p_cache_key: string
+          p_embedding: string
+          p_fingerprint: string
+          p_threshold?: number
+          p_workspace_id: string
+        }
+        Returns: {
+          age_seconds: number
+          fingerprint_match: boolean
+          hit_count: number
+          id: string
+          model: string
+          response: Json
+          similarity: number
+        }[]
+      }
       match_solutions_for_lead: {
         Args: { p_lead_id: string; p_limit?: number }
         Returns: {
@@ -7960,6 +8033,10 @@ export type Database = {
       promote_vivier_to_lead: {
         Args: { p_qualification_status?: string; p_vivier_id: string }
         Returns: string
+      }
+      purge_semantic_cache: {
+        Args: { p_cache_key?: string; p_workspace_id: string }
+        Returns: number
       }
       record_api_usage: {
         Args: {
@@ -8063,6 +8140,16 @@ export type Database = {
         Args: { p_limit?: number; p_search: string }
         Returns: {
           city: string
+        }[]
+      }
+      semantic_cache_stats: {
+        Args: { p_since_hours?: number; p_workspace_id: string }
+        Returns: {
+          avg_age_seconds: number
+          hit_rate: number
+          top_keys: Json
+          total_entries: number
+          total_hits: number
         }[]
       }
       show_limit: { Args: never; Returns: number }

@@ -68,6 +68,33 @@ export function RagDiagnosticsDrawer({ traceId, label = 'Contexte injecté' }: R
 
         {trace && (
           <div className="space-y-6 pt-6">
+            {/* Cache status (M6) */}
+            {trace.cache_status && (
+              <section>
+                <div
+                  className={
+                    'flex items-center justify-between rounded-md border px-3 py-2 text-xs ' +
+                    (trace.cache_status === 'hit'
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+                      : trace.cache_status === 'bypass'
+                        ? 'border-amber-200 bg-amber-50 text-amber-900'
+                        : 'border-border bg-muted text-muted-foreground')
+                  }
+                >
+                  <span className="font-medium uppercase tracking-wide">
+                    Cache {trace.cache_status}
+                  </span>
+                  <span className="font-mono">
+                    {trace.cache_status === 'hit' && trace.cache_similarity != null
+                      ? `sim ${trace.cache_similarity.toFixed(2)} · âge ${Math.round((trace.cache_age_seconds ?? 0) / 60)} min`
+                      : trace.cache_status === 'miss'
+                        ? 'nouvelle synthèse persistée'
+                        : 'cache désactivé pour ce refresh'}
+                  </span>
+                </div>
+              </section>
+            )}
+
             {/* Budget tokens */}
             <section>
               <h3 className="text-sm font-semibold mb-2">Budget tokens</h3>

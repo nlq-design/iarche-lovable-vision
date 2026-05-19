@@ -24,6 +24,9 @@ export interface AiContextTrace {
   rag_chunks: RagChunkDebug[];
   warnings: string[];
   created_at: string;
+  cache_status: 'hit' | 'miss' | 'bypass' | null;
+  cache_similarity: number | null;
+  cache_age_seconds: number | null;
 }
 
 export function useRagTrace(traceId: string | null | undefined) {
