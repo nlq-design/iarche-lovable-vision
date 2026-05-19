@@ -127,7 +127,11 @@ async function backfill(
     const { data: rows, error } = await q;
     if (error) throw error;
 
-    for (const row of rows ?? []) {
+    const toProcess = (rows ?? [])
+      .filter((r) => !indexedIds.has((r as { id: string }).id))
+      .slice(0, limit);
+
+    for (const row of toProcess) {
       try {
         const r = await indexTranscription(supabase, (row as { id: string }).id);
         results.push({ id: (row as { id: string }).id, ok: true, chunks: r.chunks });
