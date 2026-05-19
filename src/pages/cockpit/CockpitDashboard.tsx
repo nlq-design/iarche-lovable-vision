@@ -652,7 +652,7 @@ export default function CockpitDashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0 px-3 pb-2">
-                  <ScrollArea className="max-h-[300px]">
+                  <ScrollArea className="h-[300px] pr-2">
                     {activitiesLoading ? (
                       <div className="space-y-2">{[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-10 w-full" />)}</div>
                     ) : meaningfulActivities.length === 0 ? (
