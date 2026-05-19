@@ -5,8 +5,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Crosshair, Network } from 'lucide-react';
 import { CrossSignal, CrossSignalDB } from '@/hooks/cockpit/useCockpitIntelligence';
 import { cn } from '@/lib/utils';
-import { entityRoute } from './helpers';
 import { AIActionDrawer } from './AIActionDrawer';
+import { EntityQuickViewDrawer } from './EntityQuickViewDrawer';
 import { computeAIActionSignature, type AIActionSnapshot } from '@/hooks/cockpit/useAIAction';
 
 interface CrossSignalsWidgetProps {
@@ -27,6 +27,7 @@ interface UnifiedSignal {
 
 export function CrossSignalsWidget({ signals, embeddingSignals, isLoading, navigate }: CrossSignalsWidgetProps) {
   const [selected, setSelected] = useState<AIActionSnapshot | null>(null);
+  const [previewEntity, setPreviewEntity] = useState<{ type: string; id: string } | null>(null);
 
   const unified: UnifiedSignal[] = [
     ...(embeddingSignals || []).map((s) => ({
@@ -105,9 +106,9 @@ export function CrossSignalsWidget({ signals, embeddingSignals, isLoading, navig
                               className="text-[9px] bg-background/80 border rounded px-1 py-0 hover:bg-primary/10 transition-colors"
                               onClick={(ev) => {
                                 ev.stopPropagation();
-                                navigate(entityRoute(e.type, e.id));
+                                setPreviewEntity({ type: e.type, id: e.id });
                               }}
-                              title={e.role}
+                              title={e.role ? `${e.role} — Cliquer pour aperçu` : 'Cliquer pour aperçu'}
                             >
                               {e.name}
                               {e.role && <span className="opacity-60 ml-0.5">·{e.role}</span>}
@@ -124,6 +125,13 @@ export function CrossSignalsWidget({ signals, embeddingSignals, isLoading, navig
         </CardContent>
       </Card>
       <AIActionDrawer snapshot={selected} open={!!selected} onOpenChange={(o) => !o && setSelected(null)} />
+      <EntityQuickViewDrawer
+        entityType={previewEntity?.type ?? null}
+        entityId={previewEntity?.id ?? null}
+        open={!!previewEntity}
+        onOpenChange={(o) => !o && setPreviewEntity(null)}
+        onNavigate={navigate}
+      />
     </>
   );
 }
