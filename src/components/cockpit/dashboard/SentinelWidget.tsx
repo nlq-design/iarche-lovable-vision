@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { SentinelAlert } from '@/hooks/cockpit/useAISentinel';
 import { cn } from '@/lib/utils';
-import { navigateToEntity } from './helpers';
+
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { AIActionDrawer } from './AIActionDrawer';
