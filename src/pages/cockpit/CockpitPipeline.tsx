@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { CockpitLayout } from "@/components/cockpit/CockpitLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, ArrowRight, Filter, GripVertical, Building2, Plus, User, AlertTriangle, Clock } from "lucide-react";
