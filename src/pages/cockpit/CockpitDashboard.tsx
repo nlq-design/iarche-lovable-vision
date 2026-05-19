@@ -387,19 +387,22 @@ export default function CockpitDashboard() {
                       )}
                     </div>
                   ) : (
-                    <div className="space-y-1">
-                      {todayBookings.slice(0, 4).map((b: any) => (
-                        <div key={b.id} className="flex items-center justify-between py-1.5 px-1 rounded hover:bg-muted/50 transition-colors cursor-pointer"
-                          onClick={() => navigate('/cockpit/agenda')}>
-                          <div className="min-w-0">
-                            <p className="text-xs font-medium truncate">{b.name}</p>
-                            <p className="text-[10px] text-muted-foreground truncate">{b.company || b.email}</p>
+                    <ScrollArea className="h-[200px] pr-2">
+                      <div className="space-y-1">
+                        {todayBookings.map((b: any) => (
+                          <div key={b.id} className="flex items-center justify-between py-1.5 px-1 rounded hover:bg-muted/50 transition-colors cursor-pointer"
+                            onClick={() => navigate('/cockpit/agenda')}>
+                            <div className="min-w-0">
+                              <p className="text-xs font-medium truncate">{b.name}</p>
+                              <p className="text-[10px] text-muted-foreground truncate">{b.company || b.email}</p>
+                            </div>
+                            <Badge variant="outline" className="text-[10px] font-mono">{format(new Date(b.start_time), 'HH:mm')}</Badge>
                           </div>
-                          <Badge variant="outline" className="text-[10px] font-mono">{format(new Date(b.start_time), 'HH:mm')}</Badge>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
                   )}
+
                 </CardContent>
               </Card>
 
