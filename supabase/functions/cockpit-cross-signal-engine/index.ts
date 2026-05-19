@@ -94,7 +94,7 @@ async function computeWorkspaceSignals(supabase: any, workspaceId: string): Prom
   const cutoff = new Date(Date.now() - STAGNATION_DAYS * 86400000).toISOString();
   const { data: opps } = await supabase
     .from('opportunities')
-    .select('id, title, lead_id, value_amount, stage, stage_entered_at, leads(id, full_name, company)')
+    .select('id, title, lead_id, value_amount, stage, stage_entered_at, leads(id, name, company)')
     .eq('workspace_id', workspaceId)
     .not('stage', 'in', '(won,lost,closed_won,closed_lost)')
     .lte('stage_entered_at', cutoff)
@@ -105,7 +105,7 @@ async function computeWorkspaceSignals(supabase: any, workspaceId: string): Prom
   for (const opp of opps || []) {
     const lead = opp.leads;
     if (!lead?.id) continue;
-    const leadLabel = lead.full_name || lead.company || 'Lead';
+    const leadLabel = lead.name || lead.company || 'Lead';
     const stagnationDays = Math.floor((Date.now() - new Date(opp.stage_entered_at).getTime()) / 86400000);
 
     // Match partners via embeddings
