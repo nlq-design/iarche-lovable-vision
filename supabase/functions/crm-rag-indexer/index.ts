@@ -817,20 +817,35 @@ function computeTemporalWeight(sourceDate: string | null): number {
 }
 
 /**
- * Supprime les surrogates UTF-16 orphelins (high sans low ou inverse)
- * et les caractères de contrôle non-imprimables qui font échouer le JSON
- * Postgres avec code 22P02 ("Unicode low surrogate must follow a high surrogate").
+ * Supprime les surrogates UTF-16 orphelins et les caractères de contrôle non-imprimables.
+ * JSON.stringify émet \uXXXX pour les lone surrogates -> Postgres rejette en 22P02.
+ * Passe unique sur les code units pour éviter les bugs de regex sur surrogates consécutifs.
  */
 function stripLoneSurrogates(input: string): string {
   if (!input) return input;
-  return input
-    // High surrogate non suivi d'un low surrogate
-    .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/g, "")
-    // Low surrogate non précédé d'un high surrogate
-    .replace(/(^|[^\uD800-\uDBFF])[\uDC00-\uDFFF]/g, "$1")
-    // Contrôles non-imprimables (sauf \n \r \t)
-    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "");
+  let out = "";
+  for (let i = 0; i < input.length; i++) {
+    const code = input.charCodeAt(i);
+    // High surrogate -> doit être suivi d'un low surrogate
+    if (code >= 0xD800 && code <= 0xDBFF) {
+      const next = input.charCodeAt(i + 1);
+      if (next >= 0xDC00 && next <= 0xDFFF) {
+        out += input[i] + input[i + 1];
+        i++;
+      }
+      // sinon: drop high surrogate orphelin
+      continue;
+    }
+    // Low surrogate isolé -> drop
+    if (code >= 0xDC00 && code <= 0xDFFF) continue;
+    // Contrôles non-imprimables (sauf \n=0x0A \r=0x0D \t=0x09)
+    if (code < 0x20 && code !== 0x09 && code !== 0x0A && code !== 0x0D) continue;
+    if (code === 0x7F) continue;
+    out += input[i];
+  }
+  return out;
 }
+
 
 function chunkText(input: string, size: number, overlap: number): string[] {
   const text = input.replace(/\s+/g, " ").trim();
