@@ -193,18 +193,62 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
   const pendingUpdates = buildStructuredUpdates();
   const hasUpdates = Object.keys(pendingUpdates).length > 0;
 
-  // Label dynamique du CTA primaire
-  const primaryCtaLabel = useMemo(() => {
-    if (hasValidationErrors) return 'Corriger les erreurs avant d\'enregistrer';
-    if (hasUpdates) {
-      const parts: string[] = [];
-      if (pendingUpdates.new_amount) parts.push(`montant à ${formatCurrency(pendingUpdates.new_amount as number)}`);
-      if (pendingUpdates.new_deadline) parts.push(`deadline ${format(new Date(pendingUpdates.new_deadline as string), 'dd MMM', { locale: fr })}`);
-      if (pendingUpdates.new_contact) parts.push('contact');
-      return `Mettre à jour ${parts.join(' · ')}`;
+  // Libellé entité (ex: "l'opportunité R'U'SAFE", "le lead Parham")
+  const entityTypeLabel = useMemo(() => {
+    switch (snapshot?.entity_type) {
+      case 'opportunity': return "l'opportunité";
+      case 'lead': return 'le lead';
+      case 'project': return 'le projet';
+      case 'contact': return 'le contact';
+      default: return null;
     }
-    return 'Marquer comme traité';
-  }, [hasUpdates, pendingUpdates, hasValidationErrors]);
+  }, [snapshot?.entity_type]);
+
+  const entityDisplayName = entity?.name?.trim() || snapshot?.entity_label?.trim() || '';
+  const entityRef = entityTypeLabel
+    ? `${entityTypeLabel}${entityDisplayName ? ` ${entityDisplayName}` : ''}`
+    : entityDisplayName || 'cette action';
+
+  // Aperçu structuré des changements (diff before → after)
+  const changePreview = useMemo(() => {
+    if (!hasUpdates) return [];
+    const rows: Array<{ field: string; label: string; before: string; after: string }> = [];
+    if (pendingUpdates.new_amount !== undefined) {
+      rows.push({
+        field: 'amount',
+        label: 'Montant',
+        before: entity?.amount != null ? formatCurrency(entity.amount) : '—',
+        after: formatCurrency(pendingUpdates.new_amount as number),
+      });
+    }
+    if (pendingUpdates.new_deadline !== undefined) {
+      rows.push({
+        field: 'deadline',
+        label: 'Échéance',
+        before: entity?.deadline ? format(new Date(entity.deadline), 'dd MMM yyyy', { locale: fr }) : '—',
+        after: format(new Date(pendingUpdates.new_deadline as string), 'dd MMM yyyy', { locale: fr }),
+      });
+    }
+    if (pendingUpdates.new_contact !== undefined) {
+      rows.push({
+        field: 'contact',
+        label: 'Contact',
+        before: entity?.contact || '—',
+        after: pendingUpdates.new_contact as string,
+      });
+    }
+    return rows;
+  }, [hasUpdates, pendingUpdates, entity]);
+
+  // Label dynamique du CTA primaire — reflète l'entité + le nombre de changements
+  const primaryCtaLabel = useMemo(() => {
+    if (hasValidationErrors) return "Corriger les erreurs avant d'enregistrer";
+    if (hasUpdates) {
+      const n = changePreview.length;
+      return `Appliquer ${n} changement${n > 1 ? 's' : ''} à ${entityRef}`;
+    }
+    return entityTypeLabel ? `Marquer traité sur ${entityRef}` : 'Marquer comme traité';
+  }, [hasUpdates, hasValidationErrors, changePreview.length, entityRef, entityTypeLabel]);
 
   const handlePrimaryCta = () => {
     if (hasValidationErrors) {
