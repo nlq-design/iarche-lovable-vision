@@ -357,8 +357,11 @@ export default function CockpitDashboard() {
                       </Button>
                     </div>
                   ) : (
-                    <div className="space-y-0.5">{todayTasks.map(task => <TaskRow key={task.id} task={task} navigate={navigate} />)}</div>
+                    <ScrollArea className="h-[260px] pr-2">
+                      <div className="space-y-0.5">{todayTasks.map(task => <TaskRow key={task.id} task={task} navigate={navigate} />)}</div>
+                    </ScrollArea>
                   )}
+
                 </CardContent>
               </Card>
 
