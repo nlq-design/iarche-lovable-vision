@@ -30,9 +30,7 @@ export const useCockpitActivityLog = (workspaceId?: string) => {
         .select(`
           *,
           lead:leads(id, name, email),
-          opportunity:opportunities(id, title),
-          project:projects(id, name),
-          task:tasks(id, title)
+          project:projects(id, name)
         `)
         .order("created_at", { ascending: false })
         .limit(100);
