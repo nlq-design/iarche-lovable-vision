@@ -1008,6 +1008,21 @@ async function intelligenceAggregator(supabase: any, workspaceId: string) {
     opportunityScore(supabase, workspaceId),
   ]);
 
+  // === SENTINELLE — alertes SQL actives (top 15 non résolues, prio critical>warning>info) ===
+  const { data: sentinelAlerts } = await supabase
+    .from("ai_sentinel_alerts")
+    .select("severity, category, entity_type, entity_id, title, description, created_at")
+    .eq("workspace_id", workspaceId)
+    .is("resolved_at", null)
+    .order("severity", { ascending: true }) // critical < info alphabétiquement → on retrie en JS
+    .order("created_at", { ascending: false })
+    .limit(50);
+
+  const sevOrder: Record<string, number> = { critical: 0, warning: 1, info: 2 };
+  const topSentinel = (sentinelAlerts || [])
+    .sort((a: any, b: any) => (sevOrder[a.severity] ?? 9) - (sevOrder[b.severity] ?? 9))
+    .slice(0, 15);
+
   // Win/loss stats
   const [{ data: won }, { data: lost }] = await Promise.all([
     supabase.from("opportunities").select("id, value_amount").eq("workspace_id", workspaceId).eq("stage", "closed_won"),
@@ -1156,11 +1171,20 @@ ${activeAIActions.map((a: any) => {
   }
 
   const consulteContext = consulteSections.join('\n');
+  const consulteInjectedCount =
+    leadsWithSynthesis.slice(0, 10).length +
+    projectsWithSynthesis.slice(0, 8).length +
+    partnersWithSynthesis.slice(0, 5).length;
   const consulteEnrichment = consulteContext.length > 200
     ? `\n\n--- CONTEXTE ENRICHI (Synthèses Consulte 360°) ---\nCes synthèses ont été générées par le module Consulte à partir de l'ensemble des données CRM, transcriptions, documents et historique de chaque entité. Elles sont plus riches et complètes que les données SQL brutes ci-dessus. PRIORISE ces synthèses pour tes analyses.\n\n${consulteContext}\n--- FIN CONTEXTE ENRICHI ---`
     : '';
 
-  const enrichedLlmContext = llmContext + consulteEnrichment + userFeedbackContext;
+  // === SENTINELLE — injection alertes SQL dans le contexte LLM ===
+  const sentinelBlock = topSentinel.length > 0
+    ? `\n\n--- ALERTES SENTINELLE (${topSentinel.length} actives, non dismissées) ---\nCes alertes proviennent de règles SQL déterministes (incohérences, inactivités, doublons, données manquantes). Utilise-les comme SIGNAUX FAIBLES à croiser avec le pipeline et les synthèses Consulte. Ne les recopie pas telles quelles : transforme-les en actions concrètes ou en cross_signals composites.\n\n${topSentinel.map((a: any) => `- [${a.severity.toUpperCase()}/${a.category}] ${a.entity_type}:${a.entity_id?.slice(0,8) || '?'} — ${a.title}${a.description ? ` (${a.description.slice(0, 200)})` : ''}`).join('\n')}\n--- FIN ALERTES SENTINELLE ---`
+    : '';
+
+  const enrichedLlmContext = llmContext + consulteEnrichment + sentinelBlock + userFeedbackContext;
 
   // Load prompt from DB
   const prompt = await loadPrompt(supabase, "cockpit-intelligence-aggregator", {
@@ -1319,6 +1343,8 @@ ${activeAIActions.map((a: any) => {
       overdue_tasks_count: overdueTasks?.length || 0,
       today_bookings_count: todayBookings?.length || 0,
       stale_count: staleCount,
+      consulte_injected_count: consulteInjectedCount,
+      sentinel_injected_count: topSentinel.length,
       overdue_ai_count: overdueAiCount,
       health_summary: healthResult.summary,
       pipeline_value: pipelineValue,
