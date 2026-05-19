@@ -39,8 +39,88 @@ interface IndexRequest {
   limit?: number;
 }
 
+// ─── Telemetry ──────────────────────────────────────────────────────────────
+
+type LogCtx = Record<string, unknown>;
+let CURRENT_REQUEST_ID = "";
+
+function newRequestId(): string {
+  return `rag_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function logEvent(level: "info" | "warn" | "error", event: string, ctx: LogCtx = {}) {
+  const payload = { ts: new Date().toISOString(), req: CURRENT_REQUEST_ID, level, event, ...ctx };
+  const line = `[crm-rag-indexer] ${event} ${JSON.stringify(payload)}`;
+  if (level === "error") console.error(line);
+  else if (level === "warn") console.warn(line);
+  else console.log(line);
+}
+
+/**
+ * Normalize any thrown value (PostgrestError, Error, unknown) into a structured payload.
+ * PostgrestError fields: code, message, details, hint.
+ */
+function normalizeError(err: unknown): {
+  message: string;
+  code?: string;
+  details?: string;
+  hint?: string;
+  stack?: string;
+} {
+  if (!err) return { message: "unknown error" };
+  if (err instanceof Error) {
+    const e = err as Error & { code?: string; details?: string; hint?: string };
+    return {
+      message: e.message,
+      code: e.code,
+      details: e.details,
+      hint: e.hint,
+      stack: e.stack,
+    };
+  }
+  if (typeof err === "object") {
+    const e = err as Record<string, unknown>;
+    return {
+      message: typeof e.message === "string" ? e.message : JSON.stringify(err),
+      code: e.code != null ? String(e.code) : undefined,
+      details: e.details != null ? String(e.details) : undefined,
+      hint: e.hint != null ? String(e.hint) : undefined,
+    };
+  }
+  return { message: String(err) };
+}
+
+/**
+ * Wrap a PostgrestError into a logged + structured Error.
+ * Use after `const { error } = await supabase...` checks.
+ */
+function pgError(op: string, ctx: LogCtx, error: unknown): Error {
+  const n = normalizeError(error);
+  const fullCtx = { op, ...ctx, code: n.code, message: n.message, details: n.details, hint: n.hint };
+  logEvent("error", "postgrest_error", fullCtx);
+  const err = new Error(
+    `[${op}] ${n.message}${n.code ? ` (code=${n.code})` : ""}${n.details ? ` | details=${n.details}` : ""}${n.hint ? ` | hint=${n.hint}` : ""}`,
+  );
+  (err as Error & { code?: string; details?: string; hint?: string; op?: string; ctx?: LogCtx }).code = n.code;
+  (err as Error & { details?: string }).details = n.details;
+  (err as Error & { hint?: string }).hint = n.hint;
+  (err as Error & { op?: string }).op = op;
+  (err as Error & { ctx?: LogCtx }).ctx = ctx;
+  return err;
+}
+
+function serializeError(err: unknown): string {
+  const n = normalizeError(err);
+  const parts = [n.message, n.code && `code=${n.code}`, n.details && `details=${n.details}`, n.hint && `hint=${n.hint}`]
+    .filter(Boolean);
+  return parts.join(" | ");
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  CURRENT_REQUEST_ID = newRequestId();
+  const startedAt = Date.now();
 
   try {
     const supabase = createClient(
@@ -51,36 +131,56 @@ serve(async (req) => {
     const body = (await req.json().catch(() => ({}))) as IndexRequest;
     const task = body.task ?? "index";
 
+    logEvent("info", "request_received", {
+      task,
+      resource_type: body.resource_type,
+      resource_id: body.resource_id,
+      workspace_id: body.workspace_id,
+      limit: body.limit,
+    });
+
     if (!body.resource_type) {
-      return json({ error: "resource_type is required" }, 400);
+      return json({ error: "resource_type is required", request_id: CURRENT_REQUEST_ID }, 400);
     }
 
     if (task === "backfill") {
       const result = await backfill(supabase, body);
-      return json(result);
+      logEvent("info", "request_done", { task, duration_ms: Date.now() - startedAt, ...summarizeResult(result) });
+      return json({ ...result, request_id: CURRENT_REQUEST_ID });
     }
 
     if (!body.resource_id) {
-      return json({ error: "resource_id is required for task=index" }, 400);
+      return json({ error: "resource_id is required for task=index", request_id: CURRENT_REQUEST_ID }, 400);
     }
 
     const result = await indexOne(supabase, body.resource_type, body.resource_id);
-    return json(result);
+    logEvent("info", "request_done", { task, duration_ms: Date.now() - startedAt, ...summarizeResult(result) });
+    return json({ ...result, request_id: CURRENT_REQUEST_ID });
   } catch (err) {
-    console.error("[crm-rag-indexer] fatal", err);
-    return json({ error: serializeError(err) }, 500);
+    const n = normalizeError(err);
+    logEvent("error", "request_failed", {
+      duration_ms: Date.now() - startedAt,
+      message: n.message,
+      code: n.code,
+      details: n.details,
+      hint: n.hint,
+      op: (err as { op?: string })?.op,
+      ctx: (err as { ctx?: LogCtx })?.ctx,
+    });
+    return json({ error: serializeError(err), request_id: CURRENT_REQUEST_ID }, 500);
   }
 });
 
-function serializeError(err: unknown): string {
-  if (err instanceof Error) return err.message;
-  if (err && typeof err === "object") {
-    const e = err as Record<string, unknown>;
-    const parts = [e.message, e.code, e.details, e.hint].filter(Boolean).map(String);
-    if (parts.length) return parts.join(" | ");
-    try { return JSON.stringify(err); } catch { return String(err); }
-  }
-  return String(err);
+function summarizeResult(r: unknown): LogCtx {
+  if (!r || typeof r !== "object") return {};
+  const x = r as Record<string, unknown>;
+  return {
+    processed: x.processed,
+    ok: x.ok,
+    failed: x.failed,
+    total_chunks: x.total_chunks,
+    chunks: x.chunks,
+  };
 }
 
 function json(payload: unknown, status = 200) {
@@ -139,7 +239,7 @@ async function backfill(
         .in("resource_type", ["transcription_chunk", "transcription_summary"])
         .not("parent_resource_id", "is", null)
         .range(offset, offset + PAGE - 1);
-      if (pageErr) throw pageErr;
+      if (pageErr) throw pgError("backfill.list_indexed", { table: "resource_embeddings", resource_type: req.resource_type, offset, workspace_id: req.workspace_id }, pageErr);
       if (!page || page.length === 0) break;
       for (const r of page) {
         const id = (r as { parent_resource_id: string }).parent_resource_id;
@@ -156,22 +256,30 @@ async function backfill(
       .limit(1000);
     if (req.workspace_id) q = q.eq("workspace_id", req.workspace_id);
     const { data: rows, error } = await q;
-    if (error) throw error;
+    if (error) throw pgError("backfill.list_sources", { table: "voice_transcriptions", workspace_id: req.workspace_id }, error);
 
     const toProcess = (rows ?? [])
       .filter((r) => !indexedIds.has((r as { id: string }).id))
       .slice(0, limit);
 
     for (const row of toProcess) {
+      const id = (row as { id: string }).id;
       try {
-        const r = await indexTranscription(supabase, (row as { id: string }).id);
-        results.push({ id: (row as { id: string }).id, ok: true, chunks: r.chunks });
+        const r = await indexTranscription(supabase, id);
+        results.push({ id, ok: true, chunks: r.chunks });
       } catch (e) {
-        results.push({
-          id: (row as { id: string }).id,
-          ok: false,
-          error: e instanceof Error ? e.message : String(e),
+        const n = normalizeError(e);
+        logEvent("error", "backfill_row_failed", {
+          resource_type: req.resource_type,
+          resource_id: id,
+          table: "voice_transcriptions",
+          message: n.message,
+          code: n.code,
+          details: n.details,
+          hint: n.hint,
+          op: (e as { op?: string })?.op,
         });
+        results.push({ id, ok: false, error: n.message });
       }
     }
     return {
@@ -223,7 +331,7 @@ async function genericBackfill(
       .eq("resource_type", embeddingType)
       .not("parent_resource_id", "is", null)
       .range(offset, offset + PAGE - 1);
-    if (error) throw error;
+    if (error) throw pgError("backfill.list_indexed", { table: "resource_embeddings", resource_type: embeddingType, offset, workspace_id: req.workspace_id }, error);
     if (!page || page.length === 0) break;
     for (const r of page) {
       const id = (r as { parent_resource_id: string }).parent_resource_id;
@@ -235,20 +343,31 @@ async function genericBackfill(
   let q = supabase.from(table).select("id, workspace_id").limit(1000);
   if (req.workspace_id) q = q.eq("workspace_id", req.workspace_id);
   const { data: rows, error } = await q;
-  if (error) throw error;
+  if (error) throw pgError("backfill.list_sources", { table, resource_type: req.resource_type, workspace_id: req.workspace_id }, error);
 
   const toProcess = (rows ?? [])
     .filter((r) => !indexedIds.has((r as { id: string }).id))
     .slice(0, limit);
 
-  const results: { id: string; ok: boolean; chunks?: number; error?: string }[] = [];
+  const results: { id: string; ok: boolean; chunks?: number; error?: string; code?: string; details?: string; hint?: string }[] = [];
   for (const row of toProcess) {
     const id = (row as { id: string }).id;
     try {
       const r = await handler(supabase, id);
       results.push({ id, ok: true, chunks: r.chunks });
     } catch (e) {
-      results.push({ id, ok: false, error: e instanceof Error ? e.message : String(e) });
+      const n = normalizeError(e);
+      logEvent("error", "backfill_row_failed", {
+        resource_type: req.resource_type,
+        resource_id: id,
+        table,
+        message: n.message,
+        code: n.code,
+        details: n.details,
+        hint: n.hint,
+        op: (e as { op?: string })?.op,
+      });
+      results.push({ id, ok: false, error: n.message, code: n.code, details: n.details, hint: n.hint });
     }
   }
   return {
@@ -275,7 +394,7 @@ async function indexTranscription(
     )
     .eq("id", transcriptionId)
     .maybeSingle();
-  if (error) throw error;
+  if (error) throw pgError("indexTranscription.select", { table: "voice_transcriptions", resource_id: transcriptionId }, error);
   if (!data) throw new Error(`Transcription ${transcriptionId} not found`);
 
   const t = data as {
@@ -397,7 +516,7 @@ async function indexTranscription(
       const { error: upErr } = await supabase
         .from("resource_embeddings")
         .upsert(rows, { onConflict: "resource_id,chunk_index" });
-      if (upErr) throw upErr;
+      if (upErr) throw pgError("indexTranscription.upsert_chunks", { table: "resource_embeddings", resource_type: "transcription_chunk", resource_id: t.id, workspace_id: t.workspace_id, batch_size: rows.length, chunk_index_start: rows[0]?.chunk_index, chunk_index_end: rows[rows.length - 1]?.chunk_index }, upErr);
       totalChunks += rows.length;
     }
   }
@@ -419,7 +538,7 @@ async function indexLead(
     )
     .eq("id", leadId)
     .maybeSingle();
-  if (error) throw error;
+  if (error) throw pgError("indexLead.select", { table: "leads", resource_id: leadId }, error);
   if (!data) throw new Error(`Lead ${leadId} not found`);
 
   const l = data as {
@@ -490,7 +609,7 @@ async function indexLead(
     const { error: upErr } = await supabase
       .from("resource_embeddings")
       .upsert(rows, { onConflict: "resource_id,chunk_index" });
-    if (upErr) throw upErr;
+    if (upErr) throw pgError("indexLead.upsert", { table: "resource_embeddings", resource_type: "lead_summary", resource_id: l.id, workspace_id: l.workspace_id, batch_size: rows.length }, upErr);
     total += rows.length;
   }
   return { lead_id: l.id, chunks: total };
@@ -510,7 +629,7 @@ async function indexOpportunity(
     )
     .eq("id", oppId)
     .maybeSingle();
-  if (error) throw error;
+  if (error) throw pgError("indexOpportunity.select", { table: "opportunities", resource_id: oppId }, error);
   if (!data) throw new Error(`Opportunity ${oppId} not found`);
 
   const o = data as {
@@ -580,7 +699,7 @@ async function indexOpportunity(
     const { error: upErr } = await supabase
       .from("resource_embeddings")
       .upsert(rows, { onConflict: "resource_id,chunk_index" });
-    if (upErr) throw upErr;
+    if (upErr) throw pgError("indexOpportunity.upsert", { table: "resource_embeddings", resource_type: "opportunity", resource_id: o.id, workspace_id: o.workspace_id, batch_size: rows.length }, upErr);
     total += rows.length;
   }
   return { opportunity_id: o.id, chunks: total };
@@ -598,7 +717,7 @@ async function indexEntityNote(
     ? "id, workspace_id, project_id, title, content, note_type, tags, updated_at, created_at"
     : "id, workspace_id, entity_type, entity_id, content, updated_at, created_at";
   const { data, error } = await supabase.from(table).select(cols).eq("id", noteId).maybeSingle();
-  if (error) throw error;
+  if (error) throw pgError("indexEntityNote.select", { table, resource_id: noteId }, error);
   if (!data) throw new Error(`Note ${noteId} not found in ${table}`);
   const n = data as Record<string, unknown>;
   const workspaceId = n.workspace_id as string | null;
@@ -657,7 +776,7 @@ async function indexEntityNote(
     const { error: upErr } = await supabase
       .from("resource_embeddings")
       .upsert(rows, { onConflict: "resource_id,chunk_index" });
-    if (upErr) throw upErr;
+    if (upErr) throw pgError("indexEntityNote.upsert", { table: "resource_embeddings", resource_type: embeddingType, resource_id: noteId, workspace_id: workspaceId, source_table: table, batch_size: rows.length }, upErr);
     total += rows.length;
   }
   return { note_id: noteId, chunks: total };
