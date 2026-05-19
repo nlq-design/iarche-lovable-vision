@@ -566,12 +566,12 @@ async function indexLead(
     l.status && `Statut : ${l.status}`,
   ].filter(Boolean).join("\n");
 
-  const body = [
+  const body = stripLoneSurrogates([
     header,
     l.message && `Message initial :\n${l.message}`,
     l.source_context && `Contexte source :\n${l.source_context}`,
     l.ai_documents_summary && `Synthèse Nicolas :\n${l.ai_documents_summary}`,
-  ].filter(Boolean).join("\n\n").trim();
+  ].filter(Boolean).join("\n\n").trim());
 
   if (body.length < 30) return { lead_id: l.id, chunks: 0 };
 
