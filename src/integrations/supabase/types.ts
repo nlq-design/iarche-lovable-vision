@@ -379,6 +379,51 @@ export type Database = {
           },
         ]
       }
+      ai_context_traces: {
+        Row: {
+          breakdown: Json
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          estimated_tokens: number
+          id: string
+          mode: string
+          rag_chunks: Json
+          token_budget: number | null
+          user_id: string | null
+          warnings: string[]
+          workspace_id: string
+        }
+        Insert: {
+          breakdown?: Json
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          estimated_tokens?: number
+          id?: string
+          mode: string
+          rag_chunks?: Json
+          token_budget?: number | null
+          user_id?: string | null
+          warnings?: string[]
+          workspace_id: string
+        }
+        Update: {
+          breakdown?: Json
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          estimated_tokens?: number
+          id?: string
+          mode?: string
+          rag_chunks?: Json
+          token_budget?: number | null
+          user_id?: string | null
+          warnings?: string[]
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       ai_cross_signals: {
         Row: {
           created_at: string
