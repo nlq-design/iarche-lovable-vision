@@ -1,121 +1,107 @@
-## Diagnostic Zoom
+# Vague 2 — Intelligence stratégique approfondie
 
-**Verdict : ECART confirmé côté intégration Zoom, très probablement hors UI.** Le module n’est pas cassé par la page Transcriptions elle-même : l’appel frontend part bien vers `zoom-import-recordings`, la fonction répond `200`, mais elle renvoie une liste vide avec un warning de droits Zoom.
+Durée estimée : 2-3 semaines. 4 étapes séquentielles, chacune autonome et testable. Livrable défini pour chaque étape avant de passer à la suivante.
 
-### Preuves relevées
+---
 
-- **UI** : `src/components/cockpit/transcriptions/ZoomImportModal.tsx`
-  - ligne 41 : appel `supabase.functions.invoke('zoom-import-recordings', { body: { action: 'list' } })`
-  - ligne 47-48 : si `data.recordings.length === 0`, toast générique `Aucun enregistrement Zoom trouvé sur les 30 derniers jours`
-  - problème UX : le warning backend `data.warning` n’est pas affiché, donc l’erreur réelle est masquée.
+## Étape 2.1 — Réveil des 11 règles Sentinelle dormantes
 
-- **Backend manuel** : `supabase/functions/zoom-import-recordings/index.ts`
-  - lignes 138-144 : récupère un token Zoom puis liste les enregistrements sur 30 jours.
-  - lignes 47-89 : essaie 3 stratégies :
-    1. `/users/me/recordings`
-    2. `/users` puis `/users/{id}/recordings`
-    3. `/accounts/{accountId}/recordings`
-  - lignes 91-102 : si les scopes Zoom sont manquants, retourne volontairement `recordings: []` + `warning` au lieu d’un 500.
+**Objectif** : Passer de 2 à 13 catégories d'alertes SQL actives pour nourrir le LLM de signaux faibles riches.
 
-- **Réponse réelle de la fonction testée maintenant** :
-  ```json
-  {
-    "recordings": [],
-    "total": 0,
-    "warning": "Zoom scopes manquants. Ajoutez un des scopes suivants dans votre app Zoom : cloud_recording:read:list_user_recordings, cloud_recording:read:list_user_recordings:admin, ou cloud_recording:read:list_account_recordings:master."
-  }
-  ```
+**Tâches**
+1. Auditer `ai_sentinel_alerts` actuelles (catégories actives vs dormantes selon prompt v10).
+2. Implémenter les 11 règles SQL manquantes dans `cockpit-sentinel-scan` :
+   - Lead oublié (no_activity > 14j sur lead chaud)
+   - Opportunité zombie (stage stagnant > 21j)
+   - Doublon contact/lead (fuzzy match nom+email)
+   - Lead sans email valide
+   - Proposition expirée (sent_at + validity dépassé)
+   - Projet en dépassement budget (consumed > 80%)
+   - Transcription non-liée à entité CRM > 48h
+   - Tâche IA sans réponse > 7j
+   - Booking sans préparation (briefing manquant J-1)
+   - Pipeline déséquilibré (>60% sur 1 stage)
+   - Cliente sans touchpoint > 30j post-livraison
+3. Paramétrer seuils par règle dans table `sentinel_rules_config` (severity, debounce, TTL dismissal).
+4. Ajouter index DB nécessaires pour perf.
 
-- **Logs backend récents** :
-  ```text
-  Invalid access token, does not contain scopes:[cloud_recording:read:list_user_recordings, cloud_recording:read:list_user_recordings:admin]
-  /users/me/recordings failed (400), trying user-list approach
-  Zoom scopes manquants...
-  ```
+**Livrable attendu**
+- 13 catégories visibles dans `ai_sentinel_alerts` après scan
+- Widget Sentinelle affiche au moins 5 catégories distinctes en conditions réelles
+- Documentation : `mem://cockpit/intelligence/sentinel-rules-v2`
 
-- **Secrets Zoom présents** :
-  - `ZOOM_ACCOUNT_ID`
-  - `ZOOM_CLIENT_ID`
-  - `ZOOM_CLIENT_SECRET`
-  - `ZOOM_WEBHOOK_SECRET_TOKEN`
+---
 
-- **Config backend** : `supabase/config.toml`
-  - `zoom-recording-webhook` est bien déclaré `verify_jwt = false`.
-  - `zoom-import-recordings` n’a pas de bloc explicite ; il reste invocable avec session utilisateur via `supabase.functions.invoke`, et l’appel réel répond bien `200`, donc le blocage n’est pas JWT.
+## Étape 2.2 — Mémoire temporelle (comparaison J-1 / J-7)
 
-- **Données internes** :
-  - des bookings Zoom existent en base, donc la création de réunions Zoom a déjà fonctionné.
-  - aucune transcription `source = 'zoom_recording'` trouvée actuellement, donc aucun import/webhook récent n’a produit de transcription visible.
+**Objectif** : L'IA détecte les tendances ("pipeline -15% vs J-7", "3 nouveaux leads chauds cette semaine") et pas juste l'instantané.
 
-## Cause probable
+**Tâches**
+1. Activer lecture de `daily_intelligence` historique dans `intelligenceAggregator` (J-1 + J-7 + J-30).
+2. Calculer deltas côté edge fn : pipeline value, nb leads actifs, nb opps stage X, vélocité moyenne.
+3. Injecter bloc `EVOLUTION TEMPORELLE` dans contexte LLM avec deltas chiffrés.
+4. Mettre à jour prompt v3 : exiger au moins 1 prédiction qui s'appuie sur un delta temporel.
+5. Ajouter widget `TrendDeltaWidget` (mini sparkline + delta % vs J-7).
 
-Le token Server-to-Server OAuth Zoom est bien généré, mais l’app Zoom configurée ne porte plus les scopes Cloud Recording nécessaires, ou Zoom a changé/invalidé l’autorisation effective après modification/reconnexion de l’app.
+**Livrable attendu**
+- Le brief IA cite explicitement au moins 1 évolution temporelle ("pipeline en baisse de X% sur 7j")
+- Widget Tendances visible sur dashboard
+- Snapshot quotidien sauvegardé en BDD vérifiable
 
-Ce n’est pas un problème de date ni de page UI : la fonction interroge bien la fenêtre `2026-04-10 → 2026-05-10`, mais Zoom refuse les endpoints d’enregistrements faute de scope.
+---
 
-## Plan de correction proposé
+## Étape 2.3 — Pré-génération d'artefacts (drafts mail/devis/notes)
 
-### 1. Correction UX immédiate du modal Zoom
+**Objectif** : Quand l'IA recommande "envoyer Diag 8 à Parham", elle génère aussi le draft email prêt à éditer/envoyer (gain 80% du temps).
 
-Dans `ZoomImportModal.tsx` :
+**Tâches**
+1. Étendre table `ai_actions` avec colonne `artifact` (JSONB : type + payload draft).
+2. Edge fn `ai-action-artifact-generator` : pour chaque action top-5 de type `send_email`/`send_proposal`/`create_note`, génère le draft via Lovable AI (gpt-5 si email client-facing, gemini-flash sinon).
+3. Récupérer contexte ciblé : dernière transcription du lead, dernier email reçu, vocabulary entity, owner_profile signature.
+4. UI : bouton "Voir le draft" dans `AIActionDrawer` → modal éditable → bouton "Envoyer" (déclenche edge fn email existante) ou "Copier".
+5. Tracker usage : taux d'acceptation draft, édits utilisateur (pour fine-tune prompt).
 
-- afficher `data.warning` en toast warning au lieu du toast générique “Aucun enregistrement...” quand le backend signale un problème de scopes ;
-- afficher dans le modal un état explicite : “Accès aux enregistrements Zoom non autorisé” ;
-- conserver le toast “Aucun enregistrement trouvé” seulement quand il n’y a pas de warning backend.
+**Livrable attendu**
+- 100% des actions top-5 de type email/devis ont un draft cliquable
+- Draft email contient : objet, corps personnalisé, signature owner, CTA clair
+- Métrique `artifact_acceptance_rate` exposée dans dashboard admin
 
-Objectif : ne plus masquer une erreur de configuration Zoom comme une absence d’enregistrement.
+---
 
-### 2. Durcir la fonction `zoom-import-recordings`
+## Étape 2.4 — Vrais cross-signals (transcription × inventaire × partner × opportunité)
 
-Dans `supabase/functions/zoom-import-recordings/index.ts` :
+**Objectif** : Remplacer "16 projets at_risk" (agrégation SQL) par des découvertes croisées non-triviales du type : *"Lead X mentionne besoin Y en transcription du 12/05 → Partner Z dispose de cette compétence → Opportunité Z stagne depuis 14j → recommander mise en relation."*
 
-- ajouter dans la réponse un champ structuré, par exemple :
-  ```json
-  {
-    "recordings": [],
-    "total": 0,
-    "warning": "...",
-    "error_code": "ZOOM_MISSING_RECORDING_SCOPES",
-    "required_scopes": [
-      "cloud_recording:read:list_user_recordings",
-      "cloud_recording:read:list_user_recordings:admin",
-      "cloud_recording:read:list_account_recordings:master"
-    ]
-  }
-  ```
-- logger aussi les statuts des stratégies 2 et 3 pour savoir exactement si `/users` ou `/accounts/{accountId}/recordings` échouent par scope ou par compte.
+**Tâches**
+1. Créer edge fn `cockpit-cross-signal-engine` (cron 1×/jour, 06:00 UTC) :
+   - Index sémantique des transcriptions récentes (30j) via embeddings (déjà en place via `useVectorization`)
+   - Match vs `partner_competences` + `solutions` actifs
+   - Match vs `opportunities` en stage > 7j
+   - Score combinaison (pertinence sémantique × valeur opp × ancienneté stagnation)
+2. Stocker top 10 cross-signals dans nouvelle table `ai_cross_signals` (TTL 7j, dismissible).
+3. Lire `ai_cross_signals` dans `intelligenceAggregator` → injecter bloc `CONNEXIONS CROISÉES` dans LLM.
+4. Réécrire prompt section "cross_signals" : exiger lien explicite entre ≥2 entités de types différents avec citation source.
+5. UI : `CrossSignalsWidget` refactor → afficher entités liées avec navigation clic vers chaque entité.
 
-Objectif : diagnostic durable sans devoir relire les logs à chaque fois.
+**Livrable attendu**
+- Table `ai_cross_signals` peuplée quotidiennement (≥3 signaux/jour en conditions réelles)
+- Widget CrossSignals affiche connexions multi-entités cliquables
+- Au moins 1 cross-signal dans le brief IA cite explicitement 2+ entités sources
 
-### 3. Vérifier ou restaurer les scopes côté Zoom
+---
 
-Action côté configuration Zoom, hors code :
+## Validation finale Vague 2
 
-- ouvrir l’app Zoom Server-to-Server OAuth utilisée par `ZOOM_CLIENT_ID` ;
-- vérifier/ajouter au moins un scope compatible :
-  - `cloud_recording:read:list_user_recordings`
-  - ou `cloud_recording:read:list_user_recordings:admin`
-  - ou `cloud_recording:read:list_account_recordings:master`
-- vérifier aussi les scopes de téléchargement d’enregistrement si l’import échoue ensuite sur `action: import` ;
-- réactiver/reconnecter l’app Zoom si Zoom exige une nouvelle activation après ajout de scopes.
+Avant de clôturer :
+- Brief IA contient les 4 nouvelles dimensions (Sentinelle riche, évolution temporelle, drafts, cross-signals)
+- Audit BDD : tables `ai_sentinel_alerts` (13 cat.), `ai_cross_signals` (peuplée), `ai_actions.artifact` (drafts générés)
+- Pas de régression sur Vague 1 (consulte_count actif, gemini-2.5-pro, ROI prio)
+- Mise à jour `mem://index.md` avec les 4 nouvelles entrées mémoire
 
-### 4. Re-tester sans modifier les données
+---
 
-Après correction des scopes :
+## Confirmation requise
 
-- appeler `zoom-import-recordings` en `action: list` ;
-- attendre une réponse avec `recordings.length > 0` ;
-- vérifier que la réunion de mercredi/jeudi apparaît ;
-- seulement ensuite tester l’import d’un enregistrement.
+Je propose de démarrer par **l'Étape 2.1 (Sentinelle)** car elle conditionne la qualité des étapes suivantes (plus de signaux SQL → meilleur contexte LLM pour cross-signals et drafts).
 
-## Ce que je ne touche pas dans ce plan
-
-- Pas de modification de `calendar-booking`.
-- Pas de modification du webhook Zoom automatique.
-- Pas de migration base de données.
-- Pas de modification des transcriptions existantes.
-- Pas de changement des secrets Zoom tant que les scopes Zoom n’ont pas été confirmés côté compte.
-
-## Conclusion
-
-Le module a probablement “régressé” fonctionnellement parce que l’autorisation Zoom actuelle ne contient plus les scopes Cloud Recording requis. Le code reçoit bien une erreur Zoom, mais l’UI l’affiche comme “aucun enregistrement trouvé”, ce qui rend le diagnostic invisible.
+Confirmes-tu la séquence 2.1 → 2.2 → 2.3 → 2.4, ou souhaites-tu réordonner (ex. commencer par 2.3 drafts pour ROI immédiat) ?
