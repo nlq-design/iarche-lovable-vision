@@ -508,6 +508,86 @@ serve(async (req) => {
         },
         ai_reasoning: `[Sentinelle] Opportunité sans montant estimé en stage "${a.stage}". Le pipeline financier est incomplet.`,
       }),
+      // === v2.1 — Nouveaux templates de propositions ===
+      risk_opportunity_zombie: (a) => ({
+        action_type: "create_task",
+        action_label: `Débloquer opportunité "${a.entity_name}" (${a.days_inactive}j stage ${a.stage})`,
+        action_payload: {
+          entity_type: "opportunity", entity_id: a.entity_id,
+          title: `Décision opportunité zombie – ${a.entity_name}`,
+          description: `Opportunité stagnante depuis ${a.days_inactive}j en stage "${a.stage}". Décider : relancer, faire avancer ou disqualifier.`,
+          priority: "high", due_in_days: 1,
+        },
+        ai_reasoning: `[Sentinelle] Opportunité zombie ${a.days_inactive}j sans mouvement. Coût d'opportunité élevé si laissée en l'état.`,
+      }),
+      overdue_opp_close_date: (a) => ({
+        action_type: "create_task",
+        action_label: `Reprogrammer ou conclure "${a.entity_name}" (close date dépassée)`,
+        action_payload: {
+          entity_type: "opportunity", entity_id: a.entity_id,
+          title: `Close date dépassée – ${a.entity_name}`,
+          description: `La date de closing est dépassée. Reprogrammer ou conclure (won/lost).`,
+          priority: "high", due_in_days: 1,
+        },
+        ai_reasoning: `[Sentinelle] Date de closing dépassée — assainir le forecast.`,
+      }),
+      risk_project_over_budget: (a) => ({
+        action_type: "create_task",
+        action_label: `Arbitrage budget projet "${a.entity_name}" (${a.days_inactive}%)`,
+        action_payload: {
+          entity_type: "project", entity_id: a.entity_id,
+          title: `Risque dépassement budget – ${a.entity_name}`,
+          description: `Budget consommé à ${a.days_inactive}%. Arbitrer scope, réviser budget ou alerter client.`,
+          priority: (a.days_inactive || 0) >= 100 ? "high" : "medium",
+          due_in_days: 2,
+        },
+        ai_reasoning: `[Sentinelle] Projet à ${a.days_inactive}% du budget — décision financière requise.`,
+      }),
+      risk_booking_no_prep: (a) => ({
+        action_type: "create_task",
+        action_label: `Préparer RDV "${a.entity_name}" (dans ${a.days_inactive}h)`,
+        action_payload: {
+          entity_type: "booking", entity_id: a.entity_id,
+          title: `Préparation RDV – ${a.entity_name}`,
+          description: `RDV dans ${a.days_inactive}h sans préparation détectée. Briefer le contexte, objectifs et next-step.`,
+          priority: (a.days_inactive || 24) <= 6 ? "high" : "medium",
+          due_in_days: 0,
+        },
+        ai_reasoning: `[Sentinelle] RDV imminent sans préparation — qualité d'échange à risque.`,
+      }),
+      duplicate_lead: (a) => ({
+        action_type: "create_task",
+        action_label: `Fusionner doublons lead "${a.entity_name}"`,
+        action_payload: {
+          entity_type: "lead", entity_id: a.entity_id,
+          title: `Doublon CRM – ${a.entity_name}`,
+          description: `Plusieurs leads avec le même email. Identifier le master et fusionner.`,
+          priority: "medium", due_in_days: 3,
+        },
+        ai_reasoning: `[Sentinelle] Doublons CRM dégradent la qualité des analyses et risquent de doubler les relances.`,
+      }),
+      inactivity_client_post_delivery: (a) => ({
+        action_type: "create_task",
+        action_label: `Touchpoint post-livraison "${a.entity_name}"`,
+        action_payload: {
+          entity_type: "project", entity_id: a.entity_id,
+          title: `Reprise contact client – ${a.entity_name}`,
+          description: `Client sans contact depuis ${a.days_inactive}j post-livraison. Opportunité cross/up-sell ou recueil témoignage.`,
+          priority: "medium", due_in_days: 3,
+        },
+        ai_reasoning: `[Sentinelle] Client livré dormant — potentiel commercial sous-exploité.`,
+      }),
+      imbalance_pipeline_stage: (a) => ({
+        action_type: "create_task",
+        action_label: `Rééquilibrer pipeline (${a.days_inactive}% au stage ${a.stage})`,
+        action_payload: {
+          entity_type: "workspace", entity_id: a.entity_id,
+          title: `Pipeline déséquilibré – stage ${a.stage}`,
+          description: `${a.days_inactive}% des opportunités actives sont concentrées sur le stage "${a.stage}". Accélérer la conversion en aval.`,
+          priority: "medium", due_in_days: 2,
+        },
+        ai_reasoning: `[Sentinelle] Concentration anormale du pipeline — risque de creux de revenu.`,
+      }),
     };
 
     const proposableAnomalies = anomalies.filter(
