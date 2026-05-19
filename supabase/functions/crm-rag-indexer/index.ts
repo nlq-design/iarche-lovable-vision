@@ -263,15 +263,23 @@ async function backfill(
       .slice(0, limit);
 
     for (const row of toProcess) {
+      const id = (row as { id: string }).id;
       try {
-        const r = await indexTranscription(supabase, (row as { id: string }).id);
-        results.push({ id: (row as { id: string }).id, ok: true, chunks: r.chunks });
+        const r = await indexTranscription(supabase, id);
+        results.push({ id, ok: true, chunks: r.chunks });
       } catch (e) {
-        results.push({
-          id: (row as { id: string }).id,
-          ok: false,
-          error: e instanceof Error ? e.message : String(e),
+        const n = normalizeError(e);
+        logEvent("error", "backfill_row_failed", {
+          resource_type: req.resource_type,
+          resource_id: id,
+          table: "voice_transcriptions",
+          message: n.message,
+          code: n.code,
+          details: n.details,
+          hint: n.hint,
+          op: (e as { op?: string })?.op,
         });
+        results.push({ id, ok: false, error: n.message });
       }
     }
     return {
