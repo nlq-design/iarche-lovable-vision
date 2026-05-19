@@ -16,7 +16,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { extractStructured, callLLM } from "../_shared/ai-client.ts";
 import { loadPrompt } from "../_shared/prompt-loader.ts";
-import { buildMaxContext, formatContextSummary } from "../_shared/context-maximizer.ts";
+import { buildMaxContext, formatContextSummary, recordContextTrace } from "../_shared/context-maximizer.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -96,11 +96,21 @@ serve(async (req) => {
       }
     }
 
-    let result: unknown;
+    let result: any;
+    // Sink rempli par les handlers qui appellent buildMaxContext (instrumentation
+    // RAG diagnostics). Le 1er traceId est exposé sur la réponse.
+    const traceCtx = {
+      workspaceId,
+      userId: authenticatedUserId,
+      mode,
+      entityType: entityType ?? null,
+      entityId: entityId ?? null,
+      sink: [] as string[],
+    };
 
     switch (mode) {
       case "suggest-tasks":
-        result = await suggestTasks(supabase, workspaceId, entityType, entityId);
+        result = await suggestTasks(supabase, workspaceId, entityType, entityId, traceCtx);
         break;
       case "detect-inactivity":
         result = await detectInactivity(supabase, workspaceId);
@@ -109,7 +119,7 @@ serve(async (req) => {
         result = await healthCheckProjects(supabase, workspaceId);
         break;
       case "next-step":
-        result = await suggestNextStep(supabase, entityId);
+        result = await suggestNextStep(supabase, entityId, traceCtx);
         break;
       case "opportunity-score":
         result = await opportunityScore(supabase, workspaceId);
@@ -128,6 +138,11 @@ serve(async (req) => {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
+    }
+
+    if (result && typeof result === "object" && traceCtx.sink.length > 0) {
+      (result as Record<string, unknown>).trace_id = traceCtx.sink[0];
+      (result as Record<string, unknown>).trace_ids = traceCtx.sink;
     }
 
     return new Response(JSON.stringify(result), {
@@ -160,13 +175,14 @@ serve(async (req) => {
 // MODE 1: SUGGEST TASKS
 // =============================================================================
 
-async function suggestTasks(supabase: any, workspaceId: string, entityType?: string, entityId?: string) {
+async function suggestTasks(supabase: any, workspaceId: string, entityType?: string, entityId?: string, traceCtx?: TraceCtx) {
   let context = "";
   if (entityType && entityId) {
-    context = await collectEntityContext(supabase, entityType, entityId);
+    context = await collectEntityContext(supabase, entityType, entityId, traceCtx);
   } else {
     context = await collectGlobalContext(supabase, workspaceId);
   }
+
 
   const prompt = await loadPrompt(supabase, "copilot-suggest-tasks", {
     system_prompt: `Tu es un assistant commercial expert. Suggère 3-5 tâches actionnables. Réponds en français.`,
@@ -365,7 +381,7 @@ async function healthCheckProjects(supabase: any, workspaceId: string) {
 // MODE 5: NEXT STEP SUGGESTION
 // =============================================================================
 
-async function suggestNextStep(supabase: any, entityId: string) {
+async function suggestNextStep(supabase: any, entityId: string, traceCtx?: TraceCtx) {
   if (!entityId) return { error: "entityId requis pour next-step" };
 
   const { data: opp } = await supabase.from("opportunities")
@@ -387,13 +403,25 @@ async function suggestNextStep(supabase: any, entityId: string) {
         includeTranscriptions: true,
         includeDocuments: true,
         includeEmails: true,
+        workspaceId: opp.workspace_id,
       });
       richContext = maxCtx.blocks;
       console.log(`[next-step] ${formatContextSummary(maxCtx)}`);
+      if (traceCtx) {
+        const id = await recordContextTrace(supabase, {
+          workspaceId: opp.workspace_id,
+          userId: traceCtx.userId,
+          mode: traceCtx.mode,
+          entityType: 'lead',
+          entityId: leadId,
+        }, maxCtx);
+        if (id) traceCtx.sink.push(id);
+      }
     }
   } catch (e) {
     console.warn('[next-step] Context maximizer failed:', e);
   }
+
 
   // Also fetch tasks and activity for the opportunity itself
   const [{ data: tasks }, { data: activity }] = await Promise.all([
@@ -1436,11 +1464,20 @@ ${activeAIActions.map((a: any) => {
 // HELPERS
 // =============================================================================
 
+export interface TraceCtx {
+  workspaceId: string;
+  userId: string | null;
+  mode: string;
+  entityType: string | null;
+  entityId: string | null;
+  sink: string[];
+}
+
 function daysBetween(dateStr: string): number {
   return Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000);
 }
 
-async function collectEntityContext(supabase: any, entityType: string, entityId: string): Promise<string> {
+async function collectEntityContext(supabase: any, entityType: string, entityId: string, traceCtx?: TraceCtx): Promise<string> {
   // Use context-maximizer for rich 128k-aware context assembly
   try {
     const maxCtx = await buildMaxContext(supabase, {
@@ -1451,9 +1488,22 @@ async function collectEntityContext(supabase: any, entityType: string, entityId:
       includeTranscriptions: true,
       includeDocuments: true,
       includeEmails: true,
+      workspaceId: traceCtx?.workspaceId,
     });
-    
+
     console.log(`[cockpit-copilot] ${formatContextSummary(maxCtx)}`);
+
+    if (traceCtx) {
+      const id = await recordContextTrace(supabase, {
+        workspaceId: traceCtx.workspaceId,
+        userId: traceCtx.userId,
+        mode: traceCtx.mode,
+        entityType,
+        entityId,
+      }, maxCtx);
+      if (id) traceCtx.sink.push(id);
+    }
+
     
     const tableMap: Record<string, string> = { lead: "leads", opportunity: "opportunities", project: "projects" };
     const table = tableMap[entityType];

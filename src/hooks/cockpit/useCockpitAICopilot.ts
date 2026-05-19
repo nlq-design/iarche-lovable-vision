@@ -189,9 +189,10 @@ export function useCockpitAICopilot(workspaceId?: string) {
   const suggestNextStep = useMutation({
     mutationFn: async (entityId: string) => {
       const result = await callCopilot('next-step', undefined, entityId);
-      return result as { suggestion: NextStepSuggestion; opportunity: { id: string; title: string; stage: string } };
+      return result as { suggestion: NextStepSuggestion; opportunity: { id: string; title: string; stage: string }; trace_id?: string };
     },
   });
+
 
   // Phase 2: Meeting prep
   const meetingPrep = useMutation({

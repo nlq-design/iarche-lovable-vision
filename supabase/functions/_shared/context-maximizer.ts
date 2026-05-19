@@ -57,6 +57,16 @@ export interface MaxContextOptions {
   workspaceId?: string;
 }
 
+export interface RagChunkDebug {
+  resource_id: string;
+  resource_type: string;
+  title: string;
+  source_date: string | null;
+  temporal_weight: number | null;
+  chars: number;
+  estimated_tokens: number;
+}
+
 export interface MaxContextResult {
   /** Assembled markdown context blocks */
   blocks: string;
@@ -66,6 +76,10 @@ export interface MaxContextResult {
   breakdown: Record<string, number>;
   /** Warnings (e.g., truncated sections) */
   warnings: string[];
+  /** Chunks retournés par match_entity_resources (priority 4.5) — diagnostic */
+  ragChunks: RagChunkDebug[];
+  /** Token budget that was used */
+  tokenBudget: number;
 }
 
 // ============= CONTEXT BUILDER =============
@@ -131,14 +145,16 @@ export async function buildMaxContext(
   }
 
   // ===== PRIORITY 4.5: RAG chunks liés à l'entité (transcriptions, notes, summaries) =====
-  const ragChunks = await fetchEntityRagChunks(supabase, entityType, entityId, workspaceId);
-  if (ragChunks) {
+  const ragResult = await fetchEntityRagChunks(supabase, entityType, entityId, workspaceId);
+  const ragChunks: RagChunkDebug[] = ragResult?.debug ?? [];
+  if (ragResult?.block) {
     sections.push({
       name: 'rag_chunks',
-      content: ragChunks,
+      content: ragResult.block,
       priority: 4.5,
     });
   }
+
 
   // ===== PRIORITY 5: Transcription summaries =====
   if (includeTranscriptions) {
@@ -245,8 +261,11 @@ export async function buildMaxContext(
     estimatedTokens: totalTokens,
     breakdown,
     warnings,
+    ragChunks,
+    tokenBudget,
   };
 }
+
 
 // ============= SPECIALIZED FETCHERS =============
 
@@ -255,7 +274,7 @@ async function fetchEntityRagChunks(
   entityType: string,
   entityId: string,
   workspaceId: string,
-): Promise<string | null> {
+): Promise<{ block: string; debug: RagChunkDebug[] } | null> {
   try {
     const { data, error } = await supabase.rpc('match_entity_resources', {
       p_entity_type: entityType,
@@ -270,6 +289,7 @@ async function fetchEntityRagChunks(
     }
     if (!data?.length) return null;
 
+    const debug: RagChunkDebug[] = [];
     let block = '\n## 🧠 Extraits CRM pertinents (RAG)\n';
     for (const c of data as any[]) {
       const date = c.source_date ? formatDateFR(c.source_date) : '';
@@ -277,14 +297,25 @@ async function fetchEntityRagChunks(
       const title = c.resource_title || c.resource_type;
       block += `\n### [${c.resource_type}] ${title}${date ? ` — ${date}` : ''}${weight}\n`;
       const chunk = (c.content_chunk || '').toString().trim();
-      if (chunk) block += `${chunk.substring(0, 1500)}\n`;
+      const trimmed = chunk.substring(0, 1500);
+      if (trimmed) block += `${trimmed}\n`;
+      debug.push({
+        resource_id: String(c.resource_id),
+        resource_type: String(c.resource_type),
+        title: String(title),
+        source_date: c.source_date ? String(c.source_date) : null,
+        temporal_weight: c.temporal_weight != null ? Number(c.temporal_weight) : null,
+        chars: trimmed.length,
+        estimated_tokens: estimateTokens(trimmed),
+      });
     }
-    return block;
+    return { block, debug };
   } catch (e) {
     console.warn('[context-maximizer] RAG chunks fetch exception:', e);
     return null;
   }
 }
+
 
 
 async function fetchTranscriptionSummaries(
@@ -597,4 +628,51 @@ export function formatContextSummary(result: MaxContextResult): string {
     }
   }
   return lines.join('\n');
+}
+
+// ============= TRACE PERSISTENCE =============
+
+export interface ContextTraceMeta {
+  workspaceId: string;
+  userId: string | null;
+  mode: string;
+  entityType?: string | null;
+  entityId?: string | null;
+}
+
+/**
+ * Persiste une trace de contexte IA dans `ai_context_traces`.
+ * Retourne l'id de trace, ou null en cas d'échec (jamais bloquant).
+ */
+export async function recordContextTrace(
+  supabase: SupabaseClient,
+  meta: ContextTraceMeta,
+  ctx: MaxContextResult,
+): Promise<string | null> {
+  try {
+    const { data, error } = await supabase
+      .from('ai_context_traces')
+      .insert({
+        workspace_id: meta.workspaceId,
+        user_id: meta.userId,
+        mode: meta.mode,
+        entity_type: meta.entityType ?? null,
+        entity_id: meta.entityId ?? null,
+        estimated_tokens: ctx.estimatedTokens,
+        token_budget: ctx.tokenBudget,
+        breakdown: ctx.breakdown,
+        rag_chunks: ctx.ragChunks,
+        warnings: ctx.warnings,
+      })
+      .select('id')
+      .maybeSingle();
+    if (error) {
+      console.warn('[context-maximizer] trace insert error:', error.message);
+      return null;
+    }
+    return (data as { id: string } | null)?.id ?? null;
+  } catch (e) {
+    console.warn('[context-maximizer] trace exception:', e);
+    return null;
+  }
 }
