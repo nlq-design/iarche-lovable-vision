@@ -30,6 +30,7 @@ import {
   Pencil, Activity, ChevronDown, ChevronRight,
 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
+import { toast } from 'sonner';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { entityRoute, formatCurrency, STAGE_LABELS } from './helpers';
