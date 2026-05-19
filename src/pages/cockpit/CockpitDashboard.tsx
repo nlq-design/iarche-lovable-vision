@@ -586,26 +586,29 @@ export default function CockpitDashboard() {
                   {recentTranscriptions.length === 0 ? (
                     <p className="text-xs text-muted-foreground py-3 text-center">Aucune transcription récente</p>
                   ) : (
-                    <div className="space-y-1">
-                      {recentTranscriptions.map((t: any) => (
-                        <div key={t.id}
-                          className="flex items-start gap-2 py-1.5 px-1.5 rounded hover:bg-muted/50 transition-colors cursor-pointer"
-                          onClick={() => navigate(`/cockpit/transcriptions/${t.id}`)}>
-                          <Mic className={cn("h-3.5 w-3.5 mt-0.5 flex-shrink-0",
-                            t.status === 'done' ? 'text-emerald-500' : t.status === 'error' ? 'text-destructive' : 'text-primary'
-                          )} />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium truncate">{t.title || t.summary?.title || t.original_filename || 'Sans titre'}</p>
-                            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                              {t.lead?.name && <span className="truncate">🎯 {t.lead.name}</span>}
-                              {t.project?.name && <span className="truncate">📁 {t.project.name}</span>}
-                              <span>{formatDistanceToNow(new Date(t.created_at), { addSuffix: true, locale: fr })}</span>
+                    <ScrollArea className="h-[280px] pr-2">
+                      <div className="space-y-1">
+                        {recentTranscriptions.map((t: any) => (
+                          <div key={t.id}
+                            className="flex items-start gap-2 py-1.5 px-1.5 rounded hover:bg-muted/50 transition-colors cursor-pointer"
+                            onClick={() => navigate(`/cockpit/transcriptions/${t.id}`)}>
+                            <Mic className={cn("h-3.5 w-3.5 mt-0.5 flex-shrink-0",
+                              t.status === 'done' ? 'text-emerald-500' : t.status === 'error' ? 'text-destructive' : 'text-primary'
+                            )} />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium truncate">{t.title || t.summary?.title || t.original_filename || 'Sans titre'}</p>
+                              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                                {t.lead?.name && <span className="truncate">🎯 {t.lead.name}</span>}
+                                {t.project?.name && <span className="truncate">📁 {t.project.name}</span>}
+                                <span>{formatDistanceToNow(new Date(t.created_at), { addSuffix: true, locale: fr })}</span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
                   )}
+
                 </CardContent>
               </Card>
 
