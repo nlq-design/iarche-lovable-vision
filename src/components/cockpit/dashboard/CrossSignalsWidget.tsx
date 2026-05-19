@@ -5,8 +5,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Crosshair, Network } from 'lucide-react';
 import { CrossSignal, CrossSignalDB } from '@/hooks/cockpit/useCockpitIntelligence';
 import { cn } from '@/lib/utils';
+import { entityRoute } from './helpers';
 import { AIActionDrawer } from './AIActionDrawer';
-import { EntityQuickViewDrawer } from './EntityQuickViewDrawer';
 import { computeAIActionSignature, type AIActionSnapshot } from '@/hooks/cockpit/useAIAction';
 
 interface CrossSignalsWidgetProps {
@@ -25,9 +25,17 @@ interface UnifiedSignal {
   signal_type?: string;
 }
 
+const TYPE_LABEL: Record<string, string> = {
+  lead: 'Lead',
+  opportunity: 'Opportunité',
+  partner: 'Partenaire',
+  solution: 'Solution',
+  project: 'Projet',
+  transcription: 'Transcription',
+};
+
 export function CrossSignalsWidget({ signals, embeddingSignals, isLoading, navigate }: CrossSignalsWidgetProps) {
   const [selected, setSelected] = useState<AIActionSnapshot | null>(null);
-  const [previewEntity, setPreviewEntity] = useState<{ type: string; id: string } | null>(null);
 
   const unified: UnifiedSignal[] = [
     ...(embeddingSignals || []).map((s) => ({
@@ -100,20 +108,24 @@ export function CrossSignalsWidget({ signals, embeddingSignals, isLoading, navig
                           </p>
                         )}
                         <div className="flex flex-wrap gap-1 mt-1">
-                          {signal.entities.map((e, j) => (
-                            <button
-                              key={j}
-                              className="text-[9px] bg-background/80 border rounded px-1 py-0 hover:bg-primary/10 transition-colors"
-                              onClick={(ev) => {
-                                ev.stopPropagation();
-                                setPreviewEntity({ type: e.type, id: e.id });
-                              }}
-                              title={e.role ? `${e.role} — Cliquer pour aperçu` : 'Cliquer pour aperçu'}
-                            >
-                              {e.name}
-                              {e.role && <span className="opacity-60 ml-0.5">·{e.role}</span>}
-                            </button>
-                          ))}
+                          {signal.entities.map((e, j) => {
+                            const label = TYPE_LABEL[e.type] || e.type;
+                            return (
+                              <button
+                                key={j}
+                                className="text-[9px] bg-background/80 border rounded px-1 py-0 hover:bg-primary/10 hover:border-primary/40 transition-colors inline-flex items-center gap-0.5"
+                                onClick={(ev) => {
+                                  ev.stopPropagation();
+                                  navigate(entityRoute(e.type, e.id));
+                                }}
+                                title={`Ouvrir la fiche ${label.toLowerCase()} : ${e.name}${e.role ? ` (${e.role})` : ''}`}
+                              >
+                                <span className="opacity-60">{label}:</span>
+                                <span className="font-medium">{e.name}</span>
+                                {e.role && <span className="opacity-60">·{e.role}</span>}
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
                     </div>
@@ -125,13 +137,6 @@ export function CrossSignalsWidget({ signals, embeddingSignals, isLoading, navig
         </CardContent>
       </Card>
       <AIActionDrawer snapshot={selected} open={!!selected} onOpenChange={(o) => !o && setSelected(null)} />
-      <EntityQuickViewDrawer
-        entityType={previewEntity?.type ?? null}
-        entityId={previewEntity?.id ?? null}
-        open={!!previewEntity}
-        onOpenChange={(o) => !o && setPreviewEntity(null)}
-        onNavigate={navigate}
-      />
     </>
   );
 }
