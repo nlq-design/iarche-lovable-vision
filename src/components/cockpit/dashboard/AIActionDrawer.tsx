@@ -606,6 +606,9 @@ function TimelineEntry({ note }: { note: AIActionNote }) {
   const kind = note.kind ?? 'note';
   const changes = (note.meta?.changes as Array<{ field: string; before: unknown; after: unknown }>) || [];
   const hasDetails = kind === 'update' && changes.length > 0;
+  const entitySynced = !!note.meta?.entity_synced;
+  const entityFields = (note.meta?.entity_fields as string[]) || [];
+  const entityType = note.meta?.entity_type as string | undefined;
 
   const config = {
     note: { icon: MessageSquare, color: 'text-muted-foreground', bg: 'bg-muted/40', label: 'Note' },
@@ -628,6 +631,28 @@ function TimelineEntry({ note }: { note: AIActionNote }) {
         <Icon className={cn('h-3.5 w-3.5 shrink-0 mt-0.5', config.color)} />
         <div className="flex-1 min-w-0">
           <p className="leading-relaxed whitespace-pre-wrap break-words">{note.text}</p>
+
+          {/* Badge de confirmation de sync entité — visible immédiatement */}
+          {kind === 'update' && entitySynced && (
+            <div className="flex items-center gap-1 mt-1">
+              <Badge
+                variant="outline"
+                className="text-[9px] h-4 px-1.5 gap-1 border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+              >
+                <CheckCircle2 className="h-2.5 w-2.5" />
+                {entityType ? `Synchronisé sur ${entityType}` : 'Synchronisé'}
+                {entityFields.length > 0 && ` · ${entityFields.join(', ')}`}
+              </Badge>
+            </div>
+          )}
+          {kind === 'update' && !entitySynced && note.meta?.pushed === false && (
+            <div className="flex items-center gap-1 mt-1">
+              <Badge variant="outline" className="text-[9px] h-4 px-1.5 text-muted-foreground">
+                Action IA seulement
+              </Badge>
+            </div>
+          )}
+
           <p className="text-[10px] text-muted-foreground mt-0.5">
             <span className="font-medium">{config.label}</span>
             {note.by && <span> · {note.by}</span>}
@@ -651,9 +676,10 @@ function TimelineEntry({ note }: { note: AIActionNote }) {
                   </span>
                 </div>
               ))}
-              {note.meta?.pushed && (
-                <p className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-1">
-                  Synchronisé vers l'entité
+              {entitySynced && (
+                <p className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
+                  <CheckCircle2 className="h-3 w-3" />
+                  Champs poussés en base : {entityFields.join(', ') || '—'}
                 </p>
               )}
             </div>
