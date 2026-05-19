@@ -239,7 +239,7 @@ async function backfill(
         .in("resource_type", ["transcription_chunk", "transcription_summary"])
         .not("parent_resource_id", "is", null)
         .range(offset, offset + PAGE - 1);
-      if (pageErr) throw pageErr;
+      if (pageErr) throw pgError("backfill.list_indexed", { table: "resource_embeddings", resource_type: req.resource_type, offset, workspace_id: req.workspace_id }, pageErr);
       if (!page || page.length === 0) break;
       for (const r of page) {
         const id = (r as { parent_resource_id: string }).parent_resource_id;
