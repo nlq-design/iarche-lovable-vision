@@ -381,7 +381,7 @@ async function healthCheckProjects(supabase: any, workspaceId: string) {
 // MODE 5: NEXT STEP SUGGESTION
 // =============================================================================
 
-async function suggestNextStep(supabase: any, entityId: string) {
+async function suggestNextStep(supabase: any, entityId: string, traceCtx?: TraceCtx) {
   if (!entityId) return { error: "entityId requis pour next-step" };
 
   const { data: opp } = await supabase.from("opportunities")
@@ -403,13 +403,25 @@ async function suggestNextStep(supabase: any, entityId: string) {
         includeTranscriptions: true,
         includeDocuments: true,
         includeEmails: true,
+        workspaceId: opp.workspace_id,
       });
       richContext = maxCtx.blocks;
       console.log(`[next-step] ${formatContextSummary(maxCtx)}`);
+      if (traceCtx) {
+        const id = await recordContextTrace(supabase, {
+          workspaceId: opp.workspace_id,
+          userId: traceCtx.userId,
+          mode: traceCtx.mode,
+          entityType: 'lead',
+          entityId: leadId,
+        }, maxCtx);
+        if (id) traceCtx.sink.push(id);
+      }
     }
   } catch (e) {
     console.warn('[next-step] Context maximizer failed:', e);
   }
+
 
   // Also fetch tasks and activity for the opportunity itself
   const [{ data: tasks }, { data: activity }] = await Promise.all([
