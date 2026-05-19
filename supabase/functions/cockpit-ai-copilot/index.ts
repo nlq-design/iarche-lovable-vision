@@ -1160,7 +1160,7 @@ ${activeAIActions.map((a: any) => {
     ? `\n\n--- CONTEXTE ENRICHI (Synthèses Consulte 360°) ---\nCes synthèses ont été générées par le module Consulte à partir de l'ensemble des données CRM, transcriptions, documents et historique de chaque entité. Elles sont plus riches et complètes que les données SQL brutes ci-dessus. PRIORISE ces synthèses pour tes analyses.\n\n${consulteContext}\n--- FIN CONTEXTE ENRICHI ---`
     : '';
 
-  const enrichedLlmContext = llmContext + consulteEnrichment;
+  const enrichedLlmContext = llmContext + consulteEnrichment + userFeedbackContext;
 
   // Load prompt from DB
   const prompt = await loadPrompt(supabase, "cockpit-intelligence-aggregator", {
