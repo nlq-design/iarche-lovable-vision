@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 import { Eye, TrendingDown, TrendingUp } from 'lucide-react';
 import { Prediction } from '@/hooks/cockpit/useCockpitIntelligence';
 import { cn } from '@/lib/utils';
