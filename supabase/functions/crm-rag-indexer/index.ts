@@ -96,6 +96,11 @@ async function indexOne(
       return await indexLead(supabase, resourceId);
     case "opportunity":
       return await indexOpportunity(supabase, resourceId);
+    case "entity_note":
+    case "entity_context_note":
+      return await indexEntityNote(supabase, "entity_context_notes", resourceId);
+    case "project_note":
+      return await indexEntityNote(supabase, "project_notes", resourceId);
     default:
       throw new Error(`Unsupported resource_type: ${resourceType}`);
   }
@@ -175,6 +180,16 @@ async function backfill(
 
   if (req.resource_type === "opportunity") {
     return await genericBackfill(supabase, req, "opportunities", "opportunity", indexOpportunity);
+  }
+
+  if (req.resource_type === "entity_note" || req.resource_type === "entity_context_note") {
+    return await genericBackfill(supabase, req, "entity_context_notes", "entity_note",
+      (s, id) => indexEntityNote(s, "entity_context_notes", id));
+  }
+
+  if (req.resource_type === "project_note") {
+    return await genericBackfill(supabase, req, "project_notes", "project_note",
+      (s, id) => indexEntityNote(s, "project_notes", id));
   }
 
   throw new Error(`Backfill not implemented for: ${req.resource_type}`);
@@ -558,6 +573,83 @@ async function indexOpportunity(
     total += rows.length;
   }
   return { opportunity_id: o.id, chunks: total };
+}
+
+// ─── Handler : entity_note (entity_context_notes + project_notes) ──────────
+
+async function indexEntityNote(
+  supabase: ReturnType<typeof createClient>,
+  table: "entity_context_notes" | "project_notes",
+  noteId: string,
+) {
+  const isProject = table === "project_notes";
+  const cols = isProject
+    ? "id, workspace_id, project_id, title, content, note_type, tags, updated_at, created_at"
+    : "id, workspace_id, entity_type, entity_id, content, updated_at, created_at";
+  const { data, error } = await supabase.from(table).select(cols).eq("id", noteId).maybeSingle();
+  if (error) throw error;
+  if (!data) throw new Error(`Note ${noteId} not found in ${table}`);
+  const n = data as Record<string, unknown>;
+  const workspaceId = n.workspace_id as string | null;
+  if (!workspaceId) throw new Error(`Note ${noteId} has no workspace_id`);
+
+  const content = (n.content as string | null)?.trim() || "";
+  if (content.length < 30) return { note_id: noteId, chunks: 0 };
+
+  const embeddingType = isProject ? "project_note" : "entity_note";
+  const sourceDate = (n.updated_at as string) || (n.created_at as string);
+  let title: string;
+  let entityLinks: { type: string; id: string }[];
+
+  if (isProject) {
+    title = (n.title as string | null) || `Note projet`;
+    entityLinks = buildEntityLinks([
+      { type: "project_note", id: noteId },
+      { type: "project", id: (n.project_id as string | null) || null },
+    ]);
+  } else {
+    const entType = n.entity_type as string | null;
+    const entId = n.entity_id as string | null;
+    title = `Note ${entType || "contexte"}`;
+    entityLinks = buildEntityLinks([
+      { type: "entity_note", id: noteId },
+      { type: entType || "unknown", id: entId },
+    ]);
+  }
+
+  await supabase
+    .from("resource_embeddings")
+    .delete()
+    .eq("parent_resource_id", noteId)
+    .eq("resource_type", embeddingType);
+
+  const chunks = chunkText(content, CHUNK_SIZE, CHUNK_OVERLAP).slice(0, MAX_CHUNKS_PER_DOC);
+  let total = 0;
+  for (let i = 0; i < chunks.length; i += EMBED_BATCH_SIZE) {
+    const batch = chunks.slice(i, i + EMBED_BATCH_SIZE);
+    const embeddings = await embedTexts(batch);
+    const rows = batch.map((text, j) => ({
+      resource_id: noteId,
+      resource_type: embeddingType,
+      resource_title: title,
+      resource_slug: noteId,
+      content_chunk: text,
+      chunk_index: i + j,
+      embedding: embeddings[j],
+      workspace_id: workspaceId,
+      entity_links: entityLinks,
+      temporal_weight: computeTemporalWeight(sourceDate),
+      source_date: sourceDate,
+      parent_resource_id: noteId,
+      metadata: { kind: embeddingType, title },
+    }));
+    const { error: upErr } = await supabase
+      .from("resource_embeddings")
+      .upsert(rows, { onConflict: "resource_id,chunk_index" });
+    if (upErr) throw upErr;
+    total += rows.length;
+  }
+  return { note_id: noteId, chunks: total };
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────

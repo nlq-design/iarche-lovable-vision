@@ -7876,6 +7876,26 @@ export type Database = {
         Args: { p_ids: string[] }
         Returns: number
       }
+      match_entity_resources: {
+        Args: {
+          p_entity_id: string
+          p_entity_type: string
+          p_limit?: number
+          p_types?: string[]
+          p_workspace_id?: string
+        }
+        Returns: {
+          chunk_index: number
+          content_chunk: string
+          metadata: Json
+          parent_resource_id: string
+          resource_id: string
+          resource_title: string
+          resource_type: string
+          source_date: string
+          temporal_weight: number
+        }[]
+      }
       match_partners_for_lead: {
         Args: { p_lead_id: string; p_limit?: number; p_workspace_id: string }
         Returns: {
