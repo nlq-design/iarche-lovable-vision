@@ -61,7 +61,7 @@ export function safeNavigateToEntity(
     });
     return false;
   }
-  navigate(path);
+  (navigate as (path: string) => void)(path);
   return true;
 }
 
