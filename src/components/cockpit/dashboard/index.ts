@@ -3,6 +3,7 @@ export { CrossSignalsWidget } from './CrossSignalsWidget';
 export { PredictionsWidget } from './PredictionsWidget';
 export { SentinelCardWidget, SentinelButton } from './SentinelWidget';
 export { StagnantWidget } from './StagnantWidget';
+export { TrendDeltaWidget } from './TrendDeltaWidget';
 export { TaskRow } from './TaskRow';
 export { MiniStat } from './MiniStat';
 export { ActivityIcon } from './ActivityIcon';
