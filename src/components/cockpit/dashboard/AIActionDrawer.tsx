@@ -315,6 +315,8 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
     setDismissReason('');
   };
 
+  if (!snapshot) return null;
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-xl overflow-hidden flex flex-col p-0 gap-0">
