@@ -125,6 +125,13 @@ export function CrossSignalsWidget({ signals, embeddingSignals, isLoading, navig
         </CardContent>
       </Card>
       <AIActionDrawer snapshot={selected} open={!!selected} onOpenChange={(o) => !o && setSelected(null)} />
+      <EntityQuickViewDrawer
+        entityType={previewEntity?.type ?? null}
+        entityId={previewEntity?.id ?? null}
+        open={!!previewEntity}
+        onOpenChange={(o) => !o && setPreviewEntity(null)}
+        onNavigate={navigate}
+      />
     </>
   );
 }
