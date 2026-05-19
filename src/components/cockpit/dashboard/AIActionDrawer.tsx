@@ -678,6 +678,10 @@ function TimelineEntry({ note }: { note: AIActionNote }) {
   const entitySynced = !!note.meta?.entity_synced;
   const entityFields = (note.meta?.entity_fields as string[]) || [];
   const entityType = note.meta?.entity_type as string | undefined;
+  const actor = (note.meta?.actor as 'user' | 'system' | undefined) ?? (note.by === 'system' ? 'system' : 'user');
+  const reason = note.meta?.reason as string | undefined;
+  const previousStatus = note.meta?.previous_status as string | undefined;
+  const newStatus = note.meta?.status as string | undefined;
 
   const config = {
     note: { icon: MessageSquare, color: 'text-muted-foreground', bg: 'bg-muted/40', label: 'Note' },
