@@ -541,7 +541,7 @@ async function indexLead(
   if (error) throw pgError("indexLead.select", { table: "leads", resource_id: leadId }, error);
   if (!data) throw new Error(`Lead ${leadId} not found`);
 
-  const l = data as {
+  const raw = data as {
     id: string;
     workspace_id: string | null;
     name: string | null;
@@ -556,6 +556,19 @@ async function indexLead(
     updated_at: string | null;
     created_at: string | null;
   };
+  // Sanitisation systématique des champs textuels (lone surrogates -> 22P02)
+  const clean = (v: string | null) => (v ? stripLoneSurrogates(v) : v);
+  const l = {
+    ...raw,
+    name: clean(raw.name),
+    company: clean(raw.company),
+    position: clean(raw.position),
+    industry: clean(raw.industry),
+    ai_documents_summary: clean(raw.ai_documents_summary),
+    message: clean(raw.message),
+    source_context: clean(raw.source_context),
+    status: clean(raw.status),
+  };
   if (!l.workspace_id) throw new Error(`Lead ${leadId} has no workspace_id`);
 
   const header = [
@@ -566,12 +579,12 @@ async function indexLead(
     l.status && `Statut : ${l.status}`,
   ].filter(Boolean).join("\n");
 
-  const body = [
+  const body = stripLoneSurrogates([
     header,
     l.message && `Message initial :\n${l.message}`,
     l.source_context && `Contexte source :\n${l.source_context}`,
     l.ai_documents_summary && `Synthèse Nicolas :\n${l.ai_documents_summary}`,
-  ].filter(Boolean).join("\n\n").trim();
+  ].filter(Boolean).join("\n\n").trim());
 
   if (body.length < 30) return { lead_id: l.id, chunks: 0 };
 
@@ -606,9 +619,10 @@ async function indexLead(
       parent_resource_id: l.id,
       metadata: { kind: "lead_summary", title, slug },
     }));
+    const safeRows = deepSanitizeStrings(rows);
     const { error: upErr } = await supabase
       .from("resource_embeddings")
-      .upsert(rows, { onConflict: "resource_id,chunk_index" });
+      .upsert(safeRows, { onConflict: "resource_id,chunk_index" });
     if (upErr) throw pgError("indexLead.upsert", { table: "resource_embeddings", resource_type: "lead_summary", resource_id: l.id, workspace_id: l.workspace_id, batch_size: rows.length }, upErr);
     total += rows.length;
   }
@@ -802,6 +816,54 @@ function computeTemporalWeight(sourceDate: string | null): number {
   const w = 1.0 - ((days - 7) / 83) * 0.7;
   return Math.round(w * 1000) / 1000;
 }
+
+/**
+ * Supprime les surrogates UTF-16 orphelins et les caractères de contrôle non-imprimables.
+ * JSON.stringify émet \uXXXX pour les lone surrogates -> Postgres rejette en 22P02.
+ * Passe unique sur les code units pour éviter les bugs de regex sur surrogates consécutifs.
+ */
+function stripLoneSurrogates(input: string): string {
+  if (!input) return input;
+  let out = "";
+  for (let i = 0; i < input.length; i++) {
+    const code = input.charCodeAt(i);
+    // High surrogate -> doit être suivi d'un low surrogate
+    if (code >= 0xD800 && code <= 0xDBFF) {
+      const next = input.charCodeAt(i + 1);
+      if (next >= 0xDC00 && next <= 0xDFFF) {
+        out += input[i] + input[i + 1];
+        i++;
+      }
+      // sinon: drop high surrogate orphelin
+      continue;
+    }
+    // Low surrogate isolé -> drop
+    if (code >= 0xDC00 && code <= 0xDFFF) continue;
+    // Contrôles non-imprimables (sauf \n=0x0A \r=0x0D \t=0x09)
+    if (code < 0x20 && code !== 0x09 && code !== 0x0A && code !== 0x0D) continue;
+    if (code === 0x7F) continue;
+    out += input[i];
+  }
+  return out;
+}
+
+// deno-lint-ignore no-explicit-any
+function deepSanitizeStrings<T>(value: T): T {
+  if (value == null) return value;
+  if (typeof value === "string") return stripLoneSurrogates(value) as unknown as T;
+  if (Array.isArray(value)) return value.map((v) => deepSanitizeStrings(v)) as unknown as T;
+  if (typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      out[k] = deepSanitizeStrings(v);
+    }
+    return out as unknown as T;
+  }
+  return value;
+}
+
+
+
 
 function chunkText(input: string, size: number, overlap: number): string[] {
   const text = input.replace(/\s+/g, " ").trim();
