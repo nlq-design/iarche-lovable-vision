@@ -472,6 +472,8 @@ export default function CockpitDashboard() {
 
               <PredictionsWidget predictions={intelligence?.predictions} isLoading={intelLoading} navigate={navigate} />
 
+              <TrendDeltaWidget deltas={(raw as any)?.temporal_deltas} loading={intelLoading} />
+
               {/* Health overview */}
               {intelligence?.health_overview && (
                 <Card>
