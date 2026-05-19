@@ -626,32 +626,35 @@ export default function CockpitDashboard() {
                   {recentProjects.length === 0 ? (
                     <p className="text-xs text-muted-foreground py-3 text-center">Aucun projet actif</p>
                   ) : (
-                    <div className="space-y-1">
-                      {recentProjects.map((p: any) => (
-                        <div key={p.id}
-                          className="flex items-center justify-between py-1.5 px-1.5 rounded hover:bg-muted/50 transition-colors cursor-pointer"
-                          onClick={() => navigate(`/cockpit/projects`)}>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-xs font-medium truncate">{p.name}</p>
-                            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                              {p.leads?.name && <span className="truncate">🎯 {p.leads.name}</span>}
-                              {p.budget_amount > 0 && <span>{formatCurrency(p.budget_amount)}</span>}
+                    <ScrollArea className="h-[260px] pr-2">
+                      <div className="space-y-1">
+                        {recentProjects.map((p: any) => (
+                          <div key={p.id}
+                            className="flex items-center justify-between py-1.5 px-1.5 rounded hover:bg-muted/50 transition-colors cursor-pointer"
+                            onClick={() => navigate(`/cockpit/projects`)}>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-medium truncate">{p.name}</p>
+                              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                                {p.leads?.name && <span className="truncate">🎯 {p.leads.name}</span>}
+                                {p.budget_amount > 0 && <span>{formatCurrency(p.budget_amount)}</span>}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              {p.health_status && (
+                                <span className="text-[10px]">
+                                  {p.health_status === 'on_track' ? '🟢' : p.health_status === 'at_risk' ? '🟡' : '🔴'}
+                                </span>
+                              )}
+                              <Badge variant="outline" className="text-[9px] px-1 py-0 capitalize">{p.status}</Badge>
                             </div>
                           </div>
-                          <div className="flex items-center gap-1 flex-shrink-0">
-                            {p.health_status && (
-                              <span className="text-[10px]">
-                                {p.health_status === 'on_track' ? '🟢' : p.health_status === 'at_risk' ? '🟡' : '🔴'}
-                              </span>
-                            )}
-                            <Badge variant="outline" className="text-[9px] px-1 py-0 capitalize">{p.status}</Badge>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
                   )}
                 </CardContent>
               </Card>
+
 
               {/* Activity Feed */}
               <Card className="flex-1 min-h-0">
