@@ -64,7 +64,7 @@ export function TrendDeltaWidget({ deltas, loading }: Props) {
   if (loading) {
     return (
       <Card className="p-4">
-        <LoadingState label="Calcul des tendances…" />
+        <LoadingState message="Calcul des tendances…" />
       </Card>
     );
   }
@@ -73,7 +73,7 @@ export function TrendDeltaWidget({ deltas, loading }: Props) {
     return (
       <Card className="p-4">
         <EmptyState
-          title="Pas d'historique temporel"
+          message="Pas d'historique temporel"
           description="Les tendances J-1 / J-7 / J-30 seront disponibles dès le 2e snapshot quotidien."
         />
       </Card>
