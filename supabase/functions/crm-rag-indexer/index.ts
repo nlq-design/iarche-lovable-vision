@@ -108,11 +108,21 @@ async function backfill(
     req.resource_type === "transcription_summary" ||
     req.resource_type === "voice_transcription"
   ) {
+    // Récupère les ids déjà indexés pour exclusion
+    const { data: indexed } = await supabase
+      .from("resource_embeddings")
+      .select("parent_resource_id")
+      .in("resource_type", ["transcription_chunk", "transcription_summary"])
+      .not("parent_resource_id", "is", null);
+    const indexedIds = new Set(
+      (indexed ?? []).map((r) => (r as { parent_resource_id: string }).parent_resource_id),
+    );
+
     let q = supabase
       .from("voice_transcriptions")
       .select("id, workspace_id")
       .not("raw_transcript", "is", null)
-      .limit(limit);
+      .limit(limit + indexedIds.size);
     if (req.workspace_id) q = q.eq("workspace_id", req.workspace_id);
     const { data: rows, error } = await q;
     if (error) throw error;
