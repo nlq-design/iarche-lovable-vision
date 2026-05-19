@@ -236,6 +236,72 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_actions: {
+        Row: {
+          action_text: string
+          completed_at: string | null
+          created_at: string
+          entity_id: string | null
+          entity_name: string | null
+          entity_type: string | null
+          id: string
+          impact_value: number | null
+          reasoning: string | null
+          signature: string
+          snooze_until: string | null
+          source: string
+          status: string
+          structured_updates: Json
+          updated_at: string
+          urgency: string | null
+          user_id: string | null
+          user_notes: Json
+          workspace_id: string
+        }
+        Insert: {
+          action_text: string
+          completed_at?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_name?: string | null
+          entity_type?: string | null
+          id?: string
+          impact_value?: number | null
+          reasoning?: string | null
+          signature: string
+          snooze_until?: string | null
+          source: string
+          status?: string
+          structured_updates?: Json
+          updated_at?: string
+          urgency?: string | null
+          user_id?: string | null
+          user_notes?: Json
+          workspace_id: string
+        }
+        Update: {
+          action_text?: string
+          completed_at?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_name?: string | null
+          entity_type?: string | null
+          id?: string
+          impact_value?: number | null
+          reasoning?: string | null
+          signature?: string
+          snooze_until?: string | null
+          source?: string
+          status?: string
+          structured_updates?: Json
+          updated_at?: string
+          urgency?: string | null
+          user_id?: string | null
+          user_notes?: Json
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       ai_agent_memory: {
         Row: {
           category: string | null
