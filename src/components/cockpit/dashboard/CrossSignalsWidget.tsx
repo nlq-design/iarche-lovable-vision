@@ -116,7 +116,7 @@ export function CrossSignalsWidget({ signals, embeddingSignals, isLoading, navig
                                 className="text-[9px] bg-background/80 border rounded px-1 py-0 hover:bg-primary/10 hover:border-primary/40 transition-colors inline-flex items-center gap-0.5"
                                 onClick={(ev) => {
                                   ev.stopPropagation();
-                                  navigate(entityRoute(e.type, e.id));
+                                  safeNavigateToEntity(navigate, e.type, e.id, e.name);
                                 }}
                                 title={`Ouvrir la fiche ${label.toLowerCase()} : ${e.name}${e.role ? ` (${e.role})` : ''}`}
                               >
