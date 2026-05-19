@@ -96,11 +96,21 @@ serve(async (req) => {
       }
     }
 
-    let result: unknown;
+    let result: any;
+    // Sink rempli par les handlers qui appellent buildMaxContext (instrumentation
+    // RAG diagnostics). Le 1er traceId est exposé sur la réponse.
+    const traceCtx = {
+      workspaceId,
+      userId: authenticatedUserId,
+      mode,
+      entityType: entityType ?? null,
+      entityId: entityId ?? null,
+      sink: [] as string[],
+    };
 
     switch (mode) {
       case "suggest-tasks":
-        result = await suggestTasks(supabase, workspaceId, entityType, entityId);
+        result = await suggestTasks(supabase, workspaceId, entityType, entityId, traceCtx);
         break;
       case "detect-inactivity":
         result = await detectInactivity(supabase, workspaceId);
@@ -109,7 +119,7 @@ serve(async (req) => {
         result = await healthCheckProjects(supabase, workspaceId);
         break;
       case "next-step":
-        result = await suggestNextStep(supabase, entityId);
+        result = await suggestNextStep(supabase, entityId, traceCtx);
         break;
       case "opportunity-score":
         result = await opportunityScore(supabase, workspaceId);
@@ -128,6 +138,11 @@ serve(async (req) => {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
+    }
+
+    if (result && typeof result === "object" && traceCtx.sink.length > 0) {
+      (result as Record<string, unknown>).trace_id = traceCtx.sink[0];
+      (result as Record<string, unknown>).trace_ids = traceCtx.sink;
     }
 
     return new Response(JSON.stringify(result), {
