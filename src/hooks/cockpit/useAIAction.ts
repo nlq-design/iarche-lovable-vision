@@ -193,8 +193,15 @@ export function useAIAction(snapshot: AIActionSnapshot | null) {
   };
 
   const updateStatus = useMutation({
-    mutationFn: async (params: { status: AIActionStatus; snoozeDays?: number; silent?: boolean }) => {
+    mutationFn: async (params: {
+      status: AIActionStatus;
+      snoozeDays?: number;
+      silent?: boolean;
+      reason?: string;
+      actor?: 'user' | 'system';
+    }) => {
       const row = await ensureRow();
+      const previousStatus = row.status;
       const patch: Record<string, unknown> = { status: params.status };
       if (params.status === 'snoozed' && params.snoozeDays) {
         patch.snooze_until = new Date(Date.now() + params.snoozeDays * 86400000).toISOString();
@@ -207,17 +214,35 @@ export function useAIAction(snapshot: AIActionSnapshot | null) {
       const { error } = await supabase.from('ai_actions').update(patch).eq('id', row.id);
       if (error) throw error;
 
-      // Trace dans l'historique (sauf auto-acknowledge silencieux)
-      if (!params.silent) {
-        const label = params.status === 'snoozed' && params.snoozeDays
-          ? `Reporté de ${params.snoozeDays}j`
-          : statusLabelsFr[params.status];
-        await appendHistory(row, {
-          kind: 'status',
-          text: label,
-          meta: { status: params.status, snoozeDays: params.snoozeDays },
-        });
-      }
+      // Trace systématique dans l'historique (y compris auto-acknowledge système)
+      const actor = params.actor ?? (params.silent ? 'system' : 'user');
+      const defaultReasons: Record<string, string> = {
+        'system:acknowledged': 'Ouverture du drawer (vu automatique)',
+        'user:acknowledged': 'Marqué comme vu manuellement',
+        'user:done': 'Action validée par l\'utilisateur',
+        'user:dismissed': 'Jugée non pertinente par l\'utilisateur',
+        'user:snoozed': params.snoozeDays ? `Reporté de ${params.snoozeDays} jour(s)` : 'Reporté',
+        'user:pending': 'Réouvert par l\'utilisateur',
+      };
+      const key = `${actor}:${params.status}`;
+      const reason = params.reason?.trim() || defaultReasons[key] || statusLabelsFr[params.status];
+      const label = params.status === 'snoozed' && params.snoozeDays
+        ? `Reporté de ${params.snoozeDays}j`
+        : statusLabelsFr[params.status];
+
+      await appendHistory(row, {
+        kind: 'status',
+        by: actor === 'system' ? 'system' : undefined,
+        text: `${label} — ${reason}`,
+        meta: {
+          status: params.status,
+          previous_status: previousStatus,
+          snoozeDays: params.snoozeDays,
+          actor,
+          reason,
+          at: new Date().toISOString(),
+        },
+      });
     },
     onSuccess: (_data, params) => {
       queryClient.invalidateQueries({ queryKey: ['ai-action', workspaceId, signature] });

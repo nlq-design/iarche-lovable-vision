@@ -60,9 +60,15 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
   const [newDeadline, setNewDeadline] = useState('');
   const [newAmount, setNewAmount] = useState<string>('');
   const [newContact, setNewContact] = useState('');
+  const [historyFilter, setHistoryFilter] = useState<'all' | 'status'>('all');
+  const [dismissReason, setDismissReason] = useState('');
 
   const currentStatus = row?.status ?? 'pending';
   const notes = row?.user_notes ?? [];
+  const filteredNotes = useMemo(
+    () => (historyFilter === 'status' ? notes.filter((n) => n.kind === 'status') : notes),
+    [notes, historyFilter],
+  );
 
   // Auto-acknowledge silencieux à l'ouverture (1 fois, si encore pending)
   useEffect(() => {
@@ -264,17 +270,39 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
             setNewDeadline('');
             setNewAmount('');
             setNewContact('');
-            updateStatus.mutate({ status: 'done' });
+            updateStatus.mutate({
+              status: 'done',
+              actor: 'user',
+              reason: `Action validée après mise à jour de ${entityRef}`,
+            });
           },
         },
       );
     } else {
-      updateStatus.mutate({ status: 'done' });
+      updateStatus.mutate({
+        status: 'done',
+        actor: 'user',
+        reason: noteText.trim() ? `Validée avec note : "${noteText.trim().slice(0, 80)}"` : 'Marquée traitée manuellement',
+      });
     }
   };
 
-  const handleSnooze = (days: number) => {
-    updateStatus.mutate({ status: 'snoozed', snoozeDays: days });
+  const handleSnooze = (days: number, reason?: string) => {
+    updateStatus.mutate({
+      status: 'snoozed',
+      snoozeDays: days,
+      actor: 'user',
+      reason: reason || `Reporté de ${days} jour${days > 1 ? 's' : ''} par l'utilisateur`,
+    });
+  };
+
+  const handleDismiss = () => {
+    updateStatus.mutate({
+      status: 'dismissed',
+      actor: 'user',
+      reason: dismissReason.trim() || 'Action jugée non pertinente (aucun motif précisé)',
+    });
+    setDismissReason('');
   };
 
   return (
@@ -360,21 +388,44 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
 
             {/* HISTORIQUE — timeline unifiée cliquable (notes + updates + statuts) */}
             <div>
-              <Label className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1.5 mb-2">
-                <MessageSquare className="h-3 w-3" /> Historique ({notes.length})
-              </Label>
+              <div className="flex items-center justify-between mb-2">
+                <Label className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                  <MessageSquare className="h-3 w-3" /> Historique ({notes.length})
+                </Label>
+                <div className="flex gap-1">
+                  <Button
+                    size="sm"
+                    variant={historyFilter === 'all' ? 'secondary' : 'ghost'}
+                    className="h-5 px-1.5 text-[10px]"
+                    onClick={() => setHistoryFilter('all')}
+                  >
+                    Tout
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={historyFilter === 'status' ? 'secondary' : 'ghost'}
+                    className="h-5 px-1.5 text-[10px]"
+                    onClick={() => setHistoryFilter('status')}
+                  >
+                    Logs statut
+                  </Button>
+                </div>
+              </div>
 
-              {notes.length > 0 ? (
+              {filteredNotes.length > 0 ? (
                 <div className="space-y-1.5 mb-2 max-h-64 overflow-y-auto">
-                  {[...notes].reverse().map((note, i) => (
+                  {[...filteredNotes].reverse().map((note, i) => (
                     <TimelineEntry key={`${note.at}-${i}`} note={note} />
                   ))}
                 </div>
               ) : (
                 <p className="text-[11px] text-muted-foreground italic mb-2">
-                  Aucune action enregistrée. Vos notes et modifications apparaîtront ici.
+                  {historyFilter === 'status'
+                    ? 'Aucun changement de statut enregistré.'
+                    : 'Aucune action enregistrée. Vos notes et modifications apparaîtront ici.'}
                 </p>
               )}
+
 
 
               <Textarea
@@ -564,15 +615,33 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
                 </Button>
               </PopoverContent>
             </Popover>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="text-muted-foreground hover:text-destructive"
-              onClick={() => updateStatus.mutate({ status: 'dismissed' })}
-              disabled={updateStatus.isPending}
-            >
-              <XCircle className="h-3.5 w-3.5 mr-1.5" /> Pas pertinent
-            </Button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-muted-foreground hover:text-destructive"
+                  disabled={updateStatus.isPending}
+                >
+                  <XCircle className="h-3.5 w-3.5 mr-1.5" /> Pas pertinent
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-72 p-3 space-y-2" align="end">
+                <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  Motif (optionnel — logué dans l'historique)
+                </Label>
+                <Textarea
+                  value={dismissReason}
+                  onChange={(e) => setDismissReason(e.target.value)}
+                  placeholder="Ex: déjà traité hors plateforme, info obsolète..."
+                  rows={2}
+                  className="text-xs resize-none"
+                />
+                <Button size="sm" variant="destructive" className="w-full" onClick={handleDismiss}>
+                  <XCircle className="h-3.5 w-3.5 mr-1.5" /> Confirmer l'ignorance
+                </Button>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
       </SheetContent>
@@ -609,6 +678,10 @@ function TimelineEntry({ note }: { note: AIActionNote }) {
   const entitySynced = !!note.meta?.entity_synced;
   const entityFields = (note.meta?.entity_fields as string[]) || [];
   const entityType = note.meta?.entity_type as string | undefined;
+  const actor = (note.meta?.actor as 'user' | 'system' | undefined) ?? (note.by === 'system' ? 'system' : 'user');
+  const reason = note.meta?.reason as string | undefined;
+  const previousStatus = note.meta?.previous_status as string | undefined;
+  const newStatus = note.meta?.status as string | undefined;
 
   const config = {
     note: { icon: MessageSquare, color: 'text-muted-foreground', bg: 'bg-muted/40', label: 'Note' },
@@ -631,6 +704,33 @@ function TimelineEntry({ note }: { note: AIActionNote }) {
         <Icon className={cn('h-3.5 w-3.5 shrink-0 mt-0.5', config.color)} />
         <div className="flex-1 min-w-0">
           <p className="leading-relaxed whitespace-pre-wrap break-words">{note.text}</p>
+
+          {/* Badges spécifiques aux changements de statut (log événementiel) */}
+          {kind === 'status' && (
+            <div className="flex items-center gap-1 mt-1 flex-wrap">
+              <Badge
+                variant="outline"
+                className={cn(
+                  'text-[9px] h-4 px-1.5 gap-1',
+                  actor === 'system'
+                    ? 'border-purple-500/40 bg-purple-500/10 text-purple-700 dark:text-purple-400'
+                    : 'border-blue-500/40 bg-blue-500/10 text-blue-700 dark:text-blue-400',
+                )}
+              >
+                {actor === 'system' ? 'Système' : 'Utilisateur'}
+              </Badge>
+              {previousStatus && newStatus && previousStatus !== newStatus && (
+                <Badge variant="outline" className="text-[9px] h-4 px-1.5 text-muted-foreground">
+                  {previousStatus} → {newStatus}
+                </Badge>
+              )}
+              {reason && (
+                <span className="text-[10px] text-muted-foreground italic truncate max-w-full">
+                  « {reason} »
+                </span>
+              )}
+            </div>
+          )}
 
           {/* Badge de confirmation de sync entité — visible immédiatement */}
           {kind === 'update' && entitySynced && (
