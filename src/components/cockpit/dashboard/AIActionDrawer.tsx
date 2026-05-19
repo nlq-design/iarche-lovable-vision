@@ -65,6 +65,10 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
 
   const currentStatus = row?.status ?? 'pending';
   const notes = row?.user_notes ?? [];
+  const filteredNotes = useMemo(
+    () => (historyFilter === 'status' ? notes.filter((n) => n.kind === 'status') : notes),
+    [notes, historyFilter],
+  );
 
   // Auto-acknowledge silencieux à l'ouverture (1 fois, si encore pending)
   useEffect(() => {
