@@ -175,13 +175,14 @@ serve(async (req) => {
 // MODE 1: SUGGEST TASKS
 // =============================================================================
 
-async function suggestTasks(supabase: any, workspaceId: string, entityType?: string, entityId?: string) {
+async function suggestTasks(supabase: any, workspaceId: string, entityType?: string, entityId?: string, traceCtx?: TraceCtx) {
   let context = "";
   if (entityType && entityId) {
-    context = await collectEntityContext(supabase, entityType, entityId);
+    context = await collectEntityContext(supabase, entityType, entityId, traceCtx);
   } else {
     context = await collectGlobalContext(supabase, workspaceId);
   }
+
 
   const prompt = await loadPrompt(supabase, "copilot-suggest-tasks", {
     system_prompt: `Tu es un assistant commercial expert. Suggère 3-5 tâches actionnables. Réponds en français.`,
