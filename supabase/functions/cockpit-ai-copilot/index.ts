@@ -1184,7 +1184,68 @@ ${activeAIActions.map((a: any) => {
     ? `\n\n--- ALERTES SENTINELLE (${topSentinel.length} actives, non dismissées) ---\nCes alertes proviennent de règles SQL déterministes (incohérences, inactivités, doublons, données manquantes). Utilise-les comme SIGNAUX FAIBLES à croiser avec le pipeline et les synthèses Consulte. Ne les recopie pas telles quelles : transforme-les en actions concrètes ou en cross_signals composites.\n\n${topSentinel.map((a: any) => `- [${a.severity.toUpperCase()}/${a.category}] ${a.entity_type}:${a.entity_id?.slice(0,8) || '?'} — ${a.title}${a.description ? ` (${a.description.slice(0, 200)})` : ''}`).join('\n')}\n--- FIN ALERTES SENTINELLE ---`
     : '';
 
-  const enrichedLlmContext = llmContext + consulteEnrichment + sentinelBlock + userFeedbackContext;
+  // === MÉMOIRE TEMPORELLE — comparaison J-1 / J-7 / J-30 (deltas chiffrés) ===
+  const todayDate = new Date(today);
+  const dateJ1 = new Date(todayDate.getTime() - 1 * 86400000).toISOString().split('T')[0];
+  const dateJ7 = new Date(todayDate.getTime() - 7 * 86400000).toISOString().split('T')[0];
+  const dateJ30 = new Date(todayDate.getTime() - 30 * 86400000).toISOString().split('T')[0];
+
+  const { data: histSnapshots } = await supabase
+    .from('daily_intelligence')
+    .select('generated_date, raw_data')
+    .eq('workspace_id', workspaceId)
+    .in('generated_date', [dateJ1, dateJ7, dateJ30])
+    .order('generated_date', { ascending: false });
+
+  const snapByDate: Record<string, any> = {};
+  for (const s of (histSnapshots || [])) snapByDate[s.generated_date] = s.raw_data || {};
+
+  const currentMetrics = {
+    pipeline_value: pipelineValue,
+    weighted_value: weightedValue,
+    leads_count: leads?.length || 0,
+    opportunities_count: opportunities?.length || 0,
+    projects_count: projects?.length || 0,
+    win_rate: winRate,
+    overdue_tasks_count: overdueTasks?.length || 0,
+    stale_count: staleCount,
+  };
+
+  const fmtDelta = (curr: number, prev: number | undefined, isMoney = false): string => {
+    if (prev === undefined || prev === null) return 'n/a';
+    const diff = curr - Number(prev);
+    if (Number(prev) === 0) return diff === 0 ? 'stable' : (isMoney ? `+${Math.round(diff).toLocaleString('fr-FR')}€` : `+${diff}`);
+    const pct = Math.round((diff / Number(prev)) * 100);
+    const sign = diff >= 0 ? '+' : '';
+    const valStr = isMoney ? `${sign}${Math.round(diff).toLocaleString('fr-FR')}€` : `${sign}${diff}`;
+    return `${valStr} (${sign}${pct}%)`;
+  };
+
+  const buildDeltaLine = (label: string, key: string, isMoney = false): string => {
+    const curr = (currentMetrics as any)[key];
+    const j1 = snapByDate[dateJ1]?.[key];
+    const j7 = snapByDate[dateJ7]?.[key];
+    const j30 = snapByDate[dateJ30]?.[key];
+    const fmtCurr = isMoney ? `${Math.round(curr).toLocaleString('fr-FR')}€` : String(curr);
+    return `- ${label}: ${fmtCurr} | J-1: ${fmtDelta(curr, j1, isMoney)} | J-7: ${fmtDelta(curr, j7, isMoney)} | J-30: ${fmtDelta(curr, j30, isMoney)}`;
+  };
+
+  const hasHistory = Object.keys(snapByDate).length > 0;
+  const temporalBlock = hasHistory
+    ? `\n\n--- EVOLUTION TEMPORELLE (snapshots quotidiens daily_intelligence) ---\nComparaison des KPI actuels vs J-1, J-7 et J-30. EXPLOITE OBLIGATOIREMENT au moins 1 delta significatif (>10% en valeur absolue) dans tes predictions ou cross_signals avec citation explicite ("pipeline -X% sur 7j", "leads actifs +N depuis J-7", etc.).\n\n${buildDeltaLine('Pipeline value', 'pipeline_value', true)}\n${buildDeltaLine('Pipeline pondéré', 'weighted_value', true)}\n${buildDeltaLine('Leads actifs', 'leads_count')}\n${buildDeltaLine('Opportunités ouvertes', 'opportunities_count')}\n${buildDeltaLine('Projets actifs', 'projects_count')}\n${buildDeltaLine('Win rate (%)', 'win_rate')}\n${buildDeltaLine('Tâches en retard', 'overdue_tasks_count')}\n${buildDeltaLine('Synthèses obsolètes', 'stale_count')}\n--- FIN EVOLUTION TEMPORELLE ---`
+    : '\n\n(Pas d\'historique daily_intelligence disponible pour calcul des deltas temporels.)';
+
+  // Expose deltas structurés pour widgets front (TrendDeltaWidget)
+  const temporalDeltas = {
+    available: hasHistory,
+    reference_dates: { j1: dateJ1, j7: dateJ7, j30: dateJ30 },
+    current: currentMetrics,
+    j1: snapByDate[dateJ1] || null,
+    j7: snapByDate[dateJ7] || null,
+    j30: snapByDate[dateJ30] || null,
+  };
+
+  const enrichedLlmContext = llmContext + consulteEnrichment + sentinelBlock + temporalBlock + userFeedbackContext;
 
   // Load prompt from DB
   const prompt = await loadPrompt(supabase, "cockpit-intelligence-aggregator", {
@@ -1351,6 +1412,7 @@ ${activeAIActions.map((a: any) => {
       weighted_value: weightedValue,
       win_rate: winRate,
       scoring: (scoringResult.scores || []).slice(0, 10),
+      temporal_deltas: temporalDeltas,
     },
   };
 }
