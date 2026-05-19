@@ -34,7 +34,7 @@ import { formatDistanceToNow, format } from 'date-fns';
 import { toast } from 'sonner';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { entityRoute, formatCurrency, STAGE_LABELS } from './helpers';
+import { formatCurrency, STAGE_LABELS, safeNavigateToEntity } from './helpers';
 import { useAIAction, type AIActionSnapshot, type AIActionStatus, type AIActionNote, type AIActionArtifact, type AIActionArtifactStatus } from '@/hooks/cockpit/useAIAction';
 import { useEntitySnapshot } from '@/hooks/cockpit/useEntitySnapshot';
 
@@ -111,11 +111,8 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
   }, [snapshot, entity]);
 
   const handleNavigateToEntity = () => {
-
-    if (snapshot.entity_type && snapshot.entity_id) {
-      onOpenChange(false);
-      navigate(entityRoute(snapshot.entity_type, snapshot.entity_id));
-    }
+    onOpenChange(false);
+    safeNavigateToEntity(navigate, snapshot.entity_type, snapshot.entity_id, snapshot.entity_name ?? undefined);
   };
 
   const handleAddNote = () => {

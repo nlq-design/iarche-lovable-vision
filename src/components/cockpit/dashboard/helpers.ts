@@ -1,7 +1,19 @@
 import { useNavigate } from 'react-router-dom';
 import { SentinelAlert } from '@/hooks/cockpit/useAISentinel';
+import { toast } from '@/hooks/use-toast';
 
-export function entityRoute(type: string, id: string): string {
+const ENTITY_TYPE_LABELS: Record<string, string> = {
+  lead: 'Lead',
+  opportunity: 'Opportunité',
+  project: 'Projet',
+  partner: 'Partenaire',
+  solution: 'Solution',
+  transcription: 'Transcription',
+  task: 'Tâche',
+};
+
+export function entityRoute(type: string, id: string): string | null {
+  if (!type || !id) return null;
   const routes: Record<string, string> = {
     lead: `/cockpit/leads/${id}`,
     opportunity: `/cockpit/pipeline?focus=${id}`,
@@ -11,11 +23,50 @@ export function entityRoute(type: string, id: string): string {
     transcription: `/cockpit/transcriptions/${id}`,
     task: `/cockpit/projects`,
   };
-  return routes[type] || '/cockpit';
+  return routes[type] ?? null;
+}
+
+/**
+ * Navigate to an entity's dedicated page with user-friendly fallback toasts.
+ * Returns true if navigation occurred, false if blocked by a missing id/unknown type.
+ */
+export function safeNavigateToEntity(
+  navigate: ((path: string) => void) | ReturnType<typeof useNavigate>,
+  type: string | null | undefined,
+  id: string | null | undefined,
+  entityName?: string,
+): boolean {
+  if (!type) {
+    toast({
+      title: 'Navigation impossible',
+      description: "Type d'entité manquant. Impossible d'ouvrir la fiche.",
+      variant: 'destructive',
+    });
+    return false;
+  }
+  if (!id) {
+    toast({
+      title: 'Navigation impossible',
+      description: `Identifiant manquant pour ${entityName ?? ENTITY_TYPE_LABELS[type] ?? type}.`,
+      variant: 'destructive',
+    });
+    return false;
+  }
+  const path = entityRoute(type, id);
+  if (!path) {
+    toast({
+      title: 'Type non reconnu',
+      description: `Aucune page dédiée pour le type « ${type} ».`,
+      variant: 'destructive',
+    });
+    return false;
+  }
+  (navigate as (path: string) => void)(path);
+  return true;
 }
 
 export function navigateToEntity(navigate: ReturnType<typeof useNavigate>, alert: SentinelAlert) {
-  navigate(entityRoute(alert.entity_type, alert.entity_id));
+  safeNavigateToEntity(navigate, alert.entity_type, alert.entity_id);
 }
 
 export function getSmartHeadline(ctx: {
