@@ -104,9 +104,8 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
     return null;
   }, [snapshot, entity]);
 
-  if (!snapshot) return null;
-
   const handleNavigateToEntity = () => {
+
     if (snapshot.entity_type && snapshot.entity_id) {
       onOpenChange(false);
       navigate(entityRoute(snapshot.entity_type, snapshot.entity_id));
@@ -178,6 +177,9 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
 
     return errs;
   }, [newAmount, newDeadline, newContact]);
+
+  if (!snapshot) return null;
+
 
   const hasValidationErrors = Object.keys(validationErrors).length > 0;
 
