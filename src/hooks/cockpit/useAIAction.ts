@@ -210,7 +210,7 @@ export function useAIAction(snapshot: AIActionSnapshot | null) {
       const merged = { ...(row.structured_updates || {}), ...params.updates };
       const { error } = await supabase
         .from('ai_actions')
-        .update({ structured_updates: merged })
+        .update({ structured_updates: merged as never })
         .eq('id', row.id);
       if (error) throw error;
 
