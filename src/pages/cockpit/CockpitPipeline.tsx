@@ -213,6 +213,7 @@ const CockpitPipeline = () => {
                         return (
                           <div
                             key={opp.id}
+                            id={`opp-card-${opp.id}`}
                             draggable
                             onDragStart={(e) => handleDragStart(e, opp.id)}
                             onClick={() => handleCardClick(opp)}
