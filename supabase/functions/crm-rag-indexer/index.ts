@@ -629,7 +629,7 @@ async function indexOpportunity(
     )
     .eq("id", oppId)
     .maybeSingle();
-  if (error) throw error;
+  if (error) throw pgError("indexOpportunity.select", { table: "opportunities", resource_id: oppId }, error);
   if (!data) throw new Error(`Opportunity ${oppId} not found`);
 
   const o = data as {
