@@ -27,6 +27,7 @@ interface UnifiedSignal {
 
 export function CrossSignalsWidget({ signals, embeddingSignals, isLoading, navigate }: CrossSignalsWidgetProps) {
   const [selected, setSelected] = useState<AIActionSnapshot | null>(null);
+  const [previewEntity, setPreviewEntity] = useState<{ type: string; id: string } | null>(null);
 
   const unified: UnifiedSignal[] = [
     ...(embeddingSignals || []).map((s) => ({
