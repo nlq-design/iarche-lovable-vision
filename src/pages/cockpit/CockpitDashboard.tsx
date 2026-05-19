@@ -23,6 +23,7 @@ import {
 import { useDashboardRealtime } from '@/hooks/cockpit/useDashboardRealtime';
 import { useCockpitAICopilot } from '@/hooks/cockpit/useCockpitAICopilot';
 import { useCockpitIntelligence } from '@/hooks/cockpit/useCockpitIntelligence';
+import { useCrossSignals } from '@/hooks/cockpit/useCrossSignals';
 import { useAISentinel } from '@/hooks/cockpit/useAISentinel';
 import { useAutoConsulte } from '@/hooks/cockpit/useAutoConsulte';
 import { CreateTaskDialog } from '@/components/cockpit/dialogs';
@@ -62,6 +63,7 @@ export default function CockpitDashboard() {
 
   // ─── UNIFIED INTELLIGENCE ───
   const { data: intel, isLoading: intelLoading, refresh: refreshIntel } = useCockpitIntelligence();
+  const { data: crossSignalsDb, isLoading: crossSignalsLoading } = useCrossSignals();
 
   // ─── Other AI hooks ───
   const { suggestNextStep, suggestTasks } = useCockpitAICopilot();
@@ -424,7 +426,7 @@ export default function CockpitDashboard() {
 
             {/* ─── COL 2: Signaux Croisés + Pipeline + Prédictions ─── */}
             <div className="lg:col-span-4 flex flex-col gap-3">
-              <CrossSignalsWidget signals={intelligence?.cross_signals} embeddingSignals={raw?.cross_signals_db} isLoading={intelLoading} navigate={navigate} />
+              <CrossSignalsWidget signals={intelligence?.cross_signals} embeddingSignals={crossSignalsDb ?? raw?.cross_signals_db} isLoading={intelLoading && crossSignalsLoading} navigate={navigate} />
 
               {/* Pipeline */}
               <Card className="cursor-pointer hover:border-primary/30 transition-colors" onClick={() => navigate('/cockpit/pipeline')}>
