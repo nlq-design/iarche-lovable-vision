@@ -130,6 +130,16 @@ export async function buildMaxContext(
     });
   }
 
+  // ===== PRIORITY 4.5: RAG chunks liés à l'entité (transcriptions, notes, summaries) =====
+  const ragChunks = await fetchEntityRagChunks(supabase, entityType, entityId, workspaceId);
+  if (ragChunks) {
+    sections.push({
+      name: 'rag_chunks',
+      content: ragChunks,
+      priority: 4.5,
+    });
+  }
+
   // ===== PRIORITY 5: Transcription summaries =====
   if (includeTranscriptions) {
     const transcriptions = await fetchTranscriptionSummaries(supabase, entityType, entityId);
@@ -141,6 +151,7 @@ export async function buildMaxContext(
       });
     }
   }
+
 
   // ===== PRIORITY 6: Activity log =====
   const activities = await fetchActivityLog(supabase, entityType, entityId);
