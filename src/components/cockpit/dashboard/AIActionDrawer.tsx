@@ -60,6 +60,8 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
   const [newDeadline, setNewDeadline] = useState('');
   const [newAmount, setNewAmount] = useState<string>('');
   const [newContact, setNewContact] = useState('');
+  const [historyFilter, setHistoryFilter] = useState<'all' | 'status'>('all');
+  const [dismissReason, setDismissReason] = useState('');
 
   const currentStatus = row?.status ?? 'pending';
   const notes = row?.user_notes ?? [];
