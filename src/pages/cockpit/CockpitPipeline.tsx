@@ -60,6 +60,20 @@ const CockpitPipeline = () => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [searchParams] = useSearchParams();
+  const focusId = searchParams.get('focus');
+
+  // Auto-scroll and highlight focused opportunity from ?focus=:id
+  useEffect(() => {
+    if (!focusId || isLoading) return;
+    const el = document.getElementById(`opp-card-${focusId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('ring-2', 'ring-primary', 'ring-offset-2');
+      const t = setTimeout(() => el.classList.remove('ring-2', 'ring-primary', 'ring-offset-2'), 2500);
+      return () => clearTimeout(t);
+    }
+  }, [focusId, isLoading, opportunities]);
 
   // Check stagnation: opportunity without activity for >7 days
   const getStagnationDays = (oppId: string, oppUpdatedAt: string | null): number => {
