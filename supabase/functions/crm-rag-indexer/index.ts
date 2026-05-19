@@ -516,7 +516,7 @@ async function indexTranscription(
       const { error: upErr } = await supabase
         .from("resource_embeddings")
         .upsert(rows, { onConflict: "resource_id,chunk_index" });
-      if (upErr) throw upErr;
+      if (upErr) throw pgError("indexTranscription.upsert_chunks", { table: "resource_embeddings", resource_type: "transcription_chunk", resource_id: t.id, workspace_id: t.workspace_id, batch_size: rows.length, chunk_index_start: rows[0]?.chunk_index, chunk_index_end: rows[rows.length - 1]?.chunk_index }, upErr);
       totalChunks += rows.length;
     }
   }
