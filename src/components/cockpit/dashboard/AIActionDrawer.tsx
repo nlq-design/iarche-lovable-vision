@@ -705,6 +705,33 @@ function TimelineEntry({ note }: { note: AIActionNote }) {
         <div className="flex-1 min-w-0">
           <p className="leading-relaxed whitespace-pre-wrap break-words">{note.text}</p>
 
+          {/* Badges spécifiques aux changements de statut (log événementiel) */}
+          {kind === 'status' && (
+            <div className="flex items-center gap-1 mt-1 flex-wrap">
+              <Badge
+                variant="outline"
+                className={cn(
+                  'text-[9px] h-4 px-1.5 gap-1',
+                  actor === 'system'
+                    ? 'border-purple-500/40 bg-purple-500/10 text-purple-700 dark:text-purple-400'
+                    : 'border-blue-500/40 bg-blue-500/10 text-blue-700 dark:text-blue-400',
+                )}
+              >
+                {actor === 'system' ? 'Système' : 'Utilisateur'}
+              </Badge>
+              {previousStatus && newStatus && previousStatus !== newStatus && (
+                <Badge variant="outline" className="text-[9px] h-4 px-1.5 text-muted-foreground">
+                  {previousStatus} → {newStatus}
+                </Badge>
+              )}
+              {reason && (
+                <span className="text-[10px] text-muted-foreground italic truncate max-w-full">
+                  « {reason} »
+                </span>
+              )}
+            </div>
+          )}
+
           {/* Badge de confirmation de sync entité — visible immédiatement */}
           {kind === 'update' && entitySynced && (
             <div className="flex items-center gap-1 mt-1">
