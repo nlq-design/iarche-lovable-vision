@@ -53,7 +53,10 @@ const statusConfig: Record<AIActionStatus, { label: string; className: string }>
 
 export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerProps) {
   const navigate = useNavigate();
-  const { row, isLoading, updateStatus, addNote, applyStructuredUpdate } = useAIAction(snapshot);
+  const {
+    row, isLoading, updateStatus, addNote, applyStructuredUpdate,
+    generateArtifact, saveArtifactEdit, markArtifactSent,
+  } = useAIAction(snapshot);
   const { data: entity } = useEntitySnapshot(snapshot?.entity_type, snapshot?.entity_id);
 
   const [noteText, setNoteText] = useState('');
