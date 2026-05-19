@@ -7297,6 +7297,43 @@ export type Database = {
         }
         Returns: undefined
       }
+      ai_action_transition_status: {
+        Args: {
+          _action_id: string
+          _actor: string
+          _by?: string
+          _new_status: string
+          _reason: string
+          _snooze_days?: number
+        }
+        Returns: {
+          action_text: string
+          completed_at: string | null
+          created_at: string
+          entity_id: string | null
+          entity_name: string | null
+          entity_type: string | null
+          id: string
+          impact_value: number | null
+          reasoning: string | null
+          signature: string
+          snooze_until: string | null
+          source: string
+          status: string
+          structured_updates: Json
+          updated_at: string
+          urgency: string | null
+          user_id: string | null
+          user_notes: Json
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "ai_actions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       can_access_entity_workspace: {
         Args: { p_user_id: string; p_workspace_id: string }
         Returns: boolean
