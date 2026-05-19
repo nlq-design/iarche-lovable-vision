@@ -26,8 +26,8 @@ export function useCrossSignals(workspaceIdOverride?: string) {
         narrative: row.narrative as string,
         score: Number(row.score ?? 0),
         severity: (row.severity ?? 'medium') as 'high' | 'medium' | 'low',
-        entities: (row.entities ?? []) as CrossSignalEntity[],
-        evidence: (row.evidence ?? {}) as Record<string, unknown>,
+        entities: (row.entities ?? []) as unknown as CrossSignalEntity[],
+        evidence: (row.evidence ?? {}) as unknown as Record<string, unknown>,
       }));
     },
     staleTime: 5 * 60 * 1000,
