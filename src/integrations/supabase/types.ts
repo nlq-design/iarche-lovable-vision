@@ -4975,12 +4975,17 @@ export type Database = {
           content_chunk: string
           created_at: string | null
           embedding: string | null
+          entity_links: Json
           id: string
           metadata: Json | null
+          parent_resource_id: string | null
           resource_id: string
           resource_slug: string
           resource_title: string
           resource_type: string
+          source_date: string | null
+          speaker: string | null
+          temporal_weight: number
           updated_at: string | null
           workspace_id: string | null
         }
@@ -4989,12 +4994,17 @@ export type Database = {
           content_chunk: string
           created_at?: string | null
           embedding?: string | null
+          entity_links?: Json
           id?: string
           metadata?: Json | null
+          parent_resource_id?: string | null
           resource_id: string
           resource_slug: string
           resource_title: string
           resource_type: string
+          source_date?: string | null
+          speaker?: string | null
+          temporal_weight?: number
           updated_at?: string | null
           workspace_id?: string | null
         }
@@ -5003,12 +5013,17 @@ export type Database = {
           content_chunk?: string
           created_at?: string | null
           embedding?: string | null
+          entity_links?: Json
           id?: string
           metadata?: Json | null
+          parent_resource_id?: string | null
           resource_id?: string
           resource_slug?: string
           resource_title?: string
           resource_type?: string
+          source_date?: string | null
+          speaker?: string | null
+          temporal_weight?: number
           updated_at?: string | null
           workspace_id?: string | null
         }
