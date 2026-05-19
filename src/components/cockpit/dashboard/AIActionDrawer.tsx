@@ -35,7 +35,7 @@ import { toast } from 'sonner';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { entityRoute, formatCurrency, STAGE_LABELS } from './helpers';
-import { useAIAction, type AIActionSnapshot, type AIActionStatus, type AIActionNote } from '@/hooks/cockpit/useAIAction';
+import { useAIAction, type AIActionSnapshot, type AIActionStatus, type AIActionNote, type AIActionArtifact, type AIActionArtifactStatus } from '@/hooks/cockpit/useAIAction';
 import { useEntitySnapshot } from '@/hooks/cockpit/useEntitySnapshot';
 
 interface AIActionDrawerProps {
