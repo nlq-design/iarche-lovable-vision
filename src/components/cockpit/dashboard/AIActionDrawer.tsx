@@ -677,9 +677,188 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
           </div>
         </div>
       </SheetContent>
+
+      {/* Modal édition du brouillon IA */}
+      <Dialog open={artifactModalOpen} onOpenChange={setArtifactModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-sm">
+              {row?.artifact?.type === 'email' ? <Mail className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
+              Brouillon {row?.artifact?.type === 'email' ? 'email' : 'note'} — éditable
+            </DialogTitle>
+          </DialogHeader>
+
+          {row?.artifact?.type === 'email' ? (
+            <div className="space-y-3">
+              {row.artifact.recipient_email && (
+                <div className="text-[11px] text-muted-foreground">
+                  À : <span className="font-medium text-foreground">{row.artifact.recipient_name || ''}</span>{' '}
+                  &lt;{row.artifact.recipient_email}&gt;
+                </div>
+              )}
+              <div>
+                <Label className="text-[10px] uppercase text-muted-foreground">Objet</Label>
+                <Input
+                  value={editedArtifact.subject ?? ''}
+                  onChange={(e) => setEditedArtifact((s) => ({ ...s, subject: e.target.value }))}
+                  className="h-8 text-xs"
+                />
+              </div>
+              <div>
+                <Label className="text-[10px] uppercase text-muted-foreground">Corps</Label>
+                <Textarea
+                  value={editedArtifact.body ?? ''}
+                  onChange={(e) => setEditedArtifact((s) => ({ ...s, body: e.target.value }))}
+                  rows={10}
+                  className="text-xs font-mono leading-relaxed"
+                />
+              </div>
+              <div>
+                <Label className="text-[10px] uppercase text-muted-foreground">CTA</Label>
+                <Input
+                  value={editedArtifact.cta ?? ''}
+                  onChange={(e) => setEditedArtifact((s) => ({ ...s, cta: e.target.value }))}
+                  className="h-8 text-xs"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div>
+                <Label className="text-[10px] uppercase text-muted-foreground">Titre</Label>
+                <Input
+                  value={editedArtifact.title ?? ''}
+                  onChange={(e) => setEditedArtifact((s) => ({ ...s, title: e.target.value }))}
+                  className="h-8 text-xs"
+                />
+              </div>
+              <div>
+                <Label className="text-[10px] uppercase text-muted-foreground">Contenu</Label>
+                <Textarea
+                  value={editedArtifact.content ?? ''}
+                  onChange={(e) => setEditedArtifact((s) => ({ ...s, content: e.target.value }))}
+                  rows={10}
+                  className="text-xs"
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                const a = row?.artifact;
+                if (!a) return;
+                const text = a.type === 'email'
+                  ? `Objet : ${editedArtifact.subject}\n\n${editedArtifact.body}\n\n${editedArtifact.cta || ''}`
+                  : `${editedArtifact.title}\n\n${editedArtifact.content}`;
+                navigator.clipboard.writeText(text);
+                markArtifactSent.mutate();
+                toast.success('Copié dans le presse-papier');
+              }}
+            >
+              <Copy className="h-3.5 w-3.5 mr-1.5" /> Copier
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => {
+                const a = row?.artifact;
+                if (!a) return;
+                const merged: AIActionArtifact = { ...a, ...editedArtifact } as AIActionArtifact;
+                saveArtifactEdit.mutate(merged, {
+                  onSuccess: () => setArtifactModalOpen(false),
+                });
+              }}
+              disabled={saveArtifactEdit.isPending}
+            >
+              {saveArtifactEdit.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : (
+                <><CheckCircle2 className="h-3.5 w-3.5 mr-1.5" /> Enregistrer</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Sheet>
   );
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ArtifactSection — bloc "Brouillon IA" dans le drawer
+// ─────────────────────────────────────────────────────────────────────────────
+
+function ArtifactSection({
+  artifact,
+  status,
+  generating,
+  onGenerate,
+  onRegenerate,
+  onOpen,
+}: {
+  artifact: AIActionArtifact | null;
+  status: AIActionArtifactStatus;
+  generating: boolean;
+  onGenerate: () => void;
+  onRegenerate: () => void;
+  onOpen: () => void;
+}) {
+  const hasArtifact = !!artifact && ['ready', 'edited', 'sent'].includes(status);
+
+  const preview = artifact
+    ? artifact.type === 'email'
+      ? (artifact.subject || artifact.body || '').slice(0, 120)
+      : (artifact.title || artifact.content || '').slice(0, 120)
+    : '';
+
+  return (
+    <div>
+      <Label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+        <Wand2 className="h-3 w-3" /> Brouillon IA
+        {status === 'edited' && <Badge variant="outline" className="text-[9px] h-4">édité</Badge>}
+        {status === 'sent' && <Badge variant="outline" className="text-[9px] h-4 border-emerald-500/40 text-emerald-700 dark:text-emerald-400">envoyé</Badge>}
+        {status === 'failed' && <Badge variant="destructive" className="text-[9px] h-4">échec</Badge>}
+      </Label>
+
+      {!hasArtifact ? (
+        <Button
+          size="sm"
+          variant="outline"
+          className="w-full h-8 text-xs"
+          onClick={onGenerate}
+          disabled={generating}
+        >
+          {generating ? (
+            <><Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> Génération…</>
+          ) : (
+            <><Wand2 className="h-3.5 w-3.5 mr-1.5" /> Générer un brouillon</>
+          )}
+        </Button>
+      ) : (
+        <div className="rounded-md border bg-card p-2.5 space-y-2">
+          <div className="flex items-start gap-2">
+            {artifact!.type === 'email' ? <Mail className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" /> : <Pencil className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />}
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium truncate">
+                {artifact!.type === 'email' ? (artifact!.subject || 'Sans objet') : (artifact!.title || 'Sans titre')}
+              </p>
+              <p className="text-[10px] text-muted-foreground line-clamp-2">{preview}</p>
+            </div>
+          </div>
+          <div className="flex gap-1.5">
+            <Button size="sm" variant="default" className="flex-1 h-7 text-xs" onClick={onOpen}>
+              Voir / éditer
+            </Button>
+            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={onRegenerate} disabled={generating}>
+              {generating ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Régénérer'}
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TimelineEntry — entrée d'historique cliquable (notes + statuts + updates)
