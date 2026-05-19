@@ -140,8 +140,8 @@ export function SentinelButton({ alerts, isLoading, onRefresh, onDismiss, lastFe
                         <p className="text-[10px] text-muted-foreground mt-0.5">{alert.entity_name} · {alert.entity_type}</p>
                         <div className="flex gap-1 mt-1">
                           <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[10px]"
-                            onClick={() => { setOpen(false); navigateToEntity(navigate, alert); }}>
-                            Voir <ChevronRight className="w-2.5 h-2.5 ml-0.5" />
+                            onClick={() => { setOpen(false); setSelected(alertToSnapshot(alert)); }}>
+                            Ouvrir <ChevronRight className="w-2.5 h-2.5 ml-0.5" />
                           </Button>
                           <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[10px] text-muted-foreground"
                             onClick={() => onDismiss(alert.id)}>
@@ -157,6 +157,7 @@ export function SentinelButton({ alerts, isLoading, onRefresh, onDismiss, lastFe
           )}
         </ScrollArea>
       </PopoverContent>
+      <AIActionDrawer snapshot={selected} open={!!selected} onOpenChange={(o) => !o && setSelected(null)} />
     </Popover>
   );
 }
