@@ -382,7 +382,7 @@ export function useAIAction(snapshot: AIActionSnapshot | null) {
 
   // === ARTEFACTS (Étape 2.3 Vague 2) ===
   const generateArtifact = useMutation({
-    mutationFn: async (force = false): Promise<AIActionArtifact> => {
+    mutationFn: async (force: boolean = false): Promise<AIActionArtifact> => {
       const row = await ensureRow();
       const { data, error } = await supabase.functions.invoke('ai-action-artifact-generator', {
         body: { ai_action_id: row.id, force },
