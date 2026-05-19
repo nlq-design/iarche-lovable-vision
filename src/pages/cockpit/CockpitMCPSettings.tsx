@@ -1,5 +1,6 @@
 import { CockpitLayout } from "@/components/cockpit/CockpitLayout";
 import { MCPKeysManager } from "@/components/cockpit/settings/MCPKeysManager";
+import { MCPHealthCard } from "@/components/cockpit/settings/MCPHealthCard";
 import { Key } from "lucide-react";
 
 export default function CockpitMCPSettings() {
@@ -15,6 +16,7 @@ export default function CockpitMCPSettings() {
             </p>
           </div>
         </div>
+        <MCPHealthCard />
         <MCPKeysManager />
       </div>
     </CockpitLayout>
