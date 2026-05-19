@@ -847,6 +847,23 @@ function stripLoneSurrogates(input: string): string {
   return out;
 }
 
+// deno-lint-ignore no-explicit-any
+function deepSanitizeStrings<T>(value: T): T {
+  if (value == null) return value;
+  if (typeof value === "string") return stripLoneSurrogates(value) as unknown as T;
+  if (Array.isArray(value)) return value.map((v) => deepSanitizeStrings(v)) as unknown as T;
+  if (typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      out[k] = deepSanitizeStrings(v);
+    }
+    return out as unknown as T;
+  }
+  return value;
+}
+
+
+
 
 function chunkText(input: string, size: number, overlap: number): string[] {
   const text = input.replace(/\s+/g, " ").trim();
