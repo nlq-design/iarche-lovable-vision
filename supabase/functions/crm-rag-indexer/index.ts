@@ -803,6 +803,22 @@ function computeTemporalWeight(sourceDate: string | null): number {
   return Math.round(w * 1000) / 1000;
 }
 
+/**
+ * Supprime les surrogates UTF-16 orphelins (high sans low ou inverse)
+ * et les caractères de contrôle non-imprimables qui font échouer le JSON
+ * Postgres avec code 22P02 ("Unicode low surrogate must follow a high surrogate").
+ */
+function stripLoneSurrogates(input: string): string {
+  if (!input) return input;
+  return input
+    // High surrogate non suivi d'un low surrogate
+    .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/g, "")
+    // Low surrogate non précédé d'un high surrogate
+    .replace(/(^|[^\uD800-\uDBFF])[\uDC00-\uDFFF]/g, "$1")
+    // Contrôles non-imprimables (sauf \n \r \t)
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "");
+}
+
 function chunkText(input: string, size: number, overlap: number): string[] {
   const text = input.replace(/\s+/g, " ").trim();
   if (text.length <= size) return [text];
