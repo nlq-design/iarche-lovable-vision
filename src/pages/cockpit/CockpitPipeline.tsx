@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { toast } from '@/hooks/use-toast';
 import { CockpitLayout } from "@/components/cockpit/CockpitLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, ArrowRight, Filter, GripVertical, Building2, Plus, User, AlertTriangle, Clock } from "lucide-react";
@@ -60,20 +61,35 @@ const CockpitPipeline = () => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const focusId = searchParams.get('focus');
 
-  // Auto-scroll and highlight focused opportunity from ?focus=:id
+  // Focus mode: auto-scroll to focused opportunity from ?focus=:id
   useEffect(() => {
     if (!focusId || isLoading) return;
-    const el = document.getElementById(`opp-card-${focusId}`);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      el.classList.add('ring-2', 'ring-primary', 'ring-offset-2');
-      const t = setTimeout(() => el.classList.remove('ring-2', 'ring-primary', 'ring-offset-2'), 2500);
-      return () => clearTimeout(t);
+    const exists = opportunities?.some((o) => o.id === focusId);
+    if (!exists) {
+      toast({
+        title: 'Opportunité introuvable',
+        description: "L'opportunité ciblée n'existe pas ou n'est plus accessible.",
+        variant: 'destructive',
+      });
+      const next = new URLSearchParams(searchParams);
+      next.delete('focus');
+      setSearchParams(next, { replace: true });
+      return;
     }
-  }, [focusId, isLoading, opportunities]);
+    const el = document.getElementById(`opp-card-${focusId}`);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [focusId, isLoading, opportunities, searchParams, setSearchParams]);
+
+  const clearFocus = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete('focus');
+    setSearchParams(next, { replace: true });
+  };
+
+
 
   // Check stagnation: opportunity without activity for >7 days
   const getStagnationDays = (oppId: string, oppUpdatedAt: string | null): number => {
@@ -161,6 +177,17 @@ const CockpitPipeline = () => {
 
         <CreateOpportunityDialog open={showCreateDialog} onOpenChange={setShowCreateDialog} />
 
+        {focusId && opportunities?.some((o) => o.id === focusId) && (
+          <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-md bg-primary/10 border border-primary/30 text-sm">
+            <span className="text-primary font-medium">
+              Mode focus : {opportunities.find((o) => o.id === focusId)?.title}
+            </span>
+            <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={clearFocus}>
+              Effacer le focus
+            </Button>
+          </div>
+        )}
+
         {/* Pipeline Kanban */}
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -217,8 +244,10 @@ const CockpitPipeline = () => {
                             draggable
                             onDragStart={(e) => handleDragStart(e, opp.id)}
                             onClick={() => handleCardClick(opp)}
-                            className={`p-2.5 rounded-md border bg-background hover:bg-muted/50 cursor-pointer active:cursor-grabbing transition-colors ${
+                            className={`p-2.5 rounded-md border bg-background hover:bg-muted/50 cursor-pointer active:cursor-grabbing transition-all ${
                               isStagnant ? 'border-amber-400 bg-amber-50/30 dark:bg-amber-950/20' : ''
+                            } ${
+                              focusId === opp.id ? 'ring-2 ring-primary ring-offset-2 shadow-lg scale-[1.02]' : ''
                             }`}
                           >
                             <div className="flex items-start gap-2">
