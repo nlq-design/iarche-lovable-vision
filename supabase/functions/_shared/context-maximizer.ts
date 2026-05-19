@@ -274,7 +274,7 @@ async function fetchEntityRagChunks(
   entityType: string,
   entityId: string,
   workspaceId: string,
-): Promise<string | null> {
+): Promise<{ block: string; debug: RagChunkDebug[] } | null> {
   try {
     const { data, error } = await supabase.rpc('match_entity_resources', {
       p_entity_type: entityType,
@@ -289,6 +289,7 @@ async function fetchEntityRagChunks(
     }
     if (!data?.length) return null;
 
+    const debug: RagChunkDebug[] = [];
     let block = '\n## 🧠 Extraits CRM pertinents (RAG)\n';
     for (const c of data as any[]) {
       const date = c.source_date ? formatDateFR(c.source_date) : '';
@@ -296,14 +297,25 @@ async function fetchEntityRagChunks(
       const title = c.resource_title || c.resource_type;
       block += `\n### [${c.resource_type}] ${title}${date ? ` — ${date}` : ''}${weight}\n`;
       const chunk = (c.content_chunk || '').toString().trim();
-      if (chunk) block += `${chunk.substring(0, 1500)}\n`;
+      const trimmed = chunk.substring(0, 1500);
+      if (trimmed) block += `${trimmed}\n`;
+      debug.push({
+        resource_id: String(c.resource_id),
+        resource_type: String(c.resource_type),
+        title: String(title),
+        source_date: c.source_date ? String(c.source_date) : null,
+        temporal_weight: c.temporal_weight != null ? Number(c.temporal_weight) : null,
+        chars: trimmed.length,
+        estimated_tokens: estimateTokens(trimmed),
+      });
     }
-    return block;
+    return { block, debug };
   } catch (e) {
     console.warn('[context-maximizer] RAG chunks fetch exception:', e);
     return null;
   }
 }
+
 
 
 async function fetchTranscriptionSummaries(
