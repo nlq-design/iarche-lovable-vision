@@ -699,7 +699,7 @@ async function indexOpportunity(
     const { error: upErr } = await supabase
       .from("resource_embeddings")
       .upsert(rows, { onConflict: "resource_id,chunk_index" });
-    if (upErr) throw upErr;
+    if (upErr) throw pgError("indexOpportunity.upsert", { table: "resource_embeddings", resource_type: "opportunity", resource_id: o.id, workspace_id: o.workspace_id, batch_size: rows.length }, upErr);
     total += rows.length;
   }
   return { opportunity_id: o.id, chunks: total };
