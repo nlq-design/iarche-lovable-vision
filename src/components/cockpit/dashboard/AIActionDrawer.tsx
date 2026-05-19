@@ -111,11 +111,8 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
   }, [snapshot, entity]);
 
   const handleNavigateToEntity = () => {
-
-    if (snapshot.entity_type && snapshot.entity_id) {
-      onOpenChange(false);
-      navigate(entityRoute(snapshot.entity_type, snapshot.entity_id));
-    }
+    onOpenChange(false);
+    safeNavigateToEntity(navigate, snapshot.entity_type, snapshot.entity_id, snapshot.entity_name ?? undefined);
   };
 
   const handleAddNote = () => {
