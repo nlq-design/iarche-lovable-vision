@@ -108,21 +108,31 @@ async function backfill(
     req.resource_type === "transcription_summary" ||
     req.resource_type === "voice_transcription"
   ) {
-    // Récupère les ids déjà indexés pour exclusion
-    const { data: indexed } = await supabase
-      .from("resource_embeddings")
-      .select("parent_resource_id")
-      .in("resource_type", ["transcription_chunk", "transcription_summary"])
-      .not("parent_resource_id", "is", null);
-    const indexedIds = new Set(
-      (indexed ?? []).map((r) => (r as { parent_resource_id: string }).parent_resource_id),
-    );
+    // Récupère les ids déjà indexés (pagination pour dépasser le 1000-row cap)
+    const indexedIds = new Set<string>();
+    const PAGE = 1000;
+    for (let offset = 0; ; offset += PAGE) {
+      const { data: page, error: pageErr } = await supabase
+        .from("resource_embeddings")
+        .select("parent_resource_id")
+        .in("resource_type", ["transcription_chunk", "transcription_summary"])
+        .not("parent_resource_id", "is", null)
+        .range(offset, offset + PAGE - 1);
+      if (pageErr) throw pageErr;
+      if (!page || page.length === 0) break;
+      for (const r of page) {
+        const id = (r as { parent_resource_id: string }).parent_resource_id;
+        if (id) indexedIds.add(id);
+      }
+      if (page.length < PAGE) break;
+    }
 
+    // Fetch all transcriptions (pas de raw_transcript filter ici car déjà filtré côté indexOne)
     let q = supabase
       .from("voice_transcriptions")
       .select("id, workspace_id")
       .not("raw_transcript", "is", null)
-      .limit(limit + indexedIds.size);
+      .limit(1000);
     if (req.workspace_id) q = q.eq("workspace_id", req.workspace_id);
     const { data: rows, error } = await q;
     if (error) throw error;
