@@ -61,20 +61,35 @@ const CockpitPipeline = () => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const focusId = searchParams.get('focus');
 
-  // Auto-scroll and highlight focused opportunity from ?focus=:id
+  // Focus mode: auto-scroll to focused opportunity from ?focus=:id
   useEffect(() => {
     if (!focusId || isLoading) return;
-    const el = document.getElementById(`opp-card-${focusId}`);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      el.classList.add('ring-2', 'ring-primary', 'ring-offset-2');
-      const t = setTimeout(() => el.classList.remove('ring-2', 'ring-primary', 'ring-offset-2'), 2500);
-      return () => clearTimeout(t);
+    const exists = opportunities?.some((o) => o.id === focusId);
+    if (!exists) {
+      toast({
+        title: 'Opportunité introuvable',
+        description: "L'opportunité ciblée n'existe pas ou n'est plus accessible.",
+        variant: 'destructive',
+      });
+      const next = new URLSearchParams(searchParams);
+      next.delete('focus');
+      setSearchParams(next, { replace: true });
+      return;
     }
-  }, [focusId, isLoading, opportunities]);
+    const el = document.getElementById(`opp-card-${focusId}`);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [focusId, isLoading, opportunities, searchParams, setSearchParams]);
+
+  const clearFocus = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete('focus');
+    setSearchParams(next, { replace: true });
+  };
+
+
 
   // Check stagnation: opportunity without activity for >7 days
   const getStagnationDays = (oppId: string, oppUpdatedAt: string | null): number => {
