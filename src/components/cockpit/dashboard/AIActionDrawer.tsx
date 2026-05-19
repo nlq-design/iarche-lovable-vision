@@ -270,12 +270,20 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
             setNewDeadline('');
             setNewAmount('');
             setNewContact('');
-            updateStatus.mutate({ status: 'done' });
+            updateStatus.mutate({
+              status: 'done',
+              actor: 'user',
+              reason: `Action validée après mise à jour de ${entityRef}`,
+            });
           },
         },
       );
     } else {
-      updateStatus.mutate({ status: 'done' });
+      updateStatus.mutate({
+        status: 'done',
+        actor: 'user',
+        reason: noteText.trim() ? `Validée avec note : "${noteText.trim().slice(0, 80)}"` : 'Marquée traitée manuellement',
+      });
     }
   };
 
