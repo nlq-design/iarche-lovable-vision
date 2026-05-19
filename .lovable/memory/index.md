@@ -14,6 +14,7 @@ Updated: now
 - pgvector RPC: SECURITY DEFINER avec `search_path = public, extensions` obligatoire (sinon opérateur `<=>` introuvable).
 
 ## Memories
+- [CRM-as-RAG v1](mem://infrastructure/ai/crm-rag-ingestion-v1) — Indexation auto transcriptions/leads/opps via crm-rag-indexer + triggers pg_net (Sprints 1+2 CDC v2)
 - [Cross-Signal Engine v2.4](mem://cockpit/intelligence/cross-signal-engine-v24) — Embeddings-based découverte connexions lead×partner×solution×opportunity, cron 06:00, table ai_cross_signals TTL 7j
 - [Sentinel Rules v2.1](mem://cockpit/intelligence/sentinel-rules-v2) — 13 règles SQL (5 v1 + 8 v2.1) + persistance + auto-proposals
 - [Temporal Memory v2.2](mem://cockpit/intelligence/temporal-memory-v22) — Deltas J-1/J-7/J-30 injectés au LLM + TrendDeltaWidget
