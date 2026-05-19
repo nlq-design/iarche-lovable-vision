@@ -5470,7 +5470,7 @@ app.post("/*", async (c) => {
       const startedAt = Date.now();
       try {
         const result = await authStore.run(requestAuth!, () => _callTool(name, args));
-        _supabase.from('mcp_request_logs').insert({
+        supabaseAdmin.from('mcp_request_logs').insert({
           workspace_id: requestAuth!.workspace_id,
           tool_name: name,
           status: 'ok',
@@ -5478,7 +5478,7 @@ app.post("/*", async (c) => {
         }).then(() => {}, () => {});
         return c.json({ jsonrpc: '2.0', id, result });
       } catch (toolErr: any) {
-        _supabase.from('mcp_request_logs').insert({
+        supabaseAdmin.from('mcp_request_logs').insert({
           workspace_id: requestAuth!.workspace_id,
           tool_name: name,
           status: 'error',
