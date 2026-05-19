@@ -201,48 +201,30 @@ export function useAIAction(snapshot: AIActionSnapshot | null) {
       actor?: 'user' | 'system';
     }) => {
       const row = await ensureRow();
-      const previousStatus = row.status;
-      const patch: Record<string, unknown> = { status: params.status };
-      if (params.status === 'snoozed' && params.snoozeDays) {
-        patch.snooze_until = new Date(Date.now() + params.snoozeDays * 86400000).toISOString();
-      } else {
-        patch.snooze_until = null;
-      }
-      if (params.status === 'done' || params.status === 'dismissed') {
-        patch.completed_at = new Date().toISOString();
-      }
-      const { error } = await supabase.from('ai_actions').update(patch).eq('id', row.id);
-      if (error) throw error;
-
-      // Trace systématique dans l'historique (y compris auto-acknowledge système)
       const actor = params.actor ?? (params.silent ? 'system' : 'user');
       const defaultReasons: Record<string, string> = {
         'system:acknowledged': 'Ouverture du drawer (vu automatique)',
         'user:acknowledged': 'Marqué comme vu manuellement',
-        'user:done': 'Action validée par l\'utilisateur',
-        'user:dismissed': 'Jugée non pertinente par l\'utilisateur',
+        'user:done': "Action validée par l'utilisateur",
+        'user:dismissed': "Jugée non pertinente par l'utilisateur",
         'user:snoozed': params.snoozeDays ? `Reporté de ${params.snoozeDays} jour(s)` : 'Reporté',
-        'user:pending': 'Réouvert par l\'utilisateur',
+        'user:pending': "Réouvert par l'utilisateur",
       };
       const key = `${actor}:${params.status}`;
       const reason = params.reason?.trim() || defaultReasons[key] || statusLabelsFr[params.status];
-      const label = params.status === 'snoozed' && params.snoozeDays
-        ? `Reporté de ${params.snoozeDays}j`
-        : statusLabelsFr[params.status];
 
-      await appendHistory(row, {
-        kind: 'status',
-        by: actor === 'system' ? 'system' : undefined,
-        text: `${label} — ${reason}`,
-        meta: {
-          status: params.status,
-          previous_status: previousStatus,
-          snoozeDays: params.snoozeDays,
-          actor,
-          reason,
-          at: new Date().toISOString(),
-        },
+      // Transition atomique côté Postgres : verrou de ligne + UPDATE unique
+      // (status + snooze_until + completed_at + append user_notes) en une transaction.
+      // Évite la perte d'historique en cas de mises à jour concurrentes.
+      const { error } = await supabase.rpc('ai_action_transition_status', {
+        _action_id: row.id,
+        _new_status: params.status,
+        _actor: actor,
+        _reason: reason,
+        _snooze_days: params.snoozeDays ?? null,
+        _by: actor === 'system' ? 'system' : (user?.email ?? user?.id ?? 'user'),
       });
+      if (error) throw error;
     },
     onSuccess: (_data, params) => {
       queryClient.invalidateQueries({ queryKey: ['ai-action', workspaceId, signature] });
@@ -251,6 +233,7 @@ export function useAIAction(snapshot: AIActionSnapshot | null) {
     },
     onError: (e: Error) => toast.error(`Erreur: ${e.message}`),
   });
+
 
   const addNote = useMutation({
     mutationFn: async (text: string) => {
