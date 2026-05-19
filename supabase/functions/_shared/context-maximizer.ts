@@ -57,6 +57,16 @@ export interface MaxContextOptions {
   workspaceId?: string;
 }
 
+export interface RagChunkDebug {
+  resource_id: string;
+  resource_type: string;
+  title: string;
+  source_date: string | null;
+  temporal_weight: number | null;
+  chars: number;
+  estimated_tokens: number;
+}
+
 export interface MaxContextResult {
   /** Assembled markdown context blocks */
   blocks: string;
@@ -66,6 +76,10 @@ export interface MaxContextResult {
   breakdown: Record<string, number>;
   /** Warnings (e.g., truncated sections) */
   warnings: string[];
+  /** Chunks retournés par match_entity_resources (priority 4.5) — diagnostic */
+  ragChunks: RagChunkDebug[];
+  /** Token budget that was used */
+  tokenBudget: number;
 }
 
 // ============= CONTEXT BUILDER =============
