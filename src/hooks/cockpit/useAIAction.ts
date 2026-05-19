@@ -241,6 +241,12 @@ export function useAIAction(snapshot: AIActionSnapshot | null) {
     onError: (e: Error) => toast.error(`Erreur: ${e.message}`),
   });
 
+  const entityTypeLabelsFr: Record<string, string> = {
+    opportunity: "l'opportunité",
+    lead: 'le lead',
+    project: 'le projet',
+  };
+
   const applyStructuredUpdate = useMutation({
     mutationFn: async (params: { updates: AIActionStructuredUpdates; pushToEntity?: boolean }) => {
       const row = await ensureRow();
@@ -252,31 +258,45 @@ export function useAIAction(snapshot: AIActionSnapshot | null) {
         .eq('id', row.id);
       if (error) throw error;
 
-      // Push facultatif vers l'entité réelle
+      // Push facultatif vers l'entité réelle — sync complet par type
+      const entityPatch: Record<string, unknown> = {};
+      const entityFieldsTouched: string[] = [];
+      let entitySynced = false;
+
       if (params.pushToEntity && row.entity_type && row.entity_id) {
         const u = params.updates;
+
         if (row.entity_type === 'opportunity') {
-          const patch: Record<string, unknown> = {};
-          if (u.new_deadline) patch.expected_close_date = u.new_deadline;
-          if (typeof u.new_amount === 'number') patch.value_amount = u.new_amount;
-          if (u.new_stage) patch.stage = u.new_stage;
-          if (Object.keys(patch).length) {
-            const { error: e2 } = await supabase.from('opportunities').update(patch).eq('id', row.entity_id);
-            if (e2) throw e2;
-          }
+          if (u.new_deadline) { entityPatch.expected_close_date = u.new_deadline; entityFieldsTouched.push('échéance'); }
+          if (typeof u.new_amount === 'number') { entityPatch.value_amount = u.new_amount; entityFieldsTouched.push('montant'); }
+          if (u.new_stage) { entityPatch.stage = u.new_stage; entityFieldsTouched.push('étape'); }
         } else if (row.entity_type === 'lead') {
-          const patch: Record<string, unknown> = {};
-          if (u.new_contact) patch.phone = u.new_contact;
-          if (Object.keys(patch).length) {
-            const { error: e2 } = await supabase.from('leads').update(patch).eq('id', row.entity_id);
-            if (e2) throw e2;
+          if (u.new_contact) {
+            const c = String(u.new_contact).trim();
+            const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c);
+            if (isEmail) { entityPatch.email = c; entityFieldsTouched.push('email'); }
+            else { entityPatch.phone = c; entityFieldsTouched.push('téléphone'); }
           }
+          if (typeof u.new_amount === 'number') { entityPatch.budget = u.new_amount; entityFieldsTouched.push('budget'); }
+          if (u.new_stage) { entityPatch.qualification_status = u.new_stage; entityFieldsTouched.push('qualification'); }
         } else if (row.entity_type === 'project') {
-          const patch: Record<string, unknown> = {};
-          if (u.new_deadline) patch.planned_end_date = u.new_deadline;
-          if (Object.keys(patch).length) {
-            const { error: e2 } = await supabase.from('projects').update(patch).eq('id', row.entity_id);
+          if (u.new_deadline) { entityPatch.planned_end_date = u.new_deadline; entityFieldsTouched.push('échéance'); }
+          if (typeof u.new_amount === 'number') { entityPatch.budget_amount = u.new_amount; entityFieldsTouched.push('budget'); }
+          if (u.new_stage) { entityPatch.status = u.new_stage; entityFieldsTouched.push('statut'); }
+        }
+
+        if (Object.keys(entityPatch).length) {
+          const table = row.entity_type === 'opportunity' ? 'opportunities'
+            : row.entity_type === 'lead' ? 'leads'
+            : row.entity_type === 'project' ? 'projects'
+            : null;
+          if (table) {
+            const { error: e2 } = await supabase
+              .from(table as 'opportunities' | 'leads' | 'projects')
+              .update(entityPatch)
+              .eq('id', row.entity_id);
             if (e2) throw e2;
+            entitySynced = true;
           }
         }
       }
@@ -292,15 +312,41 @@ export function useAIAction(snapshot: AIActionSnapshot | null) {
       await appendHistory(row, {
         kind: 'update',
         text: summary,
-        meta: { changes, pushed: !!params.pushToEntity },
+        meta: {
+          changes,
+          pushed: !!params.pushToEntity,
+          entity_synced: entitySynced,
+          entity_fields: entityFieldsTouched,
+          entity_type: row.entity_type,
+        },
       });
+
+      return {
+        entitySynced,
+        entityFieldsTouched,
+        entityType: row.entity_type,
+        entityName: row.entity_name,
+      };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['ai-action', workspaceId, signature] });
+      queryClient.invalidateQueries({ queryKey: ['entity-snapshot'] });
       queryClient.invalidateQueries({ queryKey: ['cockpit-leads'] });
       queryClient.invalidateQueries({ queryKey: ['cockpit-opportunities'] });
       queryClient.invalidateQueries({ queryKey: ['cockpit-projects'] });
-      toast.success('Mise à jour enregistrée');
+
+      if (result?.entitySynced && result.entityType) {
+        const label = entityTypeLabelsFr[result.entityType] ?? result.entityType;
+        const name = result.entityName ? ` "${result.entityName}"` : '';
+        const fields = result.entityFieldsTouched.length
+          ? ` (${result.entityFieldsTouched.join(', ')})`
+          : '';
+        toast.success(`${label}${name} mis à jour${fields}`, {
+          description: 'Modifications synchronisées dans la base.',
+        });
+      } else {
+        toast.success('Contexte enregistré sur l\'action IA');
+      }
     },
     onError: (e: Error) => toast.error(`Erreur: ${e.message}`),
   });
