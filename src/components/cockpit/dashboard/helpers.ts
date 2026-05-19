@@ -4,9 +4,10 @@ import { SentinelAlert } from '@/hooks/cockpit/useAISentinel';
 export function entityRoute(type: string, id: string): string {
   const routes: Record<string, string> = {
     lead: `/cockpit/leads/${id}`,
-    opportunity: `/cockpit/pipeline`,
+    opportunity: `/cockpit/pipeline?focus=${id}`,
     project: `/cockpit/projects/${id}`,
     partner: `/cockpit/partenaires/${id}`,
+    solution: `/cockpit/solutions/${id}`,
     transcription: `/cockpit/transcriptions/${id}`,
     task: `/cockpit/projects`,
   };
