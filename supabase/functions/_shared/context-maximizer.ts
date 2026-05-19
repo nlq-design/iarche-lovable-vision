@@ -638,6 +638,9 @@ export interface ContextTraceMeta {
   mode: string;
   entityType?: string | null;
   entityId?: string | null;
+  cacheStatus?: 'hit' | 'miss' | 'bypass' | null;
+  cacheSimilarity?: number | null;
+  cacheAgeSeconds?: number | null;
 }
 
 /**
@@ -663,6 +666,9 @@ export async function recordContextTrace(
         breakdown: ctx.breakdown,
         rag_chunks: ctx.ragChunks,
         warnings: ctx.warnings,
+        cache_status: meta.cacheStatus ?? null,
+        cache_similarity: meta.cacheSimilarity ?? null,
+        cache_age_seconds: meta.cacheAgeSeconds ?? null,
       })
       .select('id')
       .maybeSingle();
