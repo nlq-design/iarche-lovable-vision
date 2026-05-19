@@ -106,9 +106,9 @@ export function CrossSignalsWidget({ signals, embeddingSignals, isLoading, navig
                               className="text-[9px] bg-background/80 border rounded px-1 py-0 hover:bg-primary/10 transition-colors"
                               onClick={(ev) => {
                                 ev.stopPropagation();
-                                navigate(entityRoute(e.type, e.id));
+                                setPreviewEntity({ type: e.type, id: e.id });
                               }}
-                              title={e.role}
+                              title={e.role ? `${e.role} — Cliquer pour aperçu` : 'Cliquer pour aperçu'}
                             >
                               {e.name}
                               {e.role && <span className="opacity-60 ml-0.5">·{e.role}</span>}
