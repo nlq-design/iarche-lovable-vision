@@ -184,7 +184,9 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
     return errs;
   }, [newAmount, newDeadline, newContact]);
 
-  if (!snapshot) return null;
+
+
+
 
 
   const hasValidationErrors = Object.keys(validationErrors).length > 0;
@@ -312,6 +314,8 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
     });
     setDismissReason('');
   };
+
+  if (!snapshot) return null;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
