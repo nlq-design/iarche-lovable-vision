@@ -16,10 +16,27 @@ export interface IntelligenceAction {
   impact_value?: number;
 }
 
+export interface CrossSignalEntity {
+  type: string;
+  id: string;
+  name: string;
+  role?: string;
+}
+
 export interface CrossSignal {
   signal: string;
-  entities: Array<{ type: string; id: string; name: string }>;
+  entities: CrossSignalEntity[];
   severity: 'high' | 'medium' | 'low';
+}
+
+export interface CrossSignalDB {
+  signal_type: string;
+  title: string;
+  narrative: string;
+  score: number;
+  severity: 'high' | 'medium' | 'low';
+  entities: CrossSignalEntity[];
+  evidence?: Record<string, unknown>;
 }
 
 export interface Prediction {
@@ -76,6 +93,7 @@ export interface IntelligenceRawData {
     risk_level: string;
     recommended_action: string;
   }>;
+  cross_signals_db?: CrossSignalDB[];
 }
 
 export interface IntelligenceResult {

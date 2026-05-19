@@ -379,6 +379,68 @@ export type Database = {
           },
         ]
       }
+      ai_cross_signals: {
+        Row: {
+          created_at: string
+          dismissed_at: string | null
+          dismissed_by: string | null
+          entities: Json
+          evidence: Json | null
+          expires_at: string
+          id: string
+          narrative: string
+          score: number
+          severity: string
+          signal_type: string
+          status: string
+          title: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          dismissed_at?: string | null
+          dismissed_by?: string | null
+          entities?: Json
+          evidence?: Json | null
+          expires_at?: string
+          id?: string
+          narrative: string
+          score?: number
+          severity?: string
+          signal_type: string
+          status?: string
+          title: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          dismissed_at?: string | null
+          dismissed_by?: string | null
+          entities?: Json
+          evidence?: Json | null
+          expires_at?: string
+          id?: string
+          narrative?: string
+          score?: number
+          severity?: string
+          signal_type?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_cross_signals_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_feedback: {
         Row: {
           ai_metadata: Json | null
@@ -7798,6 +7860,22 @@ export type Database = {
       mark_ai_notifications_reviewed: {
         Args: { p_ids: string[] }
         Returns: number
+      }
+      match_partners_for_lead: {
+        Args: { p_lead_id: string; p_limit?: number; p_workspace_id: string }
+        Returns: {
+          partner_id: string
+          partner_name: string
+          similarity: number
+        }[]
+      }
+      match_solutions_for_lead: {
+        Args: { p_lead_id: string; p_limit?: number }
+        Returns: {
+          similarity: number
+          solution_id: string
+          solution_name: string
+        }[]
       }
       promote_vivier_to_lead: {
         Args: { p_qualification_status?: string; p_vivier_id: string }

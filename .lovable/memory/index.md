@@ -1,0 +1,81 @@
+# Memory: index.md
+Updated: now
+
+# Project Memory
+
+## Core
+- Multi-tenant via `workspace_id` (00...1 for IArche Interne). Strict RLS enforced. Edge fns bypassing RLS must verify JWT.
+- Zero-duplication: Cockpit reuses Admin leads. Admin manages content/org; Cockpit manages commercial pipeline.
+- Visuals: #FAF9F7 (Blanc Cassé), Night Blue (#1A2B4A), Terracotta (#B04A32). Manrope typography. Zero emojis. Standard LoadingState/EmptyState.
+- Code & Tech: Edge functions use `npm:` (not `esm.sh`). pg_net for async AI triggers. DB-first UI dashboard. Sentinel uses SQL rules.
+- AI Logic: Nicolas (Expert senior Bayonne), Zero Friction. Cascade: Lovable > OpenAI > Anthropic. Gemini 2.5 flash default.
+- Workflow: Audit existing -> Confirm -> Build surgically -> Clean dead code -> Post-audit. (See ~user).
+- Closure: aucune feature 'livrée' en mémoire sans preuve BDD (query schéma) + preuve code (grep). Spec ≠ implémentation.
+- pgvector RPC: SECURITY DEFINER avec `search_path = public, extensions` obligatoire (sinon opérateur `<=>` introuvable).
+
+## Memories
+- [Cross-Signal Engine v2.4](mem://cockpit/intelligence/cross-signal-engine-v24) — Embeddings-based découverte connexions lead×partner×solution×opportunity, cron 06:00, table ai_cross_signals TTL 7j
+- [Sentinel Rules v2.1](mem://cockpit/intelligence/sentinel-rules-v2) — 13 règles SQL (5 v1 + 8 v2.1) + persistance + auto-proposals
+- [Temporal Memory v2.2](mem://cockpit/intelligence/temporal-memory-v22) — Deltas J-1/J-7/J-30 injectés au LLM + TrendDeltaWidget
+- [AI Action Artifacts v2.3](mem://cockpit/intelligence/ai-action-artifacts-v23) — Drafts email/note pré-générés sur ai_actions, éditables et copiables
+- [Visual Identity](mem://design/visual-identity) — IArche v4 Palette, typography, UI component guidelines
+- [Performance Standards](mem://infrastructure/performance-standards) — Frontend prefetching, DB query wildcards, service mappings
+- [Cockpit Sync Trigger](mem://architecture/admin-cockpit-leads-opportunities-sync-trigger) — Auto-creates opportunity from lead
+- [Step-up MFA](mem://architecture/cockpit-step-up-mfa-mandatory-access-gate) — 4-hour TOTP TTL for /cockpit access
+- [Multi-tenant Workspace](mem://architecture/multi-tenant-saas-status-fr) — workspace_id injection and resolution fallback
+- [Workspace Fallback](mem://architecture/workspace-resolution-fallback-logic-fr) — Fallback logic: member -> owner -> default
+- [Booking System](mem://features/booking-system-unified-spec) — Fixed hourly slots, timezone offset in Edge Fn
+- [FormBuilder](mem://features/formbuilder-unified-system-v4-fr) — Upserts leads, custom email_configurations
+- [Instantly Sync](mem://integrations/instantly-campaign-sync-logic-v4-2-fr) — IANA to Etc/GMT conversion, pg_trgm indexes
+- [Viviers Extreme Perf](mem://infrastructure/database/viviers-extreme-performance-v56-fr) — RPC SECURITY DEFINER for large volumes
+- [Slug Navigation](mem://infrastructure/database/unified-slug-navigation-v22-fr) — Primary ID for Cockpit/Partner, UUID for triggers
+- [Testing Infrastructure](mem://infrastructure/testing-suite-architecture-fr) — Vitest mocks, Deno `--allow-net` tests
+- [API Governance](mem://features/admin/api-governance-v2-fr) — `api_quotas`, 3-level alerts, central circuit breaker
+- [Entity Linking](mem://cockpit/transcriptions/unified-linking-summary-fr) — Multi-entity non-duplicating transcription links
+- [Orchestration Architecture](mem://cockpit/transcriptions/architecture-orchestration-v15-fr) — Async Submit & Return via Edge/Cron
+- [Entity Vocabulary](mem://cockpit/crm/entity-vocabulary-system) — Custom terminology injected into AssemblyAI & AI prompts
+- [Consulte Cascade](mem://cockpit/consulte/data-cascading-architecture-fr) — Parent-to-child enrichment (Lead -> Projects/Docs)
+- [RLS AI Protect](mem://security/rls-ai-config-protection-fr) — Admin-only for edge_function_model_config
+- [Task Harvester](mem://cockpit/ai-copilot/task-harvester-v2-fr) — Groups tasks, synthesis_stale cascade
+- [Event-driven AI](mem://infrastructure/database/event-driven-ai-reactivity-fr) — pg_net triggers, sentinel_trigger_queue debounce
+- [Pipeline Calc](mem://cockpit/logic/pipeline-active-calculation-fr) — Excludes closed_won/closed_lost
+- [Prompt Mgmt](mem://infrastructure/ai/centralized-prompt-management-v10-fr) — ai_prompts table, google/gemini-2.5-flash
+- [AI Identity Core](mem://iarche/business-identity-and-solutions-v10-fr) — Nicolas (AI), BANT scoring, Zero Friction
+- [RAG Synthesis](mem://infrastructure/ai/rag-synthesis-context-fr) — 3-message context window, keyword_aliases
+- [Circulaire Vision](mem://cockpit/consulte/vision-circulaire-et-narrative-fr) — Before -> Now -> Why narrative structure
+- [RLS AI Metrics](mem://security/ai-infrastructure-rls-hardening-v10) — service_role INSERT for metrics, active models SELECT
+- [Activity Log](mem://cockpit/activity-log-transversal-interaction-tracking-fr) — Append-only, validates partner/system types
+- [AI Memory Logic](mem://cockpit/intelligence/enrichissement-memoire-systematique-fr) — MCP save_preference (#85) mapped to preference type
+- [Interview Mode](mem://cockpit/intelligence/mode-interview-proactif-fr) — 1 natural question at a time to fill missing CRM data
+- [Anti-hallucination](mem://cockpit/intelligence/entity-resolution-anti-hallucination-fr) — Mandatory ilike CRM search if no UUID
+- [Completeness Score](mem://cockpit/intelligence/entity-completeness-scoring-logic) — 0-100% weighted score for CRM objects
+- [Telegram UX](mem://infrastructure/telegram/callback-response-standard-fr) — answerCallbackQuery before long operations
+- [Token Transparency](mem://cockpit/ux/ai-context-transparency-v1) — <50% green, 50-80% orange, >80% red
+- [Multi-provider Strategy](mem://infrastructure/ai/multi-provider-resilience-strategy) — Lovable>OpenAI>Anthropic, Retry Mgr 1s/2s
+- [Context Maximizer](mem://infrastructure/ai/context-maximizer-logic-fr) — Notes>Vocab>Contacts>Meetings>Transcriptions
+- [Telegram TTL](mem://infrastructure/telegram/context-ttl-fr) — 30-min conversation context TTL
+- [Dashboard Spec](mem://cockpit/architecture/dashboard-intelligence-engine-spec-v1-fr) — Reads daily_intelligence, manual refresh
+- [Sentinel Logic](mem://cockpit/intelligence/sentinel-autonomous-logic-v1-fr) — SQL anomalies, 15m poll, 7-day dismissals
+- [Daily Brief](mem://cockpit/intelligence/daily-briefing-automation-v1-fr) — 07:00 UTC pg_cron auto-daily-intelligence
+- [Standard UI](mem://cockpit/ui/common-components-standard-fr) — LoadingState/EmptyState strictly used
+- [Consulte Tabs](mem://cockpit/ui/consulte-tab-structure) — Synthesis, Links, History, Context
+- [Action Proposals](mem://cockpit/intelligence/action-proposals-spec-v1-fr) — 48h TTL, auto_execute for tasks/notes
+- [AssemblyAI Setup](mem://integrations/assemblyai-optimization-v2-fr) — nano/best mode, speaker_labels, MAX_CONCURRENT=3
+- [Specifications Specs](mem://cockpit/commercial/specifications-management-system-fr) — version string, JSON content, MCP fix
+- [CRM Quality Monitor](mem://cockpit/intelligence/crm-quality-monitor-v1-fr) — audit_crm_quality #75 auto-executes
+- [Google Cal Sync](mem://integrations/google-calendar-and-temporal-logic-v9-fr) — 5 min sync, realtime Google API get-events
+- [RLS Hardening](mem://security/rls-hardening-access-control-v2-fr) — login_attempts strictly service_role
+- [Owner Profile](mem://architecture/owner-profile-full-integration-v2-fr) — {{owner_context}} injected, resolved to auth.users id
+- [Content Gap](mem://cockpit/content/mcp-content-gap-logic-v2-fr) — >= 2 articles required to cover a sector
+- [Zoom Automations](mem://integrations/zoom-webhook-recording-automation-v2-fr) — webhook recording.completed, S2S fallback
+- [CMS Data Split](mem://architecture/cms-data-source-split-fr) — page_sections key-value vs articles db
+- [Participant Sync](mem://cockpit/transcriptions/participant-crm-sync-logic-v1-fr) — Skip on re-analysis, Confirmed names override AI
+- [Tech Standards](mem://marketing/website-technical-standards-v6-fr) — loading=lazy, JSON-LD, sitemap.xml
+- [SEO Routing](mem://marketing/seo-and-routing-standards-v5-fr) — react-helmet-async, <h1> slogan
+- [Resend Auth](mem://integrations/resend-beerecos-email-system-fr) — notify.beerecos.com auth-email-hook
+- [MCP Server](mem://infrastructure/ai/mcp-server-orchestration-v8-fr) — Zod methods .int(), .uuid() explicit, whitelist tools
+- [Edge Standards](mem://infrastructure/ai/edge-function-technical-standards-fr) — npm: specifiers, 1000-row batching for CSV
+- [Email Signature](mem://features/admin/email-signature-v5-spec) — No emojis, align=left, text/html blob copy
+- [P0-A Statut Réel](mem://cockpit/cdc-p0a-statut-reel-fr.md) — Audit 16/04/2026: 9% en BDD, 10 colonnes specs dormantes à n'implémenter qu'au besoin
+- [MCP Transcription Deprecation](mem://cockpit/transcriptions/deprecation-30j-fr) — get_transcription/get_transcriptions deprecated, removal 2026-05-20, use list_transcriptions/get_transcription_detail
+- [AI Actions Loop](mem://cockpit/intelligence/ai-actions-interactive-loop-v1) — Drawer interactif sur widgets IA, table ai_actions lazy upsert, réinjection feedback dans brief
