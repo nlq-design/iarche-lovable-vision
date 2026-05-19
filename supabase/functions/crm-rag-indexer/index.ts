@@ -335,7 +335,7 @@ async function genericBackfill(
   let q = supabase.from(table).select("id, workspace_id").limit(1000);
   if (req.workspace_id) q = q.eq("workspace_id", req.workspace_id);
   const { data: rows, error } = await q;
-  if (error) throw error;
+  if (error) throw pgError("backfill.list_sources", { table, resource_type: req.resource_type, workspace_id: req.workspace_id }, error);
 
   const toProcess = (rows ?? [])
     .filter((r) => !indexedIds.has((r as { id: string }).id))
