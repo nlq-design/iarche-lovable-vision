@@ -193,7 +193,7 @@ export function useAIAction(snapshot: AIActionSnapshot | null) {
         text: text.trim(),
       };
       const notes = [...(row.user_notes || []), newNote];
-      const { error } = await supabase.from('ai_actions').update({ user_notes: notes }).eq('id', row.id);
+      const { error } = await supabase.from('ai_actions').update({ user_notes: notes as never }).eq('id', row.id);
       if (error) throw error;
     },
     onSuccess: () => {
