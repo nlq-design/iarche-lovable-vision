@@ -12,12 +12,13 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 interface SentinelAlert {
   id: string;
   severity: "info" | "warning" | "critical";
-  category: "incomplete" | "inconsistency" | "inactivity";
+  category: "incomplete" | "inconsistency" | "inactivity" | "risk" | "duplicate" | "overdue" | "imbalance";
   entity_type: string;
   entity_id: string;
   entity_name: string;
   question: string;
   detail: string;
+  rule_type?: string;
 }
 
 interface RawAnomaly {
