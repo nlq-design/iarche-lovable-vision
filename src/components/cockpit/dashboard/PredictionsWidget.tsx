@@ -70,7 +70,8 @@ export function PredictionsWidget({ predictions, isLoading }: PredictionsWidgetP
                 </div>
               );
             })}
-          </div>
+            </div>
+          </ScrollArea>
         </CardContent>
       </Card>
       <AIActionDrawer snapshot={selected} open={!!selected} onOpenChange={(o) => !o && setSelected(null)} />
