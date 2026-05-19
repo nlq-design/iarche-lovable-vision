@@ -341,14 +341,25 @@ async function genericBackfill(
     .filter((r) => !indexedIds.has((r as { id: string }).id))
     .slice(0, limit);
 
-  const results: { id: string; ok: boolean; chunks?: number; error?: string }[] = [];
+  const results: { id: string; ok: boolean; chunks?: number; error?: string; code?: string; details?: string; hint?: string }[] = [];
   for (const row of toProcess) {
     const id = (row as { id: string }).id;
     try {
       const r = await handler(supabase, id);
       results.push({ id, ok: true, chunks: r.chunks });
     } catch (e) {
-      results.push({ id, ok: false, error: e instanceof Error ? e.message : String(e) });
+      const n = normalizeError(e);
+      logEvent("error", "backfill_row_failed", {
+        resource_type: req.resource_type,
+        resource_id: id,
+        table,
+        message: n.message,
+        code: n.code,
+        details: n.details,
+        hint: n.hint,
+        op: (e as { op?: string })?.op,
+      });
+      results.push({ id, ok: false, error: n.message, code: n.code, details: n.details, hint: n.hint });
     }
   }
   return {
