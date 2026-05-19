@@ -538,7 +538,7 @@ async function indexLead(
     )
     .eq("id", leadId)
     .maybeSingle();
-  if (error) throw error;
+  if (error) throw pgError("indexLead.select", { table: "leads", resource_id: leadId }, error);
   if (!data) throw new Error(`Lead ${leadId} not found`);
 
   const l = data as {
