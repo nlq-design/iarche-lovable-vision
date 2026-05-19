@@ -3292,6 +3292,42 @@ export type Database = {
           },
         ]
       }
+      mcp_request_logs: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          error_code: number | null
+          error_message: string | null
+          id: string
+          key_id: string | null
+          status: string
+          tool_name: string | null
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          error_code?: number | null
+          error_message?: string | null
+          id?: string
+          key_id?: string | null
+          status: string
+          tool_name?: string | null
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          error_code?: number | null
+          error_message?: string | null
+          id?: string
+          key_id?: string | null
+          status?: string
+          tool_name?: string | null
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       media_templates: {
         Row: {
           created_at: string
