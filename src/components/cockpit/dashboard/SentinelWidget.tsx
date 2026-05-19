@@ -32,36 +32,39 @@ function alertToSnapshot(alert: SentinelAlert): AIActionSnapshot {
 
 // ─── Sentinel Card (in-grid) ───
 export function SentinelCardWidget({ alerts, lastFetched }: { alerts: SentinelAlert[]; lastFetched: Date | null }) {
-  const navigate = useNavigate();
+  const [selected, setSelected] = useState<AIActionSnapshot | null>(null);
   const criticalCount = alerts.filter(a => a.severity === 'critical').length;
   if (alerts.length === 0) return null;
 
   return (
-    <Card className={cn("flex-shrink-0", criticalCount > 0 ? "border-destructive/30" : "border-amber-500/20")}>
-      <CardHeader className="pb-1 pt-3 px-3">
-        <CardTitle className="text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5">
-          <Radar className={cn("h-3.5 w-3.5", criticalCount > 0 ? "text-destructive" : "text-amber-500")} />
-          <span className={criticalCount > 0 ? "text-destructive" : "text-amber-600"}>Sentinelle</span>
-          <Badge variant={criticalCount > 0 ? "destructive" : "secondary"} className="text-[10px] px-1.5 py-0 ml-1">{alerts.length}</Badge>
-          {lastFetched && <span className="text-[9px] text-muted-foreground ml-auto font-normal">{formatDistanceToNow(lastFetched, { addSuffix: true, locale: fr })}</span>}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="pt-0 px-3 pb-2">
-        <div className="space-y-1">
-          {alerts.slice(0, 3).map(alert => (
-            <button key={alert.id}
-              className={cn("w-full text-left flex items-start gap-2 p-1.5 rounded text-xs hover:bg-muted/50 transition-colors",
-                alert.severity === 'critical' ? "text-destructive" : "text-muted-foreground"
-              )}
-              onClick={() => navigateToEntity(navigate, alert)}>
-              {alert.severity === 'critical' ? <XCircle className="h-3 w-3 mt-0.5 flex-shrink-0" /> : <AlertTriangle className="h-3 w-3 mt-0.5 flex-shrink-0 text-amber-500" />}
-              <span className="truncate">{alert.entity_name}: {alert.question}</span>
-            </button>
-          ))}
-          {alerts.length > 3 && <p className="text-[10px] text-muted-foreground text-center">+{alerts.length - 3} autres</p>}
-        </div>
-      </CardContent>
-    </Card>
+    <>
+      <Card className={cn("flex-shrink-0", criticalCount > 0 ? "border-destructive/30" : "border-amber-500/20")}>
+        <CardHeader className="pb-1 pt-3 px-3">
+          <CardTitle className="text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5">
+            <Radar className={cn("h-3.5 w-3.5", criticalCount > 0 ? "text-destructive" : "text-amber-500")} />
+            <span className={criticalCount > 0 ? "text-destructive" : "text-amber-600"}>Sentinelle</span>
+            <Badge variant={criticalCount > 0 ? "destructive" : "secondary"} className="text-[10px] px-1.5 py-0 ml-1">{alerts.length}</Badge>
+            {lastFetched && <span className="text-[9px] text-muted-foreground ml-auto font-normal">{formatDistanceToNow(lastFetched, { addSuffix: true, locale: fr })}</span>}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0 px-3 pb-2">
+          <div className="space-y-1">
+            {alerts.slice(0, 3).map(alert => (
+              <button key={alert.id}
+                className={cn("w-full text-left flex items-start gap-2 p-1.5 rounded text-xs hover:bg-muted/50 transition-colors",
+                  alert.severity === 'critical' ? "text-destructive" : "text-muted-foreground"
+                )}
+                onClick={() => setSelected(alertToSnapshot(alert))}>
+                {alert.severity === 'critical' ? <XCircle className="h-3 w-3 mt-0.5 flex-shrink-0" /> : <AlertTriangle className="h-3 w-3 mt-0.5 flex-shrink-0 text-amber-500" />}
+                <span className="truncate">{alert.entity_name}: {alert.question}</span>
+              </button>
+            ))}
+            {alerts.length > 3 && <p className="text-[10px] text-muted-foreground text-center">+{alerts.length - 3} autres</p>}
+          </div>
+        </CardContent>
+      </Card>
+      <AIActionDrawer snapshot={selected} open={!!selected} onOpenChange={(o) => !o && setSelected(null)} />
+    </>
   );
 }
 
