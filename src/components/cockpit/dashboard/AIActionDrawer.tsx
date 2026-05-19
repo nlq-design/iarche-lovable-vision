@@ -118,13 +118,74 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
     }
   };
 
+  // ── Validation stricte des champs critiques ─────────────────────────────
+  // Erreurs renvoyées seulement si le champ est rempli (pas d'erreur si vide).
+  const validationErrors = useMemo(() => {
+    const errs: { amount?: string; deadline?: string; contact?: string } = {};
+
+    if (newAmount.trim()) {
+      const n = Number(newAmount);
+      if (!/^-?\d+([.,]\d+)?$/.test(newAmount.replace(',', '.'))) {
+        errs.amount = 'Format invalide (chiffres uniquement)';
+      } else if (isNaN(n)) {
+        errs.amount = 'Montant non numérique';
+      } else if (n <= 0) {
+        errs.amount = 'Le montant doit être supérieur à 0';
+      } else if (n > 10_000_000) {
+        errs.amount = 'Montant suspect (> 10 M€)';
+      }
+    }
+
+    if (newDeadline.trim()) {
+      // Input type="date" renvoie YYYY-MM-DD ; on tolère aussi un parsing libre.
+      const d = new Date(newDeadline);
+      if (isNaN(d.getTime())) {
+        errs.deadline = 'Date invalide (format AAAA-MM-JJ attendu)';
+      } else {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const min = new Date(today);
+        min.setFullYear(min.getFullYear() - 1);
+        const max = new Date(today);
+        max.setFullYear(max.getFullYear() + 5);
+        if (d < min) errs.deadline = 'Date trop ancienne (> 1 an dans le passé)';
+        else if (d > max) errs.deadline = 'Date trop lointaine (> 5 ans)';
+      }
+    }
+
+    if (newContact.trim()) {
+      const c = newContact.trim();
+      if (c.length < 4) {
+        errs.contact = 'Trop court (minimum 4 caractères)';
+      } else if (c.length > 120) {
+        errs.contact = 'Trop long (maximum 120 caractères)';
+      } else {
+        // Doit ressembler à un email ou à un téléphone (chiffres + symboles tel)
+        const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c);
+        const isPhone = /^[+()\d\s.\-]{6,}$/.test(c);
+        if (!isEmail && !isPhone) {
+          errs.contact = 'Email ou téléphone attendu';
+        }
+      }
+    }
+
+    return errs;
+  }, [newAmount, newDeadline, newContact]);
+
+  const hasValidationErrors = Object.keys(validationErrors).length > 0;
+
   const buildStructuredUpdates = () => {
     const updates: Record<string, unknown> = {};
-    if (newDeadline && newDeadline !== entity?.deadline) updates.new_deadline = newDeadline;
-    if (newAmount && !isNaN(Number(newAmount)) && Number(newAmount) !== entity?.amount) {
-      updates.new_amount = Number(newAmount);
+    if (newDeadline && !validationErrors.deadline && newDeadline !== entity?.deadline) {
+      updates.new_deadline = newDeadline;
     }
-    if (newContact.trim() && newContact.trim() !== entity?.contact) updates.new_contact = newContact.trim();
+    if (newAmount && !validationErrors.amount) {
+      const n = Number(newAmount.replace(',', '.'));
+      if (n !== entity?.amount) updates.new_amount = n;
+    }
+    if (newContact.trim() && !validationErrors.contact && newContact.trim() !== entity?.contact) {
+      updates.new_contact = newContact.trim();
+    }
     return updates;
   };
 
@@ -133,6 +194,7 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
 
   // Label dynamique du CTA primaire
   const primaryCtaLabel = useMemo(() => {
+    if (hasValidationErrors) return 'Corriger les erreurs avant d\'enregistrer';
     if (hasUpdates) {
       const parts: string[] = [];
       if (pendingUpdates.new_amount) parts.push(`montant à ${formatCurrency(pendingUpdates.new_amount as number)}`);
@@ -141,9 +203,14 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
       return `Mettre à jour ${parts.join(' · ')}`;
     }
     return 'Marquer comme traité';
-  }, [hasUpdates, pendingUpdates]);
+  }, [hasUpdates, pendingUpdates, hasValidationErrors]);
 
   const handlePrimaryCta = () => {
+    if (hasValidationErrors) {
+      const first = Object.values(validationErrors)[0];
+      toast.error(first || 'Veuillez corriger les erreurs avant d\'enregistrer');
+      return;
+    }
     if (hasUpdates) {
       applyStructuredUpdate.mutate(
         { updates: pendingUpdates, pushToEntity: true },
