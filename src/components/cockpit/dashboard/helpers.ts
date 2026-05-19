@@ -31,7 +31,7 @@ export function entityRoute(type: string, id: string): string | null {
  * Returns true if navigation occurred, false if blocked by a missing id/unknown type.
  */
 export function safeNavigateToEntity(
-  navigate: ReturnType<typeof useNavigate>,
+  navigate: ((path: string) => void) | ReturnType<typeof useNavigate>,
   type: string | null | undefined,
   id: string | null | undefined,
   entityName?: string,
