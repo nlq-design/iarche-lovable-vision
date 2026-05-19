@@ -173,12 +173,12 @@ async function computeWorkspaceSignals(supabase: any, workspaceId: string): Prom
   // 2. Leads chauds sans opportunité avec partner match
   const { data: hotLeads } = await supabase
     .from('leads')
-    .select('id, full_name, company, status, score, created_at')
+    .select('id, name, company, status, created_at')
     .eq('workspace_id', workspaceId)
-    .in('status', ['qualified', 'hot', 'warm', 'new'])
+    .in('status', ['qualified', 'hot', 'warm', 'new', 'contacted'])
     .gte('created_at', new Date(Date.now() - 30 * 86400000).toISOString())
-    .order('score', { ascending: false, nullsFirst: false })
-    .limit(10);
+    .order('created_at', { ascending: false })
+    .limit(15);
 
   const { data: leadsWithOpps } = await supabase
     .from('opportunities')
@@ -188,7 +188,7 @@ async function computeWorkspaceSignals(supabase: any, workspaceId: string): Prom
 
   for (const lead of hotLeads || []) {
     if (oppLeadIds.has(lead.id)) continue;
-    const leadLabel = lead.full_name || lead.company || 'Lead';
+    const leadLabel = lead.name || lead.company || 'Lead';
     const { data: partners } = await supabase.rpc('match_partners_for_lead', {
       p_lead_id: lead.id,
       p_workspace_id: workspaceId,
@@ -201,14 +201,14 @@ async function computeWorkspaceSignals(supabase: any, workspaceId: string): Prom
       workspace_id: workspaceId,
       signal_type: 'lead_partner_competence',
       title: `Lead chaud sans opp + match partner: ${leadLabel} ↔ ${topPartner.partner_name}`,
-      narrative: `${leadLabel} (score ${lead.score || 'N/A'}, statut ${lead.status}) n'a pas encore d'opportunité ouverte. Le partenaire ${topPartner.partner_name} matche sémantiquement (${(topPartner.similarity * 100).toFixed(0)}%) — créer une opp avec mise en relation.`,
-      score: topPartner.similarity * 1.5 * (Number(lead.score) || 50) / 50,
+      narrative: `${leadLabel} (statut ${lead.status}) n'a pas encore d'opportunité ouverte. Le partenaire ${topPartner.partner_name} matche sémantiquement (${(topPartner.similarity * 100).toFixed(0)}%) — créer une opp avec mise en relation.`,
+      score: topPartner.similarity * 1.5,
       entities: [
         { type: 'lead', id: lead.id, name: leadLabel, role: 'cible' },
         { type: 'partner', id: topPartner.partner_id, name: topPartner.partner_name, role: 'expert' },
       ],
       severity: 'medium',
-      evidence: { similarity: topPartner.similarity, lead_score: lead.score, lead_status: lead.status },
+      evidence: { similarity: topPartner.similarity, lead_status: lead.status },
     });
   }
 
