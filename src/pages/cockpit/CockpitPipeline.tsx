@@ -177,6 +177,17 @@ const CockpitPipeline = () => {
 
         <CreateOpportunityDialog open={showCreateDialog} onOpenChange={setShowCreateDialog} />
 
+        {focusId && opportunities?.some((o) => o.id === focusId) && (
+          <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-md bg-primary/10 border border-primary/30 text-sm">
+            <span className="text-primary font-medium">
+              Mode focus : {opportunities.find((o) => o.id === focusId)?.title}
+            </span>
+            <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={clearFocus}>
+              Effacer le focus
+            </Button>
+          </div>
+        )}
+
         {/* Pipeline Kanban */}
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
