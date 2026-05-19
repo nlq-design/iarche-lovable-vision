@@ -29,7 +29,7 @@ export function PredictionsWidget({ predictions, isLoading }: PredictionsWidgetP
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0 px-3 pb-2">
-          <ScrollArea className="max-h-[280px] pr-2">
+          <ScrollArea className="h-[280px] pr-2">
             <div className="space-y-1.5">
               {predictions.map((pred, i) => {
               const snapshot: AIActionSnapshot = {

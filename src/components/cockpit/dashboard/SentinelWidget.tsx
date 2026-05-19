@@ -48,7 +48,7 @@ export function SentinelCardWidget({ alerts, lastFetched }: { alerts: SentinelAl
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0 px-3 pb-2">
-          <ScrollArea className="max-h-[260px] pr-2">
+          <ScrollArea className="h-[260px] pr-2">
             <div className="space-y-1">
               {alerts.map(alert => (
                 <button key={alert.id}
@@ -121,7 +121,7 @@ export function SentinelButton({ alerts, isLoading, onRefresh, onDismiss, lastFe
             </Button>
           </div>
         </div>
-        <ScrollArea className="max-h-[350px]">
+        <ScrollArea className="h-[350px]">
           {alerts.length === 0 ? (
             <div className="p-6 text-center text-muted-foreground">
               <Radar className="w-8 h-8 mx-auto mb-2 opacity-30" />
