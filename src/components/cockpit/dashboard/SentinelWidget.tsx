@@ -78,8 +78,8 @@ const severityConfig = {
 export function SentinelButton({ alerts, isLoading, onRefresh, onDismiss, lastFetched }: {
   alerts: SentinelAlert[]; isLoading: boolean; onRefresh: () => void; onDismiss: (id: string) => void; lastFetched: Date | null;
 }) {
-  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState<AIActionSnapshot | null>(null);
   const criticalCount = alerts.filter(a => a.severity === 'critical').length;
   const hasAlerts = alerts.length > 0;
 
