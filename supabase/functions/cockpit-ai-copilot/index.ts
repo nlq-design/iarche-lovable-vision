@@ -107,6 +107,8 @@ serve(async (req) => {
       entityType: entityType ?? null,
       entityId: entityId ?? null,
       sink: [] as string[],
+      noCache: body?.no_cache === true,
+      cacheInfo: null as null | { hit: boolean; similarity?: number; ageSeconds?: number; fingerprintMatch?: boolean },
     };
 
     switch (mode) {
