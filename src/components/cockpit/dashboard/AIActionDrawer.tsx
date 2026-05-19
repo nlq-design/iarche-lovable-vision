@@ -360,21 +360,44 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
 
             {/* HISTORIQUE — timeline unifiée cliquable (notes + updates + statuts) */}
             <div>
-              <Label className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1.5 mb-2">
-                <MessageSquare className="h-3 w-3" /> Historique ({notes.length})
-              </Label>
+              <div className="flex items-center justify-between mb-2">
+                <Label className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                  <MessageSquare className="h-3 w-3" /> Historique ({notes.length})
+                </Label>
+                <div className="flex gap-1">
+                  <Button
+                    size="sm"
+                    variant={historyFilter === 'all' ? 'secondary' : 'ghost'}
+                    className="h-5 px-1.5 text-[10px]"
+                    onClick={() => setHistoryFilter('all')}
+                  >
+                    Tout
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={historyFilter === 'status' ? 'secondary' : 'ghost'}
+                    className="h-5 px-1.5 text-[10px]"
+                    onClick={() => setHistoryFilter('status')}
+                  >
+                    Logs statut
+                  </Button>
+                </div>
+              </div>
 
-              {notes.length > 0 ? (
+              {filteredNotes.length > 0 ? (
                 <div className="space-y-1.5 mb-2 max-h-64 overflow-y-auto">
-                  {[...notes].reverse().map((note, i) => (
+                  {[...filteredNotes].reverse().map((note, i) => (
                     <TimelineEntry key={`${note.at}-${i}`} note={note} />
                   ))}
                 </div>
               ) : (
                 <p className="text-[11px] text-muted-foreground italic mb-2">
-                  Aucune action enregistrée. Vos notes et modifications apparaîtront ici.
+                  {historyFilter === 'status'
+                    ? 'Aucun changement de statut enregistré.'
+                    : 'Aucune action enregistrée. Vos notes et modifications apparaîtront ici.'}
                 </p>
               )}
+
 
 
               <Textarea
