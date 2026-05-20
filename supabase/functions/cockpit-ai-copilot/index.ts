@@ -17,7 +17,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { extractStructured, callLLM } from "../_shared/ai-client.ts";
 import { loadPrompt } from "../_shared/prompt-loader.ts";
 import { buildMaxContext, formatContextSummary, recordContextTrace } from "../_shared/context-maximizer.ts";
-import { buildContextFingerprint, lookupCache, storeCache } from "../_shared/semantic-cache.ts";
+import { buildCacheKey, buildContextFingerprint, lookupCache, storeCache } from "../_shared/semantic-cache.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -193,13 +193,20 @@ async function suggestTasks(supabase: any, workspaceId: string, entityType?: str
     system_prompt: `Tu es un assistant commercial expert. Suggère 3-5 tâches actionnables. Réponds en français.`,
   });
 
-  // ─── M6 Semantic Cache (entity-scoped only) ──────────────────────────────
-  const cacheable = !!(entityType && entityId && workspaceId);
+  // ─── M6 Semantic Cache (entity-scoped only) — Contract v1 ───────────────
+  const cacheable = !!(entityType && entityId && workspaceId &&
+    (entityType === 'lead' || entityType === 'opportunity' || entityType === 'project'));
   let fingerprint = '';
-  const cacheKey = cacheable ? `suggest_tasks:${entityType}:${entityId}` : '';
+  const cacheKey = cacheable
+    ? buildCacheKey({
+        workspaceId,
+        mode: 'suggest_tasks',
+        entityType: entityType as 'lead' | 'opportunity' | 'project',
+        entityId: entityId!,
+      })
+    : '';
 
   if (cacheable) {
-    // Fetch entity updated_at to feed fingerprint (cheap)
     const tableMap: Record<string, string> = {
       lead: 'leads', opportunity: 'opportunities', project: 'projects',
     };
@@ -210,10 +217,14 @@ async function suggestTasks(supabase: any, workspaceId: string, entityType?: str
       entityUpdatedAt = row?.updated_at ?? null;
     }
     fingerprint = await buildContextFingerprint({
+      entityType: entityType as 'lead' | 'opportunity' | 'project',
+      entityId: entityId!,
+      workspaceId,
+      userId: traceCtx?.userId ?? 'system',
       entityUpdatedAt,
-      ragChunksCount: 0, // captured implicitly via entityUpdatedAt
+      ragChunksCount: traceCtx?.ragChunksCount ?? 0,
       promptVersion: (prompt as any)?.version ?? null,
-      extra: { entityType, ctxLen: context.length },
+      extra: { ctxLen: context.length },
     });
 
     if (traceCtx && !traceCtx.noCache) {
@@ -229,13 +240,24 @@ async function suggestTasks(supabase: any, workspaceId: string, entityType?: str
         };
         if (traceCtx.sink[0]) {
           supabase.from('ai_context_traces')
-            .update({ cache_status: 'hit', cache_similarity: hit.similarity, cache_age_seconds: hit.ageSeconds })
+            .update({
+              cache_status: 'hit',
+              cache_similarity: hit.similarity,
+              cache_age_seconds: hit.ageSeconds,
+              cache_mode: 'suggest_tasks',
+            })
             .eq('id', traceCtx.sink[0])
             .then(() => {});
         }
         return hit.response as any;
       }
       traceCtx.cacheInfo = { hit: false };
+      if (traceCtx.sink[0]) {
+        supabase.from('ai_context_traces')
+          .update({ cache_status: 'miss', cache_mode: 'suggest_tasks' })
+          .eq('id', traceCtx.sink[0])
+          .then(() => {});
+      }
     } else if (traceCtx?.noCache) {
       traceCtx.cacheInfo = { hit: false };
     }
@@ -299,6 +321,7 @@ async function suggestTasks(supabase: any, workspaceId: string, entityType?: str
       response: result,
       model: 'google/gemini-2.5-flash',
       promptVersion: (prompt as any)?.version ?? null,
+      ttlHours: 24,
     }).then(() => {});
   }
 
