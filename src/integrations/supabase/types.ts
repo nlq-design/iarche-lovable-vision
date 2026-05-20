@@ -383,6 +383,7 @@ export type Database = {
         Row: {
           breakdown: Json
           cache_age_seconds: number | null
+          cache_mode: string | null
           cache_similarity: number | null
           cache_status: string | null
           created_at: string
@@ -400,6 +401,7 @@ export type Database = {
         Insert: {
           breakdown?: Json
           cache_age_seconds?: number | null
+          cache_mode?: string | null
           cache_similarity?: number | null
           cache_status?: string | null
           created_at?: string
@@ -417,6 +419,7 @@ export type Database = {
         Update: {
           breakdown?: Json
           cache_age_seconds?: number | null
+          cache_mode?: string | null
           cache_similarity?: number | null
           cache_status?: string | null
           created_at?: string
