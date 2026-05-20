@@ -19,7 +19,7 @@ import { differenceInDays } from 'date-fns';
 import { useEntityCompleteness } from '@/hooks/cockpit/useEntityCompleteness';
 import { CompletenessIndicator } from '@/components/cockpit/CompletenessIndicator';
 import { OpportunityNextStepButton } from '@/components/cockpit/pipeline/OpportunityNextStepButton';
-import { useWorkspace } from '@/contexts/WorkspaceContext';
+import { useWorkspaceId } from '@/contexts/WorkspaceContext';
 
 // Small wrapper component so useEntityCompleteness hook can be called per-card
 function OppCompleteness({ data }: { data: Record<string, unknown> }) {
