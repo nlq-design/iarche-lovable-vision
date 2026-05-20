@@ -1,0 +1,2 @@
+ALTER TABLE public.ai_context_traces ADD COLUMN IF NOT EXISTS cache_mode text;
+CREATE INDEX IF NOT EXISTS idx_ai_context_traces_cache_mode ON public.ai_context_traces(cache_mode) WHERE cache_mode IS NOT NULL;

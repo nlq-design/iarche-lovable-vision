@@ -17,7 +17,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { extractStructured, callLLM } from "../_shared/ai-client.ts";
 import { loadPrompt } from "../_shared/prompt-loader.ts";
 import { buildMaxContext, formatContextSummary, recordContextTrace } from "../_shared/context-maximizer.ts";
-import { buildContextFingerprint, lookupCache, storeCache } from "../_shared/semantic-cache.ts";
+import { buildCacheKey, buildContextFingerprint, lookupCache, storeCache } from "../_shared/semantic-cache.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -193,13 +193,20 @@ async function suggestTasks(supabase: any, workspaceId: string, entityType?: str
     system_prompt: `Tu es un assistant commercial expert. Suggère 3-5 tâches actionnables. Réponds en français.`,
   });
 
-  // ─── M6 Semantic Cache (entity-scoped only) ──────────────────────────────
-  const cacheable = !!(entityType && entityId && workspaceId);
+  // ─── M6 Semantic Cache (entity-scoped only) — Contract v1 ───────────────
+  const cacheable = !!(entityType && entityId && workspaceId &&
+    (entityType === 'lead' || entityType === 'opportunity' || entityType === 'project'));
   let fingerprint = '';
-  const cacheKey = cacheable ? `suggest_tasks:${entityType}:${entityId}` : '';
+  const cacheKey = cacheable
+    ? buildCacheKey({
+        workspaceId,
+        mode: 'suggest_tasks',
+        entityType: entityType as 'lead' | 'opportunity' | 'project',
+        entityId: entityId!,
+      })
+    : '';
 
   if (cacheable) {
-    // Fetch entity updated_at to feed fingerprint (cheap)
     const tableMap: Record<string, string> = {
       lead: 'leads', opportunity: 'opportunities', project: 'projects',
     };
@@ -210,10 +217,14 @@ async function suggestTasks(supabase: any, workspaceId: string, entityType?: str
       entityUpdatedAt = row?.updated_at ?? null;
     }
     fingerprint = await buildContextFingerprint({
+      entityType: entityType as 'lead' | 'opportunity' | 'project',
+      entityId: entityId!,
+      workspaceId,
+      userId: traceCtx?.userId ?? 'system',
       entityUpdatedAt,
-      ragChunksCount: 0, // captured implicitly via entityUpdatedAt
+      ragChunksCount: traceCtx?.ragChunksCount ?? 0,
       promptVersion: (prompt as any)?.version ?? null,
-      extra: { entityType, ctxLen: context.length },
+      extra: { ctxLen: context.length },
     });
 
     if (traceCtx && !traceCtx.noCache) {
@@ -229,13 +240,24 @@ async function suggestTasks(supabase: any, workspaceId: string, entityType?: str
         };
         if (traceCtx.sink[0]) {
           supabase.from('ai_context_traces')
-            .update({ cache_status: 'hit', cache_similarity: hit.similarity, cache_age_seconds: hit.ageSeconds })
+            .update({
+              cache_status: 'hit',
+              cache_similarity: hit.similarity,
+              cache_age_seconds: hit.ageSeconds,
+              cache_mode: 'suggest_tasks',
+            })
             .eq('id', traceCtx.sink[0])
             .then(() => {});
         }
         return hit.response as any;
       }
       traceCtx.cacheInfo = { hit: false };
+      if (traceCtx.sink[0]) {
+        supabase.from('ai_context_traces')
+          .update({ cache_status: 'miss', cache_mode: 'suggest_tasks' })
+          .eq('id', traceCtx.sink[0])
+          .then(() => {});
+      }
     } else if (traceCtx?.noCache) {
       traceCtx.cacheInfo = { hit: false };
     }
@@ -299,6 +321,7 @@ async function suggestTasks(supabase: any, workspaceId: string, entityType?: str
       response: result,
       model: 'google/gemini-2.5-flash',
       promptVersion: (prompt as any)?.version ?? null,
+      ttlHours: 24,
     }).then(() => {});
   }
 
@@ -528,10 +551,21 @@ ${richContext}
     system_prompt: `Tu es un expert en vente B2B. Recommande la prochaine action. Réponds en français.`,
   });
 
-  // ─── M6 Semantic Cache lookup ─────────────────────────────────────────────
-  const cacheKey = `next_step:opportunity:${entityId}`;
+  // ─── M6 Semantic Cache lookup (Contract v1) ───────────────────────────────
+  const cacheKey = opp.workspace_id
+    ? buildCacheKey({
+        workspaceId: opp.workspace_id,
+        mode: 'next_step',
+        entityType: 'opportunity',
+        entityId: opp.id,
+      })
+    : '';
   const lastActivityId = activity?.[0]?.created_at ?? null;
   const fingerprint = await buildContextFingerprint({
+    entityType: 'opportunity',
+    entityId: opp.id,
+    workspaceId: opp.workspace_id ?? '',
+    userId: traceCtx?.userId ?? 'system',
     entityUpdatedAt: opp.updated_at,
     ragChunksCount,
     lastActivityId,
@@ -555,13 +589,13 @@ ${richContext}
         ageSeconds: hit.ageSeconds,
         fingerprintMatch: hit.fingerprintMatch,
       };
-      // Backfill cache columns on the just-inserted trace
       if (traceCtx.sink[0]) {
         supabase.from('ai_context_traces')
           .update({
             cache_status: 'hit',
             cache_similarity: hit.similarity,
             cache_age_seconds: hit.ageSeconds,
+            cache_mode: 'next_step',
           })
           .eq('id', traceCtx.sink[0])
           .then(() => {});
@@ -569,6 +603,12 @@ ${richContext}
       return { ...(hit.response as any), opportunity: { id: opp.id, title: opp.title, stage: opp.stage } };
     }
     traceCtx.cacheInfo = { hit: false };
+    if (traceCtx.sink[0]) {
+      supabase.from('ai_context_traces')
+        .update({ cache_status: 'miss', cache_mode: 'next_step' })
+        .eq('id', traceCtx.sink[0])
+        .then(() => {});
+    }
   }
   // ──────────────────────────────────────────────────────────────────────────
 
@@ -611,6 +651,7 @@ ${richContext}
       response: { suggestion },
       model: 'google/gemini-2.5-flash',
       promptVersion: (nextStepPrompt as any)?.version ?? null,
+      ttlHours: 1,
     }).then(() => {});
   }
 
@@ -1421,10 +1462,20 @@ ${activeAIActions.map((a: any) => {
     system_prompt: `Tu es le cerveau analytique du Command Center. Analyse TOUTES les données et produis une intelligence structurée. Français uniquement.`,
   });
 
-  // === M6 Semantic Cache — wrap LLM call (intelligence daily brief) ===
+  // === M6 Semantic Cache — wrap LLM call (intelligence daily brief, Contract v1) ===
   const intelligencePromptVersion = (prompt as any)?.version ?? "v1";
-  const intelligenceCacheKey = `intelligence:daily`;
+  const intelligenceEntityId = `${workspaceId}:${today}`;
+  const intelligenceCacheKey = buildCacheKey({
+    workspaceId,
+    mode: 'intelligence',
+    entityType: 'intelligence',
+    entityId: intelligenceEntityId,
+  });
   const intelligenceFingerprint = await buildContextFingerprint({
+    entityType: 'intelligence',
+    entityId: intelligenceEntityId,
+    workspaceId,
+    userId: traceCtx?.userId ?? 'system',
     entityUpdatedAt: today,
     ragChunksCount: enrichedLlmContext.length,
     lastActivityId: (recentActivity?.[0] as any)?.created_at ?? null,
@@ -1461,10 +1512,29 @@ ${activeAIActions.map((a: any) => {
           ageSeconds: hit.ageSeconds,
           fingerprintMatch: hit.fingerprintMatch,
         };
+        if (traceCtx.sink[0]) {
+          supabase.from('ai_context_traces')
+            .update({
+              cache_status: 'hit',
+              cache_similarity: hit.similarity,
+              cache_age_seconds: hit.ageSeconds,
+              cache_mode: 'intelligence',
+            })
+            .eq('id', traceCtx.sink[0])
+            .then(() => {});
+        }
       }
       return hit.response as any;
     }
-    if (traceCtx) traceCtx.cacheInfo = { hit: false };
+    if (traceCtx) {
+      traceCtx.cacheInfo = { hit: false };
+      if (traceCtx.sink[0]) {
+        supabase.from('ai_context_traces')
+          .update({ cache_status: 'miss', cache_mode: 'intelligence' })
+          .eq('id', traceCtx.sink[0])
+          .then(() => {});
+      }
+    }
   }
 
   // Single LLM call with structured output
@@ -1662,6 +1732,8 @@ export interface TraceCtx {
   entityId: string | null;
   sink: string[];
   noCache?: boolean;
+  /** Nombre de chunks RAG réellement injectés (rempli par collectEntityContext) — feed du fingerprint M6. */
+  ragChunksCount?: number;
   cacheInfo?: null | { hit: boolean; similarity?: number; ageSeconds?: number; fingerprintMatch?: boolean };
 }
 
@@ -1686,6 +1758,7 @@ async function collectEntityContext(supabase: any, entityType: string, entityId:
     console.log(`[cockpit-copilot] ${formatContextSummary(maxCtx)}`);
 
     if (traceCtx) {
+      traceCtx.ragChunksCount = (maxCtx.ragChunks ?? []).length;
       const id = await recordContextTrace(supabase, {
         workspaceId: traceCtx.workspaceId,
         userId: traceCtx.userId,
