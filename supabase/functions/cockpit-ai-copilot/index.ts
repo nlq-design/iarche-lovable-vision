@@ -1462,10 +1462,20 @@ ${activeAIActions.map((a: any) => {
     system_prompt: `Tu es le cerveau analytique du Command Center. Analyse TOUTES les données et produis une intelligence structurée. Français uniquement.`,
   });
 
-  // === M6 Semantic Cache — wrap LLM call (intelligence daily brief) ===
+  // === M6 Semantic Cache — wrap LLM call (intelligence daily brief, Contract v1) ===
   const intelligencePromptVersion = (prompt as any)?.version ?? "v1";
-  const intelligenceCacheKey = `intelligence:daily`;
+  const intelligenceEntityId = `${workspaceId}:${today}`;
+  const intelligenceCacheKey = buildCacheKey({
+    workspaceId,
+    mode: 'intelligence',
+    entityType: 'intelligence',
+    entityId: intelligenceEntityId,
+  });
   const intelligenceFingerprint = await buildContextFingerprint({
+    entityType: 'intelligence',
+    entityId: intelligenceEntityId,
+    workspaceId,
+    userId: traceCtx?.userId ?? 'system',
     entityUpdatedAt: today,
     ragChunksCount: enrichedLlmContext.length,
     lastActivityId: (recentActivity?.[0] as any)?.created_at ?? null,
@@ -1502,10 +1512,29 @@ ${activeAIActions.map((a: any) => {
           ageSeconds: hit.ageSeconds,
           fingerprintMatch: hit.fingerprintMatch,
         };
+        if (traceCtx.sink[0]) {
+          supabase.from('ai_context_traces')
+            .update({
+              cache_status: 'hit',
+              cache_similarity: hit.similarity,
+              cache_age_seconds: hit.ageSeconds,
+              cache_mode: 'intelligence',
+            })
+            .eq('id', traceCtx.sink[0])
+            .then(() => {});
+        }
       }
       return hit.response as any;
     }
-    if (traceCtx) traceCtx.cacheInfo = { hit: false };
+    if (traceCtx) {
+      traceCtx.cacheInfo = { hit: false };
+      if (traceCtx.sink[0]) {
+        supabase.from('ai_context_traces')
+          .update({ cache_status: 'miss', cache_mode: 'intelligence' })
+          .eq('id', traceCtx.sink[0])
+          .then(() => {});
+      }
+    }
   }
 
   // Single LLM call with structured output
