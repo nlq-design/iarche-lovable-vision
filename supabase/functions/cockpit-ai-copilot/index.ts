@@ -651,6 +651,7 @@ ${richContext}
       response: { suggestion },
       model: 'google/gemini-2.5-flash',
       promptVersion: (nextStepPrompt as any)?.version ?? null,
+      ttlHours: 1,
     }).then(() => {});
   }
 
