@@ -134,7 +134,7 @@ serve(async (req) => {
         result = await harvestRespond(supabase, workspaceId, body.taskIds, body.response, body.action);
         break;
       case "intelligence":
-        result = await intelligenceAggregator(supabase, workspaceId);
+        result = await intelligenceAggregator(supabase, workspaceId, traceCtx);
         break;
       default:
         return new Response(JSON.stringify({ error: `Mode inconnu: ${mode}` }), {
