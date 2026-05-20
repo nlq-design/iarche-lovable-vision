@@ -551,10 +551,21 @@ ${richContext}
     system_prompt: `Tu es un expert en vente B2B. Recommande la prochaine action. Réponds en français.`,
   });
 
-  // ─── M6 Semantic Cache lookup ─────────────────────────────────────────────
-  const cacheKey = `next_step:opportunity:${entityId}`;
+  // ─── M6 Semantic Cache lookup (Contract v1) ───────────────────────────────
+  const cacheKey = opp.workspace_id
+    ? buildCacheKey({
+        workspaceId: opp.workspace_id,
+        mode: 'next_step',
+        entityType: 'opportunity',
+        entityId: opp.id,
+      })
+    : '';
   const lastActivityId = activity?.[0]?.created_at ?? null;
   const fingerprint = await buildContextFingerprint({
+    entityType: 'opportunity',
+    entityId: opp.id,
+    workspaceId: opp.workspace_id ?? '',
+    userId: traceCtx?.userId ?? 'system',
     entityUpdatedAt: opp.updated_at,
     ragChunksCount,
     lastActivityId,
@@ -578,13 +589,13 @@ ${richContext}
         ageSeconds: hit.ageSeconds,
         fingerprintMatch: hit.fingerprintMatch,
       };
-      // Backfill cache columns on the just-inserted trace
       if (traceCtx.sink[0]) {
         supabase.from('ai_context_traces')
           .update({
             cache_status: 'hit',
             cache_similarity: hit.similarity,
             cache_age_seconds: hit.ageSeconds,
+            cache_mode: 'next_step',
           })
           .eq('id', traceCtx.sink[0])
           .then(() => {});
@@ -592,6 +603,12 @@ ${richContext}
       return { ...(hit.response as any), opportunity: { id: opp.id, title: opp.title, stage: opp.stage } };
     }
     traceCtx.cacheInfo = { hit: false };
+    if (traceCtx.sink[0]) {
+      supabase.from('ai_context_traces')
+        .update({ cache_status: 'miss', cache_mode: 'next_step' })
+        .eq('id', traceCtx.sink[0])
+        .then(() => {});
+    }
   }
   // ──────────────────────────────────────────────────────────────────────────
 
