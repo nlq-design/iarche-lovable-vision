@@ -1510,6 +1510,7 @@ ${activeAIActions.map((a: any) => {
     lastActivityId: (recentActivity?.[0] as any)?.created_at ?? null,
     sentinelDigest: `s${topSentinel.length}|cs${(crossSignalsRows || []).length}`,
     promptVersion: intelligencePromptVersion,
+    cacheScope: 'workspace',
     extra: {
       leads: leads?.length || 0,
       opps: opportunities?.length || 0,
