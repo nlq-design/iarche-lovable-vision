@@ -136,6 +136,9 @@ serve(async (req) => {
       case "intelligence":
         result = await intelligenceAggregator(supabase, workspaceId, traceCtx);
         break;
+      case "parse-voice-note":
+        result = await parseVoiceNote(supabase, workspaceId, body, traceCtx);
+        break;
       default:
         return new Response(JSON.stringify({ error: `Mode inconnu: ${mode}` }), {
           status: 400,
@@ -561,6 +564,25 @@ ${richContext}
       })
     : '';
   const lastActivityId = activity?.[0]?.created_at ?? null;
+
+  // Fetch latest user-note timestamp on this entity → bust cache when user adds context
+  let lastNoteAt: string | null = null;
+  if (opp.workspace_id) {
+    const { data: latestNoteRow } = await supabase
+      .from('ai_actions')
+      .select('user_notes, updated_at')
+      .eq('workspace_id', opp.workspace_id)
+      .eq('entity_id', opp.id)
+      .order('updated_at', { ascending: false })
+      .limit(5);
+    for (const row of latestNoteRow ?? []) {
+      const notes = Array.isArray(row.user_notes) ? row.user_notes : [];
+      for (const n of notes) {
+        if (n?.at && (!lastNoteAt || n.at > lastNoteAt)) lastNoteAt = n.at;
+      }
+    }
+  }
+
   const fingerprint = await buildContextFingerprint({
     entityType: 'opportunity',
     entityId: opp.id,
@@ -570,7 +592,7 @@ ${richContext}
     ragChunksCount,
     lastActivityId,
     promptVersion: (nextStepPrompt as any)?.version ?? null,
-    extra: { stage: opp.stage, tasks: tasks?.length ?? 0 },
+    extra: { stage: opp.stage, tasks: tasks?.length ?? 0, lastNoteAt },
   });
 
   if (traceCtx && !traceCtx.noCache && opp.workspace_id) {
@@ -1319,15 +1341,20 @@ ${(recentActivity || []).slice(0, 15).map((a: any) => `- ${a.created_at?.slice(0
 
   const userFeedbackContext = (activeAIActions && activeAIActions.length > 0)
     ? `\n\n--- FEEDBACK UTILISATEUR (boucle d'apprentissage) ---
-Ces éléments IA précédents ont été enrichis par l'utilisateur. Tu dois en tenir compte : ne PAS répéter une action déjà reportée, intégrer les nouvelles infos (deadline, montant, contact) dans tes suggestions, fusionner ou affiner plutôt que dupliquer.
+Ces éléments IA précédents ont été enrichis par l'utilisateur. Tu dois en tenir compte : ne PAS répéter une action déjà reportée ou rejetée, intégrer les nouvelles infos (deadline, montant, contact) dans tes suggestions, fusionner ou affiner plutôt que dupliquer.
 
 ${activeAIActions.map((a: any) => {
-  const notes = Array.isArray(a.user_notes) && a.user_notes.length > 0
-    ? `\n  Notes: ${a.user_notes.map((n: any) => `"${n.text}"`).join(' | ')}` : '';
+  const allNotes = Array.isArray(a.user_notes) ? a.user_notes : [];
+  const userNotes = allNotes.filter((n: any) => (n?.kind ?? 'note') === 'note');
+  const statusFeedback = allNotes.filter((n: any) => n?.kind === 'status');
+  const notesBlock = userNotes.length > 0
+    ? `\n  Notes utilisateur: ${userNotes.map((n: any) => `"${n.text}"`).join(' | ')}` : '';
+  const feedbackBlock = statusFeedback.length > 0
+    ? `\n  Feedback (rejets/reports): ${statusFeedback.map((n: any) => `"${n.text}"`).join(' | ')}` : '';
   const updates = a.structured_updates && Object.keys(a.structured_updates).length > 0
-    ? `\n  Mises à jour: ${JSON.stringify(a.structured_updates)}` : '';
+    ? `\n  Mises à jour appliquées: ${JSON.stringify(a.structured_updates)}` : '';
   const snoozeInfo = a.snooze_until ? ` [reporté jusqu'au ${a.snooze_until.slice(0, 10)}]` : '';
-  return `- [${a.source}/${a.status}${snoozeInfo}] ${a.entity_name || ''}: "${a.action_text}"${notes}${updates}`;
+  return `- [${a.source}/${a.status}${snoozeInfo}] ${a.entity_name || ''}: "${a.action_text}"${notesBlock}${feedbackBlock}${updates}`;
 }).join('\n')}
 --- FIN FEEDBACK ---`
     : '';
@@ -1864,4 +1891,121 @@ async function collectGlobalContext(supabase: any, workspaceId: string): Promise
   }).join("\n") || "Aucune"}`);
 
   return parts.join("\n\n");
+}
+
+// =============================================================================
+// MODE: PARSE VOICE NOTE — Structure une transcription vocale en update CRM
+// =============================================================================
+
+async function parseVoiceNote(
+  supabase: any,
+  workspaceId: string,
+  body: any,
+  traceCtx?: TraceCtx,
+) {
+  const transcript = String(body?.transcript ?? '').trim();
+  if (!transcript) return { error: 'transcript requis' };
+  if (transcript.length > 4000) return { error: 'transcript trop long (>4000 caractères)' };
+
+  const entityType = body?.entityType ?? null;
+  const entityId = body?.entityId ?? null;
+
+  // Snapshot entité courante (montant/deadline/contact actuels pour comparaison)
+  let entitySnapshot: any = null;
+  if (entityType && entityId) {
+    const tableMap: Record<string, string> = {
+      opportunity: 'opportunities',
+      lead: 'leads',
+      project: 'projects',
+    };
+    const table = tableMap[entityType];
+    if (table) {
+      const { data } = await supabase
+        .from(table)
+        .select('*')
+        .eq('id', entityId)
+        .eq('workspace_id', workspaceId)
+        .maybeSingle();
+      entitySnapshot = data ?? null;
+    }
+  }
+
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const contextBlock = entitySnapshot
+    ? `\n## Entité courante (${entityType})
+- Nom: ${entitySnapshot.name || entitySnapshot.title || '—'}
+- Montant actuel: ${entitySnapshot.value_amount ?? entitySnapshot.amount ?? '—'}
+- Échéance actuelle: ${entitySnapshot.expected_close_date ?? entitySnapshot.due_date ?? '—'}
+- Contact actuel: ${entitySnapshot.email ?? entitySnapshot.phone ?? '—'}
+- Stage: ${entitySnapshot.stage ?? entitySnapshot.status ?? '—'}`
+    : '';
+
+  const systemPrompt = `Tu es un assistant CRM. À partir d'une transcription vocale courte (note dictée par un commercial sur le terrain), extrais :
+1. Une note nettoyée et concise (1-3 phrases, français correct, sans hésitations ni mots parasites)
+2. Des mises à jour structurées si l'utilisateur mentionne EXPLICITEMENT un montant, une échéance ou un contact
+3. Ta confiance (0-1)
+
+RÈGLES STRICTES :
+- N'invente AUCUNE valeur. Si le montant/échéance/contact n'est pas mentionné, omets le champ.
+- Pour les dates relatives ("la semaine prochaine", "fin juin"), calcule par rapport à aujourd'hui (${todayIso}) et renvoie au format AAAA-MM-JJ.
+- Montants : accepter "15k", "15 000 euros", "15K€" → renvoyer 15000 (number).
+- Contact : email valide OU téléphone (chiffres + symboles tel).
+- Si la transcription est ambiguë ou trop courte, baisse la confiance (<0.5) et n'extrais que la note.`;
+
+  const userPrompt = `Transcription vocale brute :
+"""
+${transcript}
+"""
+${contextBlock}
+
+Aujourd'hui : ${todayIso}`;
+
+  try {
+    const parsed = await extractStructured<{
+      note: string;
+      structured_updates: {
+        new_amount?: number;
+        new_deadline?: string;
+        new_contact?: string;
+      };
+      confidence: number;
+    }>(
+      [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
+      {
+        name: 'parse_voice_note',
+        description: 'Structure une transcription vocale en update CRM',
+        parameters: {
+          type: 'object',
+          properties: {
+            note: { type: 'string' },
+            structured_updates: {
+              type: 'object',
+              properties: {
+                new_amount: { type: 'number' },
+                new_deadline: { type: 'string', description: 'Format AAAA-MM-JJ' },
+                new_contact: { type: 'string' },
+              },
+              additionalProperties: false,
+            },
+            confidence: { type: 'number', minimum: 0, maximum: 1 },
+          },
+          required: ['note', 'structured_updates', 'confidence'],
+          additionalProperties: false,
+        },
+      },
+      { functionName: FUNCTION_NAME, workspaceId },
+    );
+
+    return {
+      ok: true,
+      transcript,
+      ...parsed,
+    };
+  } catch (e) {
+    console.error('[parse-voice-note] error:', e);
+    return { error: e instanceof Error ? e.message : String(e), transcript };
+  }
 }

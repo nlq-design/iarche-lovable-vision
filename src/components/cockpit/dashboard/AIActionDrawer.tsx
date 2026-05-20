@@ -37,6 +37,7 @@ import { cn } from '@/lib/utils';
 import { formatCurrency, STAGE_LABELS, safeNavigateToEntity } from './helpers';
 import { useAIAction, type AIActionSnapshot, type AIActionStatus, type AIActionNote, type AIActionArtifact, type AIActionArtifactStatus } from '@/hooks/cockpit/useAIAction';
 import { useEntitySnapshot } from '@/hooks/cockpit/useEntitySnapshot';
+import { VoiceNoteInput, type VoiceParsedResult } from './VoiceNoteInput';
 
 interface AIActionDrawerProps {
   snapshot: AIActionSnapshot | null;
@@ -445,21 +446,36 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
                 rows={2}
                 className="text-xs resize-none"
               />
-              <Button
-                size="sm"
-                variant="ghost"
-                className="w-full mt-1 h-7 text-xs"
-                onClick={handleAddNote}
-                disabled={addNote.isPending || !noteText.trim()}
-              >
-                {addNote.isPending ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <>
-                    <Send className="h-3 w-3 mr-1.5" /> Ajouter au contexte
-                  </>
-                )}
-              </Button>
+              <div className="flex items-center justify-between gap-2 mt-1">
+                <VoiceNoteInput
+                  currentText={noteText}
+                  entityType={snapshot.entity_type}
+                  entityId={snapshot.entity_id}
+                  onTranscript={(t) => setNoteText((prev) => (prev ? `${prev} ${t}` : t))}
+                  onParsed={(r: VoiceParsedResult) => {
+                    if (r.note) setNoteText(r.note);
+                    const u = r.structured_updates ?? {};
+                    if (u.new_amount !== undefined) setNewAmount(String(u.new_amount));
+                    if (u.new_deadline) setNewDeadline(u.new_deadline);
+                    if (u.new_contact) setNewContact(u.new_contact);
+                  }}
+                />
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 text-xs"
+                  onClick={handleAddNote}
+                  disabled={addNote.isPending || !noteText.trim()}
+                >
+                  {addNote.isPending ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <>
+                      <Send className="h-3 w-3 mr-1.5" /> Ajouter au contexte
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
 
             <Separator />
