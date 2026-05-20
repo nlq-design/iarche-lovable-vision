@@ -256,12 +256,14 @@ async function suggestTasks(supabase: any, workspaceId: string, entityType?: str
         return hit.response as any;
       }
       traceCtx.cacheInfo = { hit: false };
+      const _missStart = Date.now();
       if (traceCtx.sink[0]) {
         supabase.from('ai_context_traces')
-          .update({ cache_status: 'miss', cache_mode: 'suggest_tasks' })
+          .update({ cache_status: 'miss', cache_mode: 'suggest_tasks', cache_scope: 'workspace' })
           .eq('id', traceCtx.sink[0])
           .then(() => {});
       }
+      (traceCtx as any)._missStart = _missStart;
     } else if (traceCtx?.noCache) {
       traceCtx.cacheInfo = { hit: false };
     }
@@ -627,12 +629,14 @@ ${richContext}
       return { ...(hit.response as any), opportunity: { id: opp.id, title: opp.title, stage: opp.stage } };
     }
     traceCtx.cacheInfo = { hit: false };
+    const _missStart = Date.now();
     if (traceCtx.sink[0]) {
       supabase.from('ai_context_traces')
-        .update({ cache_status: 'miss', cache_mode: 'next_step' })
+        .update({ cache_status: 'miss', cache_mode: 'next_step', cache_scope: 'workspace' })
         .eq('id', traceCtx.sink[0])
         .then(() => {});
     }
+    (traceCtx as any)._missStart = _missStart;
   }
   // ──────────────────────────────────────────────────────────────────────────
 
@@ -1558,9 +1562,10 @@ ${activeAIActions.map((a: any) => {
     }
     if (traceCtx) {
       traceCtx.cacheInfo = { hit: false };
+      (traceCtx as any)._missStart = Date.now();
       if (traceCtx.sink[0]) {
         supabase.from('ai_context_traces')
-          .update({ cache_status: 'miss', cache_mode: 'intelligence' })
+          .update({ cache_status: 'miss', cache_mode: 'intelligence', cache_scope: 'workspace' })
           .eq('id', traceCtx.sink[0])
           .then(() => {});
       }
