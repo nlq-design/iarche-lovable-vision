@@ -1,12 +1,18 @@
 /**
- * M6 — Semantic Cache helper
+ * M6 — Semantic Cache helper (Contract v1)
  *
  * Stratégie hybride :
  *  1. fingerprint exact (hash matériel du contexte) -> hit déterministe
  *  2. ANN cosine sur embedding 1536d (openai/text-embedding-3-small) -> hit sémantique
  *
- * Branchement : avant tout appel LLM dans cockpit-ai-copilot (suggestTasks, suggestNextStep, ...).
- * En cas de miss : appel LLM normal, puis storeCache() persistant.
+ * Contrat de contexte v1 (cf. mem://cockpit/intelligence/semantic-cache-contract-v1) :
+ *  - Tous les champs typés ci-dessous sont OBLIGATOIRES pour les 3 flux
+ *    (suggestTasks, suggestNextStep, intelligenceAggregator).
+ *  - `extra` est sérialisé en JSON canonique (clés triées) pour garantir
+ *    que l'ordre d'insertion n'affecte pas le hash.
+ *  - Aucun champ volatile (Date.now, random, etc.) ne doit entrer dans le fingerprint.
+ *
+ * cacheKey format figé : `{workspaceId}:{mode}:{entityType}:{entityId}`
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -17,18 +23,41 @@ const DEFAULT_THRESHOLD = 0.93;
 const DEFAULT_TTL_HOURS = 24;
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/embeddings";
 
+export type CacheMode = "suggest_tasks" | "next_step" | "intelligence";
+export type CacheEntityType = "lead" | "opportunity" | "project" | "intelligence";
+
 export interface FingerprintInput {
-  entityUpdatedAt?: string | null;
-  ragChunksCount?: number;
+  // Identité (obligatoire)
+  entityType: CacheEntityType;
+  entityId: string;
+  workspaceId: string;
+  userId: string;                 // auth.uid() ou 'system' pour les cron
+  // Signaux matériels (obligatoire)
+  entityUpdatedAt: string | null;
+  ragChunksCount: number;
+  promptVersion: string | null;
+  // Signaux optionnels
   lastActivityId?: string | null;
   sentinelDigest?: string | null;
-  promptVersion?: string | null;
   extra?: Record<string, unknown>;
+}
+
+/** Canonicalise un objet (clés triées récursivement) pour un hash stable. */
+function canonicalStringify(value: unknown): string {
+  if (value === null || typeof value !== "object") return JSON.stringify(value ?? null);
+  if (Array.isArray(value)) return `[${value.map(canonicalStringify).join(",")}]`;
+  const obj = value as Record<string, unknown>;
+  const keys = Object.keys(obj).sort();
+  return `{${keys.map((k) => `${JSON.stringify(k)}:${canonicalStringify(obj[k])}`).join(",")}}`;
 }
 
 /** SHA-256 hex deterministic fingerprint of all material context signals. */
 export async function buildContextFingerprint(input: FingerprintInput): Promise<string> {
-  const payload = JSON.stringify({
+  const payload = canonicalStringify({
+    et: input.entityType,
+    ei: input.entityId,
+    ws: input.workspaceId,
+    uid: input.userId,
     u: input.entityUpdatedAt ?? null,
     c: input.ragChunksCount ?? 0,
     a: input.lastActivityId ?? null,
@@ -41,6 +70,16 @@ export async function buildContextFingerprint(input: FingerprintInput): Promise<
   return Array.from(new Uint8Array(digest))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
+}
+
+/** Construit la clé de cache normalisée. */
+export function buildCacheKey(p: {
+  workspaceId: string;
+  mode: CacheMode;
+  entityType: CacheEntityType;
+  entityId: string;
+}): string {
+  return `${p.workspaceId}:${p.mode}:${p.entityType}:${p.entityId}`;
 }
 
 /** Embed cache query via Lovable AI Gateway. Returns null on failure (cache becomes pass-through). */
