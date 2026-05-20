@@ -1732,6 +1732,8 @@ export interface TraceCtx {
   entityId: string | null;
   sink: string[];
   noCache?: boolean;
+  /** Nombre de chunks RAG réellement injectés (rempli par collectEntityContext) — feed du fingerprint M6. */
+  ragChunksCount?: number;
   cacheInfo?: null | { hit: boolean; similarity?: number; ageSeconds?: number; fingerprintMatch?: boolean };
 }
 
@@ -1756,6 +1758,7 @@ async function collectEntityContext(supabase: any, entityType: string, entityId:
     console.log(`[cockpit-copilot] ${formatContextSummary(maxCtx)}`);
 
     if (traceCtx) {
+      traceCtx.ragChunksCount = (maxCtx.ragChunks ?? []).length;
       const id = await recordContextTrace(supabase, {
         workspaceId: traceCtx.workspaceId,
         userId: traceCtx.userId,
