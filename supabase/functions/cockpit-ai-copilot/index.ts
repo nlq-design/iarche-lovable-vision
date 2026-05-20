@@ -1606,7 +1606,7 @@ ${activeAIActions.map((a: any) => {
     { functionName: FUNCTION_NAME, workspaceId }
   );
 
-  return {
+  const payload = {
     intelligence: {
       ...result,
       generated_at: new Date().toISOString(),
@@ -1631,6 +1631,23 @@ ${activeAIActions.map((a: any) => {
       cross_signals_db: crossSignalsRows || [],
     },
   };
+
+  // M6 — fire-and-forget cache store
+  if (!traceCtx?.noCache) {
+    storeCache({
+      supabase,
+      workspaceId,
+      cacheKey: intelligenceCacheKey,
+      queryText: enrichedLlmContext,
+      fingerprint: intelligenceFingerprint,
+      response: payload,
+      model: "google/gemini-2.5-flash",
+      promptVersion: intelligencePromptVersion,
+      ttlHours: 12,
+    }).catch(() => {});
+  }
+
+  return payload;
 }
 
 // =============================================================================
