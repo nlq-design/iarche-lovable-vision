@@ -136,6 +136,9 @@ serve(async (req) => {
       case "intelligence":
         result = await intelligenceAggregator(supabase, workspaceId, traceCtx);
         break;
+      case "parse-voice-note":
+        result = await parseVoiceNote(supabase, workspaceId, body, traceCtx);
+        break;
       default:
         return new Response(JSON.stringify({ error: `Mode inconnu: ${mode}` }), {
           status: 400,
