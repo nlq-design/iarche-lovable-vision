@@ -43,6 +43,7 @@ const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const Redacia = lazy(() => import("./pages/admin/Redacia"));
 const RedacNews = lazy(() => import("./pages/admin/RedacNews"));
 const AdvancedStats = lazy(() => import("./pages/admin/AdvancedStats"));
+const AIObservability = lazy(() => import("./pages/admin/AIObservability"));
 const AuditLogs = lazy(() => import("./pages/admin/AuditLogs"));
 const SecurityDashboard = lazy(() => import("./pages/admin/SecurityDashboard"));
 const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
@@ -340,6 +341,11 @@ const App = () => (
           <Route path="/admin/advanced-stats" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <ProtectedAdminRoute><AdvancedStats /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/observability/ai" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AIObservability /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/articles" element={
