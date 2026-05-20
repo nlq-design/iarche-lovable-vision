@@ -1341,15 +1341,20 @@ ${(recentActivity || []).slice(0, 15).map((a: any) => `- ${a.created_at?.slice(0
 
   const userFeedbackContext = (activeAIActions && activeAIActions.length > 0)
     ? `\n\n--- FEEDBACK UTILISATEUR (boucle d'apprentissage) ---
-Ces éléments IA précédents ont été enrichis par l'utilisateur. Tu dois en tenir compte : ne PAS répéter une action déjà reportée, intégrer les nouvelles infos (deadline, montant, contact) dans tes suggestions, fusionner ou affiner plutôt que dupliquer.
+Ces éléments IA précédents ont été enrichis par l'utilisateur. Tu dois en tenir compte : ne PAS répéter une action déjà reportée ou rejetée, intégrer les nouvelles infos (deadline, montant, contact) dans tes suggestions, fusionner ou affiner plutôt que dupliquer.
 
 ${activeAIActions.map((a: any) => {
-  const notes = Array.isArray(a.user_notes) && a.user_notes.length > 0
-    ? `\n  Notes: ${a.user_notes.map((n: any) => `"${n.text}"`).join(' | ')}` : '';
+  const allNotes = Array.isArray(a.user_notes) ? a.user_notes : [];
+  const userNotes = allNotes.filter((n: any) => (n?.kind ?? 'note') === 'note');
+  const statusFeedback = allNotes.filter((n: any) => n?.kind === 'status');
+  const notesBlock = userNotes.length > 0
+    ? `\n  Notes utilisateur: ${userNotes.map((n: any) => `"${n.text}"`).join(' | ')}` : '';
+  const feedbackBlock = statusFeedback.length > 0
+    ? `\n  Feedback (rejets/reports): ${statusFeedback.map((n: any) => `"${n.text}"`).join(' | ')}` : '';
   const updates = a.structured_updates && Object.keys(a.structured_updates).length > 0
-    ? `\n  Mises à jour: ${JSON.stringify(a.structured_updates)}` : '';
+    ? `\n  Mises à jour appliquées: ${JSON.stringify(a.structured_updates)}` : '';
   const snoozeInfo = a.snooze_until ? ` [reporté jusqu'au ${a.snooze_until.slice(0, 10)}]` : '';
-  return `- [${a.source}/${a.status}${snoozeInfo}] ${a.entity_name || ''}: "${a.action_text}"${notes}${updates}`;
+  return `- [${a.source}/${a.status}${snoozeInfo}] ${a.entity_name || ''}: "${a.action_text}"${notesBlock}${feedbackBlock}${updates}`;
 }).join('\n')}
 --- FIN FEEDBACK ---`
     : '';
