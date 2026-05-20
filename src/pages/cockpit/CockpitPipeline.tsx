@@ -57,6 +57,7 @@ interface Lead {
 
 const CockpitPipeline = () => {
   const { opportunities, stats, isLoading, moveToStage, PIPELINE_STAGES } = useCockpitOpportunities();
+  const workspaceId = useWorkspaceId() ?? undefined;
   const { leads } = useCockpitLeads();
   const { activities } = useCockpitActivityLog();
   const [draggedId, setDraggedId] = useState<string | null>(null);
