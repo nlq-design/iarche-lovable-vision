@@ -384,6 +384,7 @@ export type Database = {
           breakdown: Json
           cache_age_seconds: number | null
           cache_mode: string | null
+          cache_scope: string | null
           cache_similarity: number | null
           cache_status: string | null
           created_at: string
@@ -391,6 +392,9 @@ export type Database = {
           entity_type: string | null
           estimated_tokens: number
           id: string
+          latency_ms: number | null
+          llm_cost_estimate_usd: number | null
+          llm_provider: string | null
           mode: string
           rag_chunks: Json
           token_budget: number | null
@@ -402,6 +406,7 @@ export type Database = {
           breakdown?: Json
           cache_age_seconds?: number | null
           cache_mode?: string | null
+          cache_scope?: string | null
           cache_similarity?: number | null
           cache_status?: string | null
           created_at?: string
@@ -409,6 +414,9 @@ export type Database = {
           entity_type?: string | null
           estimated_tokens?: number
           id?: string
+          latency_ms?: number | null
+          llm_cost_estimate_usd?: number | null
+          llm_provider?: string | null
           mode: string
           rag_chunks?: Json
           token_budget?: number | null
@@ -420,6 +428,7 @@ export type Database = {
           breakdown?: Json
           cache_age_seconds?: number | null
           cache_mode?: string | null
+          cache_scope?: string | null
           cache_similarity?: number | null
           cache_status?: string | null
           created_at?: string
@@ -427,6 +436,9 @@ export type Database = {
           entity_type?: string | null
           estimated_tokens?: number
           id?: string
+          latency_ms?: number | null
+          llm_cost_estimate_usd?: number | null
+          llm_provider?: string | null
           mode?: string
           rag_chunks?: Json
           token_budget?: number | null
@@ -7145,6 +7157,39 @@ export type Database = {
           },
         ]
       }
+      voice_usage_daily: {
+        Row: {
+          day: string
+          estimated_cost_usd: number
+          id: string
+          request_count: number
+          seconds_transcribed: number
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          day?: string
+          estimated_cost_usd?: number
+          id?: string
+          request_count?: number
+          seconds_transcribed?: number
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          day?: string
+          estimated_cost_usd?: number
+          id?: string
+          request_count?: number
+          seconds_transcribed?: number
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       workspace_ai_quotas: {
         Row: {
           alert_threshold_percent: number | null
@@ -7361,6 +7406,22 @@ export type Database = {
       }
     }
     Views: {
+      ai_cache_metrics: {
+        Row: {
+          avg_miss_latency_ms: number | null
+          cache_mode: string | null
+          day: string | null
+          estimated_savings_usd: number | null
+          hit_rate_pct: number | null
+          hits: number | null
+          misses: number | null
+          p95_miss_latency_ms: number | null
+          total_calls: number | null
+          total_cost_usd: number | null
+          workspace_id: string | null
+        }
+        Relationships: []
+      }
       ai_dashboard_metrics: {
         Row: {
           indexed_types: number | null
@@ -7534,6 +7595,15 @@ export type Database = {
         }
       }
       bump_semantic_cache_hit: { Args: { p_id: string }; Returns: undefined }
+      bump_voice_usage: {
+        Args: {
+          p_cost_usd?: number
+          p_seconds: number
+          p_user_id: string
+          p_workspace_id: string
+        }
+        Returns: undefined
+      }
       can_access_entity_workspace: {
         Args: { p_user_id: string; p_workspace_id: string }
         Returns: boolean
@@ -7546,6 +7616,7 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: boolean
       }
+      cleanup_ai_semantic_cache: { Args: never; Returns: number }
       cleanup_expired_ai_memory: { Args: never; Returns: number }
       cleanup_expired_cockpit_data: { Args: never; Returns: undefined }
       cleanup_login_attempts: { Args: never; Returns: undefined }
