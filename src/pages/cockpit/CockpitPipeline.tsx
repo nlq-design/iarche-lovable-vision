@@ -291,6 +291,7 @@ const CockpitPipeline = () => {
                                   </div>
                                   <div className="flex items-center gap-1">
                                     <OppCompleteness data={opp} />
+                                    <OpportunityNextStepButton opportunityId={opp.id} workspaceId={workspaceId} />
                                     <Badge variant="outline" className="text-xs h-5 px-1.5">
                                       {opp.probability}%
                                     </Badge>
