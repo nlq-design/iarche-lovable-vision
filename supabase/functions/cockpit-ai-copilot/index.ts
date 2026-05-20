@@ -134,7 +134,7 @@ serve(async (req) => {
         result = await harvestRespond(supabase, workspaceId, body.taskIds, body.response, body.action);
         break;
       case "intelligence":
-        result = await intelligenceAggregator(supabase, workspaceId);
+        result = await intelligenceAggregator(supabase, workspaceId, traceCtx);
         break;
       default:
         return new Response(JSON.stringify({ error: `Mode inconnu: ${mode}` }), {
@@ -1119,7 +1119,7 @@ function entityTypeToTable(entityType: string): string | null {
 // MODE 12: INTELLIGENCE AGGREGATOR (Command Intelligence Layer)
 // =============================================================================
 
-async function intelligenceAggregator(supabase: any, workspaceId: string) {
+async function intelligenceAggregator(supabase: any, workspaceId: string, traceCtx?: TraceCtx) {
   const today = new Date().toISOString().split("T")[0];
   const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
   const fourteenDaysAgo = new Date(Date.now() - 14 * 86400000).toISOString();
@@ -1421,6 +1421,52 @@ ${activeAIActions.map((a: any) => {
     system_prompt: `Tu es le cerveau analytique du Command Center. Analyse TOUTES les données et produis une intelligence structurée. Français uniquement.`,
   });
 
+  // === M6 Semantic Cache — wrap LLM call (intelligence daily brief) ===
+  const intelligencePromptVersion = (prompt as any)?.version ?? "v1";
+  const intelligenceCacheKey = `intelligence:daily`;
+  const intelligenceFingerprint = await buildContextFingerprint({
+    entityUpdatedAt: today,
+    ragChunksCount: enrichedLlmContext.length,
+    lastActivityId: (recentActivity?.[0] as any)?.created_at ?? null,
+    sentinelDigest: `s${topSentinel.length}|cs${(crossSignalsRows || []).length}`,
+    promptVersion: intelligencePromptVersion,
+    extra: {
+      leads: leads?.length || 0,
+      opps: opportunities?.length || 0,
+      proj: projects?.length || 0,
+      today_tasks: todayTasks?.length || 0,
+      overdue: overdueTasks?.length || 0,
+      bookings: todayBookings?.length || 0,
+      stale: staleCount,
+      consulte: consulteInjectedCount,
+      pipeline_value: pipelineValue,
+      win_rate: winRate,
+    },
+  });
+
+  if (!traceCtx?.noCache) {
+    const hit = await lookupCache({
+      supabase,
+      workspaceId,
+      cacheKey: intelligenceCacheKey,
+      queryText: enrichedLlmContext,
+      fingerprint: intelligenceFingerprint,
+    });
+    if (hit.hit) {
+      console.log(`[intelligence] cache HIT sim=${hit.similarity.toFixed(3)} age=${hit.ageSeconds}s fp=${hit.fingerprintMatch}`);
+      if (traceCtx) {
+        traceCtx.cacheInfo = {
+          hit: true,
+          similarity: hit.similarity,
+          ageSeconds: hit.ageSeconds,
+          fingerprintMatch: hit.fingerprintMatch,
+        };
+      }
+      return hit.response as any;
+    }
+    if (traceCtx) traceCtx.cacheInfo = { hit: false };
+  }
+
   // Single LLM call with structured output
   const result = await extractStructured<{
     top_actions: Array<{
@@ -1560,7 +1606,7 @@ ${activeAIActions.map((a: any) => {
     { functionName: FUNCTION_NAME, workspaceId }
   );
 
-  return {
+  const payload = {
     intelligence: {
       ...result,
       generated_at: new Date().toISOString(),
@@ -1585,6 +1631,23 @@ ${activeAIActions.map((a: any) => {
       cross_signals_db: crossSignalsRows || [],
     },
   };
+
+  // M6 — fire-and-forget cache store
+  if (!traceCtx?.noCache) {
+    storeCache({
+      supabase,
+      workspaceId,
+      cacheKey: intelligenceCacheKey,
+      queryText: enrichedLlmContext,
+      fingerprint: intelligenceFingerprint,
+      response: payload,
+      model: "google/gemini-2.5-flash",
+      promptVersion: intelligencePromptVersion,
+      ttlHours: 12,
+    }).catch(() => {});
+  }
+
+  return payload;
 }
 
 // =============================================================================

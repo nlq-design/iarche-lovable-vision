@@ -18,6 +18,8 @@ import { Link } from 'react-router-dom';
 import { differenceInDays } from 'date-fns';
 import { useEntityCompleteness } from '@/hooks/cockpit/useEntityCompleteness';
 import { CompletenessIndicator } from '@/components/cockpit/CompletenessIndicator';
+import { OpportunityNextStepButton } from '@/components/cockpit/pipeline/OpportunityNextStepButton';
+import { useWorkspaceId } from '@/contexts/WorkspaceContext';
 
 // Small wrapper component so useEntityCompleteness hook can be called per-card
 function OppCompleteness({ data }: { data: Record<string, unknown> }) {
@@ -55,6 +57,7 @@ interface Lead {
 
 const CockpitPipeline = () => {
   const { opportunities, stats, isLoading, moveToStage, PIPELINE_STAGES } = useCockpitOpportunities();
+  const workspaceId = useWorkspaceId() ?? undefined;
   const { leads } = useCockpitLeads();
   const { activities } = useCockpitActivityLog();
   const [draggedId, setDraggedId] = useState<string | null>(null);
@@ -288,6 +291,7 @@ const CockpitPipeline = () => {
                                   </div>
                                   <div className="flex items-center gap-1">
                                     <OppCompleteness data={opp} />
+                                    <OpportunityNextStepButton opportunityId={opp.id} workspaceId={workspaceId} />
                                     <Badge variant="outline" className="text-xs h-5 px-1.5">
                                       {opp.probability}%
                                     </Badge>
