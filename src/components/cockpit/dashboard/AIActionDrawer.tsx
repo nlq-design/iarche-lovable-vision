@@ -37,6 +37,7 @@ import { cn } from '@/lib/utils';
 import { formatCurrency, STAGE_LABELS, safeNavigateToEntity } from './helpers';
 import { useAIAction, type AIActionSnapshot, type AIActionStatus, type AIActionNote, type AIActionArtifact, type AIActionArtifactStatus } from '@/hooks/cockpit/useAIAction';
 import { useEntitySnapshot } from '@/hooks/cockpit/useEntitySnapshot';
+import { VoiceNoteInput, type VoiceParsedResult } from './VoiceNoteInput';
 
 interface AIActionDrawerProps {
   snapshot: AIActionSnapshot | null;
