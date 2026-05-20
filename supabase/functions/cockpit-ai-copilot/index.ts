@@ -564,6 +564,25 @@ ${richContext}
       })
     : '';
   const lastActivityId = activity?.[0]?.created_at ?? null;
+
+  // Fetch latest user-note timestamp on this entity → bust cache when user adds context
+  let lastNoteAt: string | null = null;
+  if (opp.workspace_id) {
+    const { data: latestNoteRow } = await supabase
+      .from('ai_actions')
+      .select('user_notes, updated_at')
+      .eq('workspace_id', opp.workspace_id)
+      .eq('entity_id', opp.id)
+      .order('updated_at', { ascending: false })
+      .limit(5);
+    for (const row of latestNoteRow ?? []) {
+      const notes = Array.isArray(row.user_notes) ? row.user_notes : [];
+      for (const n of notes) {
+        if (n?.at && (!lastNoteAt || n.at > lastNoteAt)) lastNoteAt = n.at;
+      }
+    }
+  }
+
   const fingerprint = await buildContextFingerprint({
     entityType: 'opportunity',
     entityId: opp.id,
@@ -573,7 +592,7 @@ ${richContext}
     ragChunksCount,
     lastActivityId,
     promptVersion: (nextStepPrompt as any)?.version ?? null,
-    extra: { stage: opp.stage, tasks: tasks?.length ?? 0 },
+    extra: { stage: opp.stage, tasks: tasks?.length ?? 0, lastNoteAt },
   });
 
   if (traceCtx && !traceCtx.noCache && opp.workspace_id) {
