@@ -227,6 +227,7 @@ async function suggestTasks(supabase: any, workspaceId: string, entityType?: str
       entityUpdatedAt,
       ragChunksCount: traceCtx?.ragChunksCount ?? 0,
       promptVersion: (prompt as any)?.version ?? null,
+      cacheScope: 'workspace',
       extra: { ctxLen: context.length },
     });
 
@@ -592,6 +593,7 @@ ${richContext}
     ragChunksCount,
     lastActivityId,
     promptVersion: (nextStepPrompt as any)?.version ?? null,
+    cacheScope: 'workspace',
     extra: { stage: opp.stage, tasks: tasks?.length ?? 0, lastNoteAt },
   });
 
