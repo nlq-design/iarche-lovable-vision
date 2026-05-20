@@ -1119,7 +1119,7 @@ function entityTypeToTable(entityType: string): string | null {
 // MODE 12: INTELLIGENCE AGGREGATOR (Command Intelligence Layer)
 // =============================================================================
 
-async function intelligenceAggregator(supabase: any, workspaceId: string) {
+async function intelligenceAggregator(supabase: any, workspaceId: string, traceCtx?: TraceCtx) {
   const today = new Date().toISOString().split("T")[0];
   const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
   const fourteenDaysAgo = new Date(Date.now() - 14 * 86400000).toISOString();
