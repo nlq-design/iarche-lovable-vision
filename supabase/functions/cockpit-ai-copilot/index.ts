@@ -1996,7 +1996,7 @@ Aujourd'hui : ${todayIso}`;
           additionalProperties: false,
         },
       },
-      { functionName: FUNCTION_NAME, workspaceId, model: 'google/gemini-2.5-flash' },
+      { functionName: FUNCTION_NAME, workspaceId },
     );
 
     return {
