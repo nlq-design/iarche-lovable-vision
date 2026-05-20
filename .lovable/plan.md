@@ -1,136 +1,130 @@
+# Audit — Boucle "clic → contexte → réinjection IA" + Vocal
 
-# M6 Semantic Cache — Contrat de contexte unifié
+## 1. État actuel (audit)
 
-## 1. Objectif
+### 1.1 Points d'entrée vers la boucle contextuelle
+Tous les éléments IA du `/cockpit` routent vers **un seul drawer unifié** `AIActionDrawer` :
 
-Garantir des **hits déterministes et cohérents** sur les 3 flux qui consomment `cockpit-ai-copilot` (`suggestTasks`, `suggestNextStep`, `intelligenceAggregator`) en figeant un contrat strict pour le `fingerprint`, le `cacheKey`, le `TTL` et le scope utilisateur.
-
-État actuel (audit) :
-- `ragChunksCount` incohérent : `0` (suggest-tasks), valeur réelle (next-step), `enrichedLlmContext.length` (intelligence).
-- `cacheKey` sans `workspaceId` explicite — dépend uniquement de la colonne + RLS.
-- TTL unique 24h pour tous (sauf intelligence 12h).
-- `userId` non injecté → 2 users du même workspace partagent la réponse (faux positifs).
-
-## 2. Contrat de fingerprint (v1)
-
-Tous les flux DOIVENT produire le fingerprint via `buildContextFingerprint()` avec **exactement** ces champs :
-
-| Champ | Source | Obligatoire | Notes |
-|---|---|---|---|
-| `entityType` | `'lead' \| 'opportunity' \| 'project' \| 'intelligence'` | oui | `'intelligence'` pour le Daily Brief (pas d'entité unique) |
-| `entityId` | UUID entité ou `workspaceId+date` pour intelligence | oui | déterministe |
-| `workspaceId` | resolved workspace | oui | scope tenant |
-| `userId` | `traceCtx.userId` (auth.uid) | oui | **isolation par user** (choix produit) |
-| `entityUpdatedAt` | `entity.updated_at` ISO | oui | invalide au moindre changement |
-| `ragChunksCount` | **nombre réel** de chunks injectés au prompt | oui | normalisé sur les 3 flux |
-| `lastActivityId` | dernière `activity_log.id` rattachée | si applicable | next-step uniquement |
-| `sentinelDigest` | `s{n}\|cs{n}` (counts) | si applicable | intelligence + next-step |
-| `promptVersion` | `loadPrompt().version` | oui | bump prompt → invalidation auto |
-| `extra` | objet stable trié par clé | optionnel | jamais de timestamp brut |
-
-**Règle d'or** : zéro champ volatile (pas de `Date.now()`, pas d'index aléatoire, pas de `Math.random`). Toute clé `extra` est sérialisée en JSON canonique (clés triées).
-
-## 3. Convention `cacheKey`
-
-Format figé :
-```
-{workspaceId}:{mode}:{entityType}:{entityId}
-```
-
-- `mode` ∈ `suggest_tasks | next_step | intelligence`
-- `intelligence` : `entityType=intelligence`, `entityId={workspaceId}:{YYYY-MM-DD}`
-- `workspaceId` explicite dans la clé → défense en profondeur si la colonne `workspace_id` est compromise par un changement RLS
-
-## 4. TTL par mode
-
-| Mode | TTL | Justification |
+| Source | Composant | Route vers Drawer |
 |---|---|---|
-| `suggest_tasks` | 24h | contexte entité stable, peu de tâches/jour |
-| `next_step` | 1h | recommandation hautement volatile (nouvelle activité = invalidation immédiate via `lastActivityId`) |
-| `intelligence` | 12h | Daily Brief recalculé matin + après-midi |
+| TopActions (suggestions IA) | `TopActionsWidget` | ✅ via `AIActionDrawer` |
+| Sentinelle (alertes SQL) | `SentinelWidget` + popover | ✅ via `alertToSnapshot()` |
+| Cross-Signals (corrélations) | `CrossSignalsWidget` | ✅ |
+| Prédictions / Stagnants | `PredictionsWidget`, `StagnantWidget` | ✅ |
 
-TTL passé en argument explicite à `storeCache({ ttlHours })`.
+→ **Architecture homogène confirmée**. Une seule UX de capture de contexte.
 
-## 5. Scope utilisateur (RGPD/personnalisation)
+### 1.2 Ce que le drawer permet déjà
+- Note libre (`addNote` → append `ai_actions.user_notes[]`)
+- Mises à jour structurées (montant / échéance / contact) → push direct sur l'entité (`leads`/`opportunities`)
+- Snooze + raison
+- Dismiss + raison
+- Auto-acknowledge silencieux à l'ouverture
+- Historique unifié (notes + statuts + updates) avec timeline
 
-`userId` (auth.uid de l'appelant) entre dans le fingerprint. Conséquences :
-- Deux users du même workspace ne se partagent **plus** le cache.
-- Pour `intelligence` (cron, pas de user), `userId = 'system'` (constante).
-- Hit rate attendu : -20-30% vs partage workspace, mais sécurité des recommandations garantie.
+### 1.3 Réinjection IA (la boucle)
 
-## 6. Plan d'implémentation (surgical)
+**✅ Ce qui fonctionne :**
+- `cockpit-ai-copilot/index.ts:1325` lit `user_notes` des `ai_actions` et les injecte dans le prompt LLM (contexte des 7 derniers jours).
+- Les structured updates (montant/deadline/contact) modifient l'entité → bump `entityUpdatedAt` → **invalidation automatique du cache sémantique M6** (fingerprint inclut `entityUpdatedAt`) → prochain `suggestNextStep` / `intelligenceAggregator` est un MISS et recalcule.
+- React Query invalide `entity-snapshot`, `cockpit-leads`, `cockpit-opportunities`, `cockpit-projects`.
 
-### 6.1 `supabase/functions/_shared/semantic-cache.ts`
-- Étendre `FingerprintInput` avec champs obligatoires typés : `entityType`, `entityId`, `workspaceId`, `userId`.
-- Sérialisation canonique de `extra` (clés triées) pour éviter qu'un ordre d'insertion casse le hash.
-- `storeCache` accepte `ttlHours?: number` (default 24).
-- Helper `buildCacheKey({ workspaceId, mode, entityType, entityId }): string` exporté.
+**⚠️ Trous identifiés :**
 
-### 6.2 `supabase/functions/cockpit-ai-copilot/index.ts`
-- `suggestTasks` : passer le **vrai** `ragChunksCount` (longueur de `enrichedLlmContext` / chunks RAG) + `userId` + TTL 24h.
-- `suggestNextStep` : ajouter `userId` + TTL 1h + `entityType: 'opportunity'`.
-- `intelligenceAggregator` : `userId='system'` + TTL 12h + `entityType: 'intelligence'`, `entityId='{workspaceId}:{date}'`.
-- Remplacer toutes les constructions manuelles de `cacheKey` par `buildCacheKey()`.
-- Propager `userId` via `traceCtx` (déjà disponible côté caller via JWT).
+1. **Note pure (sans structured update) = invisible pour le brief & next-step**
+   Une note ajoute du texte dans `ai_actions.user_notes` mais ne touche aucune table d'entité.
+   → `entityUpdatedAt` ne bouge pas → cache sémantique reste HIT → `suggestNextStep` et `daily_intelligence` ignorent la note jusqu'à la prochaine activité.
+   → Seul le **chatbot copilot** (qui lit `ai_actions`) voit la note.
 
-### 6.3 Documentation
-- Créer `mem://cockpit/intelligence/semantic-cache-contract-v1` (contrat figé, table champs, exemples).
-- Mettre à jour la mémoire existante `mem://cockpit/intelligence/semantic-cache-m6` pour pointer vers le contrat.
-- Ajouter `.lovable/memory/cockpit/intelligence/semantic-cache-contract-v1.md` (version dev).
+2. **Dismiss / snooze reasons** ne sont pas exposés au LLM
+   Le champ `reason` enregistré dans `user_notes` (kind=`status`) est bien repris, mais le prompt ne distingue pas explicitement "raison de rejet" vs "note utilisateur" — le signal d'apprentissage est dilué.
 
-### 6.4 Observabilité
-- `ai_context_traces.cache_status` reste `hit|miss|skip`.
-- Ajouter colonne `cache_mode` (text) sur `ai_context_traces` pour filtrer hit rate par mode dans `SemanticCacheStatsWidget`.
-- Migration SQL : `ALTER TABLE ai_context_traces ADD COLUMN cache_mode text;` + backfill `null`.
+3. **Sentinel digest** : un nouveau dismiss ne déclenche pas un rebuild de `sentinelDigest` → l'`intelligenceAggregator` peut servir un brief obsolète pendant 12h.
 
-### 6.5 Tests (Deno)
-- `semantic-cache_test.ts` : 
-  - même input → même fingerprint (déterminisme),
-  - ordre des clés `extra` différent → même fingerprint (sérialisation canonique),
-  - bump `promptVersion` → fingerprint différent,
-  - bump `userId` → fingerprint différent.
+4. **Cross-signals** : aucun feedback boucle "j'ai traité ce signal" ne retourne dans `ai_cross_signals` pour ajuster le score.
 
-## 7. Détails techniques
+### 1.4 Vocal
+- AssemblyAI déjà câblé (`transcribe-audio-chunk`, chunking client, word_boost vocabulaire CRM).
+- **Aucune intégration vocale dans le AIActionDrawer** ni dans l'ajout de note CRM.
+- Pas de `useScribe` (realtime ElevenLabs) dans le projet.
 
-```ts
-// _shared/semantic-cache.ts (extrait cible)
-export interface FingerprintInput {
-  entityType: 'lead' | 'opportunity' | 'project' | 'intelligence';
-  entityId: string;
-  workspaceId: string;
-  userId: string;                 // 'system' pour cron
-  entityUpdatedAt: string | null;
-  ragChunksCount: number;
-  lastActivityId?: string | null;
-  sentinelDigest?: string | null;
-  promptVersion: string | null;
-  extra?: Record<string, unknown>;
-}
+---
 
-export function buildCacheKey(p: {
-  workspaceId: string; mode: 'suggest_tasks'|'next_step'|'intelligence';
-  entityType: string; entityId: string;
-}): string {
-  return `${p.workspaceId}:${p.mode}:${p.entityType}:${p.entityId}`;
-}
+## 2. Plan d'action
 
-// sérialisation canonique
-function canonical(obj: Record<string, unknown>): string {
-  const keys = Object.keys(obj).sort();
-  return JSON.stringify(keys.reduce((acc, k) => ({ ...acc, [k]: obj[k] }), {}));
-}
-```
+### Phase A — Combler les trous de réinjection (backend, surgical)
 
-## 8. Critères d'acceptation
+**A1. Invalider le cache next-step quand une note est ajoutée**
+- Dans `useAIAction.addNote` : après append des notes, **bump `entity_updated_at`** sur l'entité ciblée (ou ajouter `lastNoteId` au fingerprint `next-step`).
+- Préférer option B : étendre `FingerprintInput.lastActivityId` côté `cockpit-ai-copilot` pour inclure `max(user_notes.created_at)` lu depuis `ai_actions` filtrées par entité.
+- Bénéfice : la prochaine "Prochaine étape IA" intègre la note utilisateur (TTL 1h respecté).
 
-- 3 flux passent par `buildCacheKey()` et `buildContextFingerprint()` avec **tous** les champs obligatoires renseignés (lint TS interdit l'oubli grâce au type).
-- Test Deno `semantic-cache_test.ts` vert (déterminisme + invariance d'ordre + sensibilité aux bumps).
-- `ai_context_traces.cache_mode` rempli sur les 3 modes après un appel manuel de chaque flux.
-- Mémoire projet `semantic-cache-contract-v1` créée + index `mem://index.md` mis à jour.
-- Aucune régression : Daily Brief existant continue de produire HIT au 2ᵉ appel dans la même fenêtre 12h.
+**A2. Forcer rebuild du brief intelligence sur dismiss/note critique**
+- Dans le trigger `sentinel_trigger_queue` (déjà event-driven), ajouter un event sur `UPDATE ai_actions SET status='dismissed'`.
+- Côté `intelligenceAggregator` : ajouter `sentinelDismissCount24h` au fingerprint pour casser le cache 12h quand l'utilisateur rejette plusieurs alertes.
 
-## 9. Out of scope (non-objectifs)
+**A3. Séparer "notes" vs "raisons de rejet" dans le prompt copilot**
+- Dans `cockpit-ai-copilot:1325`, scinder les `user_notes` en deux blocs : `Notes utilisateur` (kind=`note`) et `Feedback (rejets/reports)` (kind=`status`).
+- Objectif : le LLM apprend à éviter de re-proposer une action explicitement dismissée.
 
-- Pas de changement de seuil ANN (reste 0.93).
-- Pas de migration de `ai_semantic_cache` (schéma inchangé).
-- Pas d'instrumentation des widgets DB-first (`daily_intelligence`) — ils restent hors copilot.
+**A4. Boucle feedback Cross-Signals**
+- Quand un cross-signal est traité via drawer (`done`/`dismissed`), insérer une ligne dans `ai_cross_signals_feedback` (nouvelle table légère : `signal_type`, `entity_id`, `verdict`, `user_id`).
+- Le générateur de cross-signals lit cette table pour décrémenter le `score` des patterns ignorés (ML léger / heuristique).
+
+### Phase B — Dictée vocale dans AIActionDrawer
+
+**B1. Composant `<VoiceNoteInput>`**
+- Bouton micro à droite du `Textarea` "note".
+- 2 modes (settings utilisateur, défaut = streaming) :
+  - **Streaming temps réel** : `useScribe` ElevenLabs (`scribe_v2_realtime`, VAD, fr) → transcription live affichée pendant qu'on parle, commit auto sur silence 1.5s.
+  - **Push-to-talk batch** : enregistrement local → POST vers `transcribe-audio-chunk` (déjà déployé, AssemblyAI best, word_boost = `cockpit_vocabulary`).
+- Choix techno : **AssemblyAI batch** (déjà en prod, vocabulaire CRM injecté, coût maîtrisé) sauf si user veut le wow effect streaming.
+
+**B2. Pipeline d'enrichissement vocal**
+1. Transcription brute → champ note.
+2. Bouton "✨ Structurer" → appel `cockpit-ai-copilot` mode `parseVoiceNote` (nouveau endpoint léger) :
+   - Input : transcript + snapshot entité courante.
+   - Output JSON : `{ note: string, structured_updates: { new_amount?, new_deadline?, new_contact? }, suggested_status?: 'done'|'snoozed', confidence: number }`.
+   - Modèle : `google/gemini-2.5-flash` (rapide, économique, déjà default).
+3. Pré-remplissage automatique des champs structurés du drawer + diff before/after déjà existant → l'utilisateur valide d'un clic.
+
+**B3. RAG / rapprochement entité**
+- Si la transcription mentionne un nom propre absent de l'entité courante (ex: "appeler Marc plutôt que Sophie"), le copilot fait un `ilike` sur `contacts`/`leads` (déjà standard via [Anti-hallucination](mem://cockpit/intelligence/entity-resolution-anti-hallucination-fr)) et propose le rattachement.
+
+**B4. UX dans le drawer**
+- Position : icône micro inline dans le `Textarea` "Ajouter une note".
+- États : `idle` → `recording` (waveform + timer) → `transcribing` (shimmer) → `parsed` (preview structuré).
+- Raccourci : maintien `Espace` pour push-to-talk.
+- Accessibilité : feedback visuel + son court de confirmation.
+
+### Phase C — Observabilité
+
+- Ajouter `cache_mode` analytics (déjà en place) : surface dans `RagDiagnosticsDrawer` un compteur "notes prises en compte / notes ignorées par cache".
+- Tracer chaque transcription dans `ai_context_traces` (`source: 'voice_note'`, `latency_ms`, `confidence`).
+
+---
+
+## 3. Détails techniques
+
+### Fichiers à modifier
+- `supabase/functions/cockpit-ai-copilot/index.ts` : 
+  - Split notes/feedback dans prompt builder (~ligne 1325).
+  - Lecture `max(user_notes.created_at)` dans `buildContextFingerprint` next-step.
+  - Nouveau mode `parseVoiceNote` (~80 lignes, schéma Zod).
+- `src/hooks/cockpit/useAIAction.ts` : `addNote` bump `last_note_at` ou trigger côté DB.
+- `src/components/cockpit/dashboard/AIActionDrawer.tsx` : intégration `<VoiceNoteInput>`.
+- **Nouveau** `src/components/cockpit/dashboard/VoiceNoteInput.tsx`.
+- **Migration** : 
+  - Colonne `ai_actions.last_note_at TIMESTAMPTZ` + trigger update on `user_notes` change.
+  - Table `ai_cross_signals_feedback` (optionnelle, phase A4).
+
+### Hors scope
+- Pas de refactor du semantic cache M6 (contrat v1 figé).
+- Pas de remplacement d'AssemblyAI par ElevenLabs sauf si user demande streaming.
+- Pas de re-générer le `daily_intelligence` à chaque note (trop coûteux) → on se contente d'invalider next-step (TTL 1h).
+
+### Critères d'acceptation
+1. Ajouter une note sur une action IA → la "Prochaine étape IA" suivante (dans l'heure) intègre cette note (vérif `cache_mode = 'miss'`).
+2. Dismiss d'une alerte sentinelle → le brief intelligence du lendemain ne reproposera pas le même pattern.
+3. Cliquer le micro → parler "Le client veut signer pour 15000 euros début juin" → champs `amount=15000` + `deadline=2026-06-01` pré-remplis automatiquement.
+4. Aucune régression sur les flows existants du drawer.
