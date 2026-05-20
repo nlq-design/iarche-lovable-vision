@@ -1892,3 +1892,120 @@ async function collectGlobalContext(supabase: any, workspaceId: string): Promise
 
   return parts.join("\n\n");
 }
+
+// =============================================================================
+// MODE: PARSE VOICE NOTE — Structure une transcription vocale en update CRM
+// =============================================================================
+
+async function parseVoiceNote(
+  supabase: any,
+  workspaceId: string,
+  body: any,
+  traceCtx?: TraceCtx,
+) {
+  const transcript = String(body?.transcript ?? '').trim();
+  if (!transcript) return { error: 'transcript requis' };
+  if (transcript.length > 4000) return { error: 'transcript trop long (>4000 caractères)' };
+
+  const entityType = body?.entityType ?? null;
+  const entityId = body?.entityId ?? null;
+
+  // Snapshot entité courante (montant/deadline/contact actuels pour comparaison)
+  let entitySnapshot: any = null;
+  if (entityType && entityId) {
+    const tableMap: Record<string, string> = {
+      opportunity: 'opportunities',
+      lead: 'leads',
+      project: 'projects',
+    };
+    const table = tableMap[entityType];
+    if (table) {
+      const { data } = await supabase
+        .from(table)
+        .select('*')
+        .eq('id', entityId)
+        .eq('workspace_id', workspaceId)
+        .maybeSingle();
+      entitySnapshot = data ?? null;
+    }
+  }
+
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const contextBlock = entitySnapshot
+    ? `\n## Entité courante (${entityType})
+- Nom: ${entitySnapshot.name || entitySnapshot.title || '—'}
+- Montant actuel: ${entitySnapshot.value_amount ?? entitySnapshot.amount ?? '—'}
+- Échéance actuelle: ${entitySnapshot.expected_close_date ?? entitySnapshot.due_date ?? '—'}
+- Contact actuel: ${entitySnapshot.email ?? entitySnapshot.phone ?? '—'}
+- Stage: ${entitySnapshot.stage ?? entitySnapshot.status ?? '—'}`
+    : '';
+
+  const systemPrompt = `Tu es un assistant CRM. À partir d'une transcription vocale courte (note dictée par un commercial sur le terrain), extrais :
+1. Une note nettoyée et concise (1-3 phrases, français correct, sans hésitations ni mots parasites)
+2. Des mises à jour structurées si l'utilisateur mentionne EXPLICITEMENT un montant, une échéance ou un contact
+3. Ta confiance (0-1)
+
+RÈGLES STRICTES :
+- N'invente AUCUNE valeur. Si le montant/échéance/contact n'est pas mentionné, omets le champ.
+- Pour les dates relatives ("la semaine prochaine", "fin juin"), calcule par rapport à aujourd'hui (${todayIso}) et renvoie au format AAAA-MM-JJ.
+- Montants : accepter "15k", "15 000 euros", "15K€" → renvoyer 15000 (number).
+- Contact : email valide OU téléphone (chiffres + symboles tel).
+- Si la transcription est ambiguë ou trop courte, baisse la confiance (<0.5) et n'extrais que la note.`;
+
+  const userPrompt = `Transcription vocale brute :
+"""
+${transcript}
+"""
+${contextBlock}
+
+Aujourd'hui : ${todayIso}`;
+
+  try {
+    const parsed = await extractStructured<{
+      note: string;
+      structured_updates: {
+        new_amount?: number;
+        new_deadline?: string;
+        new_contact?: string;
+      };
+      confidence: number;
+    }>(
+      [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
+      {
+        name: 'parse_voice_note',
+        description: 'Structure une transcription vocale en update CRM',
+        parameters: {
+          type: 'object',
+          properties: {
+            note: { type: 'string' },
+            structured_updates: {
+              type: 'object',
+              properties: {
+                new_amount: { type: 'number' },
+                new_deadline: { type: 'string', description: 'Format AAAA-MM-JJ' },
+                new_contact: { type: 'string' },
+              },
+              additionalProperties: false,
+            },
+            confidence: { type: 'number', minimum: 0, maximum: 1 },
+          },
+          required: ['note', 'structured_updates', 'confidence'],
+          additionalProperties: false,
+        },
+      },
+      { functionName: FUNCTION_NAME, workspaceId, model: 'google/gemini-2.5-flash' },
+    );
+
+    return {
+      ok: true,
+      transcript,
+      ...parsed,
+    };
+  } catch (e) {
+    console.error('[parse-voice-note] error:', e);
+    return { error: e instanceof Error ? e.message : String(e), transcript };
+  }
+}
