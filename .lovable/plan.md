@@ -1,120 +1,136 @@
-# M6 — Semantic Cache pour cockpit-ai-copilot
 
-## Objectif business
-Réduire **30-60% des appels LLM** sur les widgets IA (Next Step, Tasks, Daily Brief) en réutilisant les réponses passées sémantiquement équivalentes, tant que le contexte CRM n'a pas matériellement changé. Économies directes sur quota Lovable AI Gateway, latence widgets divisée par ~10 sur cache hit (50-200ms vs 2-5s).
+# M6 Semantic Cache — Contrat de contexte unifié
 
-## Position dans le flux RAG
+## 1. Objectif
 
-```text
-User trigger (widget refresh, sentinel, brief)
-        │
-        ▼
-┌──────────────────────────────────────────────┐
-│ cockpit-ai-copilot                           │
-│  1. collectEntityContext (RAG + temporal)    │
-│  2. buildContextFingerprint(entity, sections)│ ← NOUVEAU
-│  3. embedQuery(promptKey + entity_id)        │ ← NOUVEAU
-│  4. lookupSemanticCache(embed, fingerprint)  │ ← NOUVEAU
-│     │                                        │
-│     ├─ HIT  ──► return cached_response       │
-│     │           + trace(cache:hit, sim, age) │
-│     │                                        │
-│     └─ MISS ──► callLLM(prompt + context)    │
-│                 storeSemanticCache(...)      │ ← NOUVEAU
-│                 + trace(cache:miss)          │
-└──────────────────────────────────────────────┘
+Garantir des **hits déterministes et cohérents** sur les 3 flux qui consomment `cockpit-ai-copilot` (`suggestTasks`, `suggestNextStep`, `intelligenceAggregator`) en figeant un contrat strict pour le `fingerprint`, le `cacheKey`, le `TTL` et le scope utilisateur.
+
+État actuel (audit) :
+- `ragChunksCount` incohérent : `0` (suggest-tasks), valeur réelle (next-step), `enrichedLlmContext.length` (intelligence).
+- `cacheKey` sans `workspaceId` explicite — dépend uniquement de la colonne + RLS.
+- TTL unique 24h pour tous (sauf intelligence 12h).
+- `userId` non injecté → 2 users du même workspace partagent la réponse (faux positifs).
+
+## 2. Contrat de fingerprint (v1)
+
+Tous les flux DOIVENT produire le fingerprint via `buildContextFingerprint()` avec **exactement** ces champs :
+
+| Champ | Source | Obligatoire | Notes |
+|---|---|---|---|
+| `entityType` | `'lead' \| 'opportunity' \| 'project' \| 'intelligence'` | oui | `'intelligence'` pour le Daily Brief (pas d'entité unique) |
+| `entityId` | UUID entité ou `workspaceId+date` pour intelligence | oui | déterministe |
+| `workspaceId` | resolved workspace | oui | scope tenant |
+| `userId` | `traceCtx.userId` (auth.uid) | oui | **isolation par user** (choix produit) |
+| `entityUpdatedAt` | `entity.updated_at` ISO | oui | invalide au moindre changement |
+| `ragChunksCount` | **nombre réel** de chunks injectés au prompt | oui | normalisé sur les 3 flux |
+| `lastActivityId` | dernière `activity_log.id` rattachée | si applicable | next-step uniquement |
+| `sentinelDigest` | `s{n}\|cs{n}` (counts) | si applicable | intelligence + next-step |
+| `promptVersion` | `loadPrompt().version` | oui | bump prompt → invalidation auto |
+| `extra` | objet stable trié par clé | optionnel | jamais de timestamp brut |
+
+**Règle d'or** : zéro champ volatile (pas de `Date.now()`, pas d'index aléatoire, pas de `Math.random`). Toute clé `extra` est sérialisée en JSON canonique (clés triées).
+
+## 3. Convention `cacheKey`
+
+Format figé :
+```
+{workspaceId}:{mode}:{entityType}:{entityId}
 ```
 
-Le cache se branche **après** l'assembly de contexte (pour avoir un fingerprint stable) et **avant** l'appel LLM. Il ne remplace pas le RAG — il évite de re-prompter Gemini quand rien de matériel n'a bougé.
+- `mode` ∈ `suggest_tasks | next_step | intelligence`
+- `intelligence` : `entityType=intelligence`, `entityId={workspaceId}:{YYYY-MM-DD}`
+- `workspaceId` explicite dans la clé → défense en profondeur si la colonne `workspace_id` est compromise par un changement RLS
 
-## Architecture
+## 4. TTL par mode
 
-### 1. Table `ai_semantic_cache`
-- `id uuid PK`
-- `workspace_id uuid` (RLS strict)
-- `cache_key text` — discriminant logique : `{prompt_key}:{entity_type}:{entity_id}` (ex: `next_step:lead:9af8...`)
-- `query_embedding vector(1536)` — embed du prompt+contexte synthétique (modèle `openai/text-embedding-3-small`, choix coût-perf)
-- `context_fingerprint text` — SHA-256 sur (updated_at entité + count RAG chunks + last activity_log id + sentinel_signals digest)
-- `response jsonb` — payload LLM brut (tasks[], next_step, draft, etc.)
-- `model text` — provider utilisé (gemini-2.5-flash, etc.) pour invalidation par modèle
-- `prompt_version text` — version du prompt (table `ai_prompts`) pour invalidation prompt
-- `hit_count int default 0`
-- `last_hit_at timestamptz`
-- `expires_at timestamptz` — TTL 24h par défaut (configurable par prompt_key)
-- `created_at timestamptz`
+| Mode | TTL | Justification |
+|---|---|---|
+| `suggest_tasks` | 24h | contexte entité stable, peu de tâches/jour |
+| `next_step` | 1h | recommandation hautement volatile (nouvelle activité = invalidation immédiate via `lastActivityId`) |
+| `intelligence` | 12h | Daily Brief recalculé matin + après-midi |
 
-**Index** : HNSW sur `query_embedding (vector_cosine_ops)`, btree sur `(workspace_id, cache_key, expires_at)`.
+TTL passé en argument explicite à `storeCache({ ttlHours })`.
 
-### 2. Fonction SQL `match_semantic_cache(workspace, key, embed, fingerprint, threshold)`
-- SECURITY DEFINER, search_path = public
-- Filtre `workspace_id = $1 AND cache_key = $2 AND expires_at > now() AND context_fingerprint = $4`
-- Si fingerprint matche exactement → retour direct (court-circuit ANN)
-- Sinon : ANN cosine sur embeddings avec `similarity >= threshold` (défaut 0.93), tri par similarité desc
-- Retourne `id, response, model, similarity, age_seconds, hit_count`
+## 5. Scope utilisateur (RGPD/personnalisation)
 
-### 3. Module partagé `_shared/semantic-cache.ts`
-- `buildContextFingerprint(ctx)` — hash déterministe sur signaux matériels (entity.updated_at, ragChunks.length, lastActivityId, sentinelDigest)
-- `embedCacheQuery(text)` — call Lovable AI `/embeddings` avec model `openai/text-embedding-3-small` (1536d, 7× moins cher que gemini)
-- `lookupCache({ supabase, workspace_id, cache_key, query_text, fingerprint, threshold? })` → `{ hit: true, response, similarity, age, source } | { hit: false }`
-- `storeCache({ supabase, ... response, ttl_hours? })`
-- Threshold par défaut **0.93** (calibrable). Sur fingerprint exact match → bypass embedding lookup, sim=1.0.
+`userId` (auth.uid de l'appelant) entre dans le fingerprint. Conséquences :
+- Deux users du même workspace ne se partagent **plus** le cache.
+- Pour `intelligence` (cron, pas de user), `userId = 'system'` (constante).
+- Hit rate attendu : -20-30% vs partage workspace, mais sécurité des recommandations garantie.
 
-### 4. Intégration `cockpit-ai-copilot`
-- Wrap `suggestNextStep` et `suggestTasks` :
-  ```ts
-  const fp = buildContextFingerprint(ctx);
-  const cacheKey = `${promptKey}:${entityType}:${entityId}`;
-  const hit = await lookupCache({ ..., cache_key: cacheKey, fingerprint: fp });
-  if (hit.hit) {
-    await recordContextTrace({ ..., cache_status: 'hit', cache_similarity: hit.similarity });
-    return { ...hit.response, trace_id, cache: { hit: true, similarity: hit.similarity, age_seconds: hit.age } };
-  }
-  // ... appel LLM normal
-  await storeCache({ ..., response: llmResponse, ttl_hours: 24 });
-  await recordContextTrace({ ..., cache_status: 'miss' });
-  ```
-- Ajout colonnes `cache_status text`, `cache_similarity numeric`, `cache_age_seconds int` sur `ai_context_traces`.
+## 6. Plan d'implémentation (surgical)
 
-### 5. Invalidation
-- **Passive (TTL)** : `expires_at` 24h + purge `pg_cron` quotidienne (`delete where expires_at < now()`).
-- **Active (fingerprint)** : tout changement d'updated_at sur lead/opportunity/note → fingerprint diffère → cache miss automatique (pas besoin de DELETE).
-- **Manuelle** : RPC `purge_semantic_cache(workspace_id, cache_key?)` pour bouton "force refresh" UI.
+### 6.1 `supabase/functions/_shared/semantic-cache.ts`
+- Étendre `FingerprintInput` avec champs obligatoires typés : `entityType`, `entityId`, `workspaceId`, `userId`.
+- Sérialisation canonique de `extra` (clés triées) pour éviter qu'un ordre d'insertion casse le hash.
+- `storeCache` accepte `ttlHours?: number` (default 24).
+- Helper `buildCacheKey({ workspaceId, mode, entityType, entityId }): string` exporté.
 
-### 6. UI — RagDiagnosticsDrawer
-Ajout d'un bandeau en tête :
-```text
-[ Cache HIT · sim 0.97 · âge 4 min · économie ~1.2k tokens ]
-[ Cache MISS · nouvelle synthèse ]
+### 6.2 `supabase/functions/cockpit-ai-copilot/index.ts`
+- `suggestTasks` : passer le **vrai** `ragChunksCount` (longueur de `enrichedLlmContext` / chunks RAG) + `userId` + TTL 24h.
+- `suggestNextStep` : ajouter `userId` + TTL 1h + `entityType: 'opportunity'`.
+- `intelligenceAggregator` : `userId='system'` + TTL 12h + `entityType: 'intelligence'`, `entityId='{workspaceId}:{date}'`.
+- Remplacer toutes les constructions manuelles de `cacheKey` par `buildCacheKey()`.
+- Propager `userId` via `traceCtx` (déjà disponible côté caller via JWT).
+
+### 6.3 Documentation
+- Créer `mem://cockpit/intelligence/semantic-cache-contract-v1` (contrat figé, table champs, exemples).
+- Mettre à jour la mémoire existante `mem://cockpit/intelligence/semantic-cache-m6` pour pointer vers le contrat.
+- Ajouter `.lovable/memory/cockpit/intelligence/semantic-cache-contract-v1.md` (version dev).
+
+### 6.4 Observabilité
+- `ai_context_traces.cache_status` reste `hit|miss|skip`.
+- Ajouter colonne `cache_mode` (text) sur `ai_context_traces` pour filtrer hit rate par mode dans `SemanticCacheStatsWidget`.
+- Migration SQL : `ALTER TABLE ai_context_traces ADD COLUMN cache_mode text;` + backfill `null`.
+
+### 6.5 Tests (Deno)
+- `semantic-cache_test.ts` : 
+  - même input → même fingerprint (déterminisme),
+  - ordre des clés `extra` différent → même fingerprint (sérialisation canonique),
+  - bump `promptVersion` → fingerprint différent,
+  - bump `userId` → fingerprint différent.
+
+## 7. Détails techniques
+
+```ts
+// _shared/semantic-cache.ts (extrait cible)
+export interface FingerprintInput {
+  entityType: 'lead' | 'opportunity' | 'project' | 'intelligence';
+  entityId: string;
+  workspaceId: string;
+  userId: string;                 // 'system' pour cron
+  entityUpdatedAt: string | null;
+  ragChunksCount: number;
+  lastActivityId?: string | null;
+  sentinelDigest?: string | null;
+  promptVersion: string | null;
+  extra?: Record<string, unknown>;
+}
+
+export function buildCacheKey(p: {
+  workspaceId: string; mode: 'suggest_tasks'|'next_step'|'intelligence';
+  entityType: string; entityId: string;
+}): string {
+  return `${p.workspaceId}:${p.mode}:${p.entityType}:${p.entityId}`;
+}
+
+// sérialisation canonique
+function canonical(obj: Record<string, unknown>): string {
+  const keys = Object.keys(obj).sort();
+  return JSON.stringify(keys.reduce((acc, k) => ({ ...acc, [k]: obj[k] }), {}));
+}
 ```
-Plus un toggle "Désactiver cache pour ce refresh" qui ajoute `?no_cache=1` à l'invocation.
 
-## Sécurité
-- RLS : `SELECT/INSERT/UPDATE` réservé `service_role` (les edge fns appellent en service_role). Pas d'accès client direct.
-- `purge_semantic_cache` : RLS via `has_role(auth.uid(), 'admin')` ou ownership workspace.
-- Pas de PII brute dans `cache_key` (IDs UUID uniquement). `response` jsonb = même contenu que ce que l'utilisateur voit déjà.
+## 8. Critères d'acceptation
 
-## Métriques (Sentinel + Dashboard)
-Nouveau widget `SemanticCacheStatsWidget` :
-- Hit rate 24h / 7j (objectif > 35%)
-- Tokens économisés (estimés)
-- Top cache_keys par hit_count
-- Age moyen des hits
+- 3 flux passent par `buildCacheKey()` et `buildContextFingerprint()` avec **tous** les champs obligatoires renseignés (lint TS interdit l'oubli grâce au type).
+- Test Deno `semantic-cache_test.ts` vert (déterminisme + invariance d'ordre + sensibilité aux bumps).
+- `ai_context_traces.cache_mode` rempli sur les 3 modes après un appel manuel de chaque flux.
+- Mémoire projet `semantic-cache-contract-v1` créée + index `mem://index.md` mis à jour.
+- Aucune régression : Daily Brief existant continue de produire HIT au 2ᵉ appel dans la même fenêtre 12h.
 
-## Plan d'exécution (3 étapes)
+## 9. Out of scope (non-objectifs)
 
-1. **DB + helper** : migration `ai_semantic_cache` + index HNSW + fonction `match_semantic_cache` + cron purge + colonnes trace.
-2. **Edge fn** : `_shared/semantic-cache.ts` + branchement `cockpit-ai-copilot` (Next Step + Tasks).
-3. **UI** : bandeau cache dans `RagDiagnosticsDrawer` + widget stats.
-
-## Points techniques
-
-- **Modèle embedding** : `openai/text-embedding-3-small` (1536d). Pourquoi pas gemini-embedding-001 (3072d) utilisé pour le RAG ? Le cache lookup est haute-fréquence → coût/perf prioritaires. Les vecteurs cache et RAG vivent dans des tables distinctes, pas de comparaison croisée.
-- **Threshold 0.93** : empiriquement bon trade-off precision/recall pour prompts CRM. À calibrer après 1 semaine de données sur `cache_similarity`.
-- **Fingerprint vs Embedding** : fingerprint match = court-circuit (réponse identique garantie, sim=1). Embedding match = approximation sémantique (couvre les cas où la query varie légèrement mais le contexte est équivalent).
-- **Coût ajouté** : 1 embedding/lookup (~1500 tokens → ~0.00002€ via gateway). Largement compensé dès le 1er hit (économie ~1-3k tokens LLM).
-
-## Critères de succès
-- Hit rate > 35% sur 7 jours d'usage normal cockpit
-- Latence widget IA cache-hit < 300ms p95
-- Zéro régression fonctionnelle (réponses cachées identiques à live pour fingerprint match)
-- Trace cache visible et lisible dans RagDiagnosticsDrawer
+- Pas de changement de seuil ANN (reste 0.93).
+- Pas de migration de `ai_semantic_cache` (schéma inchangé).
+- Pas d'instrumentation des widgets DB-first (`daily_intelligence`) — ils restent hors copilot.
