@@ -110,6 +110,44 @@ serve(async (req) => {
       console.error('[transcribe-audio-chunk] Tracking error (non-blocking):', e);
     }
 
+    // Suivi vocal per-user (scalabilité observabilité)
+    try {
+      const authHeader = req.headers.get('Authorization') || '';
+      const token = authHeader.replace(/^Bearer\s+/i, '');
+      let userId: string | null = null;
+      if (token && token.split('.').length === 3) {
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+          userId = payload?.sub ?? null;
+        } catch { /* ignore */ }
+      }
+      const workspaceIdHeader = (formData.get('workspace_id') as string | null) || '00000000-0000-0000-0000-000000000001';
+      if (userId) {
+        const durationS = Math.round(result.audio_duration ?? 0);
+        const costUsd = (durationS / 60) * 0.00617; // assemblyai-best ~0.617 cents/min
+        const supabaseUrl = Deno.env.get('SUPABASE_URL');
+        const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+        if (supabaseUrl && serviceKey) {
+          await fetch(`${supabaseUrl}/rest/v1/rpc/bump_voice_usage`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              apikey: serviceKey,
+              Authorization: `Bearer ${serviceKey}`,
+            },
+            body: JSON.stringify({
+              p_user_id: userId,
+              p_workspace_id: workspaceIdHeader,
+              p_seconds: durationS,
+              p_cost_usd: costUsd,
+            }),
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('[transcribe-audio-chunk] voice_usage tracking skipped:', (e as Error).message);
+    }
+
     return new Response(
       JSON.stringify({
         ok: true,
