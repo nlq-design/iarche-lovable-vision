@@ -79,3 +79,21 @@ Deno.test("buildCacheKey for intelligence uses composite entityId", () => {
   });
   assertEquals(k, "ws-1:intelligence:intelligence:ws-1:2026-05-20");
 });
+
+Deno.test("cacheScope=workspace mutualise le fingerprint entre utilisateurs", async () => {
+  const a = await buildContextFingerprint({ ...baseInput, cacheScope: "workspace" });
+  const b = await buildContextFingerprint({ ...baseInput, userId: "user-B", cacheScope: "workspace" });
+  assertEquals(a, b);
+});
+
+Deno.test("cacheScope=workspace diffère de scope=user (isolation préservée par défaut)", async () => {
+  const a = await buildContextFingerprint({ ...baseInput, cacheScope: "workspace" });
+  const b = await buildContextFingerprint({ ...baseInput, cacheScope: "user" });
+  assertNotEquals(a, b);
+});
+
+Deno.test("cacheScope=workspace reste sensible aux signaux matériels (promptVersion)", async () => {
+  const a = await buildContextFingerprint({ ...baseInput, cacheScope: "workspace" });
+  const b = await buildContextFingerprint({ ...baseInput, cacheScope: "workspace", promptVersion: "v4" });
+  assertNotEquals(a, b);
+});

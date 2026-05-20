@@ -26,6 +26,8 @@ const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/embeddings";
 export type CacheMode = "suggest_tasks" | "next_step" | "intelligence";
 export type CacheEntityType = "lead" | "opportunity" | "project" | "intelligence";
 
+export type CacheScope = "user" | "workspace" | "system";
+
 export interface FingerprintInput {
   // Identité (obligatoire)
   entityType: CacheEntityType;
@@ -40,6 +42,13 @@ export interface FingerprintInput {
   lastActivityId?: string | null;
   sentinelDigest?: string | null;
   extra?: Record<string, unknown>;
+  /**
+   * Périmètre de mutualisation du fingerprint :
+   *  - 'user'      : isole le cache par utilisateur (défaut, rétrocompat)
+   *  - 'workspace' : mutualise entre tous les utilisateurs d'un workspace (scalabilité multi-siège)
+   *  - 'system'    : crons/jobs partagés (déjà sans userId pertinent)
+   */
+  cacheScope?: CacheScope;
 }
 
 /** Canonicalise un objet (clés triées récursivement) pour un hash stable. */
@@ -53,11 +62,16 @@ function canonicalStringify(value: unknown): string {
 
 /** SHA-256 hex deterministic fingerprint of all material context signals. */
 export async function buildContextFingerprint(input: FingerprintInput): Promise<string> {
+  const scope: CacheScope = input.cacheScope ?? "user";
+  // En scope 'workspace' ou 'system', on retire l'identifiant utilisateur du fingerprint
+  // -> 1 seul appel LLM partagé pour N utilisateurs du même workspace.
+  const uidForFingerprint = scope === "user" ? input.userId : null;
   const payload = canonicalStringify({
     et: input.entityType,
     ei: input.entityId,
     ws: input.workspaceId,
-    uid: input.userId,
+    uid: uidForFingerprint,
+    sc: scope,
     u: input.entityUpdatedAt ?? null,
     c: input.ragChunksCount ?? 0,
     a: input.lastActivityId ?? null,

@@ -1,130 +1,108 @@
-# Audit — Boucle "clic → contexte → réinjection IA" + Vocal
+# Plan Scalabilité — Phase Instrumentation + Mode Partagé
 
-## 1. État actuel (audit)
+Approche P0/P1/P2. P0 = mesurer avant d'optimiser. P1 = activer mode partagé pour Partner/multi-siège. P2 = optimisations conditionnées aux métriques observées.
 
-### 1.1 Points d'entrée vers la boucle contextuelle
-Tous les éléments IA du `/cockpit` routent vers **un seul drawer unifié** `AIActionDrawer` :
+## P0 — Instrumentation (mesure d'abord, coût quasi nul)
 
-| Source | Composant | Route vers Drawer |
-|---|---|---|
-| TopActions (suggestions IA) | `TopActionsWidget` | ✅ via `AIActionDrawer` |
-| Sentinelle (alertes SQL) | `SentinelWidget` + popover | ✅ via `alertToSnapshot()` |
-| Cross-Signals (corrélations) | `CrossSignalsWidget` | ✅ |
-| Prédictions / Stagnants | `PredictionsWidget`, `StagnantWidget` | ✅ |
+### 1. Vue `ai_cache_metrics` (lecture)
+Vue SQL agrégée sur `ai_context_traces` :
+- hit_rate par `cache_mode` × workspace × jour
+- coût LLM évité (hits × tokens moyens)
+- top entités MISS (candidats à warm-up)
+- latence p50/p95 (ajouter colonne `latency_ms` sur `ai_context_traces`)
 
-→ **Architecture homogène confirmée**. Une seule UX de capture de contexte.
+### 2. Métriques edge functions
+- Ajouter `latency_ms`, `llm_provider_used`, `llm_cost_estimate_usd` sur `ai_context_traces`
+- Wrapper `withMetrics()` dans `_shared/semantic-cache.ts` qui timestamp avant/après LLM
+- Compteur `voice_transcription_seconds` par user/jour (table `voice_usage_daily`)
 
-### 1.2 Ce que le drawer permet déjà
-- Note libre (`addNote` → append `ai_actions.user_notes[]`)
-- Mises à jour structurées (montant / échéance / contact) → push direct sur l'entité (`leads`/`opportunities`)
-- Snooze + raison
-- Dismiss + raison
-- Auto-acknowledge silencieux à l'ouverture
-- Historique unifié (notes + statuts + updates) avec timeline
+### 3. Dashboard Admin `/admin/observability/ai`
+Widgets DB-first lisant `ai_cache_metrics` :
+- Hit rate global + par mode (objectif >60% sur intelligence, >40% sur next_step)
+- Coût LLM jour/mois par workspace
+- Top 10 entités MISS répétés (candidats invalidation excessive)
+- Volume vocal (minutes/user/jour, coût AssemblyAI estimé)
+- Latence p95 par mode
 
-### 1.3 Réinjection IA (la boucle)
+### 4. Index DB manquants (P0 critique)
+```sql
+CREATE INDEX CONCURRENTLY idx_user_notes_entity_created 
+  ON user_notes(entity_id, created_at DESC);
+CREATE INDEX CONCURRENTLY idx_ai_context_traces_workspace_mode_date 
+  ON ai_context_traces(workspace_id, cache_mode, created_at DESC);
+CREATE INDEX CONCURRENTLY idx_ai_response_cache_fingerprint 
+  ON ai_response_cache(fingerprint_hash) WHERE expires_at > now();
+```
 
-**✅ Ce qui fonctionne :**
-- `cockpit-ai-copilot/index.ts:1325` lit `user_notes` des `ai_actions` et les injecte dans le prompt LLM (contexte des 7 derniers jours).
-- Les structured updates (montant/deadline/contact) modifient l'entité → bump `entityUpdatedAt` → **invalidation automatique du cache sémantique M6** (fingerprint inclut `entityUpdatedAt`) → prochain `suggestNextStep` / `intelligenceAggregator` est un MISS et recalcule.
-- React Query invalide `entity-snapshot`, `cockpit-leads`, `cockpit-opportunities`, `cockpit-projects`.
+### 5. TTL cleanup `ai_response_cache`
+Job `pg_cron` quotidien 03:00 UTC : `DELETE FROM ai_response_cache WHERE expires_at < now() - interval '7 days'`.
 
-**⚠️ Trous identifiés :**
+## P1 — Mode partagé conditionnel (active la scalabilité Partner)
 
-1. **Note pure (sans structured update) = invisible pour le brief & next-step**
-   Une note ajoute du texte dans `ai_actions.user_notes` mais ne touche aucune table d'entité.
-   → `entityUpdatedAt` ne bouge pas → cache sémantique reste HIT → `suggestNextStep` et `daily_intelligence` ignorent la note jusqu'à la prochaine activité.
-   → Seul le **chatbot copilot** (qui lit `ai_actions`) voit la note.
+### 6. Politique `cacheScope` par mode
+Nouvelle colonne `cache_scope` dans `FingerprintInput` : `'user' | 'workspace' | 'system'`.
 
-2. **Dismiss / snooze reasons** ne sont pas exposés au LLM
-   Le champ `reason` enregistré dans `user_notes` (kind=`status`) est bien repris, mais le prompt ne distingue pas explicitement "raison de rejet" vs "note utilisateur" — le signal d'apprentissage est dilué.
+| Mode | Scope actuel | Scope cible | Justification |
+|---|---|---|---|
+| `suggestNextStep` | user | **workspace** | Recommandation factuelle CRM, pas de personnalisation utile |
+| `suggestTasks` | user | **workspace** | Idem |
+| `intelligenceAggregator` | system | **system** (inchangé) | Déjà partagé |
+| `chat copilot` | user | **user** (inchangé) | Personnalisé par historique conversationnel |
 
-3. **Sentinel digest** : un nouveau dismiss ne déclenche pas un rebuild de `sentinelDigest` → l'`intelligenceAggregator` peut servir un brief obsolète pendant 12h.
+Impact attendu sur workspace 5 users : hit rate ×5 sur modes structurés, coût LLM ÷5.
 
-4. **Cross-signals** : aucun feedback boucle "j'ai traité ce signal" ne retourne dans `ai_cross_signals` pour ajuster le score.
+### 7. Flag `workspace_settings.ai_cache_mode`
+Colonne ENUM (`'shared' | 'isolated'`) sur table workspaces existante. Défaut `'shared'`. Permet override par workspace sensible (compliance).
 
-### 1.4 Vocal
-- AssemblyAI déjà câblé (`transcribe-audio-chunk`, chunking client, word_boost vocabulaire CRM).
-- **Aucune intégration vocale dans le AIActionDrawer** ni dans l'ajout de note CRM.
-- Pas de `useScribe` (realtime ElevenLabs) dans le projet.
+### 8. Fingerprint conditionnel
+Dans `_shared/semantic-cache.ts` :
+```ts
+const userIdForFingerprint = cacheScope === 'workspace' ? null : userId;
+```
+`canonicalStringify` ignore les clés null → fingerprint stable cross-users.
 
----
+## P2 — Optimisations déclenchées par les métriques (différé)
 
-## 2. Plan d'action
+À ne lancer QUE si métriques P0 montrent un seuil dépassé :
 
-### Phase A — Combler les trous de réinjection (backend, surgical)
+- **Compression Opus** vocal si `voice_usage_daily.bandwidth_mb > 50/user`
+- **Index `hnsw`** sur embeddings si latence ANN p95 > 200ms
+- **Rate-limit per user** sur copilot si `429` > 1% des appels
+- **Warm-up cache** des top entités MISS au login si hit rate < 40%
+- **Debounce React Query** (staleTime 30s) sur `AIActionDrawer` si invokes > 10/min/user
 
-**A1. Invalider le cache next-step quand une note est ajoutée**
-- Dans `useAIAction.addNote` : après append des notes, **bump `entity_updated_at`** sur l'entité ciblée (ou ajouter `lastNoteId` au fingerprint `next-step`).
-- Préférer option B : étendre `FingerprintInput.lastActivityId` côté `cockpit-ai-copilot` pour inclure `max(user_notes.created_at)` lu depuis `ai_actions` filtrées par entité.
-- Bénéfice : la prochaine "Prochaine étape IA" intègre la note utilisateur (TTL 1h respecté).
+## Architecture des changements
 
-**A2. Forcer rebuild du brief intelligence sur dismiss/note critique**
-- Dans le trigger `sentinel_trigger_queue` (déjà event-driven), ajouter un event sur `UPDATE ai_actions SET status='dismissed'`.
-- Côté `intelligenceAggregator` : ajouter `sentinelDismissCount24h` au fingerprint pour casser le cache 12h quand l'utilisateur rejette plusieurs alertes.
+```text
+ai_context_traces (+latency_ms, +cost_usd, +provider)
+       │
+       └──► vue ai_cache_metrics ──► /admin/observability/ai
+                                            (widgets DB-first)
 
-**A3. Séparer "notes" vs "raisons de rejet" dans le prompt copilot**
-- Dans `cockpit-ai-copilot:1325`, scinder les `user_notes` en deux blocs : `Notes utilisateur` (kind=`note`) et `Feedback (rejets/reports)` (kind=`status`).
-- Objectif : le LLM apprend à éviter de re-proposer une action explicitement dismissée.
+FingerprintInput
+   ├── cacheScope: 'user'|'workspace'|'system'  ◄── workspace_settings.ai_cache_mode
+   └── userId: null si scope=workspace ──► fingerprint partagé
+```
 
-**A4. Boucle feedback Cross-Signals**
-- Quand un cross-signal est traité via drawer (`done`/`dismissed`), insérer une ligne dans `ai_cross_signals_feedback` (nouvelle table légère : `signal_type`, `entity_id`, `verdict`, `user_id`).
-- Le générateur de cross-signals lit cette table pour décrémenter le `score` des patterns ignorés (ML léger / heuristique).
+## Détails techniques
 
-### Phase B — Dictée vocale dans AIActionDrawer
+- **Migrations** : 1 seule migration P0 (colonnes + index + vue + cron) ; 1 migration P1 (cache_scope + workspace_settings).
+- **Edge functions modifiées** : `_shared/semantic-cache.ts` (wrapper metrics + scope), `cockpit-ai-copilot/index.ts` (passage `cacheScope` par mode), `transcribe-audio-chunk` (compteur voice_usage_daily).
+- **Front** : nouvelle page `/admin/observability/ai` (Admin-only via RLS `has_role admin`), composants `MetricCard`, `HitRateChart` (Recharts existant), `VoiceUsageWidget`.
+- **Rétrocompat** : `cacheScope` défaut `'user'` si non passé → zéro régression sur autres modes.
+- **Tests** : étendre `semantic-cache_test.ts` avec 3 tests : fingerprint stable cross-users en scope=workspace, fingerprint divergent en scope=user, vue `ai_cache_metrics` retourne >0 lignes après seed.
 
-**B1. Composant `<VoiceNoteInput>`**
-- Bouton micro à droite du `Textarea` "note".
-- 2 modes (settings utilisateur, défaut = streaming) :
-  - **Streaming temps réel** : `useScribe` ElevenLabs (`scribe_v2_realtime`, VAD, fr) → transcription live affichée pendant qu'on parle, commit auto sur silence 1.5s.
-  - **Push-to-talk batch** : enregistrement local → POST vers `transcribe-audio-chunk` (déjà déployé, AssemblyAI best, word_boost = `cockpit_vocabulary`).
-- Choix techno : **AssemblyAI batch** (déjà en prod, vocabulaire CRM injecté, coût maîtrisé) sauf si user veut le wow effect streaming.
+## Critères d'acceptation
 
-**B2. Pipeline d'enrichissement vocal**
-1. Transcription brute → champ note.
-2. Bouton "✨ Structurer" → appel `cockpit-ai-copilot` mode `parseVoiceNote` (nouveau endpoint léger) :
-   - Input : transcript + snapshot entité courante.
-   - Output JSON : `{ note: string, structured_updates: { new_amount?, new_deadline?, new_contact? }, suggested_status?: 'done'|'snoozed', confidence: number }`.
-   - Modèle : `google/gemini-2.5-flash` (rapide, économique, déjà default).
-3. Pré-remplissage automatique des champs structurés du drawer + diff before/after déjà existant → l'utilisateur valide d'un clic.
+1. Dashboard `/admin/observability/ai` affiche hit rate, coût €/jour, latence p95 par mode.
+2. 2 users du même workspace ouvrant la même opportunité → 1 seul appel LLM (MISS puis HIT) en mode `suggestNextStep`.
+3. Workspace avec `ai_cache_mode='isolated'` retombe sur comportement actuel (isolation user).
+4. Job cron supprime entrées cache expirées >7j, mesurable via `pg_stat_user_tables`.
+5. Aucune régression sur tests Deno existants.
 
-**B3. RAG / rapprochement entité**
-- Si la transcription mentionne un nom propre absent de l'entité courante (ex: "appeler Marc plutôt que Sophie"), le copilot fait un `ilike` sur `contacts`/`leads` (déjà standard via [Anti-hallucination](mem://cockpit/intelligence/entity-resolution-anti-hallucination-fr)) et propose le rattachement.
+## Hors scope (à proposer plus tard)
 
-**B4. UX dans le drawer**
-- Position : icône micro inline dans le `Textarea` "Ajouter une note".
-- États : `idle` → `recording` (waveform + timer) → `transcribing` (shimmer) → `parsed` (preview structuré).
-- Raccourci : maintien `Espace` pour push-to-talk.
-- Accessibilité : feedback visuel + son court de confirmation.
-
-### Phase C — Observabilité
-
-- Ajouter `cache_mode` analytics (déjà en place) : surface dans `RagDiagnosticsDrawer` un compteur "notes prises en compte / notes ignorées par cache".
-- Tracer chaque transcription dans `ai_context_traces` (`source: 'voice_note'`, `latency_ms`, `confidence`).
-
----
-
-## 3. Détails techniques
-
-### Fichiers à modifier
-- `supabase/functions/cockpit-ai-copilot/index.ts` : 
-  - Split notes/feedback dans prompt builder (~ligne 1325).
-  - Lecture `max(user_notes.created_at)` dans `buildContextFingerprint` next-step.
-  - Nouveau mode `parseVoiceNote` (~80 lignes, schéma Zod).
-- `src/hooks/cockpit/useAIAction.ts` : `addNote` bump `last_note_at` ou trigger côté DB.
-- `src/components/cockpit/dashboard/AIActionDrawer.tsx` : intégration `<VoiceNoteInput>`.
-- **Nouveau** `src/components/cockpit/dashboard/VoiceNoteInput.tsx`.
-- **Migration** : 
-  - Colonne `ai_actions.last_note_at TIMESTAMPTZ` + trigger update on `user_notes` change.
-  - Table `ai_cross_signals_feedback` (optionnelle, phase A4).
-
-### Hors scope
-- Pas de refactor du semantic cache M6 (contrat v1 figé).
-- Pas de remplacement d'AssemblyAI par ElevenLabs sauf si user demande streaming.
-- Pas de re-générer le `daily_intelligence` à chaque note (trop coûteux) → on se contente d'invalider next-step (TTL 1h).
-
-### Critères d'acceptation
-1. Ajouter une note sur une action IA → la "Prochaine étape IA" suivante (dans l'heure) intègre cette note (vérif `cache_mode = 'miss'`).
-2. Dismiss d'une alerte sentinelle → le brief intelligence du lendemain ne reproposera pas le même pattern.
-3. Cliquer le micro → parler "Le client veut signer pour 15000 euros début juin" → champs `amount=15000` + `deadline=2026-06-01` pré-remplis automatiquement.
-4. Aucune régression sur les flows existants du drawer.
+- Refactor pgvector vers `hnsw` (à valider via métriques P0)
+- Migration AssemblyAI → ElevenLabs Scribe streaming
+- Rate-limiter centralisé multi-fonction
+- Sharding workspace si >500 workspaces actifs (sujet infra Lovable Cloud)
