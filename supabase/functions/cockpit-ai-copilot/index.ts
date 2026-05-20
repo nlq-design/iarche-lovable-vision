@@ -331,6 +331,13 @@ async function suggestTasks(supabase: any, workspaceId: string, entityType?: str
     }).then(() => {});
   }
 
+  if (traceCtx?.sink[0] && (traceCtx as any)._missStart) {
+    const latency = Date.now() - (traceCtx as any)._missStart;
+    supabase.from('ai_context_traces')
+      .update({ latency_ms: latency, llm_provider: 'google/gemini-2.5-flash' })
+      .eq('id', traceCtx.sink[0]).then(() => {});
+  }
+
   return result;
 }
 
@@ -681,6 +688,13 @@ ${richContext}
       promptVersion: (nextStepPrompt as any)?.version ?? null,
       ttlHours: 1,
     }).then(() => {});
+  }
+
+  if (traceCtx?.sink[0] && (traceCtx as any)._missStart) {
+    const latency = Date.now() - (traceCtx as any)._missStart;
+    supabase.from('ai_context_traces')
+      .update({ latency_ms: latency, llm_provider: 'google/gemini-2.5-flash' })
+      .eq('id', traceCtx.sink[0]).then(() => {});
   }
 
   return { suggestion, opportunity: { id: opp.id, title: opp.title, stage: opp.stage } };
@@ -1750,6 +1764,13 @@ ${activeAIActions.map((a: any) => {
       promptVersion: intelligencePromptVersion,
       ttlHours: 12,
     }).catch(() => {});
+  }
+
+  if (traceCtx?.sink[0] && (traceCtx as any)._missStart) {
+    const latency = Date.now() - (traceCtx as any)._missStart;
+    supabase.from('ai_context_traces')
+      .update({ latency_ms: latency, llm_provider: 'google/gemini-2.5-flash' })
+      .eq('id', traceCtx.sink[0]).then(() => {});
   }
 
   return payload;
