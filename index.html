@@ -29,9 +29,76 @@
     <meta name="description" content="Architecte IA basé à Bayonne. Conseil, intégration et accompagnement en intelligence artificielle pour dirigeants de PME. Sud-Ouest et toute la France." />
     <meta name="author" content="IArche" />
     <meta name="keywords" content="architecte IA, intelligence artificielle, conseil IA PME, intégration IA, Bayonne, Sud-Ouest, audit IA, développement IA, formation IA, conformité IA Act" />
-    
-    
-    
+
+    <!-- Open Graph / Facebook (fallback for non-JS crawlers) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:site_name" content="IArche" />
+    <meta property="og:title" content="IArche · Architecte IA Bayonne | Conseil & Intégration PME" />
+    <meta property="og:description" content="Architecte IA basé à Bayonne. Conseil, intégration et accompagnement en intelligence artificielle pour dirigeants de PME. Sud-Ouest et toute la France." />
+    <meta property="og:url" content="https://iarche.fr/" />
+    <meta property="og:image" content="https://iarche.fr/og-image-v4.png" />
+    <meta property="og:image:width" content="1512" />
+    <meta property="og:image:height" content="794" />
+
+    <!-- Twitter Card (fallback for non-JS crawlers) -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="IArche · Architecte IA Bayonne | Conseil & Intégration PME" />
+    <meta name="twitter:description" content="Architecte IA basé à Bayonne. Conseil, intégration et accompagnement en intelligence artificielle pour dirigeants de PME." />
+    <meta name="twitter:image" content="https://iarche.fr/og-image-v4.png" />
+
+    <!-- Schema.org JSON-LD - Organization + LocalBusiness (fallback for non-JS crawlers) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://iarche.fr/#organization",
+          "name": "IArche",
+          "url": "https://iarche.fr",
+          "logo": "https://iarche.fr/logo-iarche.png",
+          "description": "Architecte IA basé à Bayonne. On accompagne les dirigeants de PME dans l'intégration concrète de l'intelligence artificielle : audit, développement, accompagnement, conformité. Engagés localement, nous intervenons aussi partout en France.",
+          "sameAs": ["https://www.linkedin.com/company/iarche"],
+          "contactPoint": {
+            "@type": "ContactPoint",
+            "email": "nlq@iarche.fr",
+            "contactType": "customer service",
+            "availableLanguage": ["French"]
+          }
+        },
+        {
+          "@type": "LocalBusiness",
+          "@id": "https://iarche.fr/#localbusiness",
+          "name": "IArche",
+          "url": "https://iarche.fr",
+          "image": "https://iarche.fr/og-image-v4.png",
+          "description": "Architecte IA basé à Bayonne. Conseil, intégration et accompagnement en intelligence artificielle pour dirigeants de PME. Sud-Ouest et toute la France.",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Bayonne",
+            "addressRegion": "Nouvelle-Aquitaine",
+            "postalCode": "64100",
+            "addressCountry": "FR"
+          },
+          "geo": {
+            "@type": "GeoCoordinates",
+            "latitude": "43.4929",
+            "longitude": "-1.4748"
+          },
+          "areaServed": [
+            { "@type": "Country", "name": "France" },
+            { "@type": "City", "name": "Bayonne" },
+            { "@type": "City", "name": "Biarritz" },
+            { "@type": "City", "name": "Pau" },
+            { "@type": "City", "name": "Bordeaux" }
+          ],
+          "priceRange": "$$"
+        }
+      ]
+    }
+    </script>
+
     <!-- DNS prefetch & Preconnect Supabase -->
     <link rel="dns-prefetch" href="https://mgjyhlyrwnnioctkbdkk.supabase.co">
     <link rel="preconnect" href="https://mgjyhlyrwnnioctkbdkk.supabase.co" crossorigin>
@@ -51,8 +118,6 @@
     <link rel="icon" type="image/svg+xml" href="/logos/iarche-icon-32.svg">
     <link rel="apple-touch-icon" sizes="180x180" href="/favicon.png">
     <link rel="manifest" href="/manifest.json">
-
-    <!-- OG/Twitter tags managed by react-helmet-async per page -->
   </head>
 
   <body>
