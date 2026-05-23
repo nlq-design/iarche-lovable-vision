@@ -253,6 +253,14 @@ Deno.serve(async (req) => {
           }).catch((e) => console.warn("[public-rag-chat] cache store failed:", e?.message));
           console.log(`[public-rag-chat] CACHE STORE len=${fullContent.length} model=${model}`);
         }
+        // Trace miss avec latence réelle (estimation coût gemini-2.5-flash : ~$0.0005 / appel public RAG moyen)
+        trackCacheTrace({
+          supabase, workspaceId: PUBLIC_WORKSPACE_ID, mode: "public_rag",
+          cacheStatus: "miss", cacheScope: "system",
+          latencyMs: Date.now() - missStart,
+          llmProvider: model, llmCostEstimateUsd: 0.0005,
+          entityType: "public", entityId: null,
+        });
       },
     });
 
