@@ -4,7 +4,7 @@ import { CockpitLayout } from "@/components/cockpit/CockpitLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TabsContent } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -35,27 +35,16 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { 
-  ArrowLeft, 
-  ExternalLink, 
-  Users, 
+import {
+  ArrowLeft,
+  ExternalLink,
+  Users,
   UserPlus,
   Trash2,
   Loader2,
   FileText,
   Mail,
   Building2,
-  FileUp,
-  Sparkles,
-  BarChart3,
-  TrendingUp,
-  Activity,
-  Clock,
-  Rocket,
-  Euro,
-  LifeBuoy,
-  Map,
-  Megaphone,
 } from "lucide-react";
 import { SaasSubscriptionsTab } from "@/components/cockpit/SaasSubscriptionsTab";
 import { SolutionPipelineTab } from "@/components/cockpit/saas/SolutionPipelineTab";
@@ -66,6 +55,8 @@ import { SolutionRevenueTab } from "@/components/cockpit/saas/SolutionRevenueTab
 import { SolutionSupportTab } from "@/components/cockpit/saas/SolutionSupportTab";
 import { SolutionRoadmapTab } from "@/components/cockpit/saas/SolutionRoadmapTab";
 import { SolutionAcquisitionTab } from "@/components/cockpit/saas/SolutionAcquisitionTab";
+import { SolutionKpiHeader } from "@/components/cockpit/saas/SolutionKpiHeader";
+import { GroupedSolutionTabs } from "@/components/cockpit/saas/GroupedSolutionTabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useCockpitSolutionLeads, useCockpitLeads, useCockpitUploads } from "@/hooks/cockpit";
 import { LinkedFilesSection } from "@/components/cockpit/LinkedFilesSection";
@@ -198,59 +189,16 @@ export default function CockpitSolutionDetail() {
           </Button>
         </div>
 
-        {/* Tabs — Mini-CRM par SaaS */}
-        <Tabs defaultValue="saas" className="space-y-4">
-          <TabsList className="h-9 flex-wrap">
-            <TabsTrigger value="saas" className="gap-1.5 text-sm h-7">
-              <BarChart3 className="h-3.5 w-3.5" />
-              Abonnements & Clients
-            </TabsTrigger>
-            <TabsTrigger value="pipeline" className="gap-1.5 text-sm h-7">
-              <TrendingUp className="h-3.5 w-3.5" />
-              Pipeline
-            </TabsTrigger>
-            <TabsTrigger value="usage" className="gap-1.5 text-sm h-7">
-              <Activity className="h-3.5 w-3.5" />
-              Usage & Engagement
-            </TabsTrigger>
-            <TabsTrigger value="timeline" className="gap-1.5 text-sm h-7">
-              <Clock className="h-3.5 w-3.5" />
-              Timeline
-            </TabsTrigger>
-            <TabsTrigger value="onboarding" className="gap-1.5 text-sm h-7">
-              <Rocket className="h-3.5 w-3.5" />
-              Onboarding
-            </TabsTrigger>
-            <TabsTrigger value="revenue" className="gap-1.5 text-sm h-7">
-              <Euro className="h-3.5 w-3.5" />
-              Revenus
-            </TabsTrigger>
-            <TabsTrigger value="support" className="gap-1.5 text-sm h-7">
-              <LifeBuoy className="h-3.5 w-3.5" />
-              Support & NPS
-            </TabsTrigger>
-            <TabsTrigger value="roadmap" className="gap-1.5 text-sm h-7">
-              <Map className="h-3.5 w-3.5" />
-              Roadmap
-            </TabsTrigger>
-            <TabsTrigger value="acquisition" className="gap-1.5 text-sm h-7">
-              <Megaphone className="h-3.5 w-3.5" />
-              Acquisition
-            </TabsTrigger>
-            <TabsTrigger value="leads" className="gap-1.5 text-sm h-7">
-              <Users className="h-3.5 w-3.5" />
-              Prospects ({solutionLeads.length})
-            </TabsTrigger>
-            <TabsTrigger value="overview" className="text-sm h-7">Produit & Pricing</TabsTrigger>
-            <TabsTrigger value="documents" className="gap-1.5 text-sm h-7">
-              <FileUp className="h-3.5 w-3.5" />
-              Documents ({linkedFiles?.length || 0})
-            </TabsTrigger>
-            <TabsTrigger value="consulte" className="gap-1.5 text-sm h-7">
-              <Sparkles className="h-3.5 w-3.5" />
-              Consulte
-            </TabsTrigger>
-          </TabsList>
+        {/* KPI Header — vue de tête en permanence */}
+        <SolutionKpiHeader solutionId={id!} />
+
+        {/* Tabs — Mini-CRM par SaaS, organisés en 4 groupes */}
+        <GroupedSolutionTabs
+          solutionLeadsCount={solutionLeads.length}
+          documentsCount={linkedFiles?.length || 0}
+        >
+
+
 
           <TabsContent value="saas" className="space-y-3">
             <SaasSubscriptionsTab />
@@ -459,7 +407,8 @@ export default function CockpitSolutionDetail() {
               </CardContent>
             </Card>
           </TabsContent>
-        </Tabs>
+        </GroupedSolutionTabs>
+
       </div>
 
       {/* Delete Confirmation */}

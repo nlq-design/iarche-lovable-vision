@@ -3,6 +3,10 @@ import { createRoot } from "react-dom/client";
 import { HelmetProvider } from "react-helmet-async";
 import App from "./App.tsx";
 import "./index.css";
+import { captureUtmFromUrl } from "./lib/utm";
+
+// Capture UTM parameters on first hit (persists in sessionStorage for lead attribution)
+captureUtmFromUrl();
 
 // Safari/WebKit compatibility: Polyfill for smooth scroll behavior
 if (!('scrollBehavior' in document.documentElement.style)) {
