@@ -201,7 +201,12 @@ const Contact = () => {
             "@id": "https://iarche.fr/#organization",
             "name": "IArche",
             "url": "https://iarche.fr",
-            "logo": "https://iarche.fr/logo-iarche.png",
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://iarche.fr/logo-iarche.png",
+              "width": 512,
+              "height": 512
+            },
             "description": "Architecte IA basé à Bayonne. On accompagne les dirigeants de PME dans l'intégration concrète de l'intelligence artificielle : audit, développement, accompagnement, conformité. Engagés localement, nous intervenons aussi partout en France.",
             "sameAs": ["https://www.linkedin.com/company/iarche"],
             "contactPoint": {
@@ -209,6 +214,7 @@ const Contact = () => {
               "email": "nlq@iarche.fr",
               "telephone": "+33661741381",
               "contactType": "customer service",
+              "areaServed": "FR",
               "availableLanguage": ["French"]
             }
           })}
