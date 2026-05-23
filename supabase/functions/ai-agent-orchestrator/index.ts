@@ -9498,7 +9498,7 @@ ${calendarRef.join('\n')}
     console.log(`Response mode detected: ${responseMode} (query: "${userQuery.slice(0, 50)}...")`);
     
     // Inject mode into system prompt
-    const promptWithMode = systemPrompt.replace("{response_mode}", responseMode);
+    const promptWithMode = effectiveSystemPrompt.replace("{response_mode}", responseMode);
 
     // Build messages with system prompt + memory context + date context
     const fullMessages = [
