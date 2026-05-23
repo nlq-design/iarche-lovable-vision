@@ -14,6 +14,7 @@ Updated: now
 - pgvector RPC: SECURITY DEFINER avec `search_path = public, extensions` obligatoire (sinon opérateur `<=>` introuvable).
 
 ## Memories
+- [Content Gap Activation Phase L](mem://cockpit/intelligence/content-gap-activation-phase-l) — Telegram content_gap_alert (high+medium uniquement) déclenché par rag-content-gap-detector + section dashboard /admin/observability/ai (alertes ouvertes + top clusters live via RPC cluster_unanswered_rag seuil 2).
 - [RAG Self-Healing Phase K](mem://cockpit/intelligence/rag-self-healing-phase-k) — public_rag_unanswered + RPC cluster_unanswered_rag (cosine 0.85, ≥3/14j) + edge rag-content-gap-detector cron 04:17 → ai_sentinel_alerts category='content_gap'. Logging dans public-rag-chat (no_match + low_confidence<0.5), zéro coût LLM.
 - [Auto-Action Confiance Phase J](mem://cockpit/intelligence/auto-action-confiance-phase-j) — compute_action_confidence (zéro LLM) + trigger AFTER INSERT, seuil 0.85 → auto_execute planifié 2h. Cron process-auto-actions */5min, vue scheduled_auto_actions, RPC cancel_auto_action, bandeau ambre + bouton annuler dans ActionProposalsList.
 - [Memory Long-Terme Phase I](mem://cockpit/intelligence/memory-long-terme-phase-i) — memory-enricher.ts (dormant) branché dans orchestrator : injection prefs/decisions long-terme + auto-capture regex post-réponse (fire-and-forget, zéro LLM)

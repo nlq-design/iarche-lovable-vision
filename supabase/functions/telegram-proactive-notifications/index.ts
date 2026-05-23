@@ -14,7 +14,7 @@ const TELEGRAM_BOT_TOKEN = Deno.env.get("TELEGRAM_BOT_TOKEN")!;
 const DEFAULT_CHAT_ID = Deno.env.get("TELEGRAM_ADMIN_CHAT_ID") || "";
 
 interface NotificationPayload {
-  type: "new_lead" | "new_booking" | "task_reminder" | "morning_briefing";
+  type: "new_lead" | "new_booking" | "task_reminder" | "morning_briefing" | "content_gap_alert";
   entity_id?: string;
   entity_type?: string;
   data?: Record<string, unknown>;
@@ -379,7 +379,42 @@ async function handleMorningBriefing(supabase: SupabaseClientAny, chatId: string
   return "Échec d'envoi du briefing";
 }
 
-// ============ CRON HANDLERS ============
+// ---- Phase IA-2L — Notification "lacune contenu" Sentinel ----
+async function handleContentGapAlert(supabase: SupabaseClientAny, alertId: string, chatId: string): Promise<string> {
+  const alreadySent = await checkAlreadySent(supabase, chatId, "content_gap_alert", alertId);
+  if (alreadySent) return "Notification déjà envoyée";
+
+  const { data: alert } = await supabase
+    .from("ai_sentinel_alerts")
+    .select("id, severity, title, description, ai_metadata")
+    .eq("id", alertId)
+    .eq("category", "content_gap")
+    .single();
+
+  if (!alert) return "Alerte introuvable";
+
+  const meta = (alert.ai_metadata ?? {}) as Record<string, unknown>;
+  const severityIcon: Record<string, string> = { high: "🔴", medium: "🟡", low: "🟢" };
+  const samples = Array.isArray(meta.sample_queries) ? (meta.sample_queries as string[]).slice(0, 3) : [];
+
+  const message = `${severityIcon[alert.severity as string] || "📚"} <b>Lacune contenu public détectée</b>
+
+<b>${alert.title}</b>
+
+📊 ${meta.occurrences ?? "?"} questions similaires sur ${meta.window_days ?? "?"} jours
+${samples.length ? `\n💬 Exemples :\n${samples.map((q) => `  • <i>${q.slice(0, 100)}</i>`).join("\n")}\n` : ""}
+
+➡️ Action : créer un article ou enrichir la FAQ pour combler ce manque.
+
+🔗 <a href="https://iarche.fr/admin/observability/ai">Voir le dashboard</a>`;
+
+  const sent = await sendTelegramMessage(chatId, message);
+  if (sent) {
+    await markAsSent(supabase, chatId, "content_gap_alert", "content_gap", alertId);
+    return "Notification envoyée";
+  }
+  return "Échec d'envoi";
+}
 
 async function checkDueTaskReminders(supabase: SupabaseClientAny, chatId: string): Promise<{ sent: number; skipped: number }> {
   // Find tasks due in the next hour that haven't been reminded
@@ -507,6 +542,11 @@ serve(async (req) => {
 
       case "morning_briefing":
         result = await handleMorningBriefing(supabase, chatId);
+        break;
+
+      case "content_gap_alert":
+        if (!body.entity_id) throw new Error("entity_id required for content_gap_alert");
+        result = await handleContentGapAlert(supabase, body.entity_id, chatId);
         break;
 
       default:

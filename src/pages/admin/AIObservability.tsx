@@ -27,20 +27,49 @@ interface VoiceRow {
   estimated_cost_usd: number;
 }
 
+interface ContentGapRow {
+  cluster_anchor_id: string;
+  representative_query: string;
+  occurrences: number;
+  last_asked: string;
+  avg_top_similarity: number | null;
+  sample_queries: string[] | null;
+}
+
+interface ContentGapAlertRow {
+  id: string;
+  severity: string;
+  title: string;
+  created_at: string;
+  resolved_at: string | null;
+  ai_metadata: Record<string, unknown> | null;
+}
+
 export default function AIObservability() {
   const [metrics, setMetrics] = useState<MetricRow[]>([]);
   const [voice, setVoice] = useState<VoiceRow[]>([]);
+  const [gaps, setGaps] = useState<ContentGapRow[]>([]);
+  const [gapAlerts, setGapAlerts] = useState<ContentGapAlertRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       const since = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString().slice(0, 10);
-      const [m, v] = await Promise.all([
+      const [m, v, g, ga] = await Promise.all([
         supabase.from("ai_cache_metrics" as any).select("*").gte("day", since).order("day", { ascending: false }),
         supabase.from("voice_usage_daily").select("*").gte("day", since).order("day", { ascending: false }),
+        supabase.rpc("cluster_unanswered_rag" as any, { _days: 14, _min_count: 2, _sim_threshold: 0.85 }),
+        supabase.from("ai_sentinel_alerts" as any)
+          .select("id, severity, title, created_at, resolved_at, ai_metadata")
+          .eq("category", "content_gap")
+          .is("resolved_at", null)
+          .order("created_at", { ascending: false })
+          .limit(20),
       ]);
       setMetrics((m.data as any) || []);
       setVoice((v.data as any) || []);
+      setGaps((g.data as any) || []);
+      setGapAlerts((ga.data as any) || []);
       setLoading(false);
     })();
   }, []);
@@ -211,6 +240,67 @@ export default function AIObservability() {
                   </table>
                 </CardContent>
               </Card>
+            </section>
+
+            <section>
+              <h2 className="text-xl font-semibold mb-3">Lacunes contenu public (RAG)</h2>
+              <p className="text-xs text-muted-foreground mb-3">
+                Questions récurrentes sans réponse satisfaisante sur 14 jours (clustering sémantique cosine ≥ 0.85). À transformer en articles/FAQ.
+              </p>
+              <div className="grid gap-4 md:grid-cols-2">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Alertes Sentinelle ouvertes ({gapAlerts.length})</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <ul className="divide-y">
+                      {gapAlerts.map((a) => {
+                        const meta = (a.ai_metadata ?? {}) as Record<string, unknown>;
+                        const occ = (meta.occurrences as number) ?? 0;
+                        return (
+                          <li key={a.id} className="p-3 text-sm">
+                            <div className="flex items-center gap-2">
+                              <Badge variant={a.severity === "high" ? "destructive" : a.severity === "medium" ? "default" : "secondary"} className="text-[10px]">
+                                {a.severity}
+                              </Badge>
+                              <span className="font-medium truncate flex-1">{a.title}</span>
+                              <span className="text-xs text-muted-foreground shrink-0">{occ}×</span>
+                            </div>
+                          </li>
+                        );
+                      })}
+                      {gapAlerts.length === 0 && (
+                        <li className="p-6 text-center text-muted-foreground text-sm">Aucune alerte ouverte.</li>
+                      )}
+                    </ul>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Top clusters live (≥ 2 occurrences)</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <ul className="divide-y">
+                      {gaps.slice(0, 10).map((c) => (
+                        <li key={c.cluster_anchor_id} className="p-3 text-sm">
+                          <div className="flex items-start gap-2">
+                            <Badge variant="outline" className="text-[10px] shrink-0">{c.occurrences}×</Badge>
+                            <span className="flex-1 truncate">« {c.representative_query} »</span>
+                          </div>
+                          {c.sample_queries && c.sample_queries.length > 1 && (
+                            <p className="text-xs text-muted-foreground mt-1 ml-8 truncate">
+                              + {c.sample_queries.length - 1} variantes
+                            </p>
+                          )}
+                        </li>
+                      ))}
+                      {gaps.length === 0 && (
+                        <li className="p-6 text-center text-muted-foreground text-sm">Aucun cluster détecté.</li>
+                      )}
+                    </ul>
+                  </CardContent>
+                </Card>
+              </div>
             </section>
           </div>
         )}
