@@ -6,7 +6,7 @@
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { loadPrompt } from "../_shared/prompt-loader.ts";
-import { buildCacheKey, buildContextFingerprint, lookupCache, storeCache } from "../_shared/semantic-cache.ts";
+import { buildCacheKey, buildContextFingerprint, lookupCache, storeCache, trackCacheTrace } from "../_shared/semantic-cache.ts";
 
 // Workspace IArche Interne (cache mutualisé pour tout le trafic public)
 const PUBLIC_WORKSPACE_ID = "00000000-0000-0000-0000-000000000001";
