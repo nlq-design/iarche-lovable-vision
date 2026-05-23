@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Palette, Upload, Image as ImageIcon } from 'lucide-react';
+import { BrandingDocumentPreview } from '@/components/cockpit/settings/BrandingDocumentPreview';
 
 const COLOR_FIELDS = [
   { key: 'primary_color' as const, label: 'Couleur principale', placeholder: '#1A2B4A' },
@@ -184,6 +185,25 @@ export default function SettingsBranding() {
             </div>
           </CardContent>
         </Card>
+
+        <BrandingDocumentPreview
+          values={{
+            logo_url: data?.logo_url ?? null,
+            brand_name: form.brand_name,
+            tagline: form.tagline,
+            primary_color: form.primary_color,
+            secondary_color: form.secondary_color,
+            accent_color: form.accent_color,
+            background_color: form.background_color,
+            text_color: form.text_color,
+            heading_font: form.heading_font,
+            body_font: form.body_font,
+            footer_text: form.footer_text,
+            document_header_html: form.document_header_html,
+            document_footer_html: form.document_footer_html,
+            email_signature_html: form.email_signature_html,
+          }}
+        />
 
         <div className="flex justify-end gap-2">
           <Button onClick={onSave} disabled={upsert.isPending}>
