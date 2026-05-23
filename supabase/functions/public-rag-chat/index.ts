@@ -6,7 +6,7 @@
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { loadPrompt } from "../_shared/prompt-loader.ts";
-import { buildCacheKey, buildContextFingerprint, lookupCache, storeCache } from "../_shared/semantic-cache.ts";
+import { buildCacheKey, buildContextFingerprint, lookupCache, storeCache, trackCacheTrace } from "../_shared/semantic-cache.ts";
 
 // Workspace IArche Interne (cache mutualisé pour tout le trafic public)
 const PUBLIC_WORKSPACE_ID = "00000000-0000-0000-0000-000000000001";
@@ -179,12 +179,19 @@ Deno.serve(async (req) => {
 
     if (cached.hit && typeof cached.response === "string") {
       console.log(`[public-rag-chat] CACHE HIT sim=${cached.similarity.toFixed(3)} age=${cached.ageSeconds}s hits=${cached.hitCount}`);
+      trackCacheTrace({
+        supabase, workspaceId: PUBLIC_WORKSPACE_ID, mode: "public_rag",
+        cacheStatus: "hit", cacheScope: "system",
+        cacheSimilarity: cached.similarity, cacheAgeSeconds: cached.ageSeconds,
+        llmProvider: cached.model ?? null, entityType: "public", entityId: null,
+      });
       return new Response(streamPlainTextAsSSE(cached.response), {
         headers: { ...corsHeaders, "Content-Type": "text/event-stream", "X-Cache": "HIT" },
       });
     }
 
     // ---- 5. Stream LLM (cache miss) ----
+    const missStart = Date.now();
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -246,6 +253,14 @@ Deno.serve(async (req) => {
           }).catch((e) => console.warn("[public-rag-chat] cache store failed:", e?.message));
           console.log(`[public-rag-chat] CACHE STORE len=${fullContent.length} model=${model}`);
         }
+        // Trace miss avec latence réelle (estimation coût gemini-2.5-flash : ~$0.0005 / appel public RAG moyen)
+        trackCacheTrace({
+          supabase, workspaceId: PUBLIC_WORKSPACE_ID, mode: "public_rag",
+          cacheStatus: "miss", cacheScope: "system",
+          latencyMs: Date.now() - missStart,
+          llmProvider: model, llmCostEstimateUsd: 0.0005,
+          entityType: "public", entityId: null,
+        });
       },
     });
 

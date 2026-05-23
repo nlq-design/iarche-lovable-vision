@@ -5,7 +5,7 @@ import { createAIClient } from "../_shared/ai-client.ts";
 import { chatWithTools, completeLLM } from "../_shared/ai-legacy-bridge.ts";
 import type { AIMessage, AITool } from "../_shared/ai-types.ts";
 import { composeSystemPromptForRequest, type Intent } from "../_shared/intent-router.ts";
-import { buildCacheKey, buildContextFingerprint, lookupCache, storeCache } from "../_shared/semantic-cache.ts";
+import { buildCacheKey, buildContextFingerprint, lookupCache, storeCache, trackCacheTrace } from "../_shared/semantic-cache.ts";
 
 // Phase IA-2 — Cache sémantique orchestrator (general intent only, no tool_calls)
 const ORCHESTRATOR_CACHE_TTL_HOURS = 24;
@@ -9597,6 +9597,12 @@ ${calendarRef.join('\n')}
       });
       if (cached.hit && typeof cached.response === "string") {
         console.log(`[orchestrator] CACHE HIT sim=${cached.similarity.toFixed(3)} age=${cached.ageSeconds}s hits=${cached.hitCount}`);
+        trackCacheTrace({
+          supabase, workspaceId: workspace_id, userId: safeUserId,
+          mode: "orchestrator_general", cacheStatus: "hit", cacheScope: "workspace",
+          cacheSimilarity: cached.similarity, cacheAgeSeconds: cached.ageSeconds,
+          llmProvider: cached.model ?? selectedModel, entityType: "general", entityId: null,
+        });
         return new Response(JSON.stringify({
           ok: true,
           message: cached.response,
@@ -9620,6 +9626,7 @@ ${calendarRef.join('\n')}
         });
       }
     }
+    const orchestratorMissStart = Date.now();
 
     let aiResponse = await aiClient.complete({
       messages: fullMessages as AIMessage[],
@@ -9783,6 +9790,20 @@ ${calendarRef.join('\n')}
         ttlHours: ORCHESTRATOR_CACHE_TTL_HOURS,
       }).catch((e) => console.warn("[orchestrator] cache store failed:", (e as Error).message));
       console.log(`[orchestrator] CACHE STORE intent=general len=${finalContent.length} model=${selectedModel}`);
+    }
+
+    // Phase IA-2 — Trace MISS (coût estimé gemini-2.5-flash ~$0.001 par appel orchestrator moyen)
+    if (cacheEligible) {
+      const totalTokens = aiResponse.usage?.total_tokens ?? 0;
+      const costEstimate = totalTokens > 0 ? (totalTokens / 1_000_000) * 0.30 : 0.001;
+      trackCacheTrace({
+        supabase, workspaceId: workspace_id, userId: safeUserId,
+        mode: "orchestrator_general", cacheStatus: "miss", cacheScope: "workspace",
+        latencyMs: Date.now() - orchestratorMissStart,
+        llmProvider: selectedModel, llmCostEstimateUsd: costEstimate,
+        estimatedTokens: totalTokens,
+        entityType: "general", entityId: null,
+      });
     }
 
     // Save assistant response to memory (important insights only)

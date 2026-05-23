@@ -147,7 +147,15 @@ export default function AIObservability() {
                     <tbody>
                       {Object.entries(byMode).map(([mode, v]) => {
                         const hr = v.calls > 0 ? Math.round((v.hits / v.calls) * 1000) / 10 : 0;
-                        const target = mode === "intelligence" ? 60 : 40;
+                        // Cibles différenciées par pipeline (IA-2)
+                        const targetByMode: Record<string, number> = {
+                          intelligence: 60,
+                          public_rag: 60,           // FAQ marketing très répétitive
+                          orchestrator_general: 25, // greetings + FAQ IArche
+                          suggest_tasks: 40,
+                          next_step: 40,
+                        };
+                        const target = targetByMode[mode] ?? 40;
                         return (
                           <tr key={mode} className="border-b last:border-0">
                             <td className="p-3 font-medium">{mode}</td>
