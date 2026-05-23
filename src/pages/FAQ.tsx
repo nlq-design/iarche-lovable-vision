@@ -53,7 +53,7 @@ const faqData = [
   },
   {
     question: "Qu'est-ce que la garantie de résultat 'Zero Friction' ?",
-    audit:
+    answer:
       "Notre engagement 'Zero Friction' signifie que nous concevons des solutions qui s'intègrent naturellement dans vos habitudes de travail existantes. Pas de disruption inutile, pas de changement de processus pour le plaisir. Si un outil IA crée plus de friction qu'il n'en résout, nous le reconfigurons ou proposons une alternative. Votre satisfaction opérationnelle est notre critère de succès premier.",
   },
   {
