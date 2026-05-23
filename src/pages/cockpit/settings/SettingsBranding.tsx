@@ -7,18 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@/components/ui/separator';
 import { Palette, Upload, Image as ImageIcon } from 'lucide-react';
 import { BrandingDocumentPreview } from '@/components/cockpit/settings/BrandingDocumentPreview';
 
-const COLOR_FIELDS = [
-  { key: 'primary_color' as const, label: 'Couleur principale', placeholder: '#1A2B4A' },
-  { key: 'secondary_color' as const, label: 'Couleur secondaire', placeholder: '#B04A32' },
-  { key: 'accent_color' as const, label: 'Couleur d’accent', placeholder: '#FAF9F7' },
-  { key: 'background_color' as const, label: 'Fond', placeholder: '#FFFFFF' },
-  { key: 'text_color' as const, label: 'Texte', placeholder: '#0F172A' },
-];
+const FONT_OPTIONS = ['Inter', 'Manrope', 'Roboto', 'Open Sans', 'Lato', 'Montserrat', 'Poppins', 'Source Sans Pro'];
 
 export default function SettingsBranding() {
   const workspaceId = useWorkspaceId();
@@ -39,40 +31,54 @@ export default function SettingsBranding() {
 
   const set = (k: string, v: string) => setForm(prev => ({ ...prev, [k]: v }));
 
-  const onUpload = async (file: File, kind: 'logo' | 'logo_dark' | 'favicon') => {
+  const onUpload = async (file: File, kind: 'logo' | 'favicon') => {
     await uploadAsset.mutateAsync({ file, kind });
   };
 
   const onSave = () => {
-    const patch: Record<string, string | null> = {};
-    Object.entries(form).forEach(([k, v]) => { patch[k] = v.trim() === '' ? null : v; });
+    // Only save the simple fields. Apply the chosen font to both heading & body for consistency.
+    const font = form.body_font?.trim() || form.heading_font?.trim() || '';
+    const patch: Record<string, string | null> = {
+      brand_name: form.brand_name?.trim() || null,
+      tagline: form.tagline?.trim() || null,
+      primary_color: form.primary_color?.trim() || null,
+      secondary_color: form.secondary_color?.trim() || null,
+      heading_font: font || null,
+      body_font: font || null,
+      footer_text: form.footer_text?.trim() || null,
+    };
     upsert.mutate(patch as never);
   };
 
-  const LogoSlot = ({ kind, label, url }: { kind: 'logo' | 'logo_dark' | 'favicon'; label: string; url: string | null }) => (
+  const LogoSlot = ({ kind, label, hint, url }: { kind: 'logo' | 'favicon'; label: string; hint: string; url: string | null }) => (
     <div className="space-y-2">
       <Label>{label}</Label>
       <div className="flex items-center gap-3">
         <div className="h-16 w-16 rounded-md border bg-muted/30 flex items-center justify-center overflow-hidden">
           {url ? <img src={url} alt={label} className="h-full w-full object-contain" /> : <ImageIcon className="h-6 w-6 text-muted-foreground" />}
         </div>
-        <label className="inline-flex">
-          <Button type="button" variant="outline" size="sm" asChild>
-            <span className="cursor-pointer inline-flex items-center gap-2">
-              <Upload className="h-4 w-4" />
-              {url ? 'Remplacer' : 'Importer'}
-            </span>
-          </Button>
-          <input
-            type="file"
-            accept="image/png,image/jpeg,image/webp,image/svg+xml,image/x-icon"
-            className="hidden"
-            onChange={(e) => { const f = e.target.files?.[0]; if (f) onUpload(f, kind); e.currentTarget.value = ''; }}
-          />
-        </label>
+        <div className="flex flex-col gap-1">
+          <label className="inline-flex">
+            <Button type="button" variant="outline" size="sm" asChild>
+              <span className="cursor-pointer inline-flex items-center gap-2">
+                <Upload className="h-4 w-4" />
+                {url ? 'Remplacer' : 'Importer'}
+              </span>
+            </Button>
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/svg+xml,image/x-icon"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) onUpload(f, kind); e.currentTarget.value = ''; }}
+            />
+          </label>
+          <span className="text-xs text-muted-foreground">{hint}</span>
+        </div>
       </div>
     </div>
   );
+
+  const currentFont = form.body_font?.trim() || form.heading_font?.trim() || '';
 
   return (
     <CockpitLayout>
@@ -81,108 +87,108 @@ export default function SettingsBranding() {
           <Palette className="h-6 w-6 text-primary" />
           <div>
             <h1 className="text-2xl font-bold text-foreground">Identité visuelle</h1>
-            <p className="text-muted-foreground">Logo, couleurs et typographie appliqués automatiquement aux documents et exports IA.</p>
+            <p className="text-muted-foreground">L’essentiel pour personnaliser vos documents et exports IA.</p>
           </div>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Logos</CardTitle>
-            <CardDescription>PNG, JPG, WEBP ou SVG. Stockés par workspace, accessibles aux exports IA.</CardDescription>
+            <CardTitle>Logo</CardTitle>
+            <CardDescription>Importez votre logo principal et un favicon. Formats PNG, JPG, SVG.</CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-6 sm:grid-cols-3">
-            <LogoSlot kind="logo" label="Logo principal" url={data?.logo_url ?? null} />
-            <LogoSlot kind="logo_dark" label="Logo fond sombre" url={data?.logo_dark_url ?? null} />
-            <LogoSlot kind="favicon" label="Favicon" url={data?.favicon_url ?? null} />
+          <CardContent className="grid gap-6 sm:grid-cols-2">
+            <LogoSlot kind="logo" label="Logo" hint="Affiché en en-tête des documents" url={data?.logo_url ?? null} />
+            <LogoSlot kind="favicon" label="Favicon" hint="Icône d’onglet navigateur" url={data?.favicon_url ?? null} />
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
             <CardTitle>Marque</CardTitle>
-            <CardDescription>Nom et signature affichés dans les documents générés.</CardDescription>
+            <CardDescription>Nom et signature reprises automatiquement dans les exports.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Nom de marque</Label>
-              <Input value={form.brand_name ?? ''} onChange={e => set('brand_name', e.target.value)} placeholder="IArche" />
+              <Input value={form.brand_name ?? ''} onChange={e => set('brand_name', e.target.value)} placeholder="Ma société" />
             </div>
             <div className="space-y-2">
-              <Label>Slogan</Label>
-              <Input value={form.tagline ?? ''} onChange={e => set('tagline', e.target.value)} placeholder="L’architecte de votre croissance" />
+              <Label>Slogan (optionnel)</Label>
+              <Input value={form.tagline ?? ''} onChange={e => set('tagline', e.target.value)} placeholder="Une phrase qui vous décrit" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Palette</CardTitle>
-            <CardDescription>Couleurs au format hexadécimal injectées dans les exports.</CardDescription>
+            <CardTitle>Couleurs</CardTitle>
+            <CardDescription>Deux couleurs suffisent : une principale, une d’accent.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
-            {COLOR_FIELDS.map(({ key, label, placeholder }) => (
-              <div key={key} className="space-y-2">
-                <Label>{label}</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="color"
-                    className="w-14 h-10 p-1 cursor-pointer"
-                    value={form[key]?.match(/^#[0-9a-f]{6}$/i) ? form[key] : '#ffffff'}
-                    onChange={e => set(key, e.target.value)}
-                  />
-                  <Input
-                    value={form[key] ?? ''}
-                    onChange={e => set(key, e.target.value)}
-                    placeholder={placeholder}
-                  />
-                </div>
+            <div className="space-y-2">
+              <Label>Couleur principale</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="color"
+                  className="w-14 h-10 p-1 cursor-pointer"
+                  value={form.primary_color?.match(/^#[0-9a-f]{6}$/i) ? form.primary_color : '#1A2B4A'}
+                  onChange={e => set('primary_color', e.target.value)}
+                />
+                <Input value={form.primary_color ?? ''} onChange={e => set('primary_color', e.target.value)} placeholder="#1A2B4A" />
               </div>
-            ))}
+            </div>
+            <div className="space-y-2">
+              <Label>Couleur d’accent</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="color"
+                  className="w-14 h-10 p-1 cursor-pointer"
+                  value={form.secondary_color?.match(/^#[0-9a-f]{6}$/i) ? form.secondary_color : '#B04A32'}
+                  onChange={e => set('secondary_color', e.target.value)}
+                />
+                <Input value={form.secondary_color ?? ''} onChange={e => set('secondary_color', e.target.value)} placeholder="#B04A32" />
+              </div>
+            </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
             <CardTitle>Typographie</CardTitle>
-            <CardDescription>Polices Google Fonts ou système.</CardDescription>
+            <CardDescription>Une seule police, appliquée aux titres et au corps.</CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label>Police des titres</Label>
-              <Input value={form.heading_font ?? ''} onChange={e => set('heading_font', e.target.value)} placeholder="Manrope" />
-            </div>
-            <div className="space-y-2">
-              <Label>Police du corps</Label>
-              <Input value={form.body_font ?? ''} onChange={e => set('body_font', e.target.value)} placeholder="Inter" />
+          <CardContent>
+            <div className="space-y-2 max-w-sm">
+              <Label>Police</Label>
+              <div className="flex flex-wrap gap-2">
+                {FONT_OPTIONS.map(font => (
+                  <Button
+                    key={font}
+                    type="button"
+                    variant={currentFont === font ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => { set('heading_font', font); set('body_font', font); }}
+                    style={{ fontFamily: `'${font}', sans-serif` }}
+                  >
+                    {font}
+                  </Button>
+                ))}
+              </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Documents & Emails</CardTitle>
-            <CardDescription>Blocs HTML repris automatiquement dans les exports IA, factures et signatures.</CardDescription>
+            <CardTitle>Pied de page</CardTitle>
+            <CardDescription>Texte affiché en bas des documents générés (mentions légales, contact…).</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Pied de page documents</Label>
-              <Textarea rows={2} value={form.footer_text ?? ''} onChange={e => set('footer_text', e.target.value)} placeholder="IArche · SAS au capital de ..." />
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>En-tête document (HTML)</Label>
-                <Textarea rows={4} value={form.document_header_html ?? ''} onChange={e => set('document_header_html', e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label>Pied de page document (HTML)</Label>
-                <Textarea rows={4} value={form.document_footer_html ?? ''} onChange={e => set('document_footer_html', e.target.value)} />
-              </div>
-            </div>
-            <Separator />
-            <div className="space-y-2">
-              <Label>Signature email (HTML)</Label>
-              <Textarea rows={5} value={form.email_signature_html ?? ''} onChange={e => set('email_signature_html', e.target.value)} />
-            </div>
+          <CardContent>
+            <Input
+              value={form.footer_text ?? ''}
+              onChange={e => set('footer_text', e.target.value)}
+              placeholder="Ma société — contact@exemple.com"
+            />
           </CardContent>
         </Card>
 
@@ -193,15 +199,9 @@ export default function SettingsBranding() {
             tagline: form.tagline,
             primary_color: form.primary_color,
             secondary_color: form.secondary_color,
-            accent_color: form.accent_color,
-            background_color: form.background_color,
-            text_color: form.text_color,
-            heading_font: form.heading_font,
-            body_font: form.body_font,
+            heading_font: currentFont,
+            body_font: currentFont,
             footer_text: form.footer_text,
-            document_header_html: form.document_header_html,
-            document_footer_html: form.document_footer_html,
-            email_signature_html: form.email_signature_html,
           }}
         />
 
