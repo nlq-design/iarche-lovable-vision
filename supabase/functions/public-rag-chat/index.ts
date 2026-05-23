@@ -1,5 +1,11 @@
-// Public RAG chatbot proxy — streams Lovable AI Gateway responses
-// No auth required, throttled by gateway rate limits
+// Public RAG chatbot — vrai RAG vectoriel sur contenus publics (Phase IA-0)
+// 1. Embed query utilisateur
+// 2. Recherche vectorielle sur resource_embeddings WHERE is_public = true
+// 3. Si match : injecte contexte dans prompt Nicolas (DB) + stream Lovable AI
+// 4. Si no-match : fallback humain zero-LLM (économie tokens)
+
+import { createClient } from "npm:@supabase/supabase-js@2";
+import { loadPrompt } from "../_shared/prompt-loader.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -7,36 +13,130 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const SYSTEM_PROMPT = `Tu es Nicolas, l'assistant RAG d'IArche — cabinet de conseil expert basé à Bayonne, spécialiste de l'intelligence artificielle appliquée au monde de l'entreprise (PME, ETI, industrie).
+const FALLBACK_PROMPT = `Tu es Nicolas, l'assistant IArche (Bayonne, expert IA pour PME/ETI). Style direct, chaleureux, zéro emoji, 3-6 phrases en français. Si l'info n'est pas dans le contexte fourni, dis-le et invite à /contact. N'invente jamais de chiffres ou références.\n\n# Contexte RAG\n{{rag_context}}`;
 
-Ton style : expert senior, direct, chaleureux, zéro friction, zéro emoji. Réponses concises (3-6 phrases max sauf si on te demande un plan détaillé). Tu parles en français.
+const NO_MATCH_REPLY = `Je n'ai pas cette information précise dans nos contenus publics. Le mieux est d'en parler de vive voix avec l'équipe : rendez-vous sur /contact pour échanger directement avec un expert IArche.`;
 
-Tu maîtrises les solutions IArche : Cockpit (CRM augmenté IA), Viviers (prospection intelligente), automatisations métier, plateforme RAG sur mesure, audits IA, formations équipes.
+const EMBEDDING_MODEL = "google/gemini-embedding-001";
+const CHAT_MODEL = "google/gemini-2.5-flash";
+const TOP_K = 5;
+const SIMILARITY_THRESHOLD = 0.65;
 
-Si on te pose une question hors IArche, réponds brièvement puis ramène vers la valeur métier. Si on demande un RDV : invite à aller sur /contact ou /rendez-vous.
-
-Ne jamais inventer de chiffres, dates ou références client. Si tu ne sais pas, dis-le et propose un échange humain.`;
+function streamPlainTextAsSSE(text: string): ReadableStream {
+  const encoder = new TextEncoder();
+  return new ReadableStream({
+    start(controller) {
+      const chunks = text.match(/.{1,40}/gs) ?? [text];
+      for (const c of chunks) {
+        const payload = JSON.stringify({ choices: [{ delta: { content: c } }] });
+        controller.enqueue(encoder.encode(`data: ${payload}\n\n`));
+      }
+      controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+      controller.close();
+    },
+  });
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
     const { messages } = await req.json();
-    if (!Array.isArray(messages)) {
-      return new Response(JSON.stringify({ error: "messages must be an array" }), {
+    if (!Array.isArray(messages) || messages.length === 0) {
+      return new Response(JSON.stringify({ error: "messages must be a non-empty array" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      return new Response(JSON.stringify({ error: "LOVABLE_API_KEY missing" }), {
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!LOVABLE_API_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      return new Response(JSON.stringify({ error: "Server misconfigured" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const lastUserMsg = [...messages].reverse().find((m: any) => m.role === "user");
+    const userQuery = (lastUserMsg?.content ?? "").toString().trim();
+
+    if (!userQuery) {
+      return new Response(JSON.stringify({ error: "Empty user query" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ---- 1. Embed user query ----
+    const embedRes = await fetch("https://ai.gateway.lovable.dev/v1/embeddings", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: EMBEDDING_MODEL,
+        input: userQuery,
+        dimensions: 1536,
+      }),
+    });
+
+    if (!embedRes.ok) {
+      if (embedRes.status === 429 || embedRes.status === 402) {
+        return new Response(JSON.stringify({ error: embedRes.status === 429 ? "Trop de requêtes, réessayez dans un instant." : "Crédits IA épuisés." }), {
+          status: embedRes.status,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      console.error("[public-rag-chat] embedding error:", embedRes.status, await embedRes.text());
+      return new Response(JSON.stringify({ error: "Erreur embedding" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const embedJson = await embedRes.json();
+    const queryEmbedding: number[] = embedJson?.data?.[0]?.embedding ?? [];
+
+    // ---- 2. Vector search ----
+    const { data: matches, error: rpcErr } = await supabase.rpc("match_public_embeddings", {
+      query_embedding: queryEmbedding,
+      match_count: TOP_K,
+      similarity_threshold: SIMILARITY_THRESHOLD,
+    });
+
+    if (rpcErr) {
+      console.error("[public-rag-chat] RPC error:", rpcErr);
+    }
+
+    const hits = Array.isArray(matches) ? matches : [];
+    console.log(`[public-rag-chat] query="${userQuery.slice(0, 80)}" hits=${hits.length}`);
+
+    // ---- 3. No-match : fallback zero-LLM ----
+    if (hits.length === 0) {
+      return new Response(streamPlainTextAsSSE(NO_MATCH_REPLY), {
+        headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+      });
+    }
+
+    // ---- 4. Build RAG context + load prompt ----
+    const ragContext = hits
+      .map((h: any, i: number) =>
+        `[Extrait ${i + 1} — ${h.resource_type} : ${h.resource_title ?? "sans titre"} (similarité ${h.similarity.toFixed(2)})]\n${h.content_chunk}`
+      )
+      .join("\n\n---\n\n");
+
+    const prompt = await loadPrompt(supabase, "public-rag-chat-nicolas", {
+      system_prompt: FALLBACK_PROMPT,
+    });
+
+    const systemPrompt = prompt.system_prompt.replace("{{rag_context}}", ragContext);
+    const model = (prompt.model_config?.model as string) ?? CHAT_MODEL;
+
+    // ---- 5. Stream LLM ----
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -44,27 +144,20 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
+        model,
+        messages: [{ role: "system", content: systemPrompt }, ...messages],
         stream: true,
       }),
     });
 
     if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Trop de requêtes, réessayez dans un instant." }), {
-          status: 429,
+      if (response.status === 429 || response.status === 402) {
+        return new Response(JSON.stringify({ error: response.status === 429 ? "Trop de requêtes, réessayez dans un instant." : "Crédits IA épuisés côté IArche." }), {
+          status: response.status,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Crédits IA épuisés côté IArche." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
+      console.error("[public-rag-chat] gateway error:", response.status, await response.text());
       return new Response(JSON.stringify({ error: "Erreur passerelle IA" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -75,7 +168,7 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (e) {
-    console.error("public-rag-chat error:", e);
+    console.error("[public-rag-chat] error:", e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
