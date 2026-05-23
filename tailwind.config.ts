@@ -67,9 +67,25 @@ export default {
         sans: ['Manrope', 'system-ui', 'sans-serif'],
       },
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        xs: "var(--radius-xs)",
+        sm: "var(--radius-sm)",
+        md: "var(--radius-md)",
+        lg: "var(--radius-lg)",
+        xl: "var(--radius-xl)",
+        "2xl": "var(--radius-2xl)",
+      },
+      boxShadow: {
+        "soft-xs": "var(--shadow-xs)",
+        "soft-sm": "var(--shadow-sm)",
+        "soft-md": "var(--shadow-md)",
+        "soft-lg": "var(--shadow-lg)",
+        terracotta: "var(--shadow-terracotta)",
+        night: "var(--shadow-night)",
+      },
+      backgroundImage: {
+        "gradient-night": "var(--gradient-night)",
+        "gradient-mesh-hero": "var(--gradient-mesh-hero)",
+        "terracotta-glow": "var(--gradient-terracotta-glow)",
       },
       keyframes: {
         "accordion-down": {
