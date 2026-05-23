@@ -3944,6 +3944,7 @@ export type Database = {
           id: string
           lead_id: string | null
           probability: number | null
+          solution_id: string | null
           source: string | null
           stage: string
           stage_entered_at: string | null
@@ -3963,6 +3964,7 @@ export type Database = {
           id?: string
           lead_id?: string | null
           probability?: number | null
+          solution_id?: string | null
           source?: string | null
           stage?: string
           stage_entered_at?: string | null
@@ -3982,6 +3984,7 @@ export type Database = {
           id?: string
           lead_id?: string | null
           probability?: number | null
+          solution_id?: string | null
           source?: string | null
           stage?: string
           stage_entered_at?: string | null
@@ -3996,6 +3999,13 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunities_solution_id_fkey"
+            columns: ["solution_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
             referencedColumns: ["id"]
           },
           {
@@ -8150,6 +8160,15 @@ export type Database = {
           occurrences: number
           query_normalized: string
         }[]
+      }
+      get_solution_pipeline: { Args: { p_solution_id: string }; Returns: Json }
+      get_solution_timeline: {
+        Args: { p_limit?: number; p_solution_id: string }
+        Returns: Json
+      }
+      get_solution_user_activity: {
+        Args: { p_solution_id: string }
+        Returns: Json
       }
       get_vivier_engagement_stats: {
         Args: { p_vivier_ids: string[] }

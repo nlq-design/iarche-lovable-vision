@@ -1,103 +1,108 @@
-# Phase IA-1 (révisé) — Router d'intent sur `ai-agent-orchestrator`
 
-## Cible confirmée par audit
+# Mini-CRM par SaaS — Plan d'exécution P0 → P2
 
-- **Fichier** : `supabase/functions/ai-agent-orchestrator/index.ts` (9 687 lignes)
-- **Prompt monolithique** : `master-agent` = **27 368 caractères** (~6 800 tokens système chargés à CHAQUE appel)
-- **Consommateurs** : Chat Cockpit, Telegram, API directe — toutes intents confondues
-- **Contenu actuel** : identité + règles d'exécution + mapping tâche→prompt (130+ outils) + style réponse + hiérarchie + canaux
+Chaque solution du catalogue devient une unité CRM autonome avec ses propres modules. Tout est cross-référencé via `solution_id` (UUID de l'article `resource_type='solution'`).
 
-## Constat
+## Audit BDD existant
 
-Chaque message utilisateur (même trivial type "qui est ce lead ?") consomme les 6,8K tokens du prompt complet, alors que **<20% du contenu est pertinent** pour une intent donnée.
+- Existe : `opportunities`, `activity_log`, `workspace_ai_usage`, `invoices`, `subscriptions`, `plans`, `solution_leads`
+- Manque : `solution_id` sur `opportunities`, tables `tickets`, `nps_responses`, `product_features`, `feature_votes`, `lead_sources`, `onboarding_milestones`
 
-## Architecture cible — modulaire, pas révolutionnaire
+---
 
-```text
-User message
-   │
-   ▼
-[1] Intent Classifier (Gemini Flash Lite, ~100 tokens, cache 60s)
-   │   → { intent: "crm_query" | "doc_generation" | "vivier" | "analysis" | "general" }
-   ▼
-[2] Prompt Composer
-   │   = master-agent-core (slim ~8K)  +  module_{intent} (~2-4K)
-   ▼
-[3] Appel LLM existant (ai-agent-orchestrator inchangé en aval)
-```
+## SPRINT P0 — Mini-CRM exploitable (1-2 jours)
 
-## Décomposition du prompt `master-agent` (27K → 8K core + 5 modules)
+### 1. Pipeline commercial par solution
+- **Migration** : `ALTER TABLE opportunities ADD COLUMN solution_id uuid REFERENCES articles(id)`
+- **RPC** `get_solution_pipeline(p_solution_id)` SECURITY DEFINER → opportunités filtrées + KPIs (pipeline value, win rate, stages distribution, next steps)
+- **UI** : nouvel onglet "Pipeline" dans `CockpitSolutionDetail` → table opportunités + funnel par stage + bouton "lier opportunité existante" + auto-tag depuis `solution_leads`
+- **Auto-tag** : trigger qui propage `solution_id` de `solution_leads` vers opportunités créées depuis un lead lié
 
-| Nouveau slug | Contenu extrait | Taille cible | Chargé quand |
-|---|---|---|---|
-| `master-agent-core` | Identité, règles exécution, session memory, recherche avant création | ~8K | TOUJOURS |
-| `master-agent-module-crm` | Mapping CRUD leads/partners/contacts + scoring + matching | ~3K | intent=crm_query, general |
-| `master-agent-module-docs` | Mapping génération devis/CDC/proposition + emails | ~3K | intent=doc_generation |
-| `master-agent-module-analysis` | Synthèses 360°, transcriptions, OCR, copilot | ~4K | intent=analysis |
-| `master-agent-module-vivier` | Prospection B2B + campagnes | ~2K | intent=vivier |
-| `master-agent-module-general` | Tools-reference condensé fallback | ~2K | intent=general |
+### 2. Utilisateurs actifs par SaaS
+- **RPC** `get_solution_user_activity(p_solution_id)` → pour chaque workspace abonné, calcule depuis `activity_log` + `workspace_ai_usage` :
+  - DAU/WAU/MAU
+  - Top 5 features utilisées (group by action_type)
+  - Dernière session
+  - Score d'engagement (0-100)
+- **UI** : onglet "Usage & Engagement" → table workspaces avec heatmap d'activité + alertes (workspaces inactifs > 14j)
 
-**Économie attendue** : 6800 tokens → ~2800 tokens en moyenne = **-58% tokens système**.
+### 3. Activity timeline transversale
+- **RPC** `get_solution_timeline(p_solution_id, p_limit)` → fusion chronologique : leads, opportunités, abonnements, tickets, signatures CDC, transcriptions, mentions
+- **UI** : onglet "Timeline" → flux unique scrollable par date, filtres par type d'événement
 
-## Plan d'implémentation
+---
 
-### Étape 1 — Migration SQL (seed des 6 nouveaux prompts)
-- INSERT `master-agent-core` + 5 modules dans `ai_prompts` (category="agent")
-- Découpage manuel propre depuis `master-agent` actuel (préserver intégralement les règles)
-- `master-agent` ANCIEN conservé en fallback (versionné v9, jamais supprimé tant que router non validé)
+## SPRINT P1 — Boucle commerciale & support (3-4 jours)
 
-### Étape 2 — Module router (nouveau fichier partagé)
-- `supabase/functions/_shared/intent-router.ts`
-  - `classifyIntent(message, history)` → Lovable AI Gateway / gemini-2.5-flash-lite, JSON strict, fallback `general` sur erreur
-  - `composeSystemPrompt(intent, supabase)` → `loadPrompt('master-agent-core') + loadPrompt('master-agent-module-' + intent)`
-  - Cache fingerprint message → intent (60s, in-memory) pour éviter re-classification
+### 4. Onboarding & Activation funnel
+- **Migration** : table `onboarding_milestones` (workspace_id, solution_id, milestone, completed_at)
+- **Milestones par défaut** : signup → première_connexion → premier_workflow → activation_paid → power_user (J7)
+- **Triggers auto** depuis `activity_log` pour cocher les milestones
+- **UI** : funnel visuel (Sankey) trial → active, time-to-value médian, drop-off par étape, liste workspaces bloqués + suggestion d'action IA
 
-### Étape 3 — Branchement dans `ai-agent-orchestrator/index.ts`
-- Ligne 9112 : remplacer `getSystemPrompt(supabase)` (qui charge master-agent unique) par `composeSystemPromptForRequest(supabase, message)`
-- Toutes les autres fonctions (tools, governor, ui-navigation) restent inchangées
-- ~15 lignes modifiées
+### 5. Revenus & Facturation détaillés
+- **RPC** `get_solution_revenue(p_solution_id, p_period)` :
+  - MRR break-down (new / expansion / contraction / churn)
+  - LTV moyen par plan
+  - Cohortes mensuelles (rétention)
+  - Factures recentes via `invoices`
+- **UI** : onglet "Revenus" → graphique MRR évolutif + table factures + alerte impayés
 
-### Étape 4 — Observabilité
-- Ajout colonne `intent_classified` (TEXT) + `prompt_modules_loaded` (TEXT[]) dans `ai_usage_metrics`
-- Log chaque dispatch dans `console.log` JSON structuré (déjà standard)
-- Pas de nouveau dashboard cette itération — métriques exploitables via `/admin/observability/ai`
+### 6. Support / Tickets / NPS
+- **Migration** : tables `support_tickets` (workspace_id, solution_id, status, priority, subject, owner), `nps_responses` (workspace_id, solution_id, score 0-10, comment, created_at)
+- **RPC** `get_solution_support_kpis(p_solution_id)` : tickets ouverts/SLA, NPS moyen, % détracteurs/promoteurs
+- **UI** : onglet "Support & NPS" → kanban tickets + graphe NPS dans le temps + verbatim détracteurs
 
-### Étape 5 — Validation
-- 8 requêtes types couvrant chaque intent → vérifier classification correcte
-- Comparaison tokens master-agent vs router sur 10 cas réels (objectif -50%)
-- Fallback testé : si classifier crash → load `master-agent` complet (continuité garantie)
+---
 
-## Garde-fous
+## SPRINT P2 — Croissance stratégique (5+ jours)
 
-- **Classifier failure** → fallback automatique sur `master-agent` original. Aucune régression user-facing possible.
-- **Slug module manquant** → load `master-agent-module-general` + log warning
-- **Cache classifier** : clé = hash(message + dernier message assistant) — TTL 60s
-- **Telegram & Chat Cockpit** : transparents, aucune modif frontend
+### 7. Roadmap & demandes clients
+- **Migration** : tables `product_features` (solution_id, title, status enum[idea|planned|in_progress|shipped], votes_count), `feature_votes` (feature_id, workspace_id, weight)
+- **UI** : onglet "Roadmap" → 4 colonnes statut, votes pondérés par MRR du workspace voteur, lien lecture publique
 
-## Détails techniques
+### 8. Marketing & Acquisition
+- **Migration** : `lead_sources` (lead_id, channel, utm_source, utm_medium, utm_campaign, cost_eur), colonne `solution_id` sur `lead_sources`
+- **Capture UTM** côté `FormBuilder` (déjà partiellement présent ?)
+- **RPC** `get_solution_acquisition(p_solution_id)` : CAC par canal, ratio leads→clients, ROI campagne
+- **UI** : onglet "Acquisition" → funnel par canal + classement ROI
 
-- **Edge function** : `npm:` specifiers, `verify_jwt = true` (déjà en place)
-- **Cache prompts** : réutilise le cache 5min de `prompt-loader.ts` existant
-- **Multi-tenant** : aucun impact (prompts sont workspace-NULL = globaux)
-- **Cascade providers** : héritée du Retry Manager existant
+---
 
-## Livrables
+## Architecture transverse
 
-1. 1 migration SQL = INSERT 6 prompts + 2 colonnes `ai_usage_metrics`
-2. `supabase/functions/_shared/intent-router.ts` (~120 lignes)
-3. Patch `ai-agent-orchestrator/index.ts` (~15 lignes)
-4. Mémoire `mem://cockpit/intelligence/multi-prompt-router-v1`
+### Sécurité
+- Toutes les RPC en `SECURITY DEFINER` avec garde `has_role(auth.uid(),'super_admin')` (catalogue SaaS = vue éditeur)
+- RLS sur nouvelles tables : `workspace_member OR super_admin`
 
-## Estimation
+### UI/UX (réutilise standards existants)
+- `CockpitSolutionDetail` passe à **12 onglets** organisés en 3 groupes : Commercial (Pipeline, Prospects, Onboarding, Acquisition, Revenus) / Produit (Vue, Roadmap, Documents) / Clients (Abonnements, Usage, Support, Timeline)
+- Composants `LoadingState`/`EmptyState` standard, palette IArche, zero emoji
+- Header sticky avec KPIs clés (MRR, # clients actifs, # opp en cours, NPS)
 
-- Découpage propre du prompt master-agent (étape la plus délicate) : 25 min
-- Code router + branchement : 15 min
-- Migration + validation : 15 min
-- **Total : ~55 min**
+### Performance
+- Vues matérialisées rafraîchies via cron 1h pour KPIs lourds (engagement, cohortes, MRR break-down)
+- `daily_intelligence` étendu par solution → injecté dans le brief IA quotidien
 
-## ROI
+### Réutilisation zero-duplication
+- Le tab "Prospects" actuel reste, mais devient filtrable par stage et hérite du nouveau `solution_id` côté opportunité
+- `activity_log` reste source unique de vérité pour usage + timeline
+- Pas de table doublon : tout pointe vers `solution_id`
 
-- **-58% tokens système moyens** sur tous canaux chat (Cockpit + Telegram + API)
-- À volume actuel : économie tangible immédiate sur quota Lovable AI Gateway
-- Maintenabilité : modules éditables indépendamment via `/admin/ai-prompts` (déjà en place)
-- Réversibilité totale : un feature flag DB peut basculer router ON/OFF en 1 seconde
+---
+
+## Livrables par sprint
+
+| Sprint | Migrations | RPCs | Composants UI | Onglets ajoutés |
+|---|---|---|---|---|
+| P0 | 1 (col + trigger) | 3 | 3 | Pipeline, Usage, Timeline |
+| P1 | 3 tables | 3 | 3 | Onboarding, Revenus, Support/NPS |
+| P2 | 3 tables | 2 | 2 | Roadmap, Acquisition |
+
+## Ordre d'exécution proposé
+
+1. **P0 d'abord en un seul lot** (migration unique + 3 RPCs + 3 composants UI) → tu valides la mécanique sur Cockpit by IArche
+2. **P1 en deuxième lot** une fois P0 validé visuellement
+3. **P2 en troisième lot** (le plus structurant produit, à faire quand tu auras un 2e SaaS pour valider la généricité)
+
+Si tu approuves, je lance immédiatement **P0 complet** dans la prochaine itération (1 migration + 3 RPCs + refonte `CockpitSolutionDetail` avec les 3 nouveaux onglets), puis je te livre P1 et P2 en chaînage.
