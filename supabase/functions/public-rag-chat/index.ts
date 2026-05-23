@@ -144,8 +144,47 @@ Deno.serve(async (req) => {
 
     const systemPrompt = prompt.system_prompt.replace("{{rag_context}}", ragContext);
     const model = (prompt.model_config?.model as string) ?? CHAT_MODEL;
+    const promptVersion = (prompt.model_config?.version as string) ?? prompt.slug ?? "public-rag-chat-nicolas";
 
-    // ---- 5. Stream LLM ----
+    // ---- 4b. Semantic cache lookup (v1.1) ----
+    // Clé : workspace IArche + mode public_rag + entityType public + 'global'
+    // Fingerprint matériel = top-3 chunk IDs + prompt version (invalidé si RAG change)
+    const cacheKey = buildCacheKey({
+      workspaceId: PUBLIC_WORKSPACE_ID,
+      mode: "public_rag",
+      entityType: "public",
+      entityId: "global",
+    });
+    const topChunkIds = hits.slice(0, 3).map((h: any) => h.id ?? h.resource_id ?? "").join("|");
+    const fingerprint = await buildContextFingerprint({
+      entityType: "public",
+      entityId: "global",
+      workspaceId: PUBLIC_WORKSPACE_ID,
+      userId: "anonymous",
+      entityUpdatedAt: null,
+      ragChunksCount: hits.length,
+      promptVersion,
+      extra: { top_chunks: topChunkIds },
+      cacheScope: "system",
+    });
+
+    const cached = await lookupCache({
+      supabase,
+      workspaceId: PUBLIC_WORKSPACE_ID,
+      cacheKey,
+      queryText: userQuery,
+      fingerprint,
+      threshold: CACHE_THRESHOLD,
+    });
+
+    if (cached.hit && typeof cached.response === "string") {
+      console.log(`[public-rag-chat] CACHE HIT sim=${cached.similarity.toFixed(3)} age=${cached.ageSeconds}s hits=${cached.hitCount}`);
+      return new Response(streamPlainTextAsSSE(cached.response), {
+        headers: { ...corsHeaders, "Content-Type": "text/event-stream", "X-Cache": "HIT" },
+      });
+    }
+
+    // ---- 5. Stream LLM (cache miss) ----
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -173,8 +212,45 @@ Deno.serve(async (req) => {
       });
     }
 
-    return new Response(response.body, {
-      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+    // ---- 5b. Tee stream pour capter la réponse complète et la stocker en cache ----
+    const decoder = new TextDecoder();
+    let fullContent = "";
+    const passthrough = new TransformStream<Uint8Array, Uint8Array>({
+      transform(chunk, controller) {
+        controller.enqueue(chunk);
+        const text = decoder.decode(chunk, { stream: true });
+        for (const line of text.split("\n")) {
+          if (!line.startsWith("data: ")) continue;
+          const payload = line.slice(6).trim();
+          if (payload === "[DONE]" || !payload) continue;
+          try {
+            const json = JSON.parse(payload);
+            const delta = json?.choices?.[0]?.delta?.content;
+            if (typeof delta === "string") fullContent += delta;
+          } catch { /* ignore SSE parse errors */ }
+        }
+      },
+      flush() {
+        if (fullContent && fullContent.length > 20) {
+          // Fire-and-forget : ne bloque pas la fermeture du stream
+          storeCache({
+            supabase,
+            workspaceId: PUBLIC_WORKSPACE_ID,
+            cacheKey,
+            queryText: userQuery,
+            fingerprint,
+            response: fullContent,
+            model,
+            promptVersion,
+            ttlHours: CACHE_TTL_HOURS,
+          }).catch((e) => console.warn("[public-rag-chat] cache store failed:", e?.message));
+          console.log(`[public-rag-chat] CACHE STORE len=${fullContent.length} model=${model}`);
+        }
+      },
+    });
+
+    return new Response(response.body!.pipeThrough(passthrough), {
+      headers: { ...corsHeaders, "Content-Type": "text/event-stream", "X-Cache": "MISS" },
     });
   } catch (e) {
     console.error("[public-rag-chat] error:", e);
