@@ -133,6 +133,15 @@ export async function classifyIntent(query: string): Promise<Intent> {
     return "general";
   }
 
+  // Phase C — Router Sémantique v2 : tentative embedding-based avant fallback LLM
+  const semantic = await classifyIntentSemantic(key, apiKey);
+  if (semantic && semantic.similarity >= SEMANTIC_THRESHOLD) {
+    console.log(`[intent-router] semantic hit intent=${semantic.intent} sim=${semantic.similarity.toFixed(3)}`);
+    cacheSet(key, semantic.intent);
+    return semantic.intent;
+  }
+
+
   try {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 4000);
