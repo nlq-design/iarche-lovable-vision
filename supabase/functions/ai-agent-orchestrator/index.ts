@@ -9124,6 +9124,37 @@ serve(async (req) => {
     const lastUserMessage = messages.filter((m: { role: string }) => m.role === "user").pop();
     const userQuery = lastUserMessage?.content || "";
 
+    // ============================================================
+    // PHASE IA-1 : Intent router (modular prompt)
+    // Fallback transparent vers le composer monolithique v5.3 si échec.
+    // ============================================================
+    let routedIntent: Intent | null = null;
+    let routedModules: string[] = [];
+    try {
+      const routed = await composeSystemPromptForRequest(supabase, userQuery);
+      if (routed.used_router && routed.prompt) {
+        // Override the legacy composition with the modular one
+        // (model already chosen above from master-agent; keep master-agent-core's
+        //  model only if it differs and is not in telegram fast mode).
+        (globalThis as Record<string, unknown>).__routedPromptOverride = routed.prompt;
+        routedIntent = routed.intent;
+        routedModules = routed.modulesLoaded;
+        console.log(
+          `[orchestrator] using modular prompt intent=${routed.intent} chars=${routed.prompt.length}`,
+        );
+      }
+    } catch (err) {
+      console.warn("[orchestrator] intent router error, fallback to legacy:", (err as Error).message);
+    }
+
+    // If router produced a prompt, swap it in (keeps configuredModel from legacy fetch)
+    const overridePrompt = (globalThis as Record<string, unknown>).__routedPromptOverride as
+      | string
+      | undefined;
+    const effectiveSystemPrompt = overridePrompt || systemPrompt;
+    (globalThis as Record<string, unknown>).__routedPromptOverride = undefined; // clear
+
+
     // =============================================================================
     // RATE LIMITING - Prevent abuse
     // =============================================================================
