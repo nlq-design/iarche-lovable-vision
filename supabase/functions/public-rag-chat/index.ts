@@ -6,6 +6,12 @@
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { loadPrompt } from "../_shared/prompt-loader.ts";
+import { buildCacheKey, buildContextFingerprint, lookupCache, storeCache } from "../_shared/semantic-cache.ts";
+
+// Workspace IArche Interne (cache mutualisé pour tout le trafic public)
+const PUBLIC_WORKSPACE_ID = "00000000-0000-0000-0000-000000000001";
+const CACHE_TTL_HOURS = 168; // 7 jours (contenu marketing stable)
+const CACHE_THRESHOLD = 0.93;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
