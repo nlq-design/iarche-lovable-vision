@@ -198,7 +198,19 @@ export default function CockpitSolutionDetail() {
               Consulte
             </TabsTrigger>
             <TabsTrigger value="overview" className="text-sm h-7">Aperçu</TabsTrigger>
+            {solution.slug === 'cockpit-by-iarche' && (
+              <TabsTrigger value="saas" className="gap-1.5 text-sm h-7">
+                <BarChart3 className="h-3.5 w-3.5" />
+                Abonnements SaaS
+              </TabsTrigger>
+            )}
           </TabsList>
+
+          {solution.slug === 'cockpit-by-iarche' && (
+            <TabsContent value="saas" className="space-y-3">
+              <SaasSubscriptionsTab />
+            </TabsContent>
+          )}
 
           {/* Leads Tab */}
           <TabsContent value="leads" className="space-y-3">
