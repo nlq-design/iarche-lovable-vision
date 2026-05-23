@@ -4,6 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { createAIClient } from "../_shared/ai-client.ts";
 import { chatWithTools, completeLLM } from "../_shared/ai-legacy-bridge.ts";
 import type { AIMessage, AITool } from "../_shared/ai-types.ts";
+import { composeSystemPromptForRequest, type Intent } from "../_shared/intent-router.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -9123,6 +9124,31 @@ serve(async (req) => {
     const lastUserMessage = messages.filter((m: { role: string }) => m.role === "user").pop();
     const userQuery = lastUserMessage?.content || "";
 
+    // ============================================================
+    // PHASE IA-1 : Intent router (modular prompt)
+    // Fallback transparent vers le composer monolithique v5.3 si échec.
+    // ============================================================
+    let effectiveSystemPrompt = systemPrompt;
+    let routedIntent: Intent | null = null;
+    let routedModules: string[] = [];
+    try {
+      const routed = await composeSystemPromptForRequest(supabase, userQuery);
+      if (routed.used_router && routed.prompt) {
+        effectiveSystemPrompt = routed.prompt;
+        routedIntent = routed.intent;
+        routedModules = routed.modulesLoaded;
+        console.log(
+          `[orchestrator] modular prompt intent=${routed.intent} chars=${routed.prompt.length} modules=${routedModules.join(",")}`,
+        );
+      } else {
+        console.log("[orchestrator] router fallback to legacy monolithic prompt");
+      }
+    } catch (err) {
+      console.warn("[orchestrator] intent router error, fallback to legacy:", (err as Error).message);
+    }
+
+
+
     // =============================================================================
     // RATE LIMITING - Prevent abuse
     // =============================================================================
@@ -9472,7 +9498,7 @@ ${calendarRef.join('\n')}
     console.log(`Response mode detected: ${responseMode} (query: "${userQuery.slice(0, 50)}...")`);
     
     // Inject mode into system prompt
-    const promptWithMode = systemPrompt.replace("{response_mode}", responseMode);
+    const promptWithMode = effectiveSystemPrompt.replace("{response_mode}", responseMode);
 
     // Build messages with system prompt + memory context + date context
     const fullMessages = [
