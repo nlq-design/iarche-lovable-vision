@@ -813,12 +813,14 @@ export type Database = {
           estimated_cost_cents: number | null
           id: string
           input_tokens: number
+          intent_classified: string | null
           latency_ms: number | null
           metadata: Json | null
           model_id: string
           model_provider: string
           operation_type: string
           output_tokens: number
+          prompt_modules_loaded: string[] | null
           prompt_slug: string | null
           success: boolean | null
           total_tokens: number | null
@@ -833,12 +835,14 @@ export type Database = {
           estimated_cost_cents?: number | null
           id?: string
           input_tokens?: number
+          intent_classified?: string | null
           latency_ms?: number | null
           metadata?: Json | null
           model_id: string
           model_provider: string
           operation_type: string
           output_tokens?: number
+          prompt_modules_loaded?: string[] | null
           prompt_slug?: string | null
           success?: boolean | null
           total_tokens?: number | null
@@ -853,12 +857,14 @@ export type Database = {
           estimated_cost_cents?: number | null
           id?: string
           input_tokens?: number
+          intent_classified?: string | null
           latency_ms?: number | null
           metadata?: Json | null
           model_id?: string
           model_provider?: string
           operation_type?: string
           output_tokens?: number
+          prompt_modules_loaded?: string[] | null
           prompt_slug?: string | null
           success?: boolean | null
           total_tokens?: number | null
