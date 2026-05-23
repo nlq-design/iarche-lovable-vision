@@ -36,7 +36,7 @@ interface ActionProposalsListProps {
 }
 
 export function ActionProposalsList({ workspaceId, compact = false }: ActionProposalsListProps) {
-  const { pendingProposals, executedProposals, isLoading, validateAction, rejectAction } = useActionProposals(workspaceId);
+  const { pendingProposals, executedProposals, isLoading, validateAction, rejectAction, cancelAutoAction } = useActionProposals(workspaceId);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [rejectNotes, setRejectNotes] = useState('');
   const [rejectingId, setRejectingId] = useState<string | null>(null);
