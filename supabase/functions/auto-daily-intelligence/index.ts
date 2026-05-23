@@ -126,6 +126,16 @@ serve(async (req) => {
         }
       });
 
+      const crossSignals =
+        intelligenceResult.intelligence?.cross_signals?.slice(0, 2) || [];
+      if (crossSignals.length > 0) {
+        briefLines.push("");
+        briefLines.push("🔗 *Signaux croisés :*");
+        crossSignals.forEach((s: any) => {
+          briefLines.push(`• ${s.signal}`);
+        });
+      }
+
       // Phase H : top 3 alertes prédictives (churn prioritaire)
       const topChurn = predictiveAlerts.filter((a) => a.alert_type === "churn").slice(0, 2);
       const topConv = predictiveAlerts.filter((a) => a.alert_type === "conversion").slice(0, 2);
