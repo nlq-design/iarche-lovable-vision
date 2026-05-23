@@ -48,8 +48,14 @@ import {
   FileUp,
   Sparkles,
   BarChart3,
+  TrendingUp,
+  Activity,
+  Clock,
 } from "lucide-react";
 import { SaasSubscriptionsTab } from "@/components/cockpit/SaasSubscriptionsTab";
+import { SolutionPipelineTab } from "@/components/cockpit/saas/SolutionPipelineTab";
+import { SolutionUsageTab } from "@/components/cockpit/saas/SolutionUsageTab";
+import { SolutionTimelineTab } from "@/components/cockpit/saas/SolutionTimelineTab";
 import { supabase } from "@/integrations/supabase/client";
 import { useCockpitSolutionLeads, useCockpitLeads, useCockpitUploads } from "@/hooks/cockpit";
 import { LinkedFilesSection } from "@/components/cockpit/LinkedFilesSection";
