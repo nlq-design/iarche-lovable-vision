@@ -27,20 +27,49 @@ interface VoiceRow {
   estimated_cost_usd: number;
 }
 
+interface ContentGapRow {
+  cluster_anchor_id: string;
+  representative_query: string;
+  occurrences: number;
+  last_asked: string;
+  avg_top_similarity: number | null;
+  sample_queries: string[] | null;
+}
+
+interface ContentGapAlertRow {
+  id: string;
+  severity: string;
+  title: string;
+  created_at: string;
+  resolved_at: string | null;
+  ai_metadata: Record<string, unknown> | null;
+}
+
 export default function AIObservability() {
   const [metrics, setMetrics] = useState<MetricRow[]>([]);
   const [voice, setVoice] = useState<VoiceRow[]>([]);
+  const [gaps, setGaps] = useState<ContentGapRow[]>([]);
+  const [gapAlerts, setGapAlerts] = useState<ContentGapAlertRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       const since = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString().slice(0, 10);
-      const [m, v] = await Promise.all([
+      const [m, v, g, ga] = await Promise.all([
         supabase.from("ai_cache_metrics" as any).select("*").gte("day", since).order("day", { ascending: false }),
         supabase.from("voice_usage_daily").select("*").gte("day", since).order("day", { ascending: false }),
+        supabase.rpc("cluster_unanswered_rag" as any, { _days: 14, _min_count: 2, _sim_threshold: 0.85 }),
+        supabase.from("ai_sentinel_alerts" as any)
+          .select("id, severity, title, created_at, resolved_at, ai_metadata")
+          .eq("category", "content_gap")
+          .is("resolved_at", null)
+          .order("created_at", { ascending: false })
+          .limit(20),
       ]);
       setMetrics((m.data as any) || []);
       setVoice((v.data as any) || []);
+      setGaps((g.data as any) || []);
+      setGapAlerts((ga.data as any) || []);
       setLoading(false);
     })();
   }, []);
