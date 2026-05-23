@@ -14,7 +14,7 @@ const TELEGRAM_BOT_TOKEN = Deno.env.get("TELEGRAM_BOT_TOKEN")!;
 const DEFAULT_CHAT_ID = Deno.env.get("TELEGRAM_ADMIN_CHAT_ID") || "";
 
 interface NotificationPayload {
-  type: "new_lead" | "new_booking" | "task_reminder" | "morning_briefing";
+  type: "new_lead" | "new_booking" | "task_reminder" | "morning_briefing" | "content_gap_alert";
   entity_id?: string;
   entity_type?: string;
   data?: Record<string, unknown>;
