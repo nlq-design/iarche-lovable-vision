@@ -584,6 +584,33 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_intent_router_fallbacks: {
+        Row: {
+          created_at: string
+          id: string
+          intent_classified: string
+          query_normalized: string
+          query_text: string
+          similarity_best: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          intent_classified: string
+          query_normalized: string
+          query_text: string
+          similarity_best?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          intent_classified?: string
+          query_normalized?: string
+          query_text?: string
+          similarity_best?: number | null
+        }
+        Relationships: []
+      }
       ai_models: {
         Row: {
           capabilities: string[] | null
@@ -7801,6 +7828,16 @@ export type Database = {
           importance_score: number
           memory_type: string
           metadata: Json
+        }[]
+      }
+      get_recurring_intent_fallbacks: {
+        Args: { max_results?: number; min_count?: number; since_days?: number }
+        Returns: {
+          avg_similarity: number
+          example_query: string
+          intent_classified: string
+          occurrences: number
+          query_normalized: string
         }[]
       }
       get_vivier_engagement_stats: {
