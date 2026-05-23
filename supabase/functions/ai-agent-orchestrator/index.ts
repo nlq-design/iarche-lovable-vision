@@ -9768,6 +9768,23 @@ ${calendarRef.join('\n')}
 
     const finalContent = assistantMessage?.content || "Je n'ai pas pu traiter votre demande.";
 
+    // Phase IA-2 — Store cache si éligible ET aucun tool_call déclenché
+    // (sinon on risquerait de servir des données CRM périmées sur hit suivant)
+    if (cacheEligible && allToolCalls.length === 0 && finalContent.length > 30) {
+      storeCache({
+        supabase,
+        workspaceId: workspace_id,
+        cacheKey: orchestratorCacheKey,
+        queryText: userQuery,
+        fingerprint: orchestratorFingerprint,
+        response: finalContent,
+        model: selectedModel,
+        promptVersion: `modular:${routedModules.join("|")}`,
+        ttlHours: ORCHESTRATOR_CACHE_TTL_HOURS,
+      }).catch((e) => console.warn("[orchestrator] cache store failed:", (e as Error).message));
+      console.log(`[orchestrator] CACHE STORE intent=general len=${finalContent.length} model=${selectedModel}`);
+    }
+
     // Save assistant response to memory (important insights only)
     if (finalContent && finalContent.length > 50) {
       const isInsight = allToolCalls.length > 0 || finalContent.includes("recommand") || finalContent.includes("suggèr") || finalContent.includes("action");
