@@ -56,7 +56,7 @@ serve(async (req) => {
 
       const severity = c.occurrences >= 10 ? "high" : c.occurrences >= 5 ? "medium" : "low";
 
-      const { error: insErr } = await supabase.from("ai_sentinel_alerts").insert({
+      const { data: inserted, error: insErr } = await supabase.from("ai_sentinel_alerts").insert({
         workspace_id: PUBLIC_WORKSPACE_ID,
         severity,
         category: "content_gap",
@@ -72,12 +72,23 @@ serve(async (req) => {
           window_days: WINDOW_DAYS,
           source: "rag-content-gap-detector",
         },
-      });
+      }).select("id").single();
 
       if (insErr) {
         console.error("[rag-content-gap-detector] insert error:", insErr.message);
       } else {
         created++;
+        // Phase IA-2L — Notification Telegram (fire-and-forget) pour high+medium
+        if (inserted?.id && (severity === "high" || severity === "medium")) {
+          fetch(`${SUPABASE_URL}/functions/v1/telegram-proactive-notifications`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${SERVICE_ROLE}`,
+            },
+            body: JSON.stringify({ type: "content_gap_alert", entity_id: inserted.id }),
+          }).catch((e) => console.error("[rag-content-gap-detector] telegram notif:", e));
+        }
       }
     }
 
