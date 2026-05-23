@@ -17,7 +17,8 @@ const FALLBACK_PROMPT = `Tu es Nicolas, l'assistant IArche (Bayonne, expert IA p
 
 const NO_MATCH_REPLY = `Je n'ai pas cette information précise dans nos contenus publics. Le mieux est d'en parler de vive voix avec l'équipe : rendez-vous sur /contact pour échanger directement avec un expert IArche.`;
 
-const EMBEDDING_MODEL = "google/gemini-embedding-001";
+// Doit matcher le modèle utilisé pour indexer resource_embeddings (cf. _shared/ai-client.ts → preferredOrder embed = openai)
+const EMBEDDING_MODEL = "openai/text-embedding-3-small";
 const CHAT_MODEL = "google/gemini-2.5-flash";
 const TOP_K = 5;
 const SIMILARITY_THRESHOLD = 0.65;
