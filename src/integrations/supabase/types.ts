@@ -3422,6 +3422,45 @@ export type Database = {
           },
         ]
       }
+      lead_predictions: {
+        Row: {
+          churn_risk_14d: number
+          computed_at: string
+          conversion_proba_14d: number
+          created_at: string
+          id: string
+          lead_id: string
+          model_version: string
+          signals: Json
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          churn_risk_14d?: number
+          computed_at?: string
+          conversion_proba_14d?: number
+          created_at?: string
+          id?: string
+          lead_id: string
+          model_version?: string
+          signals?: Json
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          churn_risk_14d?: number
+          computed_at?: string
+          conversion_proba_14d?: number
+          created_at?: string
+          id?: string
+          lead_id?: string
+          model_version?: string
+          signals?: Json
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           address: string | null
@@ -7676,6 +7715,20 @@ export type Database = {
         }
         Relationships: []
       }
+      top_predictive_alerts: {
+        Row: {
+          alert_type: string | null
+          company: string | null
+          computed_at: string | null
+          id: string | null
+          lead_id: string | null
+          name: string | null
+          score: number | null
+          signals: Json | null
+          workspace_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       add_backup_log: {
@@ -7766,6 +7819,10 @@ export type Database = {
         }[]
       }
       cleanup_rate_limit_requests: { Args: never; Returns: undefined }
+      compute_lead_predictions: {
+        Args: { _workspace_id?: string }
+        Returns: number
+      }
       count_atelier_inscriptions: {
         Args: { atelier_uuid: string }
         Returns: number
