@@ -23,8 +23,22 @@ const DEFAULT_THRESHOLD = 0.93;
 const DEFAULT_TTL_HOURS = 24;
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/embeddings";
 
-export type CacheMode = "suggest_tasks" | "next_step" | "intelligence";
-export type CacheEntityType = "lead" | "opportunity" | "project" | "intelligence";
+// Contract v1.1 (2026-05-23) : ajout `public_rag` + `orchestrator_general`
+// pour cache cross-pipeline (public-rag-chat + ai-agent-orchestrator).
+// Non-breaking : extension du type union, schéma DB inchangé.
+export type CacheMode =
+  | "suggest_tasks"
+  | "next_step"
+  | "intelligence"
+  | "public_rag"
+  | "orchestrator_general";
+export type CacheEntityType =
+  | "lead"
+  | "opportunity"
+  | "project"
+  | "intelligence"
+  | "public"
+  | "general";
 
 export type CacheScope = "user" | "workspace" | "system";
 
