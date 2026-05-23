@@ -9228,43 +9228,59 @@ serve(async (req) => {
       ? user_id
       : authedUserId;
 
-    const recentMemory = await getRecentMemory(supabase, workspace_id, safeUserId ?? undefined, session_id, 10);
+    // Phase IA-1 v6.2 : LAZY MEMORY LOADING
+    // Skip all 3 memory DB queries for short "general" intents (greetings,
+    // navigation, simple questions). Saves 3 DB calls + token bloat downstream.
+    const isShortGeneral =
+      routedIntent === "general" && (userQuery || "").trim().length < 40;
+
+    if (isShortGeneral) {
+      console.log(`[orchestrator] lazy-memory: skipping 3 memory queries (short general intent, query="${(userQuery || '').slice(0, 30)}")`);
+    }
+
+    const recentMemory: string[] = isShortGeneral
+      ? []
+      : await getRecentMemory(supabase, workspace_id, safeUserId ?? undefined, session_id, 10);
 
     // 2. Search relevant memory semantically
-    const relevantMemory = userQuery ? await searchMemory(supabase, userQuery, workspace_id, safeUserId ?? undefined, 5) : [];
-    
+    const relevantMemory: string[] = isShortGeneral || !userQuery
+      ? []
+      : await searchMemory(supabase, userQuery, workspace_id, safeUserId ?? undefined, 5);
+
     // 3. Fetch active entities from recent context (leads/partners mentioned recently)
     let activeEntities: { type: string; id: string; name: string; details: string }[] = [];
-    try {
-      // Build query with proper parameterized filters
-      let contextQuery = supabase
-        .from("ai_agent_memory")
-        .select("entity_type, entity_id, content")
-        .eq("memory_type", "context")
-        .eq("category", "active_entity");
-      
-      // Use validated inputs for the filter - proper parameterized approach
-      if (session_id) {
-        contextQuery = contextQuery.eq("session_id", session_id);
-      } else if (safeUserId) {
-        contextQuery = contextQuery.eq("user_id", safeUserId);
+    if (!isShortGeneral) {
+      try {
+        // Build query with proper parameterized filters
+        let contextQuery = supabase
+          .from("ai_agent_memory")
+          .select("entity_type, entity_id, content")
+          .eq("memory_type", "context")
+          .eq("category", "active_entity");
+
+        // Use validated inputs for the filter - proper parameterized approach
+        if (session_id) {
+          contextQuery = contextQuery.eq("session_id", session_id);
+        } else if (safeUserId) {
+          contextQuery = contextQuery.eq("user_id", safeUserId);
+        }
+
+        const { data: contextMemory } = await contextQuery
+          .gte("expires_at", new Date().toISOString())
+          .order("created_at", { ascending: false })
+          .limit(3); // Reduced from 5 to avoid context pollution
+
+        if (contextMemory && contextMemory.length > 0) {
+          activeEntities = contextMemory.map((m: { entity_type: string | null; entity_id: string | null; content: string }) => ({
+            type: m.entity_type || "unknown",
+            id: m.entity_id || "",
+            name: m.content.split(":")[0] || "",
+            details: m.content,
+          }));
+        }
+      } catch (err) {
+        console.error("Active entities fetch error (non-blocking):", err);
       }
-      
-      const { data: contextMemory } = await contextQuery
-        .gte("expires_at", new Date().toISOString())
-        .order("created_at", { ascending: false })
-        .limit(3); // Reduced from 5 to avoid context pollution
-      
-      if (contextMemory && contextMemory.length > 0) {
-        activeEntities = contextMemory.map((m: { entity_type: string | null; entity_id: string | null; content: string }) => ({
-          type: m.entity_type || "unknown",
-          id: m.entity_id || "",
-          name: m.content.split(":")[0] || "",
-          details: m.content,
-        }));
-      }
-    } catch (err) {
-      console.error("Active entities fetch error (non-blocking):", err);
     }
     
     // 3b. ADVANCED TOPIC CHANGE DETECTION
