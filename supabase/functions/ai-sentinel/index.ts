@@ -99,7 +99,27 @@ const ALERT_TEMPLATES: Record<string, (a: RawAnomaly) => { question: string; det
     question: `Spécification "${a.entity_name}" en brouillon depuis ${a.days_inactive}j`,
     detail: `Finaliser ou archiver pour libérer le pipeline`,
   }),
-};
+  // === v3 — Nouvelles règles ===
+  risk_churn_hot_lead: (a) => ({
+    question: `Lead chaud "${a.entity_name}" (score ${a.days_inactive}/100) sans contact depuis 30j+`,
+    detail: `Score BANT élevé mais inactif — risque de churn, relance prioritaire`,
+  }),
+  risk_opportunity_dormant: (a) => ({
+    question: `Opportunité "${a.entity_name}" dormante (${a.days_inactive}j sans activité)`,
+    detail: `Stage ${a.stage} — early warning, programmer une relance avant escalade en zombie`,
+  }),
+  risk_pipeline_stage_regression: (a) => ({
+    question: `Opportunité "${a.entity_name}" a régressé de stage`,
+    detail: `Stage actuel ${a.stage} — analyser le motif de recul et arbitrer`,
+  }),
+  risk_over_solicitation: (a) => ({
+    question: `Lead "${a.entity_name}" sur-sollicité (${a.days_inactive} emails en 7j)`,
+    detail: `Risque de désabonnement — espacer les relances et varier le canal`,
+  }),
+}; // close ALERT_TEMPLATES
+// Sentinel stub to keep diff minimal (removed duplicate closing of object above)
+const _SENTINEL_V3_MARKER = true;
+
 
 function isValidEmail(e?: string | null): boolean {
   if (!e) return false;
