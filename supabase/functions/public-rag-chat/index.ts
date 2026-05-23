@@ -124,6 +124,25 @@ Deno.serve(async (req) => {
     const topSim = hits[0]?.similarity ?? 0;
     console.log(`[public-rag-chat] q="${userQuery.slice(0, 60)}" hits=${hits.length} top_sim=${Number(topSim).toFixed(3)}`);
 
+    // ---- Phase IA-2K — Self-Healing: log questions sans réponse satisfaisante ----
+    // (no_match OU low_confidence < 0.5) → analyse asynchrone par rag-content-gap-detector
+    const LOW_CONFIDENCE_THRESHOLD = 0.5;
+    const needsLogging = hits.length === 0 || topSim < LOW_CONFIDENCE_THRESHOLD;
+    if (needsLogging && userQuery.length >= 6 && userQuery.length <= 500) {
+      const normalized = userQuery.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
+      supabase.from("public_rag_unanswered").insert({
+        query: userQuery,
+        normalized_query: normalized,
+        query_embedding: embeddingStr,
+        top_similarity: Number(topSim.toFixed(3)),
+        hits_count: hits.length,
+        reason: hits.length === 0 ? "no_match" : "low_confidence",
+        user_agent: req.headers.get("user-agent")?.slice(0, 200) ?? null,
+      }).then(({ error }) => {
+        if (error) console.error("[public-rag-chat] unanswered log error:", error.message);
+      });
+    }
+
     // ---- 3. No-match : fallback zero-LLM ----
     if (hits.length === 0) {
       return new Response(streamPlainTextAsSSE(NO_MATCH_REPLY), {

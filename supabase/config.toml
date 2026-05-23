@@ -257,3 +257,6 @@ verify_jwt = false
 
 [functions.process-auto-actions]
 verify_jwt = false
+
+[functions.rag-content-gap-detector]
+verify_jwt = false
