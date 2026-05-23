@@ -51,11 +51,17 @@ import {
   TrendingUp,
   Activity,
   Clock,
+  Rocket,
+  Euro,
+  LifeBuoy,
 } from "lucide-react";
 import { SaasSubscriptionsTab } from "@/components/cockpit/SaasSubscriptionsTab";
 import { SolutionPipelineTab } from "@/components/cockpit/saas/SolutionPipelineTab";
 import { SolutionUsageTab } from "@/components/cockpit/saas/SolutionUsageTab";
 import { SolutionTimelineTab } from "@/components/cockpit/saas/SolutionTimelineTab";
+import { SolutionOnboardingTab } from "@/components/cockpit/saas/SolutionOnboardingTab";
+import { SolutionRevenueTab } from "@/components/cockpit/saas/SolutionRevenueTab";
+import { SolutionSupportTab } from "@/components/cockpit/saas/SolutionSupportTab";
 import { supabase } from "@/integrations/supabase/client";
 import { useCockpitSolutionLeads, useCockpitLeads, useCockpitUploads } from "@/hooks/cockpit";
 import { LinkedFilesSection } from "@/components/cockpit/LinkedFilesSection";
