@@ -144,7 +144,7 @@ const FAQ = () => {
                     {item.question}
                   </AccordionTrigger>
                   <AccordionContent className="text-muted-foreground text-sm md:text-base leading-relaxed pb-5">
-                    {(item as { answer?: string; audit?: string }).answer ?? (item as { answer?: string; audit?: string }).audit ?? ""}
+                    {item.answer}
                   </AccordionContent>
                 </AccordionItem>
               ))}
