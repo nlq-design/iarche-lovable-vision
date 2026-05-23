@@ -51,7 +51,7 @@ serve(async (req) => {
     const user = userData.user;
 
     // Body
-    const { plan_slug, workspace_id, success_url, cancel_url } = await req.json();
+    const { plan_slug, workspace_id, success_url, cancel_url, billing_period } = await req.json();
     if (!plan_slug || !workspace_id || !success_url || !cancel_url) {
       return new Response(
         JSON.stringify({
@@ -61,6 +61,8 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
+
+    const period: "monthly" | "yearly" = billing_period === "yearly" ? "yearly" : "monthly";
 
     // (c) Vérif membre workspace
     const { data: member } = await supabase
@@ -93,12 +95,14 @@ serve(async (req) => {
       );
     }
 
-    if (!plan.stripe_price_id) {
+    const priceId = period === "yearly" ? plan.stripe_price_id_yearly : plan.stripe_price_id;
+    if (!priceId) {
       return new Response(
-        JSON.stringify({ error: "Plan has no stripe_price_id configured" }),
+        JSON.stringify({ error: `Plan has no stripe_price_id configured for ${period} billing` }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
+
 
     // (e) Récup ou création stripe_customer_id
     const { data: workspace, error: wsErr } = await supabase
@@ -140,12 +144,13 @@ serve(async (req) => {
     const session = await stripe.checkout.sessions.create({
       customer: stripeCustomerId,
       mode: "subscription",
-      line_items: [{ price: plan.stripe_price_id, quantity: 1 }],
+      line_items: [{ price: priceId, quantity: 1 }],
       subscription_data: {
         metadata: {
           workspace_id,
           plan_id: plan.id,
           plan_slug,
+          billing_period: period,
           user_id: user.id,
         },
       },
