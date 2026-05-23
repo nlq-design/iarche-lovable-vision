@@ -48,6 +48,7 @@ const navigationItems = [
   { title: 'Analytics', url: '/cockpit/analytics', icon: BarChart3 },
   { title: 'Agent IA', url: '/cockpit/chatbot', icon: Bot },
   { title: 'Paramètres', url: '/cockpit/settings', icon: Settings },
+  { title: 'Mon compte', url: '/cockpit/account', icon: UserCircle },
 ];
 
 export function CockpitSidebar() {
