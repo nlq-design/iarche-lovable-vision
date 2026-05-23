@@ -92,7 +92,7 @@ export function CockpitSidebar() {
       
       <SidebarContent className="pt-2 px-2">
         <SidebarMenu className="space-y-0.5">
-          {navigationItems.map((item) => {
+          {visibleItems.map((item) => {
             const active = isActive(item.url, item.exact);
             
             const linkContent = (
