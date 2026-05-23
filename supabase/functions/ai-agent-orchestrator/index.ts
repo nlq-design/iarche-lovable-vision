@@ -9792,6 +9792,20 @@ ${calendarRef.join('\n')}
       console.log(`[orchestrator] CACHE STORE intent=general len=${finalContent.length} model=${selectedModel}`);
     }
 
+    // Phase IA-2 — Trace MISS (coût estimé gemini-2.5-flash ~$0.001 par appel orchestrator moyen)
+    if (cacheEligible) {
+      const totalTokens = aiResponse.usage?.total_tokens ?? 0;
+      const costEstimate = totalTokens > 0 ? (totalTokens / 1_000_000) * 0.30 : 0.001;
+      trackCacheTrace({
+        supabase, workspaceId: workspace_id, userId: safeUserId,
+        mode: "orchestrator_general", cacheStatus: "miss", cacheScope: "workspace",
+        latencyMs: Date.now() - orchestratorMissStart,
+        llmProvider: selectedModel, llmCostEstimateUsd: costEstimate,
+        estimatedTokens: totalTokens,
+        entityType: "general", entityId: null,
+      });
+    }
+
     // Save assistant response to memory (important insights only)
     if (finalContent && finalContent.length > 50) {
       const isInsight = allToolCalls.length > 0 || finalContent.includes("recommand") || finalContent.includes("suggèr") || finalContent.includes("action");
