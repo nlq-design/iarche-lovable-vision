@@ -7462,6 +7462,38 @@ export type Database = {
           },
         ]
       }
+      workspace_ai_thresholds: {
+        Row: {
+          auto_action_confidence_threshold: number
+          last_metrics: Json
+          rag_similarity_threshold: number
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          auto_action_confidence_threshold?: number
+          last_metrics?: Json
+          rag_similarity_threshold?: number
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          auto_action_confidence_threshold?: number
+          last_metrics?: Json
+          rag_similarity_threshold?: number
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_ai_thresholds_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: true
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workspace_ai_usage: {
         Row: {
           created_at: string | null
@@ -7870,6 +7902,15 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      auto_resolve_content_gaps: {
+        Args: { _threshold?: number }
+        Returns: {
+          alert_id: string
+          matched_title: string
+          representative_query: string
+          similarity: number
+        }[]
       }
       bump_semantic_cache_hit: { Args: { p_id: string }; Returns: undefined }
       bump_voice_usage: {
@@ -8445,6 +8486,16 @@ export type Database = {
       purge_semantic_cache: {
         Args: { p_cache_key?: string; p_workspace_id: string }
         Returns: number
+      }
+      recompute_workspace_thresholds: {
+        Args: never
+        Returns: {
+          cancel_rate: number
+          new_threshold: number
+          old_threshold: number
+          sample_size: number
+          workspace_id: string
+        }[]
       }
       record_api_usage: {
         Args: {
