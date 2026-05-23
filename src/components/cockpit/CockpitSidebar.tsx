@@ -66,7 +66,12 @@ export function CockpitSidebar() {
   const location = useLocation();
   const currentPath = location.pathname;
   const queryClient = useQueryClient();
-  
+  const { isSuperAdmin } = useAuth();
+
+  const visibleItems = navigationItems.filter(
+    (item) => !item.superAdminOnly || isSuperAdmin
+  );
+
   const isCollapsed = state === 'collapsed';
 
   const isActive = (url: string, exact?: boolean) => {
