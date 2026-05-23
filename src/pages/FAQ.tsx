@@ -72,7 +72,7 @@ const faqSchema = {
     "name": item.question,
     "acceptedAnswer": {
       "@type": "Answer",
-      "text": (item as { answer?: string; audit?: string }).answer ?? (item as { answer?: string; audit?: string }).audit ?? "",
+      "text": item.answer,
     },
   })),
 };
