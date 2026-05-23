@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Palette, Upload, Image as ImageIcon } from 'lucide-react';
+import { BrandingDocumentPreview } from '@/components/cockpit/settings/BrandingDocumentPreview';
 
 const COLOR_FIELDS = [
   { key: 'primary_color' as const, label: 'Couleur principale', placeholder: '#1A2B4A' },
