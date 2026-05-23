@@ -91,6 +91,58 @@ function AdminUsers() {
         </p>
       </div>
 
+      {orphans.length > 0 && (
+        <Card className="border-amber-500/40 bg-amber-500/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-600" />
+              Partenaires sans compte ({orphans.length})
+            </CardTitle>
+            <CardDescription>
+              Partenaires actifs sans `auth.user` — envoyer une invitation pour qu'ils accèdent à leur espace.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nom</TableHead>
+                  <TableHead>Email d'invitation</TableHead>
+                  <TableHead className="w-[140px]">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {orphans.map((p) => (
+                  <TableRow key={p.id}>
+                    <TableCell className="font-medium">{p.name}</TableCell>
+                    <TableCell>
+                      <Input
+                        type="email"
+                        placeholder="email@exemple.fr"
+                        value={emails[p.id] ?? ''}
+                        onChange={(e) => setEmails(prev => ({ ...prev, [p.id]: e.target.value }))}
+                        className="max-w-xs"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        size="sm"
+                        onClick={() => handleInvite(p.id)}
+                        disabled={inviting === p.id || !emails[p.id]?.trim()}
+                      >
+                        <Mail className="h-3 w-3 mr-1" />
+                        {inviting === p.id ? 'Envoi...' : 'Inviter'}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+
       <Card>
         <CardHeader>
           <CardTitle>Comptes authentifiés</CardTitle>
