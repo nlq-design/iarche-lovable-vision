@@ -496,8 +496,8 @@ serve(async (req) => {
   }
 
   try {
-    const body: RequestBody = await req.json();
-    const { title, sections: rawSections, metadata, theme, documentType, exportSettings } = body;
+    const body: RequestBody & { workspace_id?: string } = await req.json();
+    const { title, sections: rawSections, metadata, theme, documentType, exportSettings, workspace_id } = body;
 
     // Ensure sections is always an array
     const sections: DocumentSection[] = Array.isArray(rawSections) ? rawSections : [];
@@ -508,21 +508,32 @@ serve(async (req) => {
       throw new Error('Title is required');
     }
 
-    // Export settings with defaults
+    // Resolve workspace branding (JWT or explicit workspace_id). Used as fallback defaults.
+    const { branding } = await resolveBranding(req, workspace_id);
+    if (branding) console.log('[generate-docx] branding applied for workspace', branding.workspace_id);
+
+    const brandPrimary = (branding?.primary_color || '').replace('#', '');
+    const brandAccent = (branding?.secondary_color || branding?.accent_color || '').replace('#', '');
+    const brandHeadingFont = branding?.heading_font || null;
+    const brandBodyFont = branding?.body_font || null;
+
+    // Export settings: client > branding > IArche defaults
     const headerSettings = {
-      companyName: exportSettings?.header?.companyName ?? 'IArche',
-      tagline: exportSettings?.header?.tagline ?? 'Architecture de Solutions IA',
+      companyName: exportSettings?.header?.companyName ?? branding?.brand_name ?? 'IArche',
+      tagline: exportSettings?.header?.tagline ?? branding?.tagline ?? 'Architecture de Solutions IA',
       showLogo: exportSettings?.header?.showLogo ?? true,
     };
     const footerSettings = {
-      line1: exportSettings?.footer?.line1 ?? 'IArche - Conseil en Architecture IA & Transformation Digitale',
+      line1: exportSettings?.footer?.line1 ?? branding?.footer_text ?? 'IArche - Conseil en Architecture IA & Transformation Digitale',
       line2: exportSettings?.footer?.line2 ?? 'contact@iarche.fr  •  www.iarche.fr',
       showPageNumbers: exportSettings?.footer?.showPageNumbers ?? true,
     };
 
-    // Convert hex color to DOCX format (remove #)
-    const primaryColor = theme?.primaryColor?.replace('#', '') || COLORS.bleuNuit;
-    const accentColor = theme?.accentColor?.replace('#', '') || COLORS.terracotta;
+    // Color resolution: explicit theme > branding > IArche defaults
+    const primaryColor = (theme?.primaryColor?.replace('#', '')) || brandPrimary || COLORS.bleuNuit;
+    const accentColor = (theme?.accentColor?.replace('#', '')) || brandAccent || COLORS.terracotta;
+    const headingFont = brandHeadingFont || 'Calibri';
+    const bodyFont = brandBodyFont || 'Calibri';
 
     // Build document sections
     const documentSections: Paragraph[] = [];
