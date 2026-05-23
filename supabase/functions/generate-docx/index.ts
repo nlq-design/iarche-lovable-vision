@@ -18,6 +18,46 @@ import {
   convertInchesToTwip,
 } from "https://esm.sh/docx@8.5.0";
 import { encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+// Resolve workspace branding from JWT or explicit workspace_id (service-role read).
+async function resolveBranding(req: Request, explicitWorkspaceId?: string) {
+  try {
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+    let workspaceId = explicitWorkspaceId || null;
+    if (!workspaceId) {
+      const authHeader = req.headers.get("Authorization");
+      if (authHeader) {
+        const { data: userData } = await supabaseAdmin.auth.getUser(authHeader.replace("Bearer ", ""));
+        const uid = userData?.user?.id;
+        if (uid) {
+          const { data: m } = await supabaseAdmin
+            .from("workspace_members")
+            .select("workspace_id")
+            .eq("user_id", uid)
+            .order("created_at", { ascending: true })
+            .limit(1)
+            .maybeSingle();
+          workspaceId = m?.workspace_id ?? null;
+        }
+      }
+    }
+    if (!workspaceId) return { workspaceId: null, branding: null };
+    const { data: branding } = await supabaseAdmin
+      .from("workspace_branding")
+      .select("*")
+      .eq("workspace_id", workspaceId)
+      .maybeSingle();
+    return { workspaceId, branding };
+  } catch (e) {
+    console.warn("[generate-docx] branding resolve failed:", (e as Error).message);
+    return { workspaceId: null, branding: null };
+  }
+}
+
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
