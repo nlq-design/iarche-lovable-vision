@@ -1,0 +1,1 @@
+ALTER VIEW public.top_predictive_alerts SET (security_invoker = on);
