@@ -51,11 +51,17 @@ import {
   TrendingUp,
   Activity,
   Clock,
+  Rocket,
+  Euro,
+  LifeBuoy,
 } from "lucide-react";
 import { SaasSubscriptionsTab } from "@/components/cockpit/SaasSubscriptionsTab";
 import { SolutionPipelineTab } from "@/components/cockpit/saas/SolutionPipelineTab";
 import { SolutionUsageTab } from "@/components/cockpit/saas/SolutionUsageTab";
 import { SolutionTimelineTab } from "@/components/cockpit/saas/SolutionTimelineTab";
+import { SolutionOnboardingTab } from "@/components/cockpit/saas/SolutionOnboardingTab";
+import { SolutionRevenueTab } from "@/components/cockpit/saas/SolutionRevenueTab";
+import { SolutionSupportTab } from "@/components/cockpit/saas/SolutionSupportTab";
 import { supabase } from "@/integrations/supabase/client";
 import { useCockpitSolutionLeads, useCockpitLeads, useCockpitUploads } from "@/hooks/cockpit";
 import { LinkedFilesSection } from "@/components/cockpit/LinkedFilesSection";
@@ -207,6 +213,18 @@ export default function CockpitSolutionDetail() {
               <Clock className="h-3.5 w-3.5" />
               Timeline
             </TabsTrigger>
+            <TabsTrigger value="onboarding" className="gap-1.5 text-sm h-7">
+              <Rocket className="h-3.5 w-3.5" />
+              Onboarding
+            </TabsTrigger>
+            <TabsTrigger value="revenue" className="gap-1.5 text-sm h-7">
+              <Euro className="h-3.5 w-3.5" />
+              Revenus
+            </TabsTrigger>
+            <TabsTrigger value="support" className="gap-1.5 text-sm h-7">
+              <LifeBuoy className="h-3.5 w-3.5" />
+              Support & NPS
+            </TabsTrigger>
             <TabsTrigger value="leads" className="gap-1.5 text-sm h-7">
               <Users className="h-3.5 w-3.5" />
               Prospects ({solutionLeads.length})
@@ -237,6 +255,19 @@ export default function CockpitSolutionDetail() {
           <TabsContent value="timeline" className="space-y-3">
             <SolutionTimelineTab solutionId={id!} />
           </TabsContent>
+
+          <TabsContent value="onboarding" className="space-y-3">
+            <SolutionOnboardingTab solutionId={id!} />
+          </TabsContent>
+
+          <TabsContent value="revenue" className="space-y-3">
+            <SolutionRevenueTab solutionId={id!} />
+          </TabsContent>
+
+          <TabsContent value="support" className="space-y-3">
+            <SolutionSupportTab solutionId={id!} />
+          </TabsContent>
+
 
 
 
