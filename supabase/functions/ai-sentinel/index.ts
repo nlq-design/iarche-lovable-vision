@@ -116,9 +116,7 @@ const ALERT_TEMPLATES: Record<string, (a: RawAnomaly) => { question: string; det
     question: `Lead "${a.entity_name}" sur-sollicité (${a.days_inactive} emails en 7j)`,
     detail: `Risque de désabonnement — espacer les relances et varier le canal`,
   }),
-}; // close ALERT_TEMPLATES
-// Sentinel stub to keep diff minimal (removed duplicate closing of object above)
-const _SENTINEL_V3_MARKER = true;
+};
 
 
 function isValidEmail(e?: string | null): boolean {
