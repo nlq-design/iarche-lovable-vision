@@ -5,6 +5,11 @@ import { createAIClient } from "../_shared/ai-client.ts";
 import { chatWithTools, completeLLM } from "../_shared/ai-legacy-bridge.ts";
 import type { AIMessage, AITool } from "../_shared/ai-types.ts";
 import { composeSystemPromptForRequest, type Intent } from "../_shared/intent-router.ts";
+import { buildCacheKey, buildContextFingerprint, lookupCache, storeCache } from "../_shared/semantic-cache.ts";
+
+// Phase IA-2 — Cache sémantique orchestrator (general intent only, no tool_calls)
+const ORCHESTRATOR_CACHE_TTL_HOURS = 24;
+const ORCHESTRATOR_CACHE_THRESHOLD = 0.95; // strict pour éviter pollution CRM
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
