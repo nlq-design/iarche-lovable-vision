@@ -1,12 +1,16 @@
-import { ScanSearch } from 'lucide-react';
+import { useState } from 'react';
+import { Bug, ScanSearch } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Progress } from '@/components/ui/progress';
 import { LoadingState } from '@/components/cockpit/common/LoadingState';
 import { EmptyState } from '@/components/cockpit/common/EmptyState';
 import { useRagTrace } from '@/hooks/cockpit/useRagTrace';
+import { useWorkspace } from '@/contexts/WorkspaceContext';
 
 interface RagDiagnosticsDrawerProps {
   traceId: string | null | undefined;
