@@ -3,6 +3,8 @@ Updated: now
 
 # Project Memory
 
+- [Persona Workspace P4](mem://architecture/persona-workspace-p4) — workspaces.ai_persona JSONB + persona.ts helper + {{persona_*}} variables (56 prompts NON refactorés, P4-bis JIT)
+- [Onboarding Self-serve P5](mem://architecture/onboarding-self-serve-p5) — /cockpit/onboarding wizard 3 étapes + create-cockpit-workspace edge fn idempotente, trial 14j
 - [Compte User P3](mem://architecture/compte-user-p3) — Panneau /admin/users active les partenaires orphelins via invite-partner existant
 - [Compte User P2](mem://architecture/compte-user-p2) — /admin/users + edge fn admin-list-users + super_admin super-set (has_role) + nettoyage rôles cumulés
 
