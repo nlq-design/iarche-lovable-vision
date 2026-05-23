@@ -179,12 +179,19 @@ Deno.serve(async (req) => {
 
     if (cached.hit && typeof cached.response === "string") {
       console.log(`[public-rag-chat] CACHE HIT sim=${cached.similarity.toFixed(3)} age=${cached.ageSeconds}s hits=${cached.hitCount}`);
+      trackCacheTrace({
+        supabase, workspaceId: PUBLIC_WORKSPACE_ID, mode: "public_rag",
+        cacheStatus: "hit", cacheScope: "system",
+        cacheSimilarity: cached.similarity, cacheAgeSeconds: cached.ageSeconds,
+        llmProvider: cached.model ?? null, entityType: "public", entityId: null,
+      });
       return new Response(streamPlainTextAsSSE(cached.response), {
         headers: { ...corsHeaders, "Content-Type": "text/event-stream", "X-Cache": "HIT" },
       });
     }
 
     // ---- 5. Stream LLM (cache miss) ----
+    const missStart = Date.now();
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
