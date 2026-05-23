@@ -2,12 +2,15 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { LoadingState } from '@/components/cockpit/common/LoadingState';
 import { EmptyState } from '@/components/cockpit/common/EmptyState';
-import { Users } from 'lucide-react';
+import { Users, Mail, AlertTriangle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { toast } from 'sonner';
 
 interface AdminUser {
   id: string;
@@ -28,27 +31,56 @@ const roleVariant = (role: string) => {
   return 'outline';
 };
 
-export default function AdminUsers() {
+
+interface OrphanPartner {
+  id: string;
+  name: string;
+  email: string | null;
+}
+
+export default function AdminUsersWrapper() { return <AdminUsers />; }
+
+function AdminUsers() {
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [orphans, setOrphans] = useState<OrphanPartner[]>([]);
+  const [emails, setEmails] = useState<Record<string, string>>({});
+  const [inviting, setInviting] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      const { data, error } = await supabase.functions.invoke('admin-list-users');
-      if (error) {
-        setError(error.message);
-      } else {
-        setUsers(data?.users ?? []);
-      }
-      setLoading(false);
-    })();
-  }, []);
+  const load = async () => {
+    setLoading(true);
+    const [usersRes, partnersRes] = await Promise.all([
+      supabase.functions.invoke('admin-list-users'),
+      supabase.from('partners').select('id, name, email').is('user_id', null).eq('status', 'active'),
+    ]);
+    if (usersRes.error) setError(usersRes.error.message);
+    else setUsers(usersRes.data?.users ?? []);
+    if (!partnersRes.error) {
+      const list = (partnersRes.data ?? []) as OrphanPartner[];
+      setOrphans(list);
+      setEmails(Object.fromEntries(list.map(p => [p.id, p.email ?? ''])));
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const handleInvite = async (partnerId: string) => {
+    const email = emails[partnerId]?.trim();
+    if (!email) { toast.error('Email requis'); return; }
+    setInviting(partnerId);
+    const { error } = await supabase.functions.invoke('invite-partner', {
+      body: { partner_id: partnerId, email },
+    });
+    setInviting(null);
+    if (error) { toast.error(`Échec : ${error.message}`); return; }
+    toast.success(`Invitation envoyée à ${email}`);
+    load();
+  };
 
   if (loading) return <LoadingState message="Chargement des utilisateurs..." />;
   if (error) return <EmptyState message="Erreur" description={error} icon={Users} />;
-  if (users.length === 0) return <EmptyState message="Aucun utilisateur" description="Aucun compte enregistré." icon={Users} />;
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -58,6 +90,58 @@ export default function AdminUsers() {
           {users.length} compte{users.length > 1 ? 's' : ''} — rôles, dernière connexion, workspaces
         </p>
       </div>
+
+      {orphans.length > 0 && (
+        <Card className="border-amber-500/40 bg-amber-500/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-600" />
+              Partenaires sans compte ({orphans.length})
+            </CardTitle>
+            <CardDescription>
+              Partenaires actifs sans `auth.user` — envoyer une invitation pour qu'ils accèdent à leur espace.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nom</TableHead>
+                  <TableHead>Email d'invitation</TableHead>
+                  <TableHead className="w-[140px]">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {orphans.map((p) => (
+                  <TableRow key={p.id}>
+                    <TableCell className="font-medium">{p.name}</TableCell>
+                    <TableCell>
+                      <Input
+                        type="email"
+                        placeholder="email@exemple.fr"
+                        value={emails[p.id] ?? ''}
+                        onChange={(e) => setEmails(prev => ({ ...prev, [p.id]: e.target.value }))}
+                        className="max-w-xs"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        size="sm"
+                        onClick={() => handleInvite(p.id)}
+                        disabled={inviting === p.id || !emails[p.id]?.trim()}
+                      >
+                        <Mail className="h-3 w-3 mr-1" />
+                        {inviting === p.id ? 'Envoi...' : 'Inviter'}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
 
       <Card>
         <CardHeader>
