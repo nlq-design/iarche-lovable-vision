@@ -18,6 +18,7 @@ const ProtectedCockpitRoute = ({ children }: ProtectedCockpitRouteProps) => {
   const { user, loading: authLoading } = useAuth();
   const { 
     hasCockpitAccess, 
+    hasCockpitAdminAccess,
     isStepUpVerified, 
     mfaEnabled, 
     loading: cockpitLoading,
@@ -26,6 +27,10 @@ const ProtectedCockpitRoute = ({ children }: ProtectedCockpitRouteProps) => {
   const location = useLocation();
   const [showMfaDialog, setShowMfaDialog] = useState(false);
   const [deniedReason, setDeniedReason] = useState<AccessDeniedReason | null>(null);
+
+  // MFA n'est exigée que pour les admins internes (cockpit_admin / super_admin).
+  // Les clients SaaS (cockpit_user seul) accèdent sans 2FA.
+  const mfaRequired = hasCockpitAdminAccess;
 
   useEffect(() => {
     if (authLoading || cockpitLoading) return;
@@ -37,23 +42,23 @@ const ProtectedCockpitRoute = ({ children }: ProtectedCockpitRouteProps) => {
       return;
     }
 
-    if (!mfaEnabled) {
+    if (mfaRequired && !mfaEnabled) {
       setDeniedReason('MFA_NOT_ENABLED');
       return;
     }
 
-    if (!isStepUpVerified) {
+    if (mfaRequired && !isStepUpVerified) {
       setDeniedReason('STEPUP_REQUIRED');
       setShowMfaDialog(true);
       return;
     }
 
     setDeniedReason(null);
-  }, [authLoading, cockpitLoading, user, hasCockpitAccess, mfaEnabled, isStepUpVerified]);
+  }, [authLoading, cockpitLoading, user, hasCockpitAccess, mfaRequired, mfaEnabled, isStepUpVerified]);
 
   // Phase G — Prewarm intent cache (1× par session, throttle 6h côté serveur)
   useCockpitPrewarm(
-    !authLoading && !cockpitLoading && !!user && hasCockpitAccess && mfaEnabled && isStepUpVerified
+    !authLoading && !cockpitLoading && !!user && hasCockpitAccess && (!mfaRequired || (mfaEnabled && isStepUpVerified))
   );
 
   // Loading state
