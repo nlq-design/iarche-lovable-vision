@@ -182,12 +182,17 @@ export default function CockpitSolutionDetail() {
           </Button>
         </div>
 
-        {/* Tabs */}
-        <Tabs defaultValue="leads" className="space-y-4">
+        {/* Tabs — catalogue SaaS : Produit / Abonnements / Documents / Prospects / Consulte */}
+        <Tabs defaultValue="saas" className="space-y-4">
           <TabsList className="h-9">
+            <TabsTrigger value="saas" className="gap-1.5 text-sm h-7">
+              <BarChart3 className="h-3.5 w-3.5" />
+              Abonnements & Clients
+            </TabsTrigger>
+            <TabsTrigger value="overview" className="text-sm h-7">Produit & Pricing</TabsTrigger>
             <TabsTrigger value="leads" className="gap-1.5 text-sm h-7">
               <Users className="h-3.5 w-3.5" />
-              Leads ({solutionLeads.length})
+              Prospects ({solutionLeads.length})
             </TabsTrigger>
             <TabsTrigger value="documents" className="gap-1.5 text-sm h-7">
               <FileUp className="h-3.5 w-3.5" />
@@ -197,20 +202,12 @@ export default function CockpitSolutionDetail() {
               <Sparkles className="h-3.5 w-3.5" />
               Consulte
             </TabsTrigger>
-            <TabsTrigger value="overview" className="text-sm h-7">Aperçu</TabsTrigger>
-            {solution.slug === 'cockpit-by-iarche' && (
-              <TabsTrigger value="saas" className="gap-1.5 text-sm h-7">
-                <BarChart3 className="h-3.5 w-3.5" />
-                Abonnements SaaS
-              </TabsTrigger>
-            )}
           </TabsList>
 
-          {solution.slug === 'cockpit-by-iarche' && (
-            <TabsContent value="saas" className="space-y-3">
-              <SaasSubscriptionsTab />
-            </TabsContent>
-          )}
+          <TabsContent value="saas" className="space-y-3">
+            <SaasSubscriptionsTab />
+          </TabsContent>
+
 
           {/* Leads Tab */}
           <TabsContent value="leads" className="space-y-3">
