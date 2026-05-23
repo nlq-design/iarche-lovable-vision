@@ -8084,7 +8084,7 @@ export type Database = {
       match_public_embeddings: {
         Args: {
           match_count?: number
-          query_embedding: string
+          query_embedding_text: string
           similarity_threshold?: number
         }
         Returns: {
