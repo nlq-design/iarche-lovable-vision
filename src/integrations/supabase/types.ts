@@ -4878,20 +4878,35 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_url: string | null
           created_at: string
+          full_name: string | null
+          locale: string
+          notification_prefs: Json
           onboarded_at: string | null
+          timezone: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          avatar_url?: string | null
           created_at?: string
+          full_name?: string | null
+          locale?: string
+          notification_prefs?: Json
           onboarded_at?: string | null
+          timezone?: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          avatar_url?: string | null
           created_at?: string
+          full_name?: string | null
+          locale?: string
+          notification_prefs?: Json
           onboarded_at?: string | null
+          timezone?: string
           updated_at?: string
           user_id?: string
         }
