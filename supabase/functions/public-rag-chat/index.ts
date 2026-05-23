@@ -111,8 +111,16 @@ Deno.serve(async (req) => {
     });
 
     if (rpcErr) {
-      console.error("[public-rag-chat] RPC error:", rpcErr);
+      console.error("[public-rag-chat] RPC error:", JSON.stringify(rpcErr));
     }
+
+    // Diagnostic seuil 0 pour observer la similarité brute
+    const { data: diag } = await supabase.rpc("match_public_embeddings", {
+      query_embedding_text: embeddingStr,
+      match_count: 3,
+      similarity_threshold: -1,
+    });
+    console.log(`[public-rag-chat] DIAG top3=${JSON.stringify((diag ?? []).map((d: any) => ({ t: d.resource_title, s: Number(d.similarity).toFixed(3) })))}`);
 
     const hits = Array.isArray(matches) ? matches : [];
     const topSim = hits[0]?.similarity ?? 0;
