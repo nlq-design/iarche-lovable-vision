@@ -244,3 +244,51 @@ export async function storeCache(args: CacheStoreArgs): Promise<void> {
     console.warn("[semantic-cache] store exception:", (e as Error).message);
   }
 }
+
+// ============================================================================
+// Observability — trackCacheTrace (IA-2)
+// Insert one row in ai_context_traces per pipeline call so the existing
+// /admin/observability/ai dashboard (vue ai_cache_metrics) aggregates all
+// pipelines uniformly. Fire-and-forget, never throws.
+// ============================================================================
+export interface TraceArgs {
+  supabase: SupabaseClient;
+  workspaceId: string;
+  userId?: string | null;
+  mode: CacheMode;
+  cacheStatus: "hit" | "miss";
+  cacheScope: CacheScope;
+  cacheSimilarity?: number | null;
+  cacheAgeSeconds?: number | null;
+  latencyMs?: number | null;
+  llmProvider?: string | null;
+  llmCostEstimateUsd?: number | null;
+  estimatedTokens?: number;
+  entityType?: CacheEntityType | null;
+  entityId?: string | null;
+}
+
+export function trackCacheTrace(args: TraceArgs): void {
+  try {
+    args.supabase.from("ai_context_traces").insert({
+      workspace_id: args.workspaceId,
+      user_id: args.userId ?? null,
+      mode: args.mode,
+      entity_type: args.entityType ?? null,
+      entity_id: args.entityId ?? null,
+      estimated_tokens: args.estimatedTokens ?? 0,
+      cache_status: args.cacheStatus,
+      cache_mode: args.mode,
+      cache_scope: args.cacheScope,
+      cache_similarity: args.cacheSimilarity ?? null,
+      cache_age_seconds: args.cacheAgeSeconds ?? null,
+      latency_ms: args.latencyMs ?? null,
+      llm_provider: args.llmProvider ?? null,
+      llm_cost_estimate_usd: args.llmCostEstimateUsd ?? null,
+    }).then(({ error }) => {
+      if (error) console.warn("[semantic-cache] trace error:", error.message);
+    });
+  } catch (e) {
+    console.warn("[semantic-cache] trace exception:", (e as Error).message);
+  }
+}
