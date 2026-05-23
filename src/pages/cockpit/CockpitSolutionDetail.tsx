@@ -199,14 +199,15 @@ export default function CockpitSolutionDetail() {
           </Button>
         </div>
 
-        {/* KPI Header */}
+        {/* KPI Header — vue de tête en permanence */}
         <SolutionKpiHeader solutionId={id!} />
 
         {/* Tabs — Mini-CRM par SaaS, organisés en 4 groupes */}
-        <SolutionTabsGrouped
+        <GroupedSolutionTabs
           solutionLeadsCount={solutionLeads.length}
           documentsCount={linkedFiles?.length || 0}
         >
+
 
 
           <TabsContent value="saas" className="space-y-3">
