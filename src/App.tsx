@@ -827,6 +827,11 @@ const App = () => (
               <ProtectedCockpitRoute><CockpitSettings /></ProtectedCockpitRoute>
             </Suspense>
           } />
+          <Route path="/cockpit/account" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedCockpitRoute><CockpitAccount /></ProtectedCockpitRoute>
+            </Suspense>
+          } />
           <Route path="/cockpit/settings/mcp" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <ProtectedCockpitRoute><CockpitMCPSettings /></ProtectedCockpitRoute>
