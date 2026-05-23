@@ -47,7 +47,9 @@ import {
   Building2,
   FileUp,
   Sparkles,
+  BarChart3,
 } from "lucide-react";
+import { SaasSubscriptionsTab } from "@/components/cockpit/SaasSubscriptionsTab";
 import { supabase } from "@/integrations/supabase/client";
 import { useCockpitSolutionLeads, useCockpitLeads, useCockpitUploads } from "@/hooks/cockpit";
 import { LinkedFilesSection } from "@/components/cockpit/LinkedFilesSection";
@@ -196,7 +198,19 @@ export default function CockpitSolutionDetail() {
               Consulte
             </TabsTrigger>
             <TabsTrigger value="overview" className="text-sm h-7">Aperçu</TabsTrigger>
+            {solution.slug === 'cockpit-by-iarche' && (
+              <TabsTrigger value="saas" className="gap-1.5 text-sm h-7">
+                <BarChart3 className="h-3.5 w-3.5" />
+                Abonnements SaaS
+              </TabsTrigger>
+            )}
           </TabsList>
+
+          {solution.slug === 'cockpit-by-iarche' && (
+            <TabsContent value="saas" className="space-y-3">
+              <SaasSubscriptionsTab />
+            </TabsContent>
+          )}
 
           {/* Leads Tab */}
           <TabsContent value="leads" className="space-y-3">

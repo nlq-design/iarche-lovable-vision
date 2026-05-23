@@ -8066,6 +8066,30 @@ export type Database = {
           usage_percent_tokens: number
         }[]
       }
+      get_cockpit_saas_kpis: { Args: never; Returns: Json }
+      get_cockpit_saas_subscriptions: {
+        Args: never
+        Returns: {
+          ai_tokens_30d: number
+          cancel_at_period_end: boolean
+          canceled_at: string
+          created_at: string
+          current_period_end: string
+          current_period_start: string
+          last_activity_at: string
+          leads_created_30d: number
+          members_count: number
+          owner_email: string
+          plan_name: string
+          plan_price_monthly: number
+          plan_slug: string
+          status: string
+          subscription_id: string
+          trial_end: string
+          workspace_id: string
+          workspace_name: string
+        }[]
+      }
       get_crm_graph: {
         Args: {
           p_depth?: number
