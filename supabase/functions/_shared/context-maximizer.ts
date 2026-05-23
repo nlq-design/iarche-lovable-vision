@@ -291,6 +291,7 @@ export async function buildMaxContext(
     breakdown,
     warnings,
     ragChunks,
+    filters,
     tokenBudget,
   };
 }
