@@ -5197,6 +5197,42 @@ export type Database = {
           },
         ]
       }
+      public_rag_unanswered: {
+        Row: {
+          asked_at: string
+          hits_count: number | null
+          id: string
+          normalized_query: string
+          query: string
+          query_embedding: string | null
+          reason: string
+          top_similarity: number | null
+          user_agent: string | null
+        }
+        Insert: {
+          asked_at?: string
+          hits_count?: number | null
+          id?: string
+          normalized_query: string
+          query: string
+          query_embedding?: string | null
+          reason: string
+          top_similarity?: number | null
+          user_agent?: string | null
+        }
+        Update: {
+          asked_at?: string
+          hits_count?: number | null
+          id?: string
+          normalized_query?: string
+          query?: string
+          query_embedding?: string | null
+          reason?: string
+          top_similarity?: number | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       quote_numbers: {
         Row: {
           billing_entity_id: string
@@ -7876,6 +7912,17 @@ export type Database = {
         }[]
       }
       cleanup_rate_limit_requests: { Args: never; Returns: undefined }
+      cluster_unanswered_rag: {
+        Args: { _days?: number; _min_count?: number; _sim_threshold?: number }
+        Returns: {
+          avg_top_similarity: number
+          cluster_anchor_id: string
+          last_asked: string
+          occurrences: number
+          representative_query: string
+          sample_queries: string[]
+        }[]
+      }
       compute_action_confidence: {
         Args: { _proposal_id: string }
         Returns: number
