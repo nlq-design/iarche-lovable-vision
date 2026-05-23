@@ -3,6 +3,9 @@ Updated: now
 
 # Project Memory
 
+- [Compte User P2](mem://architecture/compte-user-p2) — /admin/users + edge fn admin-list-users + super_admin super-set (has_role) + nettoyage rôles cumulés
+
+
 ## Core
 - Multi-tenant via `workspace_id` (00...1 for IArche Interne). Strict RLS enforced. Edge fns bypassing RLS must verify JWT.
 - Zero-duplication: Cockpit reuses Admin leads. Admin manages content/org; Cockpit manages commercial pipeline.
