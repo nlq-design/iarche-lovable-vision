@@ -14,6 +14,7 @@ Updated: now
 - pgvector RPC: SECURITY DEFINER avec `search_path = public, extensions` obligatoire (sinon opérateur `<=>` introuvable).
 
 ## Memories
+- [Predictive Scoring Phase H](mem://cockpit/intelligence/predictive-scoring-phase-h) — Heuristique SQL pure (zéro LLM) sur lead_predictions, cron 06:30 UTC, vue top_predictive_alerts, injection brief Telegram + widget PredictiveScoringWidget. 43 leads scorés en initial run.
 - [Cache Prewarming Phase G](mem://cockpit/intelligence/cache-prewarming-phase-g) — Cache persistant DB ai_query_intent_cache (TTL 30j) consulté en 1er par intent-router + edge cache-prewarm (20 requêtes dashboard, throttle 6h/workspace) monté dans ProtectedCockpitRoute. Latence intent connue : ~50ms (gain 95%+).
 - [Sentinel v3 + Router Auto-Learn](mem://cockpit/intelligence/widget-sentinel-v3-autolearn-router) — Phase E (widget 7 catégories + 4 PROPOSAL_TEMPLATES risk) + Phase F (logging fallbacks LLM dans ai_intent_router_fallbacks, edge auto-seed-intent-anchors daily 03:17 UTC, hit rate cible 70→90% en 2 sem.)
 - [CRM-as-RAG v1](mem://infrastructure/ai/crm-rag-ingestion-v1) — Indexation auto transcriptions/leads/opps via crm-rag-indexer + triggers pg_net (Sprints 1+2 CDC v2)

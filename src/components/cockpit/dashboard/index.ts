@@ -1,6 +1,7 @@
 export { TopActionsWidget } from './TopActionsWidget';
 export { CrossSignalsWidget } from './CrossSignalsWidget';
 export { PredictionsWidget } from './PredictionsWidget';
+export { PredictiveScoringWidget } from './PredictiveScoringWidget';
 export { SentinelCardWidget, SentinelButton } from './SentinelWidget';
 export { StagnantWidget } from './StagnantWidget';
 export { TrendDeltaWidget } from './TrendDeltaWidget';

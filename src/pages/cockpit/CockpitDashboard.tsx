@@ -30,7 +30,7 @@ import { CreateTaskDialog } from '@/components/cockpit/dialogs';
 import { HarvestInterviewPanel } from '@/components/cockpit/HarvestInterviewPanel';
 import { ActionProposalsList } from '@/components/cockpit/ActionProposalsList';
 import {
- TopActionsWidget, CrossSignalsWidget, PredictionsWidget,
+ TopActionsWidget, CrossSignalsWidget, PredictionsWidget, PredictiveScoringWidget,
  SentinelCardWidget, SentinelButton, StagnantWidget, TrendDeltaWidget,
   TaskRow, MiniStat, ActivityIcon,
   getSmartHeadline, formatCurrency, STAGE_COLORS,
@@ -473,6 +473,8 @@ export default function CockpitDashboard() {
               </Card>
 
               <PredictionsWidget predictions={intelligence?.predictions} isLoading={intelLoading} navigate={navigate} />
+
+              <PredictiveScoringWidget navigate={navigate} />
 
               <TrendDeltaWidget deltas={(raw as any)?.temporal_deltas} loading={intelLoading} />
 

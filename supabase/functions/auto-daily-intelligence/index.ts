@@ -54,15 +54,33 @@ serve(async (req) => {
       throw new Error(`Intelligence call failed: ${intelligenceError.message}`);
     }
 
+    // Phase H : récupération des prédictions (cron 06:30 UTC les a calculées)
+    let predictiveAlerts: any[] = [];
+    try {
+      const { data: alerts } = await supabase
+        .from("top_predictive_alerts")
+        .select("lead_id, name, company, alert_type, score, signals")
+        .eq("workspace_id", workspaceId)
+        .order("score", { ascending: false })
+        .limit(10);
+      predictiveAlerts = alerts || [];
+    } catch (e) {
+      console.warn("[auto-daily-intelligence] predictive_alerts fetch failed:", e);
+    }
+
     // Store in DB
     const generationMs = Date.now() - startMs;
+    const enrichedRaw = {
+      ...(intelligenceResult.raw || {}),
+      predictive_alerts: predictiveAlerts,
+    };
     const { data: inserted, error: insertError } = await supabase
       .from("daily_intelligence")
       .insert({
         workspace_id: workspaceId,
         generated_date: today,
         intelligence: intelligenceResult.intelligence,
-        raw_data: intelligenceResult.raw,
+        raw_data: enrichedRaw,
         consulte_count: intelligenceResult.raw?.consulte_injected_count ?? 0,
         generation_ms: generationMs,
       })
@@ -115,6 +133,20 @@ serve(async (req) => {
         briefLines.push("🔗 *Signaux croisés :*");
         crossSignals.forEach((s: any) => {
           briefLines.push(`• ${s.signal}`);
+        });
+      }
+
+      // Phase H : top 3 alertes prédictives (churn prioritaire)
+      const topChurn = predictiveAlerts.filter((a) => a.alert_type === "churn").slice(0, 2);
+      const topConv = predictiveAlerts.filter((a) => a.alert_type === "conversion").slice(0, 2);
+      if (topChurn.length || topConv.length) {
+        briefLines.push("");
+        briefLines.push("🔮 *Prédictions 14j :*");
+        topChurn.forEach((a) => {
+          briefLines.push(`⚠️ Churn ${a.score}% — ${a.name || "Lead"}${a.company ? ` (${a.company})` : ""}`);
+        });
+        topConv.forEach((a) => {
+          briefLines.push(`✨ Conv. ${a.score}% — ${a.name || "Lead"}${a.company ? ` (${a.company})` : ""}`);
         });
       }
 
