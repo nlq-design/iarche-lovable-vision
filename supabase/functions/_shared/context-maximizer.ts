@@ -700,6 +700,7 @@ export async function recordContextTrace(
         token_budget: ctx.tokenBudget,
         breakdown: ctx.breakdown,
         rag_chunks: ctx.ragChunks,
+        filters: ctx.filters,
         warnings: ctx.warnings,
         cache_status: meta.cacheStatus ?? null,
         cache_similarity: meta.cacheSimilarity ?? null,
