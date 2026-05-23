@@ -2767,6 +2767,51 @@ export type Database = {
           },
         ]
       }
+      feature_votes: {
+        Row: {
+          comment: string | null
+          created_at: string
+          feature_id: string
+          id: string
+          lead_id: string | null
+          user_id: string | null
+          weight: number
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          feature_id: string
+          id?: string
+          lead_id?: string | null
+          user_id?: string | null
+          weight?: number
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          feature_id?: string
+          id?: string
+          lead_id?: string | null
+          user_id?: string | null
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feature_votes_feature_id_fkey"
+            columns: ["feature_id"]
+            isOneToOne: false
+            referencedRelation: "product_features"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feature_votes_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       form_analytics: {
         Row: {
           created_at: string | null
@@ -3497,6 +3542,7 @@ export type Database = {
           familiarity_score: number | null
           id: string
           industry: string | null
+          landing_page: string | null
           last_contacted_at: string | null
           lead_score: number | null
           lead_score_details: Json | null
@@ -3507,6 +3553,7 @@ export type Database = {
           position: string | null
           postal_code: string | null
           qualification_status: string | null
+          referrer: string | null
           siret: string | null
           slug: string | null
           source: string
@@ -3515,6 +3562,11 @@ export type Database = {
           status: string | null
           synthesis_stale: boolean | null
           updated_at: string | null
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
           website: string | null
           workspace_id: string
         }
@@ -3535,6 +3587,7 @@ export type Database = {
           familiarity_score?: number | null
           id?: string
           industry?: string | null
+          landing_page?: string | null
           last_contacted_at?: string | null
           lead_score?: number | null
           lead_score_details?: Json | null
@@ -3545,6 +3598,7 @@ export type Database = {
           position?: string | null
           postal_code?: string | null
           qualification_status?: string | null
+          referrer?: string | null
           siret?: string | null
           slug?: string | null
           source: string
@@ -3553,6 +3607,11 @@ export type Database = {
           status?: string | null
           synthesis_stale?: boolean | null
           updated_at?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
           website?: string | null
           workspace_id?: string
         }
@@ -3573,6 +3632,7 @@ export type Database = {
           familiarity_score?: number | null
           id?: string
           industry?: string | null
+          landing_page?: string | null
           last_contacted_at?: string | null
           lead_score?: number | null
           lead_score_details?: Json | null
@@ -3583,6 +3643,7 @@ export type Database = {
           position?: string | null
           postal_code?: string | null
           qualification_status?: string | null
+          referrer?: string | null
           siret?: string | null
           slug?: string | null
           source?: string
@@ -3591,6 +3652,11 @@ export type Database = {
           status?: string | null
           synthesis_stale?: boolean | null
           updated_at?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
           website?: string | null
           workspace_id?: string
         }
@@ -4976,6 +5042,62 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      product_features: {
+        Row: {
+          category: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          effort: number | null
+          id: string
+          impact: number | null
+          shipped_at: string | null
+          solution_id: string
+          status: string
+          target_release: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          effort?: number | null
+          id?: string
+          impact?: number | null
+          shipped_at?: string | null
+          solution_id: string
+          status?: string
+          target_release?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          effort?: number | null
+          id?: string
+          impact?: number | null
+          shipped_at?: string | null
+          solution_id?: string
+          status?: string
+          target_release?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_features_solution_id_fkey"
+            columns: ["solution_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -8315,6 +8437,10 @@ export type Database = {
           query_normalized: string
         }[]
       }
+      get_solution_acquisition: {
+        Args: { p_solution_id: string }
+        Returns: Json
+      }
       get_solution_onboarding: {
         Args: { p_solution_id: string }
         Returns: Json
@@ -8324,6 +8450,7 @@ export type Database = {
         Args: { p_solution_id: string }
         Returns: Json
       }
+      get_solution_roadmap: { Args: { p_solution_id: string }; Returns: Json }
       get_solution_support: { Args: { p_solution_id: string }; Returns: Json }
       get_solution_timeline: {
         Args: { p_limit?: number; p_solution_id: string }

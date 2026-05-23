@@ -54,6 +54,8 @@ import {
   Rocket,
   Euro,
   LifeBuoy,
+  Map,
+  Megaphone,
 } from "lucide-react";
 import { SaasSubscriptionsTab } from "@/components/cockpit/SaasSubscriptionsTab";
 import { SolutionPipelineTab } from "@/components/cockpit/saas/SolutionPipelineTab";
@@ -62,6 +64,8 @@ import { SolutionTimelineTab } from "@/components/cockpit/saas/SolutionTimelineT
 import { SolutionOnboardingTab } from "@/components/cockpit/saas/SolutionOnboardingTab";
 import { SolutionRevenueTab } from "@/components/cockpit/saas/SolutionRevenueTab";
 import { SolutionSupportTab } from "@/components/cockpit/saas/SolutionSupportTab";
+import { SolutionRoadmapTab } from "@/components/cockpit/saas/SolutionRoadmapTab";
+import { SolutionAcquisitionTab } from "@/components/cockpit/saas/SolutionAcquisitionTab";
 import { supabase } from "@/integrations/supabase/client";
 import { useCockpitSolutionLeads, useCockpitLeads, useCockpitUploads } from "@/hooks/cockpit";
 import { LinkedFilesSection } from "@/components/cockpit/LinkedFilesSection";
@@ -225,6 +229,14 @@ export default function CockpitSolutionDetail() {
               <LifeBuoy className="h-3.5 w-3.5" />
               Support & NPS
             </TabsTrigger>
+            <TabsTrigger value="roadmap" className="gap-1.5 text-sm h-7">
+              <Map className="h-3.5 w-3.5" />
+              Roadmap
+            </TabsTrigger>
+            <TabsTrigger value="acquisition" className="gap-1.5 text-sm h-7">
+              <Megaphone className="h-3.5 w-3.5" />
+              Acquisition
+            </TabsTrigger>
             <TabsTrigger value="leads" className="gap-1.5 text-sm h-7">
               <Users className="h-3.5 w-3.5" />
               Prospects ({solutionLeads.length})
@@ -267,6 +279,15 @@ export default function CockpitSolutionDetail() {
           <TabsContent value="support" className="space-y-3">
             <SolutionSupportTab solutionId={id!} />
           </TabsContent>
+
+          <TabsContent value="roadmap" className="space-y-3">
+            <SolutionRoadmapTab solutionId={id!} />
+          </TabsContent>
+
+          <TabsContent value="acquisition" className="space-y-3">
+            <SolutionAcquisitionTab solutionId={id!} />
+          </TabsContent>
+
 
 
 
