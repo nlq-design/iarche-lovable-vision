@@ -51,12 +51,13 @@ serve(async (req) => {
     const user = userData.user;
 
     // Body
-    const { plan_slug, workspace_id, success_url, cancel_url, billing_period } = await req.json();
-    if (!plan_slug || !workspace_id || !success_url || !cancel_url) {
+    const body = await req.json();
+    const { plan_slug, success_url, cancel_url, billing_period } = body;
+    let { workspace_id } = body;
+    if (!plan_slug || !success_url || !cancel_url) {
       return new Response(
         JSON.stringify({
-          error:
-            "Missing required fields: plan_slug, workspace_id, success_url, cancel_url",
+          error: "Missing required fields: plan_slug, success_url, cancel_url",
         }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
@@ -64,28 +65,48 @@ serve(async (req) => {
 
     const period: "monthly" | "yearly" = billing_period === "yearly" ? "yearly" : "monthly";
 
-    // (c) Vérif membre workspace
-    const { data: member } = await supabase
+    // (c) Résolution workspace_id côté serveur depuis les memberships de l'utilisateur
+    //     -> évite tout désync localStorage / cache client
+    const { data: memberships, error: memErr } = await supabase
       .from("workspace_members")
-      .select("user_id")
-      .eq("workspace_id", workspace_id)
-      .eq("user_id", user.id)
-      .limit(1)
-      .maybeSingle();
+      .select("workspace_id, role, status")
+      .eq("user_id", user.id);
 
-    if (!member) {
-      console.warn("[stripe-checkout-session] membership denied", {
+    if (memErr) {
+      console.error("[stripe-checkout-session] memberships query failed", memErr);
+      return new Response(
+        JSON.stringify({ error: "Failed to load workspace memberships" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    const activeMemberships = (memberships ?? []).filter(
+      (m) => !m.status || m.status === "active",
+    );
+
+    if (activeMemberships.length === 0) {
+      console.warn("[stripe-checkout-session] no membership for user", {
         user_id: user.id,
         email: user.email,
-        workspace_id,
+        requested_workspace_id: workspace_id,
       });
       return new Response(
         JSON.stringify({
-          error: "Not a member of this workspace",
-          debug: { user_id: user.id, workspace_id },
+          error: "Aucun workspace actif pour cet utilisateur. Contactez le support.",
+          debug: { user_id: user.id },
         }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
+    }
+
+    const matched = activeMemberships.find((m) => m.workspace_id === workspace_id);
+    if (!matched) {
+      console.warn("[stripe-checkout-session] workspace_id mismatch, fallback to first membership", {
+        user_id: user.id,
+        requested_workspace_id: workspace_id,
+        fallback_workspace_id: activeMemberships[0].workspace_id,
+      });
+      workspace_id = activeMemberships[0].workspace_id;
     }
 
     // (d) Plan actif
