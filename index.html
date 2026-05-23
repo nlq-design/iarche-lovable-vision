@@ -57,13 +57,20 @@
           "@id": "https://iarche.fr/#organization",
           "name": "IArche",
           "url": "https://iarche.fr",
-          "logo": "https://iarche.fr/logo-iarche.png",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://iarche.fr/logo-iarche.png",
+            "width": 512,
+            "height": 512
+          },
           "description": "Architecte IA basé à Bayonne. On accompagne les dirigeants de PME dans l'intégration concrète de l'intelligence artificielle : audit, développement, accompagnement, conformité. Engagés localement, nous intervenons aussi partout en France.",
           "sameAs": ["https://www.linkedin.com/company/iarche"],
           "contactPoint": {
             "@type": "ContactPoint",
             "email": "nlq@iarche.fr",
+            "telephone": "+33661741381",
             "contactType": "customer service",
+            "areaServed": "FR",
             "availableLanguage": ["French"]
           }
         },
@@ -73,9 +80,13 @@
           "name": "IArche",
           "url": "https://iarche.fr",
           "image": "https://iarche.fr/og/home.png",
+          "logo": "https://iarche.fr/logo-iarche.png",
           "description": "Architecte IA basé à Bayonne. Conseil, intégration et accompagnement en intelligence artificielle pour dirigeants de PME. Sud-Ouest et toute la France.",
+          "email": "nlq@iarche.fr",
+          "telephone": "+33661741381",
           "address": {
             "@type": "PostalAddress",
+            "streetAddress": "Bayonne",
             "addressLocality": "Bayonne",
             "addressRegion": "Nouvelle-Aquitaine",
             "postalCode": "64100",
@@ -83,8 +94,8 @@
           },
           "geo": {
             "@type": "GeoCoordinates",
-            "latitude": "43.4929",
-            "longitude": "-1.4748"
+            "latitude": 43.4929,
+            "longitude": -1.4748
           },
           "areaServed": [
             { "@type": "Country", "name": "France" },
@@ -93,7 +104,14 @@
             { "@type": "City", "name": "Pau" },
             { "@type": "City", "name": "Bordeaux" }
           ],
-          "priceRange": "$$"
+          "openingHoursSpecification": {
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+            "opens": "09:00",
+            "closes": "18:00"
+          },
+          "priceRange": "$$",
+          "parentOrganization": { "@id": "https://iarche.fr/#organization" }
         }
       ]
     }
