@@ -74,8 +74,16 @@ serve(async (req) => {
       .maybeSingle();
 
     if (!member) {
+      console.warn("[stripe-checkout-session] membership denied", {
+        user_id: user.id,
+        email: user.email,
+        workspace_id,
+      });
       return new Response(
-        JSON.stringify({ error: "Not a member of this workspace" }),
+        JSON.stringify({
+          error: "Not a member of this workspace",
+          debug: { user_id: user.id, workspace_id },
+        }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
