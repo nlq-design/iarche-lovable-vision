@@ -114,17 +114,9 @@ Deno.serve(async (req) => {
       console.error("[public-rag-chat] RPC error:", JSON.stringify(rpcErr));
     }
 
-    // Diagnostic seuil 0 pour observer la similarité brute
-    const { data: diag } = await supabase.rpc("match_public_embeddings", {
-      query_embedding_text: embeddingStr,
-      match_count: 3,
-      similarity_threshold: -1,
-    });
-    console.log(`[public-rag-chat] DIAG top3=${JSON.stringify((diag ?? []).map((d: any) => ({ t: d.resource_title, s: Number(d.similarity).toFixed(3) })))}`);
-
     const hits = Array.isArray(matches) ? matches : [];
     const topSim = hits[0]?.similarity ?? 0;
-    console.log(`[public-rag-chat] query="${userQuery.slice(0, 80)}" embed_len=${queryEmbedding.length} hits=${hits.length} top_sim=${topSim.toFixed(3)}`);
+    console.log(`[public-rag-chat] q="${userQuery.slice(0, 60)}" hits=${hits.length} top_sim=${Number(topSim).toFixed(3)}`);
 
     // ---- 3. No-match : fallback zero-LLM ----
     if (hits.length === 0) {
