@@ -1,4 +1,5 @@
 import { Helmet } from 'react-helmet-async';
+import { PageHero } from '@/components/sections/PageHero';
 import { Link } from 'react-router-dom';
 import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 import Header from '@/components/layout/Header';

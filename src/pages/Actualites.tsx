@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { PageHero } from '@/components/sections/PageHero';
 import { Helmet } from 'react-helmet-async';
 import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 import Header from '@/components/layout/Header';

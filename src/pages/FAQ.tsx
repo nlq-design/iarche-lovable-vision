@@ -1,4 +1,5 @@
 import { Helmet } from "react-helmet-async";
+import { PageHero } from '@/components/sections/PageHero';
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import BackgroundLayout from "@/components/layouts/BackgroundLayout";
