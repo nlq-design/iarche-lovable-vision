@@ -544,6 +544,11 @@ serve(async (req) => {
         result = await handleMorningBriefing(supabase, chatId);
         break;
 
+      case "content_gap_alert":
+        if (!body.entity_id) throw new Error("entity_id required for content_gap_alert");
+        result = await handleContentGapAlert(supabase, body.entity_id, chatId);
+        break;
+
       default:
         return new Response(
           JSON.stringify({ error: `Unknown notification type: ${body.type}` }),
