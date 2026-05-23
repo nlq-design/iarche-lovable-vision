@@ -1,82 +1,103 @@
-# Phase IA-1 — Multi-Prompt Router contextuel
+# Phase IA-1 (révisé) — Router d'intent sur `ai-agent-orchestrator`
 
-## Objectif
-Remplacer le prompt monolithique de `cockpit-ai-copilot` par un **router d'intent** qui sélectionne dynamiquement un prompt spécialisé selon la nature de la requête utilisateur. Gain attendu : réponses plus précises, tokens réduits (~30-40%), maintenabilité accrue.
+## Cible confirmée par audit
 
-## Architecture cible
+- **Fichier** : `supabase/functions/ai-agent-orchestrator/index.ts` (9 687 lignes)
+- **Prompt monolithique** : `master-agent` = **27 368 caractères** (~6 800 tokens système chargés à CHAQUE appel)
+- **Consommateurs** : Chat Cockpit, Telegram, API directe — toutes intents confondues
+- **Contenu actuel** : identité + règles d'exécution + mapping tâche→prompt (130+ outils) + style réponse + hiérarchie + canaux
+
+## Constat
+
+Chaque message utilisateur (même trivial type "qui est ce lead ?") consomme les 6,8K tokens du prompt complet, alors que **<20% du contenu est pertinent** pour une intent donnée.
+
+## Architecture cible — modulaire, pas révolutionnaire
 
 ```text
 User message
    │
    ▼
-[1] Intent Classifier (Gemini Flash Lite, ~50 tokens)
-   │   → returns: { intent: "crm_query" | "task_action" | "synthesis" | "interview" | "general" }
+[1] Intent Classifier (Gemini Flash Lite, ~100 tokens, cache 60s)
+   │   → { intent: "crm_query" | "doc_generation" | "vivier" | "analysis" | "general" }
    ▼
-[2] Prompt Router (lookup ai_prompts par slug)
-   │   → charge le prompt spécialisé + injecte contexte ciblé
+[2] Prompt Composer
+   │   = master-agent-core (slim ~8K)  +  module_{intent} (~2-4K)
    ▼
-[3] LLM Call (Gemini Flash / Pro selon intent)
-   │   → cache sémantique M6 en amont (déjà en place)
-   ▼
-Response
+[3] Appel LLM existant (ai-agent-orchestrator inchangé en aval)
 ```
 
-## Les 5 prompts spécialisés (table `ai_prompts`)
+## Décomposition du prompt `master-agent` (27K → 8K core + 5 modules)
 
-| Slug | Intent | Modèle | Contexte injecté |
+| Nouveau slug | Contenu extrait | Taille cible | Chargé quand |
 |---|---|---|---|
-| `copilot-router-classifier` | — (classifier) | gemini-2.5-flash-lite | message brut seul |
-| `copilot-crm-query` | Recherche entité / question factuelle | gemini-2.5-flash | CRM entities + completeness |
-| `copilot-task-action` | Créer tâche / note / action | gemini-2.5-flash | Pipeline + opportunités actives |
-| `copilot-synthesis` | Synthèse multi-source | gemini-2.5-pro | Notes + transcriptions + deltas temporels |
-| `copilot-interview` | Mode interview proactif | gemini-2.5-flash | Champs CRM manquants (completeness < 70%) |
-| `copilot-general` | Fallback conversationnel | gemini-2.5-flash | Owner context minimal |
+| `master-agent-core` | Identité, règles exécution, session memory, recherche avant création | ~8K | TOUJOURS |
+| `master-agent-module-crm` | Mapping CRUD leads/partners/contacts + scoring + matching | ~3K | intent=crm_query, general |
+| `master-agent-module-docs` | Mapping génération devis/CDC/proposition + emails | ~3K | intent=doc_generation |
+| `master-agent-module-analysis` | Synthèses 360°, transcriptions, OCR, copilot | ~4K | intent=analysis |
+| `master-agent-module-vivier` | Prospection B2B + campagnes | ~2K | intent=vivier |
+| `master-agent-module-general` | Tools-reference condensé fallback | ~2K | intent=general |
+
+**Économie attendue** : 6800 tokens → ~2800 tokens en moyenne = **-58% tokens système**.
 
 ## Plan d'implémentation
 
-### Étape 1 — Seed des prompts (migration SQL)
-- INSERT des 6 entrées dans `ai_prompts` (5 spécialisés + 1 classifier)
-- Chaque prompt suit la Charte Nicolas (Bayonne, Zero Friction, owner_context)
-- Variables d'injection respectent le contrat `{{crm_context}}`, `{{temporal_deltas}}`, etc.
+### Étape 1 — Migration SQL (seed des 6 nouveaux prompts)
+- INSERT `master-agent-core` + 5 modules dans `ai_prompts` (category="agent")
+- Découpage manuel propre depuis `master-agent` actuel (préserver intégralement les règles)
+- `master-agent` ANCIEN conservé en fallback (versionné v9, jamais supprimé tant que router non validé)
 
-### Étape 2 — Module router (edge function)
-- Nouveau fichier : `supabase/functions/cockpit-ai-copilot/router.ts`
-  - `classifyIntent(message)` → appel Gemini Flash Lite, parse JSON strict
-  - `loadPromptBySlug(slug)` → fetch depuis `ai_prompts` (avec cache 5min in-memory)
-  - `buildContextForIntent(intent, userId, workspaceId)` → injection ciblée
-- Branchement dans `cockpit-ai-copilot/index.ts` : remplace l'appel direct par `router.dispatch()`
-- Conservation du cache sémantique M6 **en amont** du classifier (fingerprint sur message brut)
+### Étape 2 — Module router (nouveau fichier partagé)
+- `supabase/functions/_shared/intent-router.ts`
+  - `classifyIntent(message, history)` → Lovable AI Gateway / gemini-2.5-flash-lite, JSON strict, fallback `general` sur erreur
+  - `composeSystemPrompt(intent, supabase)` → `loadPrompt('master-agent-core') + loadPrompt('master-agent-module-' + intent)`
+  - Cache fingerprint message → intent (60s, in-memory) pour éviter re-classification
 
-### Étape 3 — Observabilité
-- Ajout colonne `intent_detected` dans `ai_metrics` (TEXT nullable)
-- Trace dans `RagDiagnosticsDrawer` : badge "Intent: crm_query" + modèle effectif
-- Métrique `voice_usage_daily` étendue : breakdown par intent
+### Étape 3 — Branchement dans `ai-agent-orchestrator/index.ts`
+- Ligne 9112 : remplacer `getSystemPrompt(supabase)` (qui charge master-agent unique) par `composeSystemPromptForRequest(supabase, message)`
+- Toutes les autres fonctions (tools, governor, ui-navigation) restent inchangées
+- ~15 lignes modifiées
 
-### Étape 4 — Tests & validation
-- 10 requêtes types couvrant chaque intent → vérifier classification correcte
-- Mesure tokens avant/après sur cas réels (objectif -30%)
-- Pas de régression sur cache hit rate (M6)
+### Étape 4 — Observabilité
+- Ajout colonne `intent_classified` (TEXT) + `prompt_modules_loaded` (TEXT[]) dans `ai_usage_metrics`
+- Log chaque dispatch dans `console.log` JSON structuré (déjà standard)
+- Pas de nouveau dashboard cette itération — métriques exploitables via `/admin/observability/ai`
+
+### Étape 5 — Validation
+- 8 requêtes types couvrant chaque intent → vérifier classification correcte
+- Comparaison tokens master-agent vs router sur 10 cas réels (objectif -50%)
+- Fallback testé : si classifier crash → load `master-agent` complet (continuité garantie)
 
 ## Garde-fous
 
-- **Classifier failure** → fallback automatique sur `copilot-general` (jamais d'erreur 500 user-facing)
-- **Slug introuvable** dans `ai_prompts` → fallback `copilot-general` + log warning
-- **Multi-tenant** : tous les contextes injectés respectent `workspace_id` (RLS déjà durcie phase #2)
-- **Cache M6** : clé inclut `intent` pour éviter collisions entre prompts spécialisés
+- **Classifier failure** → fallback automatique sur `master-agent` original. Aucune régression user-facing possible.
+- **Slug module manquant** → load `master-agent-module-general` + log warning
+- **Cache classifier** : clé = hash(message + dernier message assistant) — TTL 60s
+- **Telegram & Chat Cockpit** : transparents, aucune modif frontend
 
 ## Détails techniques
 
-- **Edge function** : npm: imports, verify_jwt = true (déjà le défaut)
-- **Cascade providers** : Lovable AI Gateway > OpenAI > Anthropic (déjà en place via Retry Manager)
-- **Mémoire** : nouvelle entrée `mem://cockpit/intelligence/multi-prompt-router-v1` après build
+- **Edge function** : `npm:` specifiers, `verify_jwt = true` (déjà en place)
+- **Cache prompts** : réutilise le cache 5min de `prompt-loader.ts` existant
+- **Multi-tenant** : aucun impact (prompts sont workspace-NULL = globaux)
+- **Cascade providers** : héritée du Retry Manager existant
 
 ## Livrables
 
-1. 1 migration SQL (seed 6 prompts + colonne `intent_detected`)
-2. `router.ts` (~150 lignes)
-3. Patch `cockpit-ai-copilot/index.ts` (~20 lignes modifiées)
-4. Patch `RagDiagnosticsDrawer.tsx` (affichage intent)
-5. Mémoire projet mise à jour
+1. 1 migration SQL = INSERT 6 prompts + 2 colonnes `ai_usage_metrics`
+2. `supabase/functions/_shared/intent-router.ts` (~120 lignes)
+3. Patch `ai-agent-orchestrator/index.ts` (~15 lignes)
+4. Mémoire `mem://cockpit/intelligence/multi-prompt-router-v1`
 
 ## Estimation
-45-60 min build + 10 min tests = **~70 min** total.
+
+- Découpage propre du prompt master-agent (étape la plus délicate) : 25 min
+- Code router + branchement : 15 min
+- Migration + validation : 15 min
+- **Total : ~55 min**
+
+## ROI
+
+- **-58% tokens système moyens** sur tous canaux chat (Cockpit + Telegram + API)
+- À volume actuel : économie tangible immédiate sur quota Lovable AI Gateway
+- Maintenabilité : modules éditables indépendamment via `/admin/ai-prompts` (déjà en place)
+- Réversibilité totale : un feature flag DB peut basculer router ON/OFF en 1 seconde
