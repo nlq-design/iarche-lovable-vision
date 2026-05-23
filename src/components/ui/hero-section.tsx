@@ -5,7 +5,6 @@ import { ChevronDown } from 'lucide-react';
 import { useAnimationPause } from '@/hooks/useAnimationPause';
 import { useCTATracking } from '@/hooks/useCTATracking';
 import ChatbotDialog from './ChatbotDialog';
-import { GradientMesh } from '@/components/sections/GradientMesh';
 
 const HeroSection = () => {
   const heroRef = useAnimationPause<HTMLDivElement>();
@@ -14,8 +13,15 @@ const HeroSection = () => {
 
   return (
     <div ref={heroRef} className="min-h-screen flex items-center justify-center relative overflow-hidden">
-      {/* Mesh animé premium (Lot D3) — remplace les blobs manuels */}
-      <GradientMesh intensity="medium" className="-z-10" />
+      {/* Ambient lights — IArche tokens only, light mode */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10 motion-reduce:hidden"
+      >
+        <div className="absolute -top-32 -left-24 h-[28rem] w-[28rem] rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute top-1/3 -right-32 h-[32rem] w-[32rem] rounded-full bg-accent/10 blur-3xl" />
+        <div className="absolute bottom-0 left-1/3 h-[24rem] w-[24rem] rounded-full bg-primary/5 blur-3xl" />
+      </div>
 
       {/* Dotted grid — very subtle, charte-safe */}
       <div
@@ -31,7 +37,6 @@ const HeroSection = () => {
             'radial-gradient(ellipse at center, black 40%, transparent 75%)',
         }}
       />
-
 
       <div className="container text-center z-10 relative px-6 py-20">
         {/* Badge "Nouveau" — outline charte */}

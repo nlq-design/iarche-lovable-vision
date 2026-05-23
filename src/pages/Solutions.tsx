@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { PageHero } from '@/components/sections/PageHero';
 import { Helmet } from 'react-helmet-async';
 import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 import Header from '@/components/layout/Header';
@@ -105,15 +104,15 @@ const Solutions = () => {
       
       <main className="min-h-screen pt-4">
         <section className="max-w-6xl mx-auto px-6 py-4">
-          <PageHero
-            eyebrow="Plateformes IArche"
-            title="Nos solutions"
-            subtitle="IArche déploie des solutions SaaS conçues à partir de besoins concrets identifiés sur le terrain."
-            showMesh={false}
-            size="sm"
-            className="!pt-0 !pb-8"
-          />
-
+          {/* En-tête */}
+          <div className="text-center mb-8">
+            <GradientTitle size="lg" className="mb-6 animate-fadeIn [animation-delay:0.1s]">
+              Nos solutions
+            </GradientTitle>
+            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto animate-fadeIn [animation-delay:0.2s]">
+              <span className="hero-gradient-text">IArche</span> déploie des solutions SaaS conçues à partir de besoins concrets identifiés sur le terrain.
+            </p>
+          </div>
 
           {/* CTA en-tête */}
           <div className="text-center mb-10 animate-fadeIn [animation-delay:0.3s]">

@@ -1,5 +1,4 @@
 import { Helmet } from 'react-helmet-async';
-import { PageHero } from '@/components/sections/PageHero';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import BackgroundLayout from '@/components/layouts/BackgroundLayout';
@@ -271,17 +270,16 @@ const Contact = () => {
       
       <main className="min-h-screen pt-4">
         <section className="max-w-6xl mx-auto px-6 py-4">
-          <PageHero
-            eyebrow="Parlons-en"
-            title="Contact"
-            subtitle="Une question ? Un projet ? Parlons-en."
-            showMesh={false}
-            size="sm"
-            className="!pt-0 !pb-8"
-          >
-            <LogoArc size="md" className="mx-auto mt-4" />
-          </PageHero>
-
+          {/* En-tête */}
+          <div className="text-center mb-8">
+            <h1 className="text-3xl md:text-5xl font-bold hero-gradient-text mb-2 animate-fadeIn [animation-delay:0.1s]">
+              Contact
+            </h1>
+            <LogoArc size="md" className="mx-auto mb-6 animate-fadeIn [animation-delay:0.15s]" />
+            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto animate-fadeIn [animation-delay:0.2s]">
+              Une question ? Un projet ? Parlons-en.
+            </p>
+          </div>
 
           {/* 2 colonnes : Formulaire + Coordonnées */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
