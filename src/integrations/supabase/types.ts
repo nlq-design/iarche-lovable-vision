@@ -5091,6 +5091,7 @@ export type Database = {
           embedding: string | null
           entity_links: Json
           id: string
+          is_public: boolean
           metadata: Json | null
           parent_resource_id: string | null
           resource_id: string
@@ -5110,6 +5111,7 @@ export type Database = {
           embedding?: string | null
           entity_links?: Json
           id?: string
+          is_public?: boolean
           metadata?: Json | null
           parent_resource_id?: string | null
           resource_id: string
@@ -5129,6 +5131,7 @@ export type Database = {
           embedding?: string | null
           entity_links?: Json
           id?: string
+          is_public?: boolean
           metadata?: Json | null
           parent_resource_id?: string | null
           resource_id?: string
@@ -8075,6 +8078,21 @@ export type Database = {
         Returns: {
           partner_id: string
           partner_name: string
+          similarity: number
+        }[]
+      }
+      match_public_embeddings: {
+        Args: {
+          match_count?: number
+          query_embedding_text: string
+          similarity_threshold?: number
+        }
+        Returns: {
+          content_chunk: string
+          id: string
+          resource_slug: string
+          resource_title: string
+          resource_type: string
           similarity: number
         }[]
       }
