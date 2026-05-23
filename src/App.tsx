@@ -31,7 +31,7 @@ import ConditionsGenerales from "./pages/ConditionsGenerales";
 import Confidentialite from "./pages/Confidentialite";
 import Admin from "./pages/Admin";
 import { CookieConsent } from "./components/CookieConsent";
-import { ChatbotRagWidget } from "./components/chatbot/ChatbotRagWidget";
+
 import { ResourceTypeValidator } from "./components/dev/ResourceTypeValidator";
 import { Loader2 } from "lucide-react";
 
@@ -988,7 +988,7 @@ const App = () => (
           <Route path="*" element={<NotFound />} />
         </Routes>
         <CookieConsent />
-        <ChatbotRagWidget />
+        
         <ResourceTypeValidator />
       </BrowserRouter>
     </TooltipProvider>
