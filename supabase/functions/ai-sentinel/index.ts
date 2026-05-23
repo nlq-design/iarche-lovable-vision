@@ -446,6 +446,129 @@ serve(async (req) => {
       });
     }
 
+    // ============================================================
+    // PHASE 1c — Sentinel v3 : 4 nouvelles règles
+    // ============================================================
+    const thirtyDaysAgoIso = thirtyDaysAgo;
+    const sevenDaysAgoIso = sevenDaysAgo;
+
+    const [
+      { data: churnLeads },
+      { data: dormantOpps },
+      { data: stageRegressions },
+      { data: emailBurstLogs },
+    ] = await Promise.all([
+      // 1. Churn risk : lead chaud + lead_score > 70 + sans contact > 30j
+      supabase.from("leads")
+        .select("id, name, company, lead_score, last_contacted_at, updated_at")
+        .eq("workspace_id", ws.id)
+        .in("qualification_status", ["r1", "r2", "negotiation"])
+        .gt("lead_score", 70)
+        .or(`last_contacted_at.lt.${thirtyDaysAgoIso},last_contacted_at.is.null`)
+        .lt("updated_at", thirtyDaysAgoIso)
+        .limit(5),
+      // 2. Opp dormante : entre 14j et 21j d'inactivité (avant zombie)
+      supabase.from("opportunities").select("id, title, stage, updated_at")
+        .eq("workspace_id", ws.id).in("stage", ACTIVE_OPP_STAGES)
+        .lt("updated_at", fourteenDaysAgoIso)
+        .gte("updated_at", twentyOneDaysAgo)
+        .limit(5),
+      // 3. Régression de stage : activity_log status_change avec metadata indiquant recul
+      supabase.from("activity_log")
+        .select("id, entity_id, entity_type, metadata, created_at, title")
+        .eq("workspace_id", ws.id)
+        .eq("activity_type", "status_change")
+        .eq("entity_type", "opportunity")
+        .gte("created_at", thirtyDaysAgoIso)
+        .order("created_at", { ascending: false })
+        .limit(50),
+      // 4. Sur-sollicitation : activity_log type=email vers même lead, count > 3 sur 7j
+      supabase.from("activity_log")
+        .select("lead_id, created_at")
+        .eq("workspace_id", ws.id)
+        .eq("activity_type", "email")
+        .not("lead_id", "is", null)
+        .gte("created_at", sevenDaysAgoIso)
+        .limit(500),
+    ]);
+
+    // 1. Churn hot lead
+    for (const l of churnLeads || []) {
+      anomalies.push({
+        category: "risk", severity: "critical", rule_type: "risk_churn_hot_lead",
+        entity_type: "lead", entity_id: l.id,
+        entity_name: l.company || l.name || "Lead",
+        raw_issue: `Lead chaud score ${l.lead_score} inactif >30j`,
+        days_inactive: Number(l.lead_score) || 0,
+      });
+    }
+
+    // 2. Opp dormante (early warning)
+    for (const o of dormantOpps || []) {
+      const days = Math.floor((now.getTime() - new Date(o.updated_at).getTime()) / 86400000);
+      anomalies.push({
+        category: "inactivity", severity: "warning", rule_type: "risk_opportunity_dormant",
+        entity_type: "opportunity", entity_id: o.id,
+        entity_name: o.title || "Opportunité",
+        raw_issue: `Inactive depuis ${days}j (avant escalade zombie)`,
+        stage: o.stage, days_inactive: days,
+      });
+    }
+
+    // 3. Régression de stage — détecte via metadata { from, to } si présent
+    const STAGE_ORDER: Record<string, number> = {
+      discovery: 1, qualified: 2, proposal: 3, negotiation: 4, closed_won: 5, closed_lost: 0, lost: 0,
+    };
+    const seenRegressions = new Set<string>();
+    for (const a of stageRegressions || []) {
+      const meta = (a.metadata || {}) as Record<string, unknown>;
+      const fromStage = String(meta.from_status ?? meta.from ?? meta.old_stage ?? "");
+      const toStage = String(meta.to_status ?? meta.to ?? meta.new_stage ?? "");
+      if (!fromStage || !toStage) continue;
+      const fromRank = STAGE_ORDER[fromStage] ?? -1;
+      const toRank = STAGE_ORDER[toStage] ?? -1;
+      if (fromRank > 0 && toRank > 0 && toRank < fromRank && !seenRegressions.has(a.entity_id)) {
+        seenRegressions.add(a.entity_id);
+        anomalies.push({
+          category: "risk", severity: "warning", rule_type: "risk_pipeline_stage_regression",
+          entity_type: "opportunity", entity_id: a.entity_id,
+          entity_name: a.title || "Opportunité",
+          raw_issue: `Régression ${fromStage} → ${toStage}`,
+          stage: toStage,
+        });
+        if (seenRegressions.size >= 5) break;
+      }
+    }
+
+    // 4. Sur-sollicitation : group by lead_id, count > 3
+    if (emailBurstLogs?.length) {
+      const counts = new Map<string, number>();
+      for (const e of emailBurstLogs as Array<{ lead_id: string }>) {
+        counts.set(e.lead_id, (counts.get(e.lead_id) || 0) + 1);
+      }
+      const overSollicited = [...counts.entries()].filter(([, c]) => c > 3).slice(0, 5);
+      if (overSollicited.length) {
+        const ids = overSollicited.map(([id]) => id);
+        const { data: leadInfo } = await supabase
+          .from("leads").select("id, name, company")
+          .in("id", ids).limit(5);
+        const leadMap = new Map((leadInfo || []).map((l: any) => [l.id, l]));
+        for (const [leadId, count] of overSollicited) {
+          const l = leadMap.get(leadId) as any;
+          anomalies.push({
+            category: "risk", severity: count > 5 ? "critical" : "warning",
+            rule_type: "risk_over_solicitation",
+            entity_type: "lead", entity_id: leadId,
+            entity_name: l?.company || l?.name || "Lead",
+            raw_issue: `${count} emails en 7j`,
+            days_inactive: count,
+          });
+        }
+      }
+    }
+
+
+
     if (!anomalies.length) {
       return new Response(JSON.stringify({ alerts: [], total: 0 }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
