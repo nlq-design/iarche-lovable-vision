@@ -9063,13 +9063,54 @@ serve(async (req) => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     const body = await req.json();
-    const { messages, stream = false, workspace_id, user_id, session_id, telegram_fast_mode = false } = body;
+    let { workspace_id } = body;
+    const { messages, stream = false, user_id, session_id, telegram_fast_mode = false } = body;
 
     if (!messages || !Array.isArray(messages)) {
       return new Response(JSON.stringify({ error: "messages array required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // ============================================================
+    // LOT 1bis - Multi-tenant: resolve workspace_id from JWT when
+    // missing in body, instead of silently falling back to NLQ.
+    // Priority: body.workspace_id -> caller's active membership ->
+    // owned workspace -> NLQ default (last resort).
+    // ============================================================
+    if (!workspace_id && authedUserId) {
+      try {
+        const { data: membership } = await supabase
+          .from("workspace_members")
+          .select("workspace_id, role")
+          .eq("user_id", authedUserId)
+          .eq("status", "active")
+          .order("role", { ascending: true }) // owner first alphabetically? keep deterministic
+          .limit(1)
+          .maybeSingle();
+        if (membership?.workspace_id) {
+          workspace_id = membership.workspace_id;
+          console.log("[orchestrator] workspace_id resolved from membership:", workspace_id);
+        } else {
+          const { data: owned } = await supabase
+            .from("workspaces")
+            .select("id")
+            .eq("owner_id", authedUserId)
+            .limit(1)
+            .maybeSingle();
+          if (owned?.id) {
+            workspace_id = owned.id;
+            console.log("[orchestrator] workspace_id resolved from ownership:", workspace_id);
+          }
+        }
+      } catch (err) {
+        console.warn("[orchestrator] workspace resolution failed:", (err as Error).message);
+      }
+    }
+    if (!workspace_id) {
+      workspace_id = "00000000-0000-0000-0000-000000000001";
+      console.warn("[orchestrator] workspace_id fallback to NLQ default (no JWT/membership)");
     }
 
     // =============================================================================
