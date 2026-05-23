@@ -9,6 +9,8 @@ import NewsletterSection from "@/components/sections/NewsletterSection";
 import Footer from "@/components/layout/Footer";
 import BackgroundLayout from "@/components/layouts/BackgroundLayout";
 import GradientDivider from "@/components/ui/GradientDivider";
+import { AgentChatPreview } from "@/components/sections/AgentChatPreview";
+import { TrustedByMarquee } from "@/components/sections/TrustedByMarquee";
 import { Helmet } from "react-helmet-async";
 
 const Index = () => {
@@ -111,6 +113,10 @@ const Index = () => {
       {/* BackgroundLayout démarre après le header */}
       <BackgroundLayout>
         <HeroSection />
+        <section className="relative px-6 pb-16 md:pb-24 -mt-8 md:-mt-16">
+          <AgentChatPreview />
+        </section>
+        <TrustedByMarquee />
         <AccrocheSection />
         <ServicesSection />
         <GradientDivider height="sm" showLogo={true} />
