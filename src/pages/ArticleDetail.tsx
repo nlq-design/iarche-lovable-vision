@@ -627,11 +627,12 @@ const ArticleDetail = () => {
               {/* CTA dans le header selon type */}
               {article.resource_type === 'solution' && (
                 <GradientLink 
-                  to={`/rendez-vous/presentation?solution=${article.slug}`}
+                  to={article.slug === 'cockpit-by-iarche' ? '/cockpit/pricing' : `/rendez-vous/presentation?solution=${article.slug}`}
                   className="text-sm"
-                  onClick={() => trackCTAClick('demander_presentation', 'solution_detail_header', article.slug)}
+                  onClick={() => trackCTAClick(article.slug === 'cockpit-by-iarche' ? 'voir_tarifs' : 'demander_presentation', 'solution_detail_header', article.slug)}
                 >
-                  {article.slug === 'collaboria' ? 'Demander une présentation de Collaboria' :
+                  {article.slug === 'cockpit-by-iarche' ? 'Voir les tarifs et s\'abonner' :
+                   article.slug === 'collaboria' ? 'Demander une présentation de Collaboria' :
                    article.slug === 'team-5-connect' ? 'Demander une présentation de Team 5 Connect' :
                    article.slug === 'datalia' ? 'Demander une présentation de Datalia' :
                    'Demander une présentation'}
@@ -889,11 +890,12 @@ const ArticleDetail = () => {
           {article.resource_type === 'solution' && (
             <div className="text-center my-12 animate-fadeIn [animation-delay:0.5s]">
               <GradientLink 
-                to={`/rendez-vous/presentation?solution=${article.slug}`}
+                to={article.slug === 'cockpit-by-iarche' ? '/cockpit/pricing' : `/rendez-vous/presentation?solution=${article.slug}`}
                 className="text-lg"
-                onClick={() => trackCTAClick('demander_presentation', 'solution_detail_before_faq', article.slug)}
+                onClick={() => trackCTAClick(article.slug === 'cockpit-by-iarche' ? 'voir_tarifs' : 'demander_presentation', 'solution_detail_before_faq', article.slug)}
               >
-                {article.slug === 'collaboria' ? 'Demander une présentation de Collaboria' :
+                {article.slug === 'cockpit-by-iarche' ? 'Voir les tarifs et démarrer mon essai' :
+                 article.slug === 'collaboria' ? 'Demander une présentation de Collaboria' :
                  article.slug === 'team-5-connect' ? 'Demander une présentation de Team 5 Connect' :
                  article.slug === 'datalia' ? 'Demander une présentation de Datalia' :
                  'Demander une présentation'}
