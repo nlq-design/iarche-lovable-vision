@@ -146,6 +146,13 @@ export async function classifyIntent(query: string): Promise<Intent> {
   const cached = cacheGet(key);
   if (cached) return cached;
 
+  // Phase G — Cache persistant DB (zéro embedding, zéro LLM si déjà vu)
+  const persisted = await persistentIntentGet(key);
+  if (persisted) {
+    cacheSet(key, persisted);
+    return persisted;
+  }
+
   const apiKey = Deno.env.get("LOVABLE_API_KEY");
   if (!apiKey) {
     console.warn("[intent-router] LOVABLE_API_KEY missing, defaulting to general");
@@ -157,6 +164,7 @@ export async function classifyIntent(query: string): Promise<Intent> {
   if (semantic && semantic.similarity >= SEMANTIC_THRESHOLD) {
     console.log(`[intent-router] semantic hit intent=${semantic.intent} sim=${semantic.similarity.toFixed(3)}`);
     cacheSet(key, semantic.intent);
+    persistentIntentUpsert(key, semantic.intent, semantic.similarity, "semantic");
     return semantic.intent;
   }
   const similarityBest = semantic ? semantic.similarity : null;
@@ -200,11 +208,53 @@ export async function classifyIntent(query: string): Promise<Intent> {
     cacheSet(key, intent);
     // Phase F — log pour auto-apprentissage des ancres
     logFallback(key, intent, similarityBest);
+    // Phase G — persist intent dans cache DB (évite re-LLM aux prochaines occurrences)
+    persistentIntentUpsert(key, intent, similarityBest, "llm");
     return intent;
   } catch (err) {
     console.warn("[intent-router] classification failed:", (err as Error).message);
     return "general";
   }
+}
+
+// Phase G — cache persistant DB (TTL 30j géré côté table)
+async function persistentIntentGet(normalizedKey: string): Promise<Intent | null> {
+  const supa = getSupa();
+  if (!supa) return null;
+  try {
+    const { data, error } = await supa
+      .from("ai_query_intent_cache")
+      .select("intent, expires_at")
+      .eq("query_normalized", normalizedKey)
+      .gt("expires_at", new Date().toISOString())
+      .maybeSingle();
+    if (error || !data) return null;
+    // Bump hit_count fire-and-forget (best effort, jamais bloquant)
+    supa
+      .rpc("increment_intent_cache_hit", { q: normalizedKey })
+      .then(() => {});
+    return data.intent as Intent;
+  } catch {
+    return null;
+  }
+}
+
+function persistentIntentUpsert(normalizedKey: string, intent: Intent, similarity: number | null, source: "semantic" | "llm" | "prewarm"): void {
+  const supa = getSupa();
+  if (!supa) return;
+  supa
+    .from("ai_query_intent_cache")
+    .upsert({
+      query_normalized: normalizedKey,
+      intent,
+      similarity_best: similarity,
+      source,
+      updated_at: new Date().toISOString(),
+      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    }, { onConflict: "query_normalized" })
+    .then(({ error }: { error: { message: string } | null }) => {
+      if (error) console.warn("[intent-router] persist intent failed:", error.message);
+    });
 }
 
 export interface ComposedPrompt {

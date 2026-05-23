@@ -659,6 +659,30 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_prewarm_runs: {
+        Row: {
+          cache_hits: number
+          last_run_at: string
+          llm_calls: number
+          queries_count: number
+          workspace_id: string
+        }
+        Insert: {
+          cache_hits?: number
+          last_run_at?: string
+          llm_calls?: number
+          queries_count?: number
+          workspace_id: string
+        }
+        Update: {
+          cache_hits?: number
+          last_run_at?: string
+          llm_calls?: number
+          queries_count?: number
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       ai_prompts: {
         Row: {
           category: string
@@ -756,6 +780,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      ai_query_intent_cache: {
+        Row: {
+          embedding: string | null
+          expires_at: string
+          hit_count: number
+          intent: string
+          query_normalized: string
+          similarity_best: number | null
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          embedding?: string | null
+          expires_at?: string
+          hit_count?: number
+          intent: string
+          query_normalized: string
+          similarity_best?: number | null
+          source?: string
+          updated_at?: string
+        }
+        Update: {
+          embedding?: string | null
+          expires_at?: string
+          hit_count?: number
+          intent?: string
+          query_normalized?: string
+          similarity_best?: number | null
+          source?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       ai_semantic_cache: {
         Row: {
@@ -8081,6 +8138,7 @@ export type Database = {
         Returns: undefined
       }
       increment_form_views: { Args: { form_slug: string }; Returns: undefined }
+      increment_intent_cache_hit: { Args: { q: string }; Returns: undefined }
       increment_workspace_ai_usage: {
         Args: {
           p_cost_cents: number
