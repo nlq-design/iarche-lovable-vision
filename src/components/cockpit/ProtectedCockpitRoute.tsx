@@ -51,6 +51,11 @@ const ProtectedCockpitRoute = ({ children }: ProtectedCockpitRouteProps) => {
     setDeniedReason(null);
   }, [authLoading, cockpitLoading, user, hasCockpitAccess, mfaEnabled, isStepUpVerified]);
 
+  // Phase G — Prewarm intent cache (1× par session, throttle 6h côté serveur)
+  useCockpitPrewarm(
+    !authLoading && !cockpitLoading && !!user && hasCockpitAccess && mfaEnabled && isStepUpVerified
+  );
+
   // Loading state
   if (authLoading || cockpitLoading) {
     return (
