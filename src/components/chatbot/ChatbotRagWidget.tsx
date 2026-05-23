@@ -145,18 +145,18 @@ export function ChatbotRagWidget() {
         className={cn(
           "fixed bottom-6 right-6 z-[60] group",
           "flex items-center gap-2 rounded-full",
-          "bg-[hsl(var(--night-blue))] text-white",
+          "bg-[hsl(var(--primary))] text-white",
           "px-5 py-3.5 shadow-[0_10px_40px_-10px_rgba(26,43,74,0.55)]",
           "border border-white/10",
           "transition-all duration-300 ease-out",
           "hover:shadow-[0_18px_50px_-10px_rgba(176,74,50,0.45)] hover:-translate-y-0.5",
-          "focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--terracotta))] focus-visible:ring-offset-2",
+          "focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--accent))] focus-visible:ring-offset-2",
           open && "scale-90 opacity-0 pointer-events-none"
         )}
       >
         <span className="relative flex h-2.5 w-2.5">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[hsl(var(--terracotta))] opacity-75" />
-          <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[hsl(var(--terracotta))]" />
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[hsl(var(--accent))] opacity-75" />
+          <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[hsl(var(--accent))]" />
         </span>
         <span className="text-sm font-medium tracking-tight">Chatbot RAG by IArche</span>
         <MessageSquare className="h-4 w-4 opacity-80" strokeWidth={1.75} />
@@ -168,7 +168,7 @@ export function ChatbotRagWidget() {
           "fixed bottom-6 right-6 z-[60] w-[calc(100vw-3rem)] sm:w-[400px]",
           "max-h-[min(640px,calc(100vh-3rem))]",
           "flex flex-col rounded-2xl overflow-hidden",
-          "bg-[hsl(var(--night-blue))] text-white",
+          "bg-[hsl(var(--primary))] text-white",
           "shadow-[0_30px_80px_-20px_rgba(26,43,74,0.65)]",
           "border border-white/10",
           "transition-all duration-300 ease-out origin-bottom-right",
@@ -178,14 +178,14 @@ export function ChatbotRagWidget() {
         aria-label="Chatbot RAG IArche"
       >
         {/* Header */}
-        <div className="relative px-5 py-4 border-b border-white/10 bg-gradient-to-br from-[hsl(var(--night-blue))] to-[hsl(220_45%_12%)]">
+        <div className="relative px-5 py-4 border-b border-white/10 bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(220_45%_12%)]">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <div className="relative flex-shrink-0">
-                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[hsl(var(--terracotta))] to-[hsl(15_55%_30%)] flex items-center justify-center">
+                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[hsl(var(--accent))] to-[hsl(15_55%_30%)] flex items-center justify-center">
                   <Sparkles className="h-4 w-4 text-white" strokeWidth={2} />
                 </div>
-                <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-400 border-2 border-[hsl(var(--night-blue))]" />
+                <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-400 border-2 border-[hsl(var(--primary))]" />
               </div>
               <div className="min-w-0">
                 <div className="text-sm font-semibold tracking-tight truncate">Nicolas — RAG IArche</div>
@@ -217,7 +217,7 @@ export function ChatbotRagWidget() {
                 className={cn(
                   "max-w-[85%] rounded-2xl px-4 py-2.5 text-[13.5px] leading-relaxed whitespace-pre-wrap",
                   m.role === "user"
-                    ? "bg-[hsl(var(--terracotta))] text-white rounded-br-md shadow-sm"
+                    ? "bg-[hsl(var(--accent))] text-white rounded-br-md shadow-sm"
                     : "bg-white/[0.06] text-white/95 rounded-bl-md border border-white/5"
                 )}
               >
@@ -241,7 +241,7 @@ export function ChatbotRagWidget() {
 
         {/* Input */}
         <div className="border-t border-white/10 bg-[hsl(220_45%_10%)] px-3 py-3">
-          <div className="flex items-end gap-2 bg-white/[0.06] border border-white/10 rounded-xl px-3 py-2 focus-within:border-[hsl(var(--terracotta))] transition-colors">
+          <div className="flex items-end gap-2 bg-white/[0.06] border border-white/10 rounded-xl px-3 py-2 focus-within:border-[hsl(var(--accent))] transition-colors">
             <textarea
               ref={inputRef}
               value={input}
@@ -261,7 +261,7 @@ export function ChatbotRagWidget() {
               className={cn(
                 "h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all",
                 input.trim() && !loading
-                  ? "bg-[hsl(var(--terracotta))] text-white hover:brightness-110"
+                  ? "bg-[hsl(var(--accent))] text-white hover:brightness-110"
                   : "bg-white/10 text-white/40 cursor-not-allowed"
               )}
             >
