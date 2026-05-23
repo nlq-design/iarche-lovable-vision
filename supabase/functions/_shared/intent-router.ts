@@ -229,12 +229,9 @@ async function persistentIntentGet(normalizedKey: string): Promise<Intent | null
       .gt("expires_at", new Date().toISOString())
       .maybeSingle();
     if (error || !data) return null;
-    // Bump hit_count fire-and-forget
-    supa.rpc("noop").then(() => {});
+    // Bump hit_count fire-and-forget (best effort, jamais bloquant)
     supa
-      .from("ai_query_intent_cache")
-      .update({ hit_count: (data as { hit_count?: number }).hit_count !== undefined ? undefined : undefined })
-      .eq("query_normalized", normalizedKey)
+      .rpc("increment_intent_cache_hit", { q: normalizedKey })
       .then(() => {});
     return data.intent as Intent;
   } catch {
