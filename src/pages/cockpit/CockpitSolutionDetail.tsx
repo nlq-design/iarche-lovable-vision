@@ -256,6 +256,19 @@ export default function CockpitSolutionDetail() {
             <SolutionTimelineTab solutionId={id!} />
           </TabsContent>
 
+          <TabsContent value="onboarding" className="space-y-3">
+            <SolutionOnboardingTab solutionId={id!} />
+          </TabsContent>
+
+          <TabsContent value="revenue" className="space-y-3">
+            <SolutionRevenueTab solutionId={id!} />
+          </TabsContent>
+
+          <TabsContent value="support" className="space-y-3">
+            <SolutionSupportTab solutionId={id!} />
+          </TabsContent>
+
+
 
 
           {/* Leads Tab */}
