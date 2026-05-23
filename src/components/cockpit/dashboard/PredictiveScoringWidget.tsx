@@ -6,9 +6,10 @@ import { Activity, TrendingDown, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLeadPredictions, type LeadPredictiveAlert } from '@/hooks/cockpit/useLeadPredictions';
 import { LoadingState } from '@/components/cockpit/common/LoadingState';
+import { useWorkspaceId } from '@/contexts/WorkspaceContext';
+import { DEFAULT_WORKSPACE_ID } from '@/lib/constants/workspace';
 
 interface PredictiveScoringWidgetProps {
-  workspaceId?: string;
   navigate: (path: string) => void;
 }
 
@@ -16,7 +17,9 @@ interface PredictiveScoringWidgetProps {
  * Phase H — Widget scoring prédictif quantitatif (heuristique DB, zéro LLM).
  * Complémentaire de PredictionsWidget (LLM, qualitatif).
  */
-export function PredictiveScoringWidget({ workspaceId, navigate }: PredictiveScoringWidgetProps) {
+export function PredictiveScoringWidget({ navigate }: PredictiveScoringWidgetProps) {
+  const ctxWorkspaceId = useWorkspaceId();
+  const workspaceId = ctxWorkspaceId ?? DEFAULT_WORKSPACE_ID;
   const { data: alerts, isLoading } = useLeadPredictions(workspaceId);
 
   if (isLoading) {
