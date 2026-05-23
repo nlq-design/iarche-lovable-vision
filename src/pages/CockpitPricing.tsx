@@ -12,6 +12,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface Plan {
   id: string;
@@ -19,23 +20,26 @@ interface Plan {
   name: string;
   tier: string | null;
   price_monthly_eur: number | null;
+  price_yearly_eur: number | null;
   features: unknown;
   limits: unknown;
   active: boolean;
 }
 
+type Period = 'monthly' | 'yearly';
+
 const FAQ_ITEMS = [
   {
-    q: 'Y a-t-il un essai gratuit ?',
-    a: "Oui, chaque plan inclut une période d'essai sans engagement. Vous pouvez explorer IArche et résilier à tout moment depuis votre espace de facturation.",
+    q: 'Comment fonctionne la facturation annuelle ?',
+    a: 'En choisissant l\'engagement annuel, vous bénéficiez de 20% de remise par rapport au tarif mensuel. La facture est émise en une fois pour 12 mois.',
   },
   {
     q: 'Puis-je changer de plan en cours de route ?',
-    a: "À tout moment depuis vos paramètres de facturation. Le passage à un plan supérieur est immédiat ; un passage à un plan inférieur prend effet à la fin de la période en cours.",
+    a: 'À tout moment depuis vos paramètres de facturation. Le passage à un plan supérieur est immédiat avec prorata ; un passage à un plan inférieur prend effet à la fin de la période en cours.',
   },
   {
-    q: "Comment annuler mon abonnement ?",
-    a: "Depuis votre portail de facturation, l'annulation est immédiate ou planifiée à la fin de la période. Vos données restent disponibles en lecture pendant 30 jours après la résiliation.",
+    q: 'Comment annuler mon abonnement ?',
+    a: "Depuis votre portail de facturation, l'annulation est planifiée à la fin de la période en cours. Vos données restent disponibles en lecture pendant 30 jours après la résiliation.",
   },
   {
     q: 'Quels moyens de paiement sont acceptés ?',
@@ -43,9 +47,9 @@ const FAQ_ITEMS = [
   },
 ];
 
-const formatPrice = (cents: number | null): string => {
-  if (cents === null || cents === undefined) return 'Sur devis';
-  return `${cents}€`;
+const formatPrice = (eur: number | null): string => {
+  if (eur === null || eur === undefined || eur === 0) return 'Sur devis';
+  return `${eur}€`;
 };
 
 const extractFeatures = (raw: unknown): string[] => {
@@ -64,13 +68,15 @@ const CockpitPricing = () => {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [period, setPeriod] = useState<Period>('monthly');
+  const [ctaLoading, setCtaLoading] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
     (async () => {
       const { data, error: err } = await supabase
         .from('plans')
-        .select('id, slug, name, tier, price_monthly_eur, features, limits, active')
+        .select('id, slug, name, tier, price_monthly_eur, price_yearly_eur, features, limits, active')
         .eq('active', true);
       if (!mounted) return;
       if (err) {
@@ -89,11 +95,55 @@ const CockpitPricing = () => {
     };
   }, []);
 
-  const handleCta = (plan: Plan) => {
+  const handleCta = async (plan: Plan) => {
     if (plan.slug === 'enterprise') {
       navigate('/contact?subject=demo-enterprise');
-    } else {
-      navigate(`/signup?plan=${plan.slug}`);
+      return;
+    }
+
+    setCtaLoading(plan.slug);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const user = session?.session?.user;
+
+      if (!user) {
+        navigate(`/signup?plan=${plan.slug}&period=${period}`);
+        return;
+      }
+
+      // Récup workspace courant via membership
+      const { data: member, error: memErr } = await supabase
+        .from('workspace_members')
+        .select('workspace_id')
+        .eq('user_id', user.id)
+        .limit(1)
+        .maybeSingle();
+
+      if (memErr || !member) {
+        navigate(`/signup?plan=${plan.slug}&period=${period}`);
+        return;
+      }
+
+      const { data, error: fnErr } = await supabase.functions.invoke('stripe-checkout-session', {
+        body: {
+          plan_slug: plan.slug,
+          workspace_id: member.workspace_id,
+          billing_period: period,
+          success_url: `${window.location.origin}/cockpit/settings/billing?checkout=success`,
+          cancel_url: `${window.location.origin}/cockpit/pricing?checkout=cancel`,
+        },
+      });
+
+      if (fnErr || !data?.checkout_url) {
+        throw new Error(fnErr?.message || 'Impossible de créer la session de paiement');
+      }
+
+      window.location.href = data.checkout_url;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error(msg);
+    } finally {
+      setCtaLoading(null);
     }
   };
 
@@ -103,7 +153,7 @@ const CockpitPricing = () => {
         <title>Tarifs IArche — Choisissez votre plan</title>
         <meta
           name="description"
-          content="Trois plans IArche pour structurer votre activité commerciale. Solo, Pro, Enterprise. Essai gratuit, sans engagement."
+          content="Trois plans IArche pour structurer votre activité commerciale. Starter, Pro, Enterprise. Mensuel ou annuel -20%, sans engagement long."
         />
         <link rel="canonical" href="https://iarche.fr/cockpit/pricing" />
       </Helmet>
@@ -119,6 +169,43 @@ const CockpitPricing = () => {
               Une plateforme commerciale augmentée par l'IA, pensée pour les indépendants
               et les équipes ambitieuses. L'IA se construit avec vous.
             </p>
+
+            {/* Toggle Mensuel / Annuel */}
+            <div className="mt-10 inline-flex items-center gap-1 rounded-full border border-border bg-card p-1">
+              <button
+                type="button"
+                onClick={() => setPeriod('monthly')}
+                className={`px-5 py-2 text-sm font-medium rounded-full transition-colors ${
+                  period === 'monthly'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+                aria-pressed={period === 'monthly'}
+              >
+                Mensuel
+              </button>
+              <button
+                type="button"
+                onClick={() => setPeriod('yearly')}
+                className={`px-5 py-2 text-sm font-medium rounded-full transition-colors flex items-center gap-2 ${
+                  period === 'yearly'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+                aria-pressed={period === 'yearly'}
+              >
+                Annuel
+                <span
+                  className={`text-xs px-2 py-0.5 rounded-full ${
+                    period === 'yearly'
+                      ? 'bg-primary-foreground/20 text-primary-foreground'
+                      : 'bg-primary/10 text-primary'
+                  }`}
+                >
+                  -20%
+                </span>
+              </button>
+            </div>
           </div>
         </section>
 
@@ -142,6 +229,18 @@ const CockpitPricing = () => {
               {plans.map((plan) => {
                 const isHighlighted = plan.slug === 'pro';
                 const features = extractFeatures(plan.features);
+                const isEnterprise = plan.slug === 'enterprise';
+                const displayPrice = isEnterprise
+                  ? null
+                  : period === 'yearly'
+                    ? plan.price_yearly_eur && plan.price_yearly_eur > 0
+                      ? Math.round(plan.price_yearly_eur / 12)
+                      : plan.price_monthly_eur
+                    : plan.price_monthly_eur;
+                const yearlyTotal = period === 'yearly' && plan.price_yearly_eur && plan.price_yearly_eur > 0
+                  ? plan.price_yearly_eur
+                  : null;
+
                 return (
                   <Card
                     key={plan.id}
@@ -162,10 +261,15 @@ const CockpitPricing = () => {
                       <CardTitle className="text-2xl">{plan.name}</CardTitle>
                       <CardDescription>
                         <span className="text-3xl font-semibold text-foreground">
-                          {formatPrice(plan.price_monthly_eur)}
+                          {formatPrice(displayPrice ?? null)}
                         </span>
-                        {plan.price_monthly_eur !== null && (
+                        {!isEnterprise && displayPrice !== null && (
                           <span className="text-muted-foreground"> / mois</span>
+                        )}
+                        {yearlyTotal !== null && (
+                          <span className="block text-xs text-muted-foreground mt-1">
+                            Facturé {yearlyTotal}€ par an
+                          </span>
                         )}
                       </CardDescription>
                     </CardHeader>
@@ -188,10 +292,13 @@ const CockpitPricing = () => {
                         onClick={() => handleCta(plan)}
                         className="w-full"
                         variant={isHighlighted ? 'default' : 'outline'}
+                        disabled={ctaLoading === plan.slug}
                       >
-                        {plan.slug === 'enterprise'
-                          ? 'Demander une démo'
-                          : 'Commencer'}
+                        {ctaLoading === plan.slug
+                          ? 'Redirection…'
+                          : isEnterprise
+                            ? 'Demander une démo'
+                            : 'Commencer'}
                       </Button>
                     </CardContent>
                   </Card>
