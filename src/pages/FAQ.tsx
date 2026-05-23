@@ -118,20 +118,16 @@ const FAQ = () => {
       <BackgroundLayout>
         <Header />
 
-        <main className="pt-24 pb-16">
+        <main className="pb-16">
+          <PageHero
+            eyebrow="FAQ"
+            title="Questions fréquentes"
+            subtitle="Tout ce que vous devez savoir sur l'intelligence artificielle pour votre PME, nos services et notre méthodologie d'accompagnement."
+            size="md"
+          />
+
           <section className="container mx-auto px-4 md:px-6 max-w-4xl">
-            <div className="text-center mb-12">
-              <span className="text-xs font-semibold tracking-[0.2em] uppercase text-terracotta mb-3 block">
-                FAQ
-              </span>
-              <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-4 leading-tight">
-                Questions fréquentes
-              </h1>
-              <p className="text-muted-foreground text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
-                Tout ce que vous devez savoir sur l'intelligence artificielle pour votre PME,
-                nos services et notre méthodologie d'accompagnement.
-              </p>
-            </div>
+
 
             <Accordion type="single" collapsible className="space-y-4">
               {faqData.map((item, index) => (

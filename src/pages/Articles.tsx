@@ -201,15 +201,15 @@ const Articles = () => {
 
       <main className="min-h-screen pt-4">
         <section className="max-w-6xl mx-auto px-6 py-4">
-          {/* En-tête dynamique - Style Timeline */}
-          <div className="text-center mb-8">
-            <GradientTitle size="lg" className="mb-6 animate-fadeIn [animation-delay:0.1s]">
-              Articles
-            </GradientTitle>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto animate-fadeIn [animation-delay:0.3s]">
-              Veille tech, cas d'usage et réglementation IA
-            </p>
-          </div>
+          <PageHero
+            eyebrow="Le mag IArche"
+            title="Articles"
+            subtitle="Veille tech, cas d'usage et réglementation IA."
+            showMesh={false}
+            size="sm"
+            className="!pt-0 !pb-8"
+          />
+
 
           {/* Filtres */}
           <div className="flex flex-wrap gap-4 mb-8 justify-center">

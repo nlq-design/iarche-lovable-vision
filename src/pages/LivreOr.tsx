@@ -144,19 +144,17 @@ const LivreOr = () => {
       
       <main className="min-h-screen pt-4">
         <section className="max-w-6xl mx-auto px-6 py-4">
-          {/* En-tête */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl md:text-5xl font-bold hero-gradient-text mb-2 animate-fadeIn [animation-delay:0.1s]">
-              Livre d'Or
-            </h1>
-            <LogoArc size="md" className="mx-auto mb-6 animate-fadeIn [animation-delay:0.15s]" />
-            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto animate-fadeIn [animation-delay:0.2s]">
-              Ce que nos clients disent de nous
-            </p>
-            
-            {/* Note globale */}
-            <div className="flex items-center justify-center gap-2 mt-4 animate-fadeIn [animation-delay:0.25s]">
-              <div className="flex">
+          <PageHero
+            eyebrow="Témoignages clients"
+            title="Livre d'Or"
+            subtitle="Ce que nos clients disent de nous."
+            showMesh={false}
+            size="sm"
+            className="!pt-0 !pb-8"
+          >
+            <LogoArc size="md" className="mx-auto mt-2" />
+            <div className="flex items-center justify-center gap-2 mt-4">
+              <div className="flex" aria-label={`Note moyenne ${averageRating} sur 5`}>
                 {[...Array(5)].map((_, i) => (
                   <Star key={i} className="h-5 w-5 fill-accent text-accent" />
                 ))}
@@ -164,7 +162,8 @@ const LivreOr = () => {
               <span className="text-lg font-semibold text-foreground">{averageRating}/5</span>
               <span className="text-muted-foreground">({reviewCount} avis)</span>
             </div>
-          </div>
+          </PageHero>
+
 
           {/* Témoignages */}
           <div className="grid gap-6 md:grid-cols-2 max-w-4xl mx-auto animate-fadeIn [animation-delay:0.3s]">

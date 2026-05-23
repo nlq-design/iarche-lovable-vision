@@ -138,15 +138,15 @@ const CasClients = () => {
 
       <main className="min-h-screen pt-4">
         <section className="max-w-6xl mx-auto px-6 py-4">
-          {/* En-tête */}
-          <div className="text-center mb-8">
-            <GradientTitle size="lg" className="mb-6 animate-fadeIn [animation-delay:0.1s]">
-              Cas clients
-            </GradientTitle>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto animate-fadeIn [animation-delay:0.2s]">
-              Projets d'intégration IA et résultats concrets pour nos clients
-            </p>
-          </div>
+          <PageHero
+            eyebrow="Preuves terrain"
+            title="Cas clients"
+            subtitle="Projets d'intégration IA et résultats concrets pour nos clients."
+            showMesh={false}
+            size="sm"
+            className="!pt-0 !pb-8"
+          />
+
 
           {/* Liste des cas clients */}
           {loading ? (
