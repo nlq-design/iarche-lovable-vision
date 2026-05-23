@@ -7,7 +7,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import {
   CheckCircle2, XCircle, Loader2, Zap, Brain,
   ListTodo, Mail, UserCheck, Calendar, StickyNote,
-  ChevronDown, ChevronUp, ShieldAlert,
+  ChevronDown, ChevronUp, ShieldAlert, Clock, Ban,
 } from 'lucide-react';
 import { useActionProposals, ActionProposal } from '@/hooks/cockpit/useActionProposals';
 import { formatDistanceToNow } from 'date-fns';
