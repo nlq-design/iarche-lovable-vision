@@ -67,7 +67,7 @@ serve(async (req) => {
     // (c) Vérif membre workspace
     const { data: member } = await supabase
       .from("workspace_members")
-      .select("id")
+      .select("user_id")
       .eq("workspace_id", workspace_id)
       .eq("user_id", user.id)
       .limit(1)
