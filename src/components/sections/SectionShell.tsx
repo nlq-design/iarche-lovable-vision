@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import type { HTMLAttributes, ReactNode } from "react";
 
-interface SectionShellProps extends HTMLAttributes<HTMLElement> {
+interface SectionShellProps extends Omit<HTMLAttributes<HTMLElement>, "title"> {
   eyebrow?: ReactNode;
   title?: ReactNode;
   subtitle?: ReactNode;
