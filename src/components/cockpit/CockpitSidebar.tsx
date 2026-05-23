@@ -33,7 +33,17 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useQueryClient } from '@tanstack/react-query';
 import { prefetchRoute } from '@/lib/prefetchQueries';
 
-const navigationItems = [
+import { useAuth } from '@/hooks/useAuth';
+
+type NavItem = {
+  title: string;
+  url: string;
+  icon: typeof LayoutDashboard;
+  exact?: boolean;
+  superAdminOnly?: boolean;
+};
+
+const navigationItems: NavItem[] = [
   { title: 'Dashboard', url: '/cockpit', icon: LayoutDashboard, exact: true },
   { title: 'Pipeline', url: '/cockpit/pipeline', icon: GitBranch },
   { title: 'Leads', url: '/cockpit/leads', icon: Users },
