@@ -304,14 +304,16 @@ async function fetchEntityRagChunks(
   entityType: string,
   entityId: string,
   workspaceId: string,
+  limit = 12,
+  allowedTypes: string[] | null = null,
 ): Promise<{ block: string; debug: RagChunkDebug[] } | null> {
   try {
     const { data, error } = await supabase.rpc('match_entity_resources', {
       p_entity_type: entityType,
       p_entity_id: entityId,
       p_workspace_id: workspaceId,
-      p_limit: 12,
-      p_types: null,
+      p_limit: limit,
+      p_types: allowedTypes,
     });
     if (error) {
       console.warn('[context-maximizer] match_entity_resources error:', error.message);
@@ -324,8 +326,9 @@ async function fetchEntityRagChunks(
     for (const c of data as any[]) {
       const date = c.source_date ? formatDateFR(c.source_date) : '';
       const weight = c.temporal_weight ? ` · poids ${Number(c.temporal_weight).toFixed(2)}` : '';
+      const sim = c.similarity != null ? ` · sim ${Number(c.similarity).toFixed(2)}` : '';
       const title = c.resource_title || c.resource_type;
-      block += `\n### [${c.resource_type}] ${title}${date ? ` — ${date}` : ''}${weight}\n`;
+      block += `\n### [${c.resource_type}] ${title}${date ? ` — ${date}` : ''}${weight}${sim}\n`;
       const chunk = (c.content_chunk || '').toString().trim();
       const trimmed = chunk.substring(0, 1500);
       if (trimmed) block += `${trimmed}\n`;
@@ -335,6 +338,7 @@ async function fetchEntityRagChunks(
         title: String(title),
         source_date: c.source_date ? String(c.source_date) : null,
         temporal_weight: c.temporal_weight != null ? Number(c.temporal_weight) : null,
+        similarity: c.similarity != null ? Number(c.similarity) : null,
         chars: trimmed.length,
         estimated_tokens: estimateTokens(trimmed),
       });
@@ -345,6 +349,7 @@ async function fetchEntityRagChunks(
     return null;
   }
 }
+
 
 
 
