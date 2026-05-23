@@ -66,6 +66,7 @@ import { SolutionRevenueTab } from "@/components/cockpit/saas/SolutionRevenueTab
 import { SolutionSupportTab } from "@/components/cockpit/saas/SolutionSupportTab";
 import { SolutionRoadmapTab } from "@/components/cockpit/saas/SolutionRoadmapTab";
 import { SolutionAcquisitionTab } from "@/components/cockpit/saas/SolutionAcquisitionTab";
+import { SolutionKpiHeader } from "@/components/cockpit/saas/SolutionKpiHeader";
 import { supabase } from "@/integrations/supabase/client";
 import { useCockpitSolutionLeads, useCockpitLeads, useCockpitUploads } from "@/hooks/cockpit";
 import { LinkedFilesSection } from "@/components/cockpit/LinkedFilesSection";
