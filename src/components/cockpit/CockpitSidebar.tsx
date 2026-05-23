@@ -48,7 +48,7 @@ const navigationItems: NavItem[] = [
   { title: 'Pipeline', url: '/cockpit/pipeline', icon: GitBranch },
   { title: 'Leads', url: '/cockpit/leads', icon: Users },
   { title: 'Projets', url: '/cockpit/projects', icon: FolderKanban },
-  { title: 'Solutions', url: '/cockpit/solutions', icon: Package },
+  { title: 'Solutions', url: '/cockpit/solutions', icon: Package, superAdminOnly: true },
   { title: 'Partenaires', url: '/cockpit/partenaires', icon: Handshake },
   { title: 'Documents', url: '/cockpit/upload', icon: Upload },
   { title: 'Devis/CDC', url: '/cockpit/documents', icon: FileText },
