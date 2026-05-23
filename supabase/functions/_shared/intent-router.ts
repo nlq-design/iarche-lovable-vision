@@ -159,6 +159,7 @@ export async function classifyIntent(query: string): Promise<Intent> {
     cacheSet(key, semantic.intent);
     return semantic.intent;
   }
+  const similarityBest = semantic ? semantic.similarity : null;
 
 
   try {
@@ -197,6 +198,8 @@ export async function classifyIntent(query: string): Promise<Intent> {
         .find((i) => raw.includes(i)) || "general";
 
     cacheSet(key, intent);
+    // Phase F — log pour auto-apprentissage des ancres
+    logFallback(key, intent, similarityBest);
     return intent;
   } catch (err) {
     console.warn("[intent-router] classification failed:", (err as Error).message);
