@@ -13,6 +13,8 @@ import {
 } from '@/components/ui/accordion';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
 
 interface Plan {
   id: string;
@@ -158,7 +160,8 @@ const CockpitPricing = () => {
         <link rel="canonical" href="https://iarche.fr/cockpit/pricing" />
       </Helmet>
 
-      <main className="min-h-screen bg-background text-foreground">
+      <Header />
+      <main className="min-h-screen bg-background text-foreground pt-20">
         {/* Hero */}
         <section className="border-b border-border">
           <div className="mx-auto max-w-6xl px-6 py-20 text-center">
@@ -355,6 +358,7 @@ const CockpitPricing = () => {
           </div>
         </section>
       </main>
+      <Footer />
     </>
   );
 };
