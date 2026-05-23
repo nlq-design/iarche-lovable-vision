@@ -94,6 +94,22 @@ export function useActionProposals(workspaceId?: string) {
     },
   });
 
+  // Phase IA-2J — annule une auto-exécution planifiée
+  const cancelAutoAction = useMutation({
+    mutationFn: async ({ id, reason }: { id: string; reason?: string }) => {
+      const { error } = await supabase.rpc('cancel_auto_action', {
+        _proposal_id: id,
+        _reason: reason ?? null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['action-proposals'] });
+      toast.success('Envoi automatique annulé');
+    },
+    onError: (error) => toast.error(`Erreur: ${error.message}`),
+  });
+
   return {
     proposals: proposals.data || [],
     pendingProposals,
@@ -102,6 +118,7 @@ export function useActionProposals(workspaceId?: string) {
     isLoading: proposals.isLoading,
     validateAction,
     rejectAction,
+    cancelAutoAction,
     refetch: proposals.refetch,
   };
 }
