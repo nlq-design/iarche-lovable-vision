@@ -1,51 +1,82 @@
-## Phase IA-0 — Fondations RAG public + gouvernance prompt
+# Phase IA-1 — Multi-Prompt Router contextuel
 
-### Objectif
-Transformer `public-rag-chat` (proxy aveugle) en vrai RAG vectoriel, et migrer son prompt vers la table `ai_prompts` (gouvernance centralisée).
+## Objectif
+Remplacer le prompt monolithique de `cockpit-ai-copilot` par un **router d'intent** qui sélectionne dynamiquement un prompt spécialisé selon la nature de la requête utilisateur. Gain attendu : réponses plus précises, tokens réduits (~30-40%), maintenabilité accrue.
 
-### Livrables
+## Architecture cible
 
-**1. Migration BDD** (`supabase--migration`)
-- `ALTER TABLE resource_embeddings ADD COLUMN is_public boolean NOT NULL DEFAULT false`
-- Index partiel : `CREATE INDEX idx_resource_embeddings_public ON resource_embeddings (is_public) WHERE is_public = true`
-- Backfill : `UPDATE resource_embeddings SET is_public = true WHERE source_type IN ('article','solution','page_section')` (à confirmer selon source_types réels — query d'audit avant)
-- RPC `match_public_embeddings(query_embedding vector, match_count int, similarity_threshold float)` : SECURITY DEFINER, filtre `is_public = true`, retourne `content, metadata, similarity`
-- Insert dans `ai_prompts` : slug `public-rag-chat-nicolas`, category `public`, version 1, system_prompt avec persona Nicolas + règles anti-hallucination + format réponse + fallback `/contact`
+```text
+User message
+   │
+   ▼
+[1] Intent Classifier (Gemini Flash Lite, ~50 tokens)
+   │   → returns: { intent: "crm_query" | "task_action" | "synthesis" | "interview" | "general" }
+   ▼
+[2] Prompt Router (lookup ai_prompts par slug)
+   │   → charge le prompt spécialisé + injecte contexte ciblé
+   ▼
+[3] LLM Call (Gemini Flash / Pro selon intent)
+   │   → cache sémantique M6 en amont (déjà en place)
+   ▼
+Response
+```
 
-**2. Refactor edge function `public-rag-chat`**
-- Charger prompt via `loadPrompt('public-rag-chat-nicolas')` (DB > fallback hardcodé pour résilience)
-- Embed query utilisateur via `/v1/embeddings` (model `google/gemini-embedding-001`, 1536 dims pour matcher l'existant)
-- Appel RPC `match_public_embeddings` (top 5, seuil 0.7)
-- Si aucun match : retour direct message Nicolas + CTA `/contact` (zero LLM call → économie tokens)
-- Si matches : injection contexte dans prompt système, streaming SSE classique vers Lovable AI Gateway
-- Conserver model `google/gemini-2.5-flash` (équilibre coût/qualité pour FAQ publique)
+## Les 5 prompts spécialisés (table `ai_prompts`)
 
-**3. Garde-fous**
-- Rate limit déjà présent côté gateway → relayer 402/429 vers UI
-- Log dans `ai_request_logs` : query, n_chunks_retrieved, fallback_used, tokens (pour monitoring coût)
-- Aucune RLS écriture nécessaire (lecture publique sur is_public=true uniquement)
+| Slug | Intent | Modèle | Contexte injecté |
+|---|---|---|---|
+| `copilot-router-classifier` | — (classifier) | gemini-2.5-flash-lite | message brut seul |
+| `copilot-crm-query` | Recherche entité / question factuelle | gemini-2.5-flash | CRM entities + completeness |
+| `copilot-task-action` | Créer tâche / note / action | gemini-2.5-flash | Pipeline + opportunités actives |
+| `copilot-synthesis` | Synthèse multi-source | gemini-2.5-pro | Notes + transcriptions + deltas temporels |
+| `copilot-interview` | Mode interview proactif | gemini-2.5-flash | Champs CRM manquants (completeness < 70%) |
+| `copilot-general` | Fallback conversationnel | gemini-2.5-flash | Owner context minimal |
 
-**4. Dead code**
-- Supprimer prompt hardcodé inline dans index.ts (remplacé par DB)
-- Pas d'autre code mort identifié dans cette fn (84 LOC, déjà minimal)
+## Plan d'implémentation
 
-### Post-audit
-- Test via `supabase--curl_edge_functions` : 1 query qui matche (ex: "Qu'est-ce que IArche?") + 1 query hors-périmètre (ex: "Comment cuisiner des pâtes?")
-- Vérifier logs edge fn + entrée dans `ai_request_logs`
-- Confirmer 0 régression UI sur ChatbotRagWidget (frontend inchangé)
+### Étape 1 — Seed des prompts (migration SQL)
+- INSERT des 6 entrées dans `ai_prompts` (5 spécialisés + 1 classifier)
+- Chaque prompt suit la Charte Nicolas (Bayonne, Zero Friction, owner_context)
+- Variables d'injection respectent le contrat `{{crm_context}}`, `{{temporal_deltas}}`, etc.
 
-### Hors périmètre IA-0 (réservé IA-1+)
-- Multi-prompts contextuels dynamiques (IA-1)
-- Cache sémantique sur public-rag-chat (IA-2)
-- Refacto orchestrateur monolithique (IA-3)
+### Étape 2 — Module router (edge function)
+- Nouveau fichier : `supabase/functions/cockpit-ai-copilot/router.ts`
+  - `classifyIntent(message)` → appel Gemini Flash Lite, parse JSON strict
+  - `loadPromptBySlug(slug)` → fetch depuis `ai_prompts` (avec cache 5min in-memory)
+  - `buildContextForIntent(intent, userId, workspaceId)` → injection ciblée
+- Branchement dans `cockpit-ai-copilot/index.ts` : remplace l'appel direct par `router.dispatch()`
+- Conservation du cache sémantique M6 **en amont** du classifier (fingerprint sur message brut)
 
-### Risques
-- Si aucune `source_type` réelle n'est "publique" → backfill vide → chatbot répond toujours fallback. Mitigation : query d'audit avant migration pour valider les source_types existants.
-- Dimension embeddings : `resource_embeddings` est en 1536 (à confirmer), donc on force `dimensions: 1536` dans la requête `/v1/embeddings` pour éviter mismatch.
+### Étape 3 — Observabilité
+- Ajout colonne `intent_detected` dans `ai_metrics` (TEXT nullable)
+- Trace dans `RagDiagnosticsDrawer` : badge "Intent: crm_query" + modèle effectif
+- Métrique `voice_usage_daily` étendue : breakdown par intent
 
-### Temps estimé
-- Audit source_types + dim embeddings : 5 min
-- Migration BDD : 10 min
-- Refactor edge fn : 20 min
-- Tests + post-audit : 15 min
-- **Total : ~50 min**
+### Étape 4 — Tests & validation
+- 10 requêtes types couvrant chaque intent → vérifier classification correcte
+- Mesure tokens avant/après sur cas réels (objectif -30%)
+- Pas de régression sur cache hit rate (M6)
+
+## Garde-fous
+
+- **Classifier failure** → fallback automatique sur `copilot-general` (jamais d'erreur 500 user-facing)
+- **Slug introuvable** dans `ai_prompts` → fallback `copilot-general` + log warning
+- **Multi-tenant** : tous les contextes injectés respectent `workspace_id` (RLS déjà durcie phase #2)
+- **Cache M6** : clé inclut `intent` pour éviter collisions entre prompts spécialisés
+
+## Détails techniques
+
+- **Edge function** : npm: imports, verify_jwt = true (déjà le défaut)
+- **Cascade providers** : Lovable AI Gateway > OpenAI > Anthropic (déjà en place via Retry Manager)
+- **Mémoire** : nouvelle entrée `mem://cockpit/intelligence/multi-prompt-router-v1` après build
+
+## Livrables
+
+1. 1 migration SQL (seed 6 prompts + colonne `intent_detected`)
+2. `router.ts` (~150 lignes)
+3. Patch `cockpit-ai-copilot/index.ts` (~20 lignes modifiées)
+4. Patch `RagDiagnosticsDrawer.tsx` (affichage intent)
+5. Mémoire projet mise à jour
+
+## Estimation
+45-60 min build + 10 min tests = **~70 min** total.
