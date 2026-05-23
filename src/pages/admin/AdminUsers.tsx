@@ -36,22 +36,55 @@ export default function AdminUsers() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      const { data, error } = await supabase.functions.invoke('admin-list-users');
-      if (error) {
-        setError(error.message);
-      } else {
-        setUsers(data?.users ?? []);
-      }
-      setLoading(false);
-    })();
-  }, []);
+interface OrphanPartner {
+  id: string;
+  name: string;
+  email: string | null;
+}
+
+export default function AdminUsersWrapper() { return <AdminUsers />; }
+
+function AdminUsers() {
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [orphans, setOrphans] = useState<OrphanPartner[]>([]);
+  const [emails, setEmails] = useState<Record<string, string>>({});
+  const [inviting, setInviting] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = async () => {
+    setLoading(true);
+    const [usersRes, partnersRes] = await Promise.all([
+      supabase.functions.invoke('admin-list-users'),
+      supabase.from('partners').select('id, name, email').is('user_id', null).eq('status', 'active'),
+    ]);
+    if (usersRes.error) setError(usersRes.error.message);
+    else setUsers(usersRes.data?.users ?? []);
+    if (!partnersRes.error) {
+      const list = (partnersRes.data ?? []) as OrphanPartner[];
+      setOrphans(list);
+      setEmails(Object.fromEntries(list.map(p => [p.id, p.email ?? ''])));
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const handleInvite = async (partnerId: string) => {
+    const email = emails[partnerId]?.trim();
+    if (!email) { toast.error('Email requis'); return; }
+    setInviting(partnerId);
+    const { error } = await supabase.functions.invoke('invite-partner', {
+      body: { partner_id: partnerId, email },
+    });
+    setInviting(null);
+    if (error) { toast.error(`Échec : ${error.message}`); return; }
+    toast.success(`Invitation envoyée à ${email}`);
+    load();
+  };
 
   if (loading) return <LoadingState message="Chargement des utilisateurs..." />;
   if (error) return <EmptyState message="Erreur" description={error} icon={Users} />;
-  if (users.length === 0) return <EmptyState message="Aucun utilisateur" description="Aucun compte enregistré." icon={Users} />;
 
   return (
     <div className="container mx-auto p-6 space-y-6">
