@@ -246,6 +246,11 @@ const App = () => (
               <IArcheLabs />
             </Suspense>
           } />
+          <Route path="/faq" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <FAQ />
+            </Suspense>
+          } />
           
           {/* Rendez-vous - uniquement avec slug */}
           <Route path="/rendez-vous/:slug" element={
