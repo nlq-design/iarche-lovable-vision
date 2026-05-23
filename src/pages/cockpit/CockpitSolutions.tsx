@@ -43,8 +43,9 @@ export default function CockpitSolutions() {
   const loadSolutions = async () => {
     const { data, error } = await supabase
       .from("articles")
-      .select("id, title, slug, excerpt, cover_image_url, published, created_at")
+      .select("id, title, slug, excerpt, cover_image_url, published, created_at, status")
       .eq("resource_type", "solution")
+      .neq("status", "archived")
       .order("created_at", { ascending: false });
     
     if (!error && data) {
