@@ -7622,6 +7622,7 @@ export type Database = {
       }
       workspaces: {
         Row: {
+          ai_persona: Json
           billing_owner_id: string | null
           billing_status: string | null
           created_at: string | null
@@ -7638,6 +7639,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          ai_persona?: Json
           billing_owner_id?: string | null
           billing_status?: string | null
           created_at?: string | null
@@ -7654,6 +7656,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          ai_persona?: Json
           billing_owner_id?: string | null
           billing_status?: string | null
           created_at?: string | null
@@ -8332,6 +8335,7 @@ export type Database = {
           id: string
         }[]
       }
+      get_workspace_persona: { Args: { _workspace_id: string }; Returns: Json }
       get_workspace_quotas: {
         Args: { p_workspace_id: string }
         Returns: {
