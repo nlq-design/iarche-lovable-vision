@@ -60,6 +60,7 @@ const AdminInvitationPreview = lazy(() => import("./pages/admin/AdminInvitationP
 const AdminInvitationEmailPreview = lazy(() => import("./pages/admin/AdminInvitationEmailPreview"));
 const AdminEmailAssetsGenerator = lazy(() => import("./pages/admin/AdminEmailAssetsGenerator"));
 const AdminLeads = lazy(() => import("./pages/admin/AdminLeads"));
+const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminContacts = lazy(() => import("./pages/admin/AdminContacts"));
 const IArcheLabsAdmin = lazy(() => import("./pages/admin/IArcheLabsAdmin"));
 const AdminAtelierInscriptions = lazy(() => import("./pages/admin/AdminAtelierInscriptions"));
@@ -404,6 +405,11 @@ const App = () => (
           <Route path="/admin/leads" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <ProtectedAdminRoute><AdminLeads /></ProtectedAdminRoute>
+            </Suspense>
+          } />
+          <Route path="/admin/users" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedAdminRoute><AdminUsers /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/contacts" element={
