@@ -7848,6 +7848,80 @@ export type Database = {
           },
         ]
       }
+      workspace_branding: {
+        Row: {
+          accent_color: string | null
+          background_color: string | null
+          body_font: string | null
+          brand_name: string | null
+          created_at: string
+          document_footer_html: string | null
+          document_header_html: string | null
+          email_signature_html: string | null
+          favicon_url: string | null
+          footer_text: string | null
+          heading_font: string | null
+          logo_dark_url: string | null
+          logo_url: string | null
+          primary_color: string | null
+          secondary_color: string | null
+          tagline: string | null
+          text_color: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          accent_color?: string | null
+          background_color?: string | null
+          body_font?: string | null
+          brand_name?: string | null
+          created_at?: string
+          document_footer_html?: string | null
+          document_header_html?: string | null
+          email_signature_html?: string | null
+          favicon_url?: string | null
+          footer_text?: string | null
+          heading_font?: string | null
+          logo_dark_url?: string | null
+          logo_url?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          tagline?: string | null
+          text_color?: string | null
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          accent_color?: string | null
+          background_color?: string | null
+          body_font?: string | null
+          brand_name?: string | null
+          created_at?: string
+          document_footer_html?: string | null
+          document_header_html?: string | null
+          email_signature_html?: string | null
+          favicon_url?: string | null
+          footer_text?: string | null
+          heading_font?: string | null
+          logo_dark_url?: string | null
+          logo_url?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          tagline?: string | null
+          text_color?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_branding_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: true
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workspace_members: {
         Row: {
           invited_by: string | null

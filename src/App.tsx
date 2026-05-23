@@ -133,6 +133,7 @@ const CockpitPricing = lazy(() => import("./pages/CockpitPricing"));
 const SettingsBilling = lazy(() => import("./pages/cockpit/SettingsBilling"));
 const SettingsTeam = lazy(() => import("./pages/cockpit/settings/SettingsTeam"));
 const SettingsPartners = lazy(() => import("./pages/cockpit/settings/SettingsPartners"));
+const SettingsBranding = lazy(() => import("./pages/cockpit/settings/SettingsBranding"));
 const AcceptTeamInvitation = lazy(() => import("./pages/cockpit/AcceptTeamInvitation"));
 const PaymentSuccess = lazy(() => import("./pages/onboarding/PaymentSuccess"));
 const PaymentCancelled = lazy(() => import("./pages/onboarding/PaymentCancelled"));
@@ -862,6 +863,11 @@ const App = () => (
           <Route path="/cockpit/settings/partners" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <ProtectedCockpitRoute><SettingsPartners /></ProtectedCockpitRoute>
+            </Suspense>
+          } />
+          <Route path="/cockpit/settings/branding" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <ProtectedCockpitRoute><SettingsBranding /></ProtectedCockpitRoute>
             </Suspense>
           } />
           <Route path="/cockpit/invitation/accepter/:token" element={
