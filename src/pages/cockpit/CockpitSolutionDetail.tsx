@@ -417,7 +417,8 @@ export default function CockpitSolutionDetail() {
               </CardContent>
             </Card>
           </TabsContent>
-        </Tabs>
+        </GroupedSolutionTabs>
+
       </div>
 
       {/* Delete Confirmation */}
