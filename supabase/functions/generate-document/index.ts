@@ -664,7 +664,7 @@ serve(async (req) => {
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    const body: GenerateDocumentRequest = await req.json();
+    const body: GenerateDocumentRequest & { workspace_id?: string } = await req.json();
     const { project_id, opportunity_id, lead_id, article_id, document_type, custom_instructions, context: inputContext, existing_sections, billing_entity_id } = body;
 
     if (!document_type) {
@@ -674,7 +674,35 @@ serve(async (req) => {
       });
     }
 
-    console.log(`Generating ${document_type} document - project: ${project_id || 'N/A'}, opportunity: ${opportunity_id || 'N/A'}, lead: ${lead_id || 'N/A'}, billing_entity: ${billing_entity_id || 'N/A'}`);
+    // Resolve workspace from JWT (fallback: explicit body, then default)
+    let workspaceId: string = body.workspace_id || "";
+    try {
+      const { data: userData } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
+      const uid = userData?.user?.id;
+      if (uid && !workspaceId) {
+        const { data: m } = await supabase
+          .from("workspace_members")
+          .select("workspace_id")
+          .eq("user_id", uid)
+          .order("created_at", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        workspaceId = m?.workspace_id || "";
+      }
+    } catch (e) {
+      console.warn("[generate-document] workspace resolve failed:", (e as Error).message);
+    }
+    if (!workspaceId) workspaceId = "00000000-0000-0000-0000-000000000001";
+
+    // Load workspace branding (used to skin generated document + injected into prompt)
+    const { data: branding } = await supabase
+      .from("workspace_branding")
+      .select("*")
+      .eq("workspace_id", workspaceId)
+      .maybeSingle();
+    if (branding) console.log(`[generate-document] branding loaded for workspace ${workspaceId}`);
+
+    console.log(`Generating ${document_type} document - project: ${project_id || 'N/A'}, opportunity: ${opportunity_id || 'N/A'}, lead: ${lead_id || 'N/A'}, billing_entity: ${billing_entity_id || 'N/A'}, workspace: ${workspaceId}`);
 
     // Fetch billing entity if provided, or get default
     let billingEntity: BillingEntity | null = null;
