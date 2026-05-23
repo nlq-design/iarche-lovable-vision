@@ -125,6 +125,7 @@ const CockpitPartenaires = lazy(() => import("./pages/cockpit/CockpitPartenaires
 const CockpitPartenaireDetail = lazy(() => import("./pages/cockpit/CockpitPartenaireDetail"));
 const CockpitImports = lazy(() => import("./pages/cockpit/CockpitImports"));
 const CockpitSettings = lazy(() => import("./pages/cockpit/CockpitSettings"));
+const CockpitAccount = lazy(() => import("./pages/cockpit/CockpitAccount"));
 const CockpitMCPSettings = lazy(() => import("./pages/cockpit/CockpitMCPSettings"));
 const CockpitPricing = lazy(() => import("./pages/CockpitPricing"));
 const SettingsBilling = lazy(() => import("./pages/cockpit/SettingsBilling"));
