@@ -1636,6 +1636,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           start_time: string
+          workspace_id: string
         }
         Insert: {
           booking_type_id?: string | null
@@ -1645,6 +1646,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           start_time: string
+          workspace_id?: string
         }
         Update: {
           booking_type_id?: string | null
@@ -1654,6 +1656,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           start_time?: string
+          workspace_id?: string
         }
         Relationships: [
           {
@@ -1716,6 +1719,7 @@ export type Database = {
           name: string
           slug: string
           updated_at: string
+          workspace_id: string
         }
         Insert: {
           buffer_minutes?: number | null
@@ -1728,6 +1732,7 @@ export type Database = {
           name: string
           slug: string
           updated_at?: string
+          workspace_id?: string
         }
         Update: {
           buffer_minutes?: number | null
@@ -1740,6 +1745,7 @@ export type Database = {
           name?: string
           slug?: string
           updated_at?: string
+          workspace_id?: string
         }
         Relationships: []
       }
@@ -2063,6 +2069,7 @@ export type Database = {
           source: string | null
           source_context: string | null
           subject: string
+          workspace_id: string
         }
         Insert: {
           company?: string | null
@@ -2075,6 +2082,7 @@ export type Database = {
           source?: string | null
           source_context?: string | null
           subject: string
+          workspace_id?: string
         }
         Update: {
           company?: string | null
@@ -2087,6 +2095,7 @@ export type Database = {
           source?: string | null
           source_context?: string | null
           subject?: string
+          workspace_id?: string
         }
         Relationships: []
       }
@@ -2429,6 +2438,7 @@ export type Database = {
           source_type: string
           status: string
           subject: string
+          workspace_id: string
         }
         Insert: {
           created_at?: string
@@ -2442,6 +2452,7 @@ export type Database = {
           source_type: string
           status?: string
           subject: string
+          workspace_id?: string
         }
         Update: {
           created_at?: string
@@ -2455,6 +2466,7 @@ export type Database = {
           source_type?: string
           status?: string
           subject?: string
+          workspace_id?: string
         }
         Relationships: []
       }
@@ -2728,6 +2740,7 @@ export type Database = {
           title: string
           updated_at: string | null
           views_count: number | null
+          workspace_id: string
         }
         Insert: {
           article_id?: string | null
@@ -2743,6 +2756,7 @@ export type Database = {
           title: string
           updated_at?: string | null
           views_count?: number | null
+          workspace_id?: string
         }
         Update: {
           article_id?: string | null
@@ -2758,6 +2772,7 @@ export type Database = {
           title?: string
           updated_at?: string | null
           views_count?: number | null
+          workspace_id?: string
         }
         Relationships: [
           {
@@ -3987,6 +4002,7 @@ export type Database = {
           published_at: string | null
           title: string
           updated_at: string
+          workspace_id: string
         }
         Insert: {
           content: string
@@ -3997,6 +4013,7 @@ export type Database = {
           published_at?: string | null
           title: string
           updated_at?: string
+          workspace_id?: string
         }
         Update: {
           content?: string
@@ -4007,6 +4024,7 @@ export type Database = {
           published_at?: string | null
           title?: string
           updated_at?: string
+          workspace_id?: string
         }
         Relationships: []
       }
@@ -6890,7 +6908,7 @@ export type Database = {
           unsubscribed_at: string | null
           updated_at: string | null
           website: string | null
-          workspace_id: string | null
+          workspace_id: string
         }
         Insert: {
           address?: string | null
@@ -6937,7 +6955,7 @@ export type Database = {
           unsubscribed_at?: string | null
           updated_at?: string | null
           website?: string | null
-          workspace_id?: string | null
+          workspace_id?: string
         }
         Update: {
           address?: string | null
@@ -6984,7 +7002,7 @@ export type Database = {
           unsubscribed_at?: string | null
           updated_at?: string | null
           website?: string | null
-          workspace_id?: string | null
+          workspace_id?: string
         }
         Relationships: []
       }
