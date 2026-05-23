@@ -8138,6 +8138,7 @@ export type Database = {
         Returns: undefined
       }
       increment_form_views: { Args: { form_slug: string }; Returns: undefined }
+      increment_intent_cache_hit: { Args: { q: string }; Returns: undefined }
       increment_workspace_ai_usage: {
         Args: {
           p_cost_cents: number
