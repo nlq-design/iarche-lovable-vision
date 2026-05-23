@@ -16,6 +16,13 @@ export interface ActionProposal {
   executed_result: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
+  // Phase IA-2J
+  auto_execute?: boolean | null;
+  source?: string | null;
+  confidence_score?: number | null;
+  confidence_reasons?: Record<string, unknown> | null;
+  auto_execute_at?: string | null;
+  auto_execute_status?: 'scheduled' | 'cancelled' | 'executed' | 'failed' | null;
 }
 
 export function useActionProposals(workspaceId?: string) {
