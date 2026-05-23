@@ -3,6 +3,7 @@ Updated: now
 
 # Project Memory
 
+- [Compte User P3](mem://architecture/compte-user-p3) — Panneau /admin/users active les partenaires orphelins via invite-partner existant
 - [Compte User P2](mem://architecture/compte-user-p2) — /admin/users + edge fn admin-list-users + super_admin super-set (has_role) + nettoyage rôles cumulés
 
 
