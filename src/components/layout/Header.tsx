@@ -8,6 +8,7 @@ import { useCTATracking } from '@/hooks/useCTATracking';
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [resourcesOpen, setResourcesOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { trackCTAClick } = useCTATracking();
@@ -24,6 +25,14 @@ const Header = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Détection du scroll pour glassmorphism sticky
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   return (
     <>
       <a
@@ -32,7 +41,14 @@ const Header = () => {
       >
         Aller au contenu
       </a>
-      <header className="sticky top-0 z-50 bg-background border-b border-border">
+      <header
+        className={`sticky top-0 z-50 transition-all duration-300 ${
+          scrolled
+            ? 'bg-background/80 backdrop-blur-md backdrop-saturate-150 border-b border-border-subtle shadow-soft-sm'
+            : 'bg-background/0 border-b border-transparent'
+        }`}
+      >
+
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           {/* Logo IArche v4.0 */}
