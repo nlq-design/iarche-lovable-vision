@@ -31,10 +31,6 @@ const roleVariant = (role: string) => {
   return 'outline';
 };
 
-export default function AdminUsers() {
-  const [users, setUsers] = useState<AdminUser[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
 interface OrphanPartner {
   id: string;
