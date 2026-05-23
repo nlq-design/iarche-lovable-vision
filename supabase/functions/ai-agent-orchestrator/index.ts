@@ -6,6 +6,7 @@ import { chatWithTools, completeLLM } from "../_shared/ai-legacy-bridge.ts";
 import type { AIMessage, AITool } from "../_shared/ai-types.ts";
 import { composeSystemPromptForRequest, type Intent } from "../_shared/intent-router.ts";
 import { buildCacheKey, buildContextFingerprint, lookupCache, storeCache, trackCacheTrace } from "../_shared/semantic-cache.ts";
+import { retrieveMemories, buildMemoryBlock, extractMemoriesFromConversation, storeMemories } from "../_shared/memory-enricher.ts";
 
 // Phase IA-2 — Cache sémantique orchestrator (general intent only, no tool_calls)
 const ORCHESTRATOR_CACHE_TTL_HOURS = 24;
@@ -9355,6 +9356,23 @@ serve(async (req) => {
     
     // 4. Build memory context string - ONLY include if truly relevant
     let memoryContext = "";
+
+    // Phase I — Long-term memory injection (preferences + decisions)
+    // Source : ai_agent_memory, filtré par importance + non-expiré.
+    // Zéro coût LLM : récupération SQL pure.
+    try {
+      const longTermMemories = await retrieveMemories(supabase, workspace_id, {
+        memoryTypes: ['preference', 'decision'],
+        minImportance: 0.7,
+        limit: 8,
+      });
+      if (longTermMemories.length > 0) {
+        memoryContext += buildMemoryBlock(longTermMemories);
+      }
+    } catch (memErr) {
+      console.warn('[orchestrator] long-term memory fetch failed:', memErr);
+    }
+
     
     // Active entities shown ONLY if query explicitly mentions them
     if (activeEntities.length > 0 && queryMentionsActiveEntity) {
@@ -9823,6 +9841,29 @@ ${calendarRef.join('\n')}
 
     const totalToolDuration = allToolCalls.reduce((sum, t) => sum + (t.duration_ms || 0), 0);
     console.log(`Agent response generated, tools called: ${allToolCalls.map(t => t.name).join(", ")}, total tool time: ${totalToolDuration}ms`);
+
+    // Phase I — Auto-capture implicite (fire-and-forget, zéro LLM, regex)
+    try {
+      const lastUserMsg = [...messages].reverse().find((m: any) => m.role === 'user')?.content;
+      if (typeof lastUserMsg === 'string' && lastUserMsg.length > 0 && typeof finalContent === 'string') {
+        const extracted = extractMemoriesFromConversation(lastUserMsg, finalContent);
+        if (extracted.length > 0) {
+          // Tag avec session_id pour traçabilité
+          const tagged = extracted.map((m) => ({
+            ...m,
+            sessionId: session_id || undefined,
+            metadata: { ...(m.metadata || {}), source: 'auto-extract-orchestrator' },
+          }));
+          // Fire-and-forget : ne bloque pas la réponse
+          storeMemories(supabase, workspace_id, user_id || null, tagged).catch((e) =>
+            console.warn('[orchestrator] memory auto-capture failed:', e)
+          );
+        }
+      }
+    } catch (autoErr) {
+      console.warn('[orchestrator] memory extraction error:', autoErr);
+    }
+
 
     return new Response(JSON.stringify({
       ok: true,

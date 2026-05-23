@@ -14,6 +14,7 @@ Updated: now
 - pgvector RPC: SECURITY DEFINER avec `search_path = public, extensions` obligatoire (sinon opérateur `<=>` introuvable).
 
 ## Memories
+- [Memory Long-Terme Phase I](mem://cockpit/intelligence/memory-long-terme-phase-i) — memory-enricher.ts (dormant) branché dans orchestrator : injection prefs/decisions long-terme + auto-capture regex post-réponse (fire-and-forget, zéro LLM)
 - [Predictive Scoring Phase H](mem://cockpit/intelligence/predictive-scoring-phase-h) — Heuristique SQL pure (zéro LLM) sur lead_predictions, cron 06:30 UTC, vue top_predictive_alerts, injection brief Telegram + widget PredictiveScoringWidget. 43 leads scorés en initial run.
 - [Cache Prewarming Phase G](mem://cockpit/intelligence/cache-prewarming-phase-g) — Cache persistant DB ai_query_intent_cache (TTL 30j) consulté en 1er par intent-router + edge cache-prewarm (20 requêtes dashboard, throttle 6h/workspace) monté dans ProtectedCockpitRoute. Latence intent connue : ~50ms (gain 95%+).
 - [Sentinel v3 + Router Auto-Learn](mem://cockpit/intelligence/widget-sentinel-v3-autolearn-router) — Phase E (widget 7 catégories + 4 PROPOSAL_TEMPLATES risk) + Phase F (logging fallbacks LLM dans ai_intent_router_fallbacks, edge auto-seed-intent-anchors daily 03:17 UTC, hit rate cible 70→90% en 2 sem.)
