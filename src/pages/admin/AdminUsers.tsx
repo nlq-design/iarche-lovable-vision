@@ -47,8 +47,8 @@ export default function AdminUsers() {
   }, []);
 
   if (loading) return <LoadingState message="Chargement des utilisateurs..." />;
-  if (error) return <EmptyState title="Erreur" description={error} icon={Users} />;
-  if (users.length === 0) return <EmptyState title="Aucun utilisateur" description="Aucun compte enregistré." icon={Users} />;
+  if (error) return <EmptyState message="Erreur" description={error} icon={Users} />;
+  if (users.length === 0) return <EmptyState message="Aucun utilisateur" description="Aucun compte enregistré." icon={Users} />;
 
   return (
     <div className="container mx-auto p-6 space-y-6">
