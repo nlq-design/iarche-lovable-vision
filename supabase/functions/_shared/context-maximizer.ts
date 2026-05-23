@@ -161,7 +161,9 @@ export async function buildMaxContext(
   }
 
   // ===== PRIORITY 4.5: RAG chunks liés à l'entité (transcriptions, notes, summaries) =====
-  const ragResult = await fetchEntityRagChunks(supabase, entityType, entityId, workspaceId);
+  const RAG_LIMIT = 12;
+  const RAG_TYPES: string[] | null = null;
+  const ragResult = await fetchEntityRagChunks(supabase, entityType, entityId, workspaceId, RAG_LIMIT, RAG_TYPES);
   const ragChunks: RagChunkDebug[] = ragResult?.debug ?? [];
   if (ragResult?.block) {
     sections.push({
@@ -170,6 +172,17 @@ export async function buildMaxContext(
       priority: 4.5,
     });
   }
+
+  const filters: RagFilters = {
+    workspace_id: workspaceId ?? null,
+    entity_type: entityType,
+    entity_id: entityId,
+    limit: RAG_LIMIT,
+    allowed_types: RAG_TYPES,
+    similarity_threshold: null, // entity_scoped retriever ne filtre pas par cosine
+    retriever: 'entity_scoped',
+    embedding_model: null,
+  };
 
 
   // ===== PRIORITY 5: Transcription summaries =====
