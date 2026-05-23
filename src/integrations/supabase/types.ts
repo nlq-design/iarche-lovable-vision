@@ -8725,6 +8725,7 @@ export type Database = {
         Args: { p_lead_id: string; p_user_id: string }
         Returns: boolean
       }
+      is_nlq_internal_user: { Args: { _user_id: string }; Returns: boolean }
       is_partner_user: { Args: never; Returns: boolean }
       is_project_creator_partner: {
         Args: { p_project_id: string; p_user_id: string }

@@ -33,12 +33,22 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useQueryClient } from '@tanstack/react-query';
 import { prefetchRoute } from '@/lib/prefetchQueries';
 
-const navigationItems = [
+import { useAuth } from '@/hooks/useAuth';
+
+type NavItem = {
+  title: string;
+  url: string;
+  icon: typeof LayoutDashboard;
+  exact?: boolean;
+  superAdminOnly?: boolean;
+};
+
+const navigationItems: NavItem[] = [
   { title: 'Dashboard', url: '/cockpit', icon: LayoutDashboard, exact: true },
   { title: 'Pipeline', url: '/cockpit/pipeline', icon: GitBranch },
   { title: 'Leads', url: '/cockpit/leads', icon: Users },
   { title: 'Projets', url: '/cockpit/projects', icon: FolderKanban },
-  { title: 'Solutions', url: '/cockpit/solutions', icon: Package },
+  { title: 'Solutions', url: '/cockpit/solutions', icon: Package, superAdminOnly: true },
   { title: 'Partenaires', url: '/cockpit/partenaires', icon: Handshake },
   { title: 'Documents', url: '/cockpit/upload', icon: Upload },
   { title: 'Devis/CDC', url: '/cockpit/documents', icon: FileText },
@@ -56,7 +66,12 @@ export function CockpitSidebar() {
   const location = useLocation();
   const currentPath = location.pathname;
   const queryClient = useQueryClient();
-  
+  const { isSuperAdmin } = useAuth();
+
+  const visibleItems = navigationItems.filter(
+    (item) => !item.superAdminOnly || isSuperAdmin
+  );
+
   const isCollapsed = state === 'collapsed';
 
   const isActive = (url: string, exact?: boolean) => {
@@ -77,7 +92,7 @@ export function CockpitSidebar() {
       
       <SidebarContent className="pt-2 px-2">
         <SidebarMenu className="space-y-0.5">
-          {navigationItems.map((item) => {
+          {visibleItems.map((item) => {
             const active = isActive(item.url, item.exact);
             
             const linkContent = (
