@@ -51,6 +51,12 @@ export type Database = {
           action_type: string
           ai_reasoning: string | null
           auto_execute: boolean | null
+          auto_execute_at: string | null
+          auto_execute_cancelled_at: string | null
+          auto_execute_cancelled_by: string | null
+          auto_execute_status: string | null
+          confidence_reasons: Json | null
+          confidence_score: number | null
           created_at: string
           executed_at: string | null
           executed_result: Json | null
@@ -69,6 +75,12 @@ export type Database = {
           action_type: string
           ai_reasoning?: string | null
           auto_execute?: boolean | null
+          auto_execute_at?: string | null
+          auto_execute_cancelled_at?: string | null
+          auto_execute_cancelled_by?: string | null
+          auto_execute_status?: string | null
+          confidence_reasons?: Json | null
+          confidence_score?: number | null
           created_at?: string
           executed_at?: string | null
           executed_result?: Json | null
@@ -87,6 +99,12 @@ export type Database = {
           action_type?: string
           ai_reasoning?: string | null
           auto_execute?: boolean | null
+          auto_execute_at?: string | null
+          auto_execute_cancelled_at?: string | null
+          auto_execute_cancelled_by?: string | null
+          auto_execute_status?: string | null
+          confidence_reasons?: Json | null
+          confidence_score?: number | null
           created_at?: string
           executed_at?: string | null
           executed_result?: Json | null
@@ -7715,6 +7733,41 @@ export type Database = {
         }
         Relationships: []
       }
+      scheduled_auto_actions: {
+        Row: {
+          action_label: string | null
+          action_type: string | null
+          auto_execute_at: string | null
+          confidence_score: number | null
+          id: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          action_label?: string | null
+          action_type?: string | null
+          auto_execute_at?: string | null
+          confidence_score?: number | null
+          id?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          action_label?: string | null
+          action_type?: string | null
+          auto_execute_at?: string | null
+          confidence_score?: number | null
+          id?: string | null
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "action_proposals_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       top_predictive_alerts: {
         Row: {
           alert_type: string | null
@@ -7800,6 +7853,10 @@ export type Database = {
         Args: { p_user_id: string; p_workspace_id: string }
         Returns: boolean
       }
+      cancel_auto_action: {
+        Args: { _proposal_id: string; _reason?: string }
+        Returns: undefined
+      }
       check_cockpit_mfa_rate_limit: {
         Args: { p_user_id: string }
         Returns: boolean
@@ -7819,6 +7876,10 @@ export type Database = {
         }[]
       }
       cleanup_rate_limit_requests: { Args: never; Returns: undefined }
+      compute_action_confidence: {
+        Args: { _proposal_id: string }
+        Returns: number
+      }
       compute_lead_predictions: {
         Args: { _workspace_id?: string }
         Returns: number

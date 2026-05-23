@@ -7,7 +7,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import {
   CheckCircle2, XCircle, Loader2, Zap, Brain,
   ListTodo, Mail, UserCheck, Calendar, StickyNote,
-  ChevronDown, ChevronUp, ShieldAlert,
+  ChevronDown, ChevronUp, ShieldAlert, Clock, Ban,
 } from 'lucide-react';
 import { useActionProposals, ActionProposal } from '@/hooks/cockpit/useActionProposals';
 import { formatDistanceToNow } from 'date-fns';
@@ -36,7 +36,7 @@ interface ActionProposalsListProps {
 }
 
 export function ActionProposalsList({ workspaceId, compact = false }: ActionProposalsListProps) {
-  const { pendingProposals, executedProposals, isLoading, validateAction, rejectAction } = useActionProposals(workspaceId);
+  const { pendingProposals, executedProposals, isLoading, validateAction, rejectAction, cancelAutoAction } = useActionProposals(workspaceId);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [rejectNotes, setRejectNotes] = useState('');
   const [rejectingId, setRejectingId] = useState<string | null>(null);
@@ -175,6 +175,36 @@ export function ActionProposalsList({ workspaceId, compact = false }: ActionProp
                   </Button>
                 </div>
               </div>
+
+              {/* Phase IA-2J — Bandeau auto-exécution planifiée */}
+              {proposal.auto_execute_status === 'scheduled' && proposal.auto_execute_at && (
+                <div className="ml-9 p-2 rounded border border-amber-300 bg-amber-50 text-xs flex items-center gap-2">
+                  <Clock className="h-3.5 w-3.5 text-amber-700 shrink-0" />
+                  <span className="text-amber-900 flex-1">
+                    Envoi auto {formatDistanceToNow(new Date(proposal.auto_execute_at), { addSuffix: true, locale: fr })}
+                    {typeof proposal.confidence_score === 'number' && (
+                      <span className="ml-1.5 opacity-70">
+                        (confiance {Math.round(proposal.confidence_score * 100)}%)
+                      </span>
+                    )}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-6 text-[11px] gap-1 border-amber-400 text-amber-900 hover:bg-amber-100"
+                    onClick={() => cancelAutoAction.mutate({ id: proposal.id })}
+                    disabled={cancelAutoAction.isPending}
+                  >
+                    <Ban className="h-3 w-3" />
+                    Annuler l'envoi auto
+                  </Button>
+                </div>
+              )}
+              {proposal.auto_execute_status === 'cancelled' && (
+                <div className="ml-9 text-[11px] text-muted-foreground italic">
+                  Envoi automatique annulé — validation manuelle requise.
+                </div>
+              )}
 
               {/* AI Reasoning */}
               {isExpanded && proposal.ai_reasoning && (

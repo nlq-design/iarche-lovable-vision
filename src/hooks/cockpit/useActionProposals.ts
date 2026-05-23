@@ -16,6 +16,13 @@ export interface ActionProposal {
   executed_result: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
+  // Phase IA-2J
+  auto_execute?: boolean | null;
+  source?: string | null;
+  confidence_score?: number | null;
+  confidence_reasons?: Record<string, unknown> | null;
+  auto_execute_at?: string | null;
+  auto_execute_status?: 'scheduled' | 'cancelled' | 'executed' | 'failed' | null;
 }
 
 export function useActionProposals(workspaceId?: string) {
@@ -87,6 +94,22 @@ export function useActionProposals(workspaceId?: string) {
     },
   });
 
+  // Phase IA-2J — annule une auto-exécution planifiée
+  const cancelAutoAction = useMutation({
+    mutationFn: async ({ id, reason }: { id: string; reason?: string }) => {
+      const { error } = await supabase.rpc('cancel_auto_action', {
+        _proposal_id: id,
+        _reason: reason ?? null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['action-proposals'] });
+      toast.success('Envoi automatique annulé');
+    },
+    onError: (error) => toast.error(`Erreur: ${error.message}`),
+  });
+
   return {
     proposals: proposals.data || [],
     pendingProposals,
@@ -95,6 +118,7 @@ export function useActionProposals(workspaceId?: string) {
     isLoading: proposals.isLoading,
     validateAction,
     rejectAction,
+    cancelAutoAction,
     refetch: proposals.refetch,
   };
 }
