@@ -28,6 +28,7 @@ function getSupa(): SupabaseClient | null {
 }
 
 // Semantic routing : embed query → match_intent_anchor RPC
+// Returns best match (similarity unfiltered) so caller can log score on LLM fallback.
 async function classifyIntentSemantic(query: string, apiKey: string): Promise<{ intent: Intent; similarity: number } | null> {
   const supa = getSupa();
   if (!supa) return null;
@@ -48,7 +49,7 @@ async function classifyIntentSemantic(query: string, apiKey: string): Promise<{ 
 
     const { data, error } = await supa.rpc("match_intent_anchor", {
       query_embedding_text: `[${vec.join(",")}]`,
-      similarity_threshold: SEMANTIC_THRESHOLD,
+      similarity_threshold: 0,
     });
     if (error || !data?.[0]) return null;
     const top = data[0];
@@ -56,6 +57,24 @@ async function classifyIntentSemantic(query: string, apiKey: string): Promise<{ 
   } catch {
     return null;
   }
+}
+
+// Phase F — fire-and-forget log d'un fallback LLM pour auto-apprentissage
+function logFallback(query: string, intent: Intent, similarityBest: number | null): void {
+  const supa = getSupa();
+  if (!supa) return;
+  const normalized = query.trim().toLowerCase().replace(/\s+/g, " ").slice(0, 300);
+  supa
+    .from("ai_intent_router_fallbacks")
+    .insert({
+      query_text: query.slice(0, 500),
+      query_normalized: normalized,
+      intent_classified: intent,
+      similarity_best: similarityBest,
+    })
+    .then(({ error }: { error: { message: string } | null }) => {
+      if (error) console.warn("[intent-router] fallback log failed:", error.message);
+    });
 }
 
 export type Intent =
