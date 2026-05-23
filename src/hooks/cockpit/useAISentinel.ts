@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 export interface SentinelAlert {
   id: string;
   severity: 'info' | 'warning' | 'critical';
-  category: 'incomplete' | 'inconsistency' | 'inactivity';
+  category: 'incomplete' | 'inconsistency' | 'inactivity' | 'risk' | 'duplicate' | 'overdue' | 'imbalance';
   entity_type: string;
   entity_id: string;
   entity_name: string;
