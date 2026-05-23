@@ -14,6 +14,7 @@ Updated: now
 - pgvector RPC: SECURITY DEFINER avec `search_path = public, extensions` obligatoire (sinon opérateur `<=>` introuvable).
 
 ## Memories
+- [Sentinel v3 + Router Auto-Learn](mem://cockpit/intelligence/widget-sentinel-v3-autolearn-router) — Phase E (widget 7 catégories + 4 PROPOSAL_TEMPLATES risk) + Phase F (logging fallbacks LLM dans ai_intent_router_fallbacks, edge auto-seed-intent-anchors daily 03:17 UTC, hit rate cible 70→90% en 2 sem.)
 - [CRM-as-RAG v1](mem://infrastructure/ai/crm-rag-ingestion-v1) — Indexation auto transcriptions/leads/opps via crm-rag-indexer + triggers pg_net (Sprints 1+2 CDC v2)
 - [Cross-Signal Engine v2.4](mem://cockpit/intelligence/cross-signal-engine-v24) — Embeddings-based découverte connexions lead×partner×solution×opportunity, cron 06:00, table ai_cross_signals TTL 7j
 - [Sentinel Rules v2.1](mem://cockpit/intelligence/sentinel-rules-v2) — 13 règles SQL (5 v1 + 8 v2.1) + persistance + auto-proposals
