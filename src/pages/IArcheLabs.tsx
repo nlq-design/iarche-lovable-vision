@@ -163,13 +163,13 @@ const IArcheLabs = () => {
         <meta property="og:description" content="Programme intensif de 5 jours à Bayonne. Tu arrives avec une idée, tu repars avec un produit en production." />
         <meta property="og:url" content="https://iarche.fr/iarche-labs" />
         <meta property="og:type" content="website" />
-        <meta property="og:image" content="https://iarche.fr/og-image-v4.png" />
+        <meta property="og:image" content="https://iarche.fr/og/iarche-labs.png" />
         <meta property="og:locale" content="fr_FR" />
         <meta property="og:site_name" content="IArche" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="IArche Labs — Construis ton SaaS en 5 jours" />
         <meta name="twitter:description" content="Programme intensif de 5 jours à Bayonne. Tu arrives avec une idée, tu repars avec un produit en production." />
-        <meta name="twitter:image" content="https://iarche.fr/og-image-v4.png" />
+        <meta name="twitter:image" content="https://iarche.fr/og/iarche-labs.png" />
         <script type="application/ld+json">
           {JSON.stringify({
             "@context": "https://schema.org",

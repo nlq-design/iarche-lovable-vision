@@ -93,9 +93,9 @@ const Services = () => {
         <meta property="og:description" content="Audit IA, développement, accompagnement et conformité. Services adaptés aux PME." />
         <meta property="og:url" content="https://iarche.fr/services" />
         <meta property="og:type" content="website" />
-        <meta property="og:image" content="https://iarche.fr/og-image-v4.png" />
-        <meta property="og:image:width" content="1512" />
-        <meta property="og:image:height" content="794" />
+        <meta property="og:image" content="https://iarche.fr/og/services.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
         <meta property="og:locale" content="fr_FR" />
         <meta property="og:site_name" content="IArche" />
         
@@ -103,7 +103,7 @@ const Services = () => {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Nos services · IArche" />
         <meta name="twitter:description" content="Audit IA, développement, accompagnement et conformité pour PME." />
-        <meta name="twitter:image" content="https://iarche.fr/og-image-v4.png" />
+        <meta name="twitter:image" content="https://iarche.fr/og/services.png" />
 
         {/* Schema.org BreadcrumbList */}
         <script type="application/ld+json">
