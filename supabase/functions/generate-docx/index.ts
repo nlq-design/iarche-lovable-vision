@@ -18,6 +18,46 @@ import {
   convertInchesToTwip,
 } from "https://esm.sh/docx@8.5.0";
 import { encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+// Resolve workspace branding from JWT or explicit workspace_id (service-role read).
+async function resolveBranding(req: Request, explicitWorkspaceId?: string) {
+  try {
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+    let workspaceId = explicitWorkspaceId || null;
+    if (!workspaceId) {
+      const authHeader = req.headers.get("Authorization");
+      if (authHeader) {
+        const { data: userData } = await supabaseAdmin.auth.getUser(authHeader.replace("Bearer ", ""));
+        const uid = userData?.user?.id;
+        if (uid) {
+          const { data: m } = await supabaseAdmin
+            .from("workspace_members")
+            .select("workspace_id")
+            .eq("user_id", uid)
+            .order("created_at", { ascending: true })
+            .limit(1)
+            .maybeSingle();
+          workspaceId = m?.workspace_id ?? null;
+        }
+      }
+    }
+    if (!workspaceId) return { workspaceId: null, branding: null };
+    const { data: branding } = await supabaseAdmin
+      .from("workspace_branding")
+      .select("*")
+      .eq("workspace_id", workspaceId)
+      .maybeSingle();
+    return { workspaceId, branding };
+  } catch (e) {
+    console.warn("[generate-docx] branding resolve failed:", (e as Error).message);
+    return { workspaceId: null, branding: null };
+  }
+}
+
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -456,8 +496,8 @@ serve(async (req) => {
   }
 
   try {
-    const body: RequestBody = await req.json();
-    const { title, sections: rawSections, metadata, theme, documentType, exportSettings } = body;
+    const body: RequestBody & { workspace_id?: string } = await req.json();
+    const { title, sections: rawSections, metadata, theme, documentType, exportSettings, workspace_id } = body;
 
     // Ensure sections is always an array
     const sections: DocumentSection[] = Array.isArray(rawSections) ? rawSections : [];
@@ -468,21 +508,32 @@ serve(async (req) => {
       throw new Error('Title is required');
     }
 
-    // Export settings with defaults
+    // Resolve workspace branding (JWT or explicit workspace_id). Used as fallback defaults.
+    const { branding } = await resolveBranding(req, workspace_id);
+    if (branding) console.log('[generate-docx] branding applied for workspace', branding.workspace_id);
+
+    const brandPrimary = (branding?.primary_color || '').replace('#', '');
+    const brandAccent = (branding?.secondary_color || branding?.accent_color || '').replace('#', '');
+    const brandHeadingFont = branding?.heading_font || null;
+    const brandBodyFont = branding?.body_font || null;
+
+    // Export settings: client > branding > IArche defaults
     const headerSettings = {
-      companyName: exportSettings?.header?.companyName ?? 'IArche',
-      tagline: exportSettings?.header?.tagline ?? 'Architecture de Solutions IA',
+      companyName: exportSettings?.header?.companyName ?? branding?.brand_name ?? 'IArche',
+      tagline: exportSettings?.header?.tagline ?? branding?.tagline ?? 'Architecture de Solutions IA',
       showLogo: exportSettings?.header?.showLogo ?? true,
     };
     const footerSettings = {
-      line1: exportSettings?.footer?.line1 ?? 'IArche - Conseil en Architecture IA & Transformation Digitale',
+      line1: exportSettings?.footer?.line1 ?? branding?.footer_text ?? 'IArche - Conseil en Architecture IA & Transformation Digitale',
       line2: exportSettings?.footer?.line2 ?? 'contact@iarche.fr  •  www.iarche.fr',
       showPageNumbers: exportSettings?.footer?.showPageNumbers ?? true,
     };
 
-    // Convert hex color to DOCX format (remove #)
-    const primaryColor = theme?.primaryColor?.replace('#', '') || COLORS.bleuNuit;
-    const accentColor = theme?.accentColor?.replace('#', '') || COLORS.terracotta;
+    // Color resolution: explicit theme > branding > IArche defaults
+    const primaryColor = (theme?.primaryColor?.replace('#', '')) || brandPrimary || COLORS.bleuNuit;
+    const accentColor = (theme?.accentColor?.replace('#', '')) || brandAccent || COLORS.terracotta;
+    const headingFont = brandHeadingFont || 'Calibri';
+    const bodyFont = brandBodyFont || 'Calibri';
 
     // Build document sections
     const documentSections: Paragraph[] = [];
@@ -521,7 +572,7 @@ serve(async (req) => {
             bold: true,
             size: TYPOGRAPHY.display.size,
             color: primaryColor,
-            font: 'Calibri',
+            font: headingFont,
           }),
         ],
         alignment: AlignmentType.CENTER,
@@ -816,7 +867,7 @@ serve(async (req) => {
         default: {
           document: {
             run: {
-              font: 'Calibri',
+              font: bodyFont,
               size: TYPOGRAPHY.body.size,
             },
           },
@@ -826,7 +877,7 @@ serve(async (req) => {
             id: "Normal",
             name: "Normal",
             run: {
-              font: "Calibri",
+              font: bodyFont,
               size: TYPOGRAPHY.body.size,
               color: COLORS.grisTexte,
             },

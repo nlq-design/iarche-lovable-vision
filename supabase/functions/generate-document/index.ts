@@ -664,7 +664,7 @@ serve(async (req) => {
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    const body: GenerateDocumentRequest = await req.json();
+    const body: GenerateDocumentRequest & { workspace_id?: string } = await req.json();
     const { project_id, opportunity_id, lead_id, article_id, document_type, custom_instructions, context: inputContext, existing_sections, billing_entity_id } = body;
 
     if (!document_type) {
@@ -674,7 +674,35 @@ serve(async (req) => {
       });
     }
 
-    console.log(`Generating ${document_type} document - project: ${project_id || 'N/A'}, opportunity: ${opportunity_id || 'N/A'}, lead: ${lead_id || 'N/A'}, billing_entity: ${billing_entity_id || 'N/A'}`);
+    // Resolve workspace from JWT (fallback: explicit body, then default)
+    let workspaceId: string = body.workspace_id || "";
+    try {
+      const { data: userData } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
+      const uid = userData?.user?.id;
+      if (uid && !workspaceId) {
+        const { data: m } = await supabase
+          .from("workspace_members")
+          .select("workspace_id")
+          .eq("user_id", uid)
+          .order("created_at", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        workspaceId = m?.workspace_id || "";
+      }
+    } catch (e) {
+      console.warn("[generate-document] workspace resolve failed:", (e as Error).message);
+    }
+    if (!workspaceId) workspaceId = "00000000-0000-0000-0000-000000000001";
+
+    // Load workspace branding (used to skin generated document + injected into prompt)
+    const { data: branding } = await supabase
+      .from("workspace_branding")
+      .select("*")
+      .eq("workspace_id", workspaceId)
+      .maybeSingle();
+    if (branding) console.log(`[generate-document] branding loaded for workspace ${workspaceId}`);
+
+    console.log(`Generating ${document_type} document - project: ${project_id || 'N/A'}, opportunity: ${opportunity_id || 'N/A'}, lead: ${lead_id || 'N/A'}, billing_entity: ${billing_entity_id || 'N/A'}, workspace: ${workspaceId}`);
 
     // Fetch billing entity if provided, or get default
     let billingEntity: BillingEntity | null = null;
@@ -1237,7 +1265,7 @@ CONSIGNES:
     const { data: savedDoc, error: saveError } = await supabase
       .from("generated_documents")
       .insert({
-        workspace_id: "00000000-0000-0000-0000-000000000001",
+        workspace_id: workspaceId,
         document_type,
         title: documentTitles[document_type],
         project_id: project_id || null,
@@ -1246,7 +1274,22 @@ CONSIGNES:
         article_id: article_id || null,
         billing_entity_id: billingEntity?.id || null,
         quote_number: quoteNumber,
-        content_json: documentContent,
+        content_json: {
+          ...documentContent,
+          branding: branding ? {
+            brand_name: branding.brand_name,
+            tagline: branding.tagline,
+            logo_url: branding.logo_url,
+            primary_color: branding.primary_color,
+            secondary_color: branding.secondary_color,
+            accent_color: branding.accent_color,
+            heading_font: branding.heading_font,
+            body_font: branding.body_font,
+            footer_text: branding.footer_text,
+            document_header_html: branding.document_header_html,
+            document_footer_html: branding.document_footer_html,
+          } : null,
+        },
         status: "draft",
         ai_generated: true,
         quote_metadata: document_type === "quote" ? {
@@ -1264,6 +1307,7 @@ CONSIGNES:
           provider: aiResult.provider,
           generated_at: new Date().toISOString(),
           billing_entity_used: billingEntity?.name || null,
+          workspace_branding_used: !!branding,
         },
       })
       .select()
