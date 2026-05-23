@@ -25,6 +25,16 @@ const INTENT_TO_MODULE: Record<Intent, string> = {
   general: "master-agent-module-general",
 };
 
+// Phase IA-1 v2 : tools-reference split per intent
+// Always load `tools-reference-core`. Additional tool modules per intent.
+const INTENT_TO_TOOL_MODULES: Record<Intent, string[]> = {
+  crm_query: ["tools-reference-crm"],
+  doc_generation: ["tools-reference-crm", "tools-reference-docs"],
+  analysis: ["tools-reference-crm", "tools-reference-analysis"],
+  vivier: ["tools-reference-crm", "tools-reference-admin"],
+  general: ["tools-reference-admin", "tools-reference-crm"],
+};
+
 // In-memory cache: query (lowercased+trimmed) -> { intent, ts }
 const intentCache = new Map<string, { intent: Intent; ts: number }>();
 const CACHE_TTL_MS = 60_000;
