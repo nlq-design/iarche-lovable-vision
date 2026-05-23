@@ -254,3 +254,6 @@ verify_jwt = false
 
 [functions.public-rag-chat]
 verify_jwt = false
+
+[functions.process-auto-actions]
+verify_jwt = false
