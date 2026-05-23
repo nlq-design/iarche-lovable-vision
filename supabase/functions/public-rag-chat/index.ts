@@ -101,10 +101,11 @@ Deno.serve(async (req) => {
 
     const embedJson = await embedRes.json();
     const queryEmbedding: number[] = embedJson?.data?.[0]?.embedding ?? [];
+    const embeddingStr = `[${queryEmbedding.join(",")}]`;
 
     // ---- 2. Vector search ----
     const { data: matches, error: rpcErr } = await supabase.rpc("match_public_embeddings", {
-      query_embedding: queryEmbedding,
+      query_embedding_text: embeddingStr,
       match_count: TOP_K,
       similarity_threshold: SIMILARITY_THRESHOLD,
     });
@@ -113,16 +114,9 @@ Deno.serve(async (req) => {
       console.error("[public-rag-chat] RPC error:", rpcErr);
     }
 
-    // Diagnostic : on relance toujours à seuil 0 pour voir la top similarité réelle
-    const { data: diagMatches } = await supabase.rpc("match_public_embeddings", {
-      query_embedding: queryEmbedding,
-      match_count: 3,
-      similarity_threshold: 0.0,
-    });
-    console.log(`[public-rag-chat] embed_len=${queryEmbedding.length} top_sim=${(diagMatches?.[0]?.similarity ?? -1).toFixed(3)} top_title="${diagMatches?.[0]?.resource_title ?? "none"}"`);
-
     const hits = Array.isArray(matches) ? matches : [];
-    console.log(`[public-rag-chat] query="${userQuery.slice(0, 80)}" hits=${hits.length}`);
+    const topSim = hits[0]?.similarity ?? 0;
+    console.log(`[public-rag-chat] query="${userQuery.slice(0, 80)}" embed_len=${queryEmbedding.length} hits=${hits.length} top_sim=${topSim.toFixed(3)}`);
 
     // ---- 3. No-match : fallback zero-LLM ----
     if (hits.length === 0) {
