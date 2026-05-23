@@ -9842,6 +9842,29 @@ ${calendarRef.join('\n')}
     const totalToolDuration = allToolCalls.reduce((sum, t) => sum + (t.duration_ms || 0), 0);
     console.log(`Agent response generated, tools called: ${allToolCalls.map(t => t.name).join(", ")}, total tool time: ${totalToolDuration}ms`);
 
+    // Phase I — Auto-capture implicite (fire-and-forget, zéro LLM, regex)
+    try {
+      const lastUserMsg = [...messages].reverse().find((m: any) => m.role === 'user')?.content;
+      if (typeof lastUserMsg === 'string' && lastUserMsg.length > 0 && typeof finalContent === 'string') {
+        const extracted = extractMemoriesFromConversation(lastUserMsg, finalContent);
+        if (extracted.length > 0) {
+          // Tag avec session_id pour traçabilité
+          const tagged = extracted.map((m) => ({
+            ...m,
+            sessionId: session_id || undefined,
+            metadata: { ...(m.metadata || {}), source: 'auto-extract-orchestrator' },
+          }));
+          // Fire-and-forget : ne bloque pas la réponse
+          storeMemories(supabase, workspace_id, user_id || null, tagged).catch((e) =>
+            console.warn('[orchestrator] memory auto-capture failed:', e)
+          );
+        }
+      }
+    } catch (autoErr) {
+      console.warn('[orchestrator] memory extraction error:', autoErr);
+    }
+
+
     return new Response(JSON.stringify({
       ok: true,
       message: finalContent,
