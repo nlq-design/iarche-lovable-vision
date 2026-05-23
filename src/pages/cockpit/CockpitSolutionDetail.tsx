@@ -280,6 +280,15 @@ export default function CockpitSolutionDetail() {
             <SolutionSupportTab solutionId={id!} />
           </TabsContent>
 
+          <TabsContent value="roadmap" className="space-y-3">
+            <SolutionRoadmapTab solutionId={id!} />
+          </TabsContent>
+
+          <TabsContent value="acquisition" className="space-y-3">
+            <SolutionAcquisitionTab solutionId={id!} />
+          </TabsContent>
+
+
 
 
 
