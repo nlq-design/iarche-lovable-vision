@@ -54,6 +54,8 @@ import {
   Rocket,
   Euro,
   LifeBuoy,
+  Map,
+  Megaphone,
 } from "lucide-react";
 import { SaasSubscriptionsTab } from "@/components/cockpit/SaasSubscriptionsTab";
 import { SolutionPipelineTab } from "@/components/cockpit/saas/SolutionPipelineTab";
@@ -62,6 +64,8 @@ import { SolutionTimelineTab } from "@/components/cockpit/saas/SolutionTimelineT
 import { SolutionOnboardingTab } from "@/components/cockpit/saas/SolutionOnboardingTab";
 import { SolutionRevenueTab } from "@/components/cockpit/saas/SolutionRevenueTab";
 import { SolutionSupportTab } from "@/components/cockpit/saas/SolutionSupportTab";
+import { SolutionRoadmapTab } from "@/components/cockpit/saas/SolutionRoadmapTab";
+import { SolutionAcquisitionTab } from "@/components/cockpit/saas/SolutionAcquisitionTab";
 import { supabase } from "@/integrations/supabase/client";
 import { useCockpitSolutionLeads, useCockpitLeads, useCockpitUploads } from "@/hooks/cockpit";
 import { LinkedFilesSection } from "@/components/cockpit/LinkedFilesSection";
