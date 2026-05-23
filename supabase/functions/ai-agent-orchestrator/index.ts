@@ -4,6 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { createAIClient } from "../_shared/ai-client.ts";
 import { chatWithTools, completeLLM } from "../_shared/ai-legacy-bridge.ts";
 import type { AIMessage, AITool } from "../_shared/ai-types.ts";
+import { composeSystemPromptForRequest, type Intent } from "../_shared/intent-router.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
