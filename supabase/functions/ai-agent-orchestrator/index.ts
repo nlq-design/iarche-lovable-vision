@@ -9356,6 +9356,23 @@ serve(async (req) => {
     
     // 4. Build memory context string - ONLY include if truly relevant
     let memoryContext = "";
+
+    // Phase I — Long-term memory injection (preferences + decisions)
+    // Source : ai_agent_memory, filtré par importance + non-expiré.
+    // Zéro coût LLM : récupération SQL pure.
+    try {
+      const longTermMemories = await retrieveMemories(supabase, workspace_id, {
+        memoryTypes: ['preference', 'decision'],
+        minImportance: 0.7,
+        limit: 8,
+      });
+      if (longTermMemories.length > 0) {
+        memoryContext += buildMemoryBlock(longTermMemories);
+      }
+    } catch (memErr) {
+      console.warn('[orchestrator] long-term memory fetch failed:', memErr);
+    }
+
     
     // Active entities shown ONLY if query explicitly mentions them
     if (activeEntities.length > 0 && queryMentionsActiveEntity) {
