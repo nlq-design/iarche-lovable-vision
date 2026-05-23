@@ -1265,7 +1265,7 @@ CONSIGNES:
     const { data: savedDoc, error: saveError } = await supabase
       .from("generated_documents")
       .insert({
-        workspace_id: "00000000-0000-0000-0000-000000000001",
+        workspace_id: workspaceId,
         document_type,
         title: documentTitles[document_type],
         project_id: project_id || null,
@@ -1274,7 +1274,22 @@ CONSIGNES:
         article_id: article_id || null,
         billing_entity_id: billingEntity?.id || null,
         quote_number: quoteNumber,
-        content_json: documentContent,
+        content_json: {
+          ...documentContent,
+          branding: branding ? {
+            brand_name: branding.brand_name,
+            tagline: branding.tagline,
+            logo_url: branding.logo_url,
+            primary_color: branding.primary_color,
+            secondary_color: branding.secondary_color,
+            accent_color: branding.accent_color,
+            heading_font: branding.heading_font,
+            body_font: branding.body_font,
+            footer_text: branding.footer_text,
+            document_header_html: branding.document_header_html,
+            document_footer_html: branding.document_footer_html,
+          } : null,
+        },
         status: "draft",
         ai_generated: true,
         quote_metadata: document_type === "quote" ? {
@@ -1292,6 +1307,7 @@ CONSIGNES:
           provider: aiResult.provider,
           generated_at: new Date().toISOString(),
           billing_entity_used: billingEntity?.name || null,
+          workspace_branding_used: !!branding,
         },
       })
       .select()
