@@ -326,9 +326,93 @@ export default function AIObservability() {
                 </Card>
               </div>
             </section>
+
+            <section>
+              <h2 className="text-xl font-semibold mb-3">Lacunes auto-résolues (30 j)</h2>
+              <p className="text-xs text-muted-foreground mb-3">
+                Alertes fermées automatiquement par <code>auto_resolve_content_gaps</code> lorsqu'un contenu public couvre la question (similarité ≥ 0,80, zéro coût LLM).
+              </p>
+              <Card>
+                <CardContent className="p-0">
+                  <ul className="divide-y">
+                    {autoResolved.map((a) => {
+                      const meta = (a.ai_metadata ?? {}) as Record<string, any>;
+                      const match = meta.resolution_match as Record<string, any> | undefined;
+                      return (
+                        <li key={a.id} className="p-3 text-sm">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary" className="text-[10px]">auto</Badge>
+                            <span className="font-medium truncate flex-1">{a.title}</span>
+                            {match?.similarity && (
+                              <span className="text-xs text-muted-foreground shrink-0">
+                                sim {Number(match.similarity).toFixed(2)}
+                              </span>
+                            )}
+                          </div>
+                          {match?.title && (
+                            <p className="text-xs text-muted-foreground mt-1 ml-1 truncate">
+                              → couvert par : « {String(match.title)} »
+                            </p>
+                          )}
+                        </li>
+                      );
+                    })}
+                    {autoResolved.length === 0 && (
+                      <li className="p-6 text-center text-muted-foreground text-sm">Aucune lacune auto-résolue récemment.</li>
+                    )}
+                  </ul>
+                </CardContent>
+              </Card>
+            </section>
+
+            <section>
+              <h2 className="text-xl font-semibold mb-3">Seuils IA adaptatifs par espace</h2>
+              <p className="text-xs text-muted-foreground mb-3">
+                Recalculés chaque lundi 03:00 UTC selon le taux d'annulation des auto-actions sur 30 jours (plage 0,75–0,95).
+              </p>
+              <Card>
+                <CardContent className="p-0">
+                  <table className="w-full text-sm">
+                    <thead className="border-b text-left text-muted-foreground">
+                      <tr>
+                        <th className="p-3">Espace</th>
+                        <th className="p-3">Seuil auto-action</th>
+                        <th className="p-3">Seuil RAG</th>
+                        <th className="p-3">Taux annulation</th>
+                        <th className="p-3">Échantillon</th>
+                        <th className="p-3">Mis à jour</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {thresholds.map((t) => {
+                        const lm = (t.last_metrics ?? {}) as Record<string, any>;
+                        const cr = typeof lm.cancel_rate === "number" ? lm.cancel_rate : null;
+                        return (
+                          <tr key={t.workspace_id} className="border-b last:border-0">
+                            <td className="p-3 font-mono text-xs">{t.workspace_id.slice(0, 8)}…</td>
+                            <td className="p-3 font-medium">{Number(t.auto_action_confidence_threshold).toFixed(2)}</td>
+                            <td className="p-3">{Number(t.rag_similarity_threshold).toFixed(2)}</td>
+                            <td className="p-3">{cr !== null ? `${(cr * 100).toFixed(1)} %` : "—"}</td>
+                            <td className="p-3">{(lm.sample_size as number) ?? "—"}</td>
+                            <td className="p-3 text-xs text-muted-foreground">{new Date(t.updated_at).toLocaleDateString()}</td>
+                          </tr>
+                        );
+                      })}
+                      {thresholds.length === 0 && (
+                        <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">Aucun seuil personnalisé (valeurs par défaut appliquées).</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </CardContent>
+              </Card>
+            </section>
           </div>
         )}
       </main>
+    </>
+  );
+}
+
     </>
   );
 }
