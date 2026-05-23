@@ -560,6 +560,30 @@ export type Database = {
           },
         ]
       }
+      ai_intent_anchors: {
+        Row: {
+          created_at: string
+          embedding: string | null
+          id: string
+          intent: string
+          text: string
+        }
+        Insert: {
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          intent: string
+          text: string
+        }
+        Update: {
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          intent?: string
+          text?: string
+        }
+        Relationships: []
+      }
       ai_models: {
         Row: {
           capabilities: string[] | null
@@ -8095,6 +8119,14 @@ export type Database = {
           resource_type: string
           source_date: string
           temporal_weight: number
+        }[]
+      }
+      match_intent_anchor: {
+        Args: { query_embedding_text: string; similarity_threshold?: number }
+        Returns: {
+          anchor_text: string
+          intent: string
+          similarity: number
         }[]
       }
       match_partners_for_lead: {
