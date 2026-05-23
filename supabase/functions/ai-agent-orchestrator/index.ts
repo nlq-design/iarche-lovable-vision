@@ -9597,6 +9597,12 @@ ${calendarRef.join('\n')}
       });
       if (cached.hit && typeof cached.response === "string") {
         console.log(`[orchestrator] CACHE HIT sim=${cached.similarity.toFixed(3)} age=${cached.ageSeconds}s hits=${cached.hitCount}`);
+        trackCacheTrace({
+          supabase, workspaceId: workspace_id, userId: safeUserId,
+          mode: "orchestrator_general", cacheStatus: "hit", cacheScope: "workspace",
+          cacheSimilarity: cached.similarity, cacheAgeSeconds: cached.ageSeconds,
+          llmProvider: cached.model ?? selectedModel, entityType: "general", entityId: null,
+        });
         return new Response(JSON.stringify({
           ok: true,
           message: cached.response,
@@ -9620,6 +9626,7 @@ ${calendarRef.join('\n')}
         });
       }
     }
+    const orchestratorMissStart = Date.now();
 
     let aiResponse = await aiClient.complete({
       messages: fullMessages as AIMessage[],
