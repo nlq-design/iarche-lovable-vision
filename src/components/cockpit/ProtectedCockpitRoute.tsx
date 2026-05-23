@@ -2,6 +2,7 @@ import { ReactNode, useState, useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useCockpitAuth } from '@/hooks/cockpit/useCockpitAuth';
+import { useCockpitPrewarm } from '@/hooks/cockpit/useCockpitPrewarm';
 import { StepUpMfaDialog } from './StepUpMfaDialog';
 import { Loader2, ShieldAlert, ShieldX, KeyRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
