@@ -42,6 +42,12 @@ function typeColor(t: string) {
 
 export function RagDiagnosticsDrawer({ traceId, label = 'Contexte injecté' }: RagDiagnosticsDrawerProps) {
   const { data: trace, isLoading } = useRagTrace(traceId);
+  const { currentWorkspaceId } = useWorkspace();
+  const [debug, setDebug] = useState(false);
+
+  // Garde-fou multi-tenant : ne jamais afficher une trace d'un autre workspace.
+  const crossTenantLeak =
+    trace && currentWorkspaceId && trace.workspace_id !== currentWorkspaceId;
 
   return (
     <Sheet>
@@ -59,8 +65,21 @@ export function RagDiagnosticsDrawer({ traceId, label = 'Contexte injecté' }: R
       </SheetTrigger>
       <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto bg-background">
         <SheetHeader>
-          <SheetTitle className="font-manrope">Diagnostic du contexte IA</SheetTitle>
+          <div className="flex items-center justify-between gap-3">
+            <SheetTitle className="font-manrope">Diagnostic du contexte IA</SheetTitle>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Bug className="h-3.5 w-3.5" />
+              <Label htmlFor="rag-debug-toggle" className="cursor-pointer text-xs">Debug</Label>
+              <Switch id="rag-debug-toggle" checked={debug} onCheckedChange={setDebug} />
+            </div>
+          </div>
         </SheetHeader>
+
+        {crossTenantLeak && (
+          <div className="mt-4 rounded-md border border-destructive bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            Trace appartenant à un autre workspace ({trace.workspace_id.slice(0, 8)}…). Affichage bloqué.
+          </div>
+        )}
 
         {isLoading && <div className="pt-6"><LoadingState message="Chargement de la trace..." inline /></div>}
 
