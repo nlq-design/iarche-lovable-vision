@@ -229,6 +229,14 @@ export default function CockpitSolutionDetail() {
               <LifeBuoy className="h-3.5 w-3.5" />
               Support & NPS
             </TabsTrigger>
+            <TabsTrigger value="roadmap" className="gap-1.5 text-sm h-7">
+              <Map className="h-3.5 w-3.5" />
+              Roadmap
+            </TabsTrigger>
+            <TabsTrigger value="acquisition" className="gap-1.5 text-sm h-7">
+              <Megaphone className="h-3.5 w-3.5" />
+              Acquisition
+            </TabsTrigger>
             <TabsTrigger value="leads" className="gap-1.5 text-sm h-7">
               <Users className="h-3.5 w-3.5" />
               Prospects ({solutionLeads.length})
