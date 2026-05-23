@@ -3,10 +3,11 @@ import { OwnerProfileManager } from "@/components/cockpit/settings/OwnerProfileM
 import { BillingEntitiesManager } from "@/components/cockpit/settings/BillingEntitiesManager";
 import { CgvTemplatesManager } from "@/components/cockpit/settings/CgvTemplatesManager";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings, Users, Handshake, CreditCard, Plug } from "lucide-react";
+import { Settings, Users, Handshake, CreditCard, Plug, Palette } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const NAV = [
+  { to: "/cockpit/settings/branding", icon: Palette, title: "Identité visuelle", desc: "Logo, palette et typographie pour les exports IA." },
   { to: "/cockpit/settings/team", icon: Users, title: "Équipe", desc: "Membres, rôles et invitations." },
   { to: "/cockpit/settings/partners", icon: Handshake, title: "Partenaires", desc: "Accès portail, visibilité et digest IA." },
   { to: "/cockpit/settings/billing", icon: CreditCard, title: "Abonnement", desc: "Plan, factures et limites." },
