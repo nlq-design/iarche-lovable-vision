@@ -35,27 +35,16 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { 
-  ArrowLeft, 
-  ExternalLink, 
-  Users, 
+import {
+  ArrowLeft,
+  ExternalLink,
+  Users,
   UserPlus,
   Trash2,
   Loader2,
   FileText,
   Mail,
   Building2,
-  FileUp,
-  Sparkles,
-  BarChart3,
-  TrendingUp,
-  Activity,
-  Clock,
-  Rocket,
-  Euro,
-  LifeBuoy,
-  Map,
-  Megaphone,
 } from "lucide-react";
 import { SaasSubscriptionsTab } from "@/components/cockpit/SaasSubscriptionsTab";
 import { SolutionPipelineTab } from "@/components/cockpit/saas/SolutionPipelineTab";
