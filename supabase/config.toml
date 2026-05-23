@@ -251,3 +251,6 @@ verify_jwt = true
 
 [functions.generate-partner-digest]
 verify_jwt = false
+
+[functions.public-rag-chat]
+verify_jwt = false
