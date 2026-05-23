@@ -409,6 +409,7 @@ export type Database = {
           entity_id: string | null
           entity_type: string | null
           estimated_tokens: number
+          filters: Json | null
           id: string
           latency_ms: number | null
           llm_cost_estimate_usd: number | null
@@ -431,6 +432,7 @@ export type Database = {
           entity_id?: string | null
           entity_type?: string | null
           estimated_tokens?: number
+          filters?: Json | null
           id?: string
           latency_ms?: number | null
           llm_cost_estimate_usd?: number | null
@@ -453,6 +455,7 @@ export type Database = {
           entity_id?: string | null
           entity_type?: string | null
           estimated_tokens?: number
+          filters?: Json | null
           id?: string
           latency_ms?: number | null
           llm_cost_estimate_usd?: number | null

@@ -7,8 +7,20 @@ export interface RagChunkDebug {
   title: string;
   source_date: string | null;
   temporal_weight: number | null;
+  similarity: number | null;
   chars: number;
   estimated_tokens: number;
+}
+
+export interface RagFilters {
+  workspace_id: string | null;
+  entity_type: string | null;
+  entity_id: string | null;
+  limit: number;
+  allowed_types: string[] | null;
+  similarity_threshold: number | null;
+  retriever: 'entity_scoped' | 'vector' | 'hybrid';
+  embedding_model?: string | null;
 }
 
 export interface AiContextTrace {
@@ -22,6 +34,7 @@ export interface AiContextTrace {
   token_budget: number | null;
   breakdown: Record<string, number>;
   rag_chunks: RagChunkDebug[];
+  filters: RagFilters | null;
   warnings: string[];
   created_at: string;
   cache_status: 'hit' | 'miss' | 'bypass' | null;

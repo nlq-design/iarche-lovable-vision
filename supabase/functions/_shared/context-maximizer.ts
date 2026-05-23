@@ -63,8 +63,22 @@ export interface RagChunkDebug {
   title: string;
   source_date: string | null;
   temporal_weight: number | null;
+  /** Similarity score (cosine) when retrieval is vector-based. Null pour les retrievers non-vectoriels (entity-scoped). */
+  similarity: number | null;
   chars: number;
   estimated_tokens: number;
+}
+
+/** Filtres RAG appliqués lors de la récupération — debug & audit multi-tenant. */
+export interface RagFilters {
+  workspace_id: string | null;
+  entity_type: string | null;
+  entity_id: string | null;
+  limit: number;
+  allowed_types: string[] | null;
+  similarity_threshold: number | null;
+  retriever: 'entity_scoped' | 'vector' | 'hybrid';
+  embedding_model?: string | null;
 }
 
 export interface MaxContextResult {
@@ -78,6 +92,8 @@ export interface MaxContextResult {
   warnings: string[];
   /** Chunks retournés par match_entity_resources (priority 4.5) — diagnostic */
   ragChunks: RagChunkDebug[];
+  /** Filtres RAG appliqués — affichés dans RagDiagnosticsDrawer (mode debug) */
+  filters: RagFilters;
   /** Token budget that was used */
   tokenBudget: number;
 }
@@ -145,7 +161,9 @@ export async function buildMaxContext(
   }
 
   // ===== PRIORITY 4.5: RAG chunks liés à l'entité (transcriptions, notes, summaries) =====
-  const ragResult = await fetchEntityRagChunks(supabase, entityType, entityId, workspaceId);
+  const RAG_LIMIT = 12;
+  const RAG_TYPES: string[] | null = null;
+  const ragResult = await fetchEntityRagChunks(supabase, entityType, entityId, workspaceId, RAG_LIMIT, RAG_TYPES);
   const ragChunks: RagChunkDebug[] = ragResult?.debug ?? [];
   if (ragResult?.block) {
     sections.push({
@@ -154,6 +172,17 @@ export async function buildMaxContext(
       priority: 4.5,
     });
   }
+
+  const filters: RagFilters = {
+    workspace_id: workspaceId ?? null,
+    entity_type: entityType,
+    entity_id: entityId,
+    limit: RAG_LIMIT,
+    allowed_types: RAG_TYPES,
+    similarity_threshold: null, // entity_scoped retriever ne filtre pas par cosine
+    retriever: 'entity_scoped',
+    embedding_model: null,
+  };
 
 
   // ===== PRIORITY 5: Transcription summaries =====
@@ -262,6 +291,7 @@ export async function buildMaxContext(
     breakdown,
     warnings,
     ragChunks,
+    filters,
     tokenBudget,
   };
 }
@@ -274,14 +304,16 @@ async function fetchEntityRagChunks(
   entityType: string,
   entityId: string,
   workspaceId: string,
+  limit = 12,
+  allowedTypes: string[] | null = null,
 ): Promise<{ block: string; debug: RagChunkDebug[] } | null> {
   try {
     const { data, error } = await supabase.rpc('match_entity_resources', {
       p_entity_type: entityType,
       p_entity_id: entityId,
       p_workspace_id: workspaceId,
-      p_limit: 12,
-      p_types: null,
+      p_limit: limit,
+      p_types: allowedTypes,
     });
     if (error) {
       console.warn('[context-maximizer] match_entity_resources error:', error.message);
@@ -294,8 +326,9 @@ async function fetchEntityRagChunks(
     for (const c of data as any[]) {
       const date = c.source_date ? formatDateFR(c.source_date) : '';
       const weight = c.temporal_weight ? ` · poids ${Number(c.temporal_weight).toFixed(2)}` : '';
+      const sim = c.similarity != null ? ` · sim ${Number(c.similarity).toFixed(2)}` : '';
       const title = c.resource_title || c.resource_type;
-      block += `\n### [${c.resource_type}] ${title}${date ? ` — ${date}` : ''}${weight}\n`;
+      block += `\n### [${c.resource_type}] ${title}${date ? ` — ${date}` : ''}${weight}${sim}\n`;
       const chunk = (c.content_chunk || '').toString().trim();
       const trimmed = chunk.substring(0, 1500);
       if (trimmed) block += `${trimmed}\n`;
@@ -305,6 +338,7 @@ async function fetchEntityRagChunks(
         title: String(title),
         source_date: c.source_date ? String(c.source_date) : null,
         temporal_weight: c.temporal_weight != null ? Number(c.temporal_weight) : null,
+        similarity: c.similarity != null ? Number(c.similarity) : null,
         chars: trimmed.length,
         estimated_tokens: estimateTokens(trimmed),
       });
@@ -315,6 +349,7 @@ async function fetchEntityRagChunks(
     return null;
   }
 }
+
 
 
 
@@ -665,6 +700,7 @@ export async function recordContextTrace(
         token_budget: ctx.tokenBudget,
         breakdown: ctx.breakdown,
         rag_chunks: ctx.ragChunks,
+        filters: ctx.filters,
         warnings: ctx.warnings,
         cache_status: meta.cacheStatus ?? null,
         cache_similarity: meta.cacheSimilarity ?? null,

@@ -1,12 +1,16 @@
-import { ScanSearch } from 'lucide-react';
+import { useState } from 'react';
+import { Bug, ScanSearch } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Progress } from '@/components/ui/progress';
 import { LoadingState } from '@/components/cockpit/common/LoadingState';
 import { EmptyState } from '@/components/cockpit/common/EmptyState';
 import { useRagTrace } from '@/hooks/cockpit/useRagTrace';
+import { useWorkspace } from '@/contexts/WorkspaceContext';
 
 interface RagDiagnosticsDrawerProps {
   traceId: string | null | undefined;
@@ -38,6 +42,12 @@ function typeColor(t: string) {
 
 export function RagDiagnosticsDrawer({ traceId, label = 'Contexte injecté' }: RagDiagnosticsDrawerProps) {
   const { data: trace, isLoading } = useRagTrace(traceId);
+  const { currentWorkspaceId } = useWorkspace();
+  const [debug, setDebug] = useState(false);
+
+  // Garde-fou multi-tenant : ne jamais afficher une trace d'un autre workspace.
+  const crossTenantLeak =
+    trace && currentWorkspaceId && trace.workspace_id !== currentWorkspaceId;
 
   return (
     <Sheet>
@@ -55,8 +65,21 @@ export function RagDiagnosticsDrawer({ traceId, label = 'Contexte injecté' }: R
       </SheetTrigger>
       <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto bg-background">
         <SheetHeader>
-          <SheetTitle className="font-manrope">Diagnostic du contexte IA</SheetTitle>
+          <div className="flex items-center justify-between gap-3">
+            <SheetTitle className="font-manrope">Diagnostic du contexte IA</SheetTitle>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Bug className="h-3.5 w-3.5" />
+              <Label htmlFor="rag-debug-toggle" className="cursor-pointer text-xs">Debug</Label>
+              <Switch id="rag-debug-toggle" checked={debug} onCheckedChange={setDebug} />
+            </div>
+          </div>
         </SheetHeader>
+
+        {crossTenantLeak && (
+          <div className="mt-4 rounded-md border border-destructive bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            Trace appartenant à un autre workspace ({trace.workspace_id.slice(0, 8)}…). Affichage bloqué.
+          </div>
+        )}
 
         {isLoading && <div className="pt-6"><LoadingState message="Chargement de la trace..." inline /></div>}
 
@@ -66,7 +89,7 @@ export function RagDiagnosticsDrawer({ traceId, label = 'Contexte injecté' }: R
           </div>
         )}
 
-        {trace && (
+        {trace && !crossTenantLeak && (
           <div className="space-y-6 pt-6">
             {/* Cache status (M6) */}
             {trace.cache_status && (
@@ -142,9 +165,48 @@ export function RagDiagnosticsDrawer({ traceId, label = 'Contexte injecté' }: R
               )}
             </section>
 
+            {/* Filtres RAG appliqués (mode debug) */}
+            {debug && trace.filters && (
+              <section>
+                <h3 className="text-sm font-semibold mb-2">Filtres RAG appliqués</h3>
+                <div className="grid grid-cols-2 gap-2 rounded-md border bg-muted/40 p-3 text-xs font-mono">
+                  <div className="text-muted-foreground">workspace_id</div>
+                  <div className="truncate" title={trace.filters.workspace_id ?? ''}>
+                    {trace.filters.workspace_id ? `${trace.filters.workspace_id.slice(0, 8)}…` : '—'}
+                  </div>
+                  <div className="text-muted-foreground">retriever</div>
+                  <div>{trace.filters.retriever}</div>
+                  <div className="text-muted-foreground">entity</div>
+                  <div className="truncate">
+                    {trace.filters.entity_type ?? '—'}
+                    {trace.filters.entity_id ? ` · ${trace.filters.entity_id.slice(0, 8)}…` : ''}
+                  </div>
+                  <div className="text-muted-foreground">limit</div>
+                  <div>{trace.filters.limit}</div>
+                  <div className="text-muted-foreground">types</div>
+                  <div>{trace.filters.allowed_types?.join(', ') ?? 'tous'}</div>
+                  <div className="text-muted-foreground">seuil sim.</div>
+                  <div>{trace.filters.similarity_threshold ?? 'n/a'}</div>
+                  {trace.filters.embedding_model && (
+                    <>
+                      <div className="text-muted-foreground">embedding</div>
+                      <div className="truncate">{trace.filters.embedding_model}</div>
+                    </>
+                  )}
+                </div>
+              </section>
+            )}
+
             {/* RAG chunks */}
             <section>
-              <h3 className="text-sm font-semibold mb-2">Extraits CRM (RAG)</h3>
+              <h3 className="text-sm font-semibold mb-2">
+                Extraits CRM (RAG)
+                {debug && trace.rag_chunks?.length ? (
+                  <span className="ml-2 text-xs font-normal text-muted-foreground">
+                    {trace.rag_chunks.length} source(s)
+                  </span>
+                ) : null}
+              </h3>
               {!trace.rag_chunks?.length ? (
                 <EmptyState message="Aucun extrait RAG lié à cette entité" inline />
               ) : (
@@ -154,6 +216,7 @@ export function RagDiagnosticsDrawer({ traceId, label = 'Contexte injecté' }: R
                       <TableHead className="h-8">Type</TableHead>
                       <TableHead className="h-8">Titre</TableHead>
                       <TableHead className="h-8">Source</TableHead>
+                      {debug && <TableHead className="h-8 text-right">Sim.</TableHead>}
                       <TableHead className="h-8 text-right">Poids</TableHead>
                       <TableHead className="h-8 text-right">Tokens</TableHead>
                     </TableRow>
@@ -168,6 +231,13 @@ export function RagDiagnosticsDrawer({ traceId, label = 'Contexte injecté' }: R
                         </TableCell>
                         <TableCell className="max-w-[180px] truncate text-xs" title={c.title}>{c.title}</TableCell>
                         <TableCell className="text-xs text-muted-foreground">{formatDateFR(c.source_date)}</TableCell>
+                        {debug && (
+                          <TableCell className="text-right">
+                            <Badge variant={weightColor(c.similarity)} className="font-mono text-[10px]">
+                              {c.similarity != null ? c.similarity.toFixed(2) : '—'}
+                            </Badge>
+                          </TableCell>
+                        )}
                         <TableCell className="text-right">
                           <Badge variant={weightColor(c.temporal_weight)} className="text-[10px]">
                             {c.temporal_weight != null ? c.temporal_weight.toFixed(2) : '—'}
