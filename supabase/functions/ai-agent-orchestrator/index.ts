@@ -4312,7 +4312,7 @@ async function executeTool(
       const { data: proposal, error: proposalError } = await supabase
         .from("action_proposals")
         .insert({
-          workspace_id: "00000000-0000-0000-0000-000000000001",
+          workspace_id: workspaceId ?? "00000000-0000-0000-0000-000000000001",
           action_type: "create_task",
           action_label: `Créer tâche: "${title}"`,
           action_payload: actionPayload,
@@ -4766,7 +4766,7 @@ async function executeTool(
           validated_by_human: false,
           auto_linked: !args.booking_id && !args.project_id && !args.opportunity_id,
         },
-        workspace_id: "00000000-0000-0000-0000-000000000001",
+        workspace_id: workspaceId ?? "00000000-0000-0000-0000-000000000001",
       };
 
       const { data, error } = await supabase
@@ -4863,7 +4863,7 @@ async function executeTool(
           generated_at: new Date().toISOString(),
         },
         visibility: "internal",
-        workspace_id: "00000000-0000-0000-0000-000000000001",
+        workspace_id: workspaceId ?? "00000000-0000-0000-0000-000000000001",
       };
 
       const { data, error } = await supabase
@@ -5144,7 +5144,7 @@ Génère un contenu HTML pour email avec:
 
           if (!existingLead) {
             // Phase 1.5 multi-tenant: always include workspace_id
-            const DEFAULT_WORKSPACE_ID = "00000000-0000-0000-0000-000000000001";
+            const DEFAULT_WORKSPACE_ID = workspaceId ?? "00000000-0000-0000-0000-000000000001";
             await supabase.from("leads").insert({
               name: bookingPayload.name,
               email: normalizedEmail,
@@ -5336,7 +5336,7 @@ Génère un contenu HTML pour email avec:
         linkedin_url: lead.linkedin_url,
         bio: lead.message || null,
         is_active: true,
-        workspace_id: "00000000-0000-0000-0000-000000000001",
+        workspace_id: workspaceId ?? "00000000-0000-0000-0000-000000000001",
       };
 
       const { data: newPartner, error: partnerErr } = await supabase
@@ -5358,7 +5358,7 @@ Génère un contenu HTML pour email avec:
 
       // Log activity
       await supabase.from("activity_log").insert({
-        workspace_id: "00000000-0000-0000-0000-000000000001",
+        workspace_id: workspaceId ?? "00000000-0000-0000-0000-000000000001",
         entity_type: "partner",
         entity_id: newPartner.id,
         activity_type: "conversion",
@@ -5489,7 +5489,7 @@ Génère un contenu HTML pour email avec:
         content: args.content as string || null,
         status: args.status as string || "draft",
         version: "1.0",
-        workspace_id: "00000000-0000-0000-0000-000000000001",
+        workspace_id: workspaceId ?? "00000000-0000-0000-0000-000000000001",
       };
 
       const { data: newSpec, error } = await supabase
@@ -5540,7 +5540,7 @@ Génère un contenu HTML pour email avec:
         status: args.status as string || "draft",
         ai_generated: false,
         version: "1.0",
-        workspace_id: "00000000-0000-0000-0000-000000000001",
+        workspace_id: workspaceId ?? "00000000-0000-0000-0000-000000000001",
       };
 
       const { data: newDoc, error } = await supabase
@@ -5674,7 +5674,7 @@ Génère un contenu HTML pour email avec:
         action_items: args.action_items as string[] || [],
         speakers: args.speakers as string[] || [],
         status: "done",
-        workspace_id: "00000000-0000-0000-0000-000000000001",
+        workspace_id: workspaceId ?? "00000000-0000-0000-0000-000000000001",
       };
 
       const { data: newTranscription, error } = await supabase
@@ -5761,7 +5761,7 @@ Génère un contenu HTML pour email avec:
       const { data: proposal, error: proposalError } = await supabase
         .from("action_proposals")
         .insert({
-          workspace_id: "00000000-0000-0000-0000-000000000001",
+          workspace_id: workspaceId ?? "00000000-0000-0000-0000-000000000001",
           action_type: "send_email",
           action_label: `Envoyer email: "${subject}" à ${args.to_name || args.to_email}`,
           action_payload: actionPayload,
@@ -5894,7 +5894,7 @@ Génère un contenu HTML pour email avec:
         expected_close_date: args.expected_close_date as string || null,
         description: args.description as string || null,
         source: args.source as string || "agent",
-        workspace_id: "00000000-0000-0000-0000-000000000001",
+        workspace_id: workspaceId ?? "00000000-0000-0000-0000-000000000001",
       };
 
       const { data: newOpp, error } = await supabase
@@ -5936,7 +5936,7 @@ Génère un contenu HTML pour email avec:
         target_end_date: args.target_end_date as string || null,
         status: args.status as string || "scoping",
         health_status: "on_track",
-        workspace_id: "00000000-0000-0000-0000-000000000001",
+        workspace_id: workspaceId ?? "00000000-0000-0000-0000-000000000001",
       };
 
       const { data: newProj, error } = await supabase
@@ -6579,7 +6579,7 @@ Génère un contenu HTML pour email avec:
 
       // Log the notification
       await supabase.from("activity_log").insert({
-        workspace_id: "00000000-0000-0000-0000-000000000001",
+        workspace_id: workspaceId ?? "00000000-0000-0000-0000-000000000001",
         entity_type: args.entity_type || "system",
         entity_id: args.entity_id || "00000000-0000-0000-0000-000000000000",
         activity_type: "proactive_notification",
@@ -7197,7 +7197,7 @@ Génère un contenu HTML pour email avec:
         .from("project_notes")
         .insert({
           project_id: args.project_id,
-          workspace_id: "00000000-0000-0000-0000-000000000001",
+          workspace_id: workspaceId ?? "00000000-0000-0000-0000-000000000001",
           title: args.title,
           content: args.content || null,
           note_type: args.note_type || "general",
@@ -7255,7 +7255,7 @@ Génère un contenu HTML pour email avec:
           entity_type: args.entity_type,
           entity_id: args.entity_id,
           content: args.content,
-          workspace_id: "00000000-0000-0000-0000-000000000001",
+          workspace_id: workspaceId ?? "00000000-0000-0000-0000-000000000001",
         })
         .select()
         .single();
