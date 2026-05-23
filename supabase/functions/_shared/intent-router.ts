@@ -25,6 +25,16 @@ const INTENT_TO_MODULE: Record<Intent, string> = {
   general: "master-agent-module-general",
 };
 
+// Phase IA-1 v2 : tools-reference split per intent
+// Always load `tools-reference-core`. Additional tool modules per intent.
+const INTENT_TO_TOOL_MODULES: Record<Intent, string[]> = {
+  crm_query: ["tools-reference-crm"],
+  doc_generation: ["tools-reference-crm", "tools-reference-docs"],
+  analysis: ["tools-reference-crm", "tools-reference-analysis"],
+  vivier: ["tools-reference-crm", "tools-reference-admin"],
+  general: ["tools-reference-admin", "tools-reference-crm"],
+};
+
 // In-memory cache: query (lowercased+trimmed) -> { intent, ts }
 const intentCache = new Map<string, { intent: Intent; ts: number }>();
 const CACHE_TTL_MS = 60_000;
@@ -140,13 +150,19 @@ export async function composeSystemPromptForRequest(
 ): Promise<ComposedPrompt> {
   const intent = await classifyIntent(userQuery);
   const moduleSlug = INTENT_TO_MODULE[intent];
+  const toolModuleSlugs = INTENT_TO_TOOL_MODULES[intent];
 
+  // Build the fetch list: core blocks + intent module + tools-core + per-intent tools
+  // We also fetch the legacy `tools-reference` as a fallback in case the split
+  // modules are missing in the DB (graceful degradation).
   const slugs = [
     "orchestrator-governor",
     "master-agent-core",
     moduleSlug,
     "ui-navigation",
-    "tools-reference",
+    "tools-reference-core",
+    ...toolModuleSlugs,
+    "tools-reference", // fallback only
   ];
 
   const { data, error } = await supabase
@@ -185,21 +201,41 @@ export async function composeSystemPromptForRequest(
 
   const governor = bySlug.get("orchestrator-governor")?.system_prompt?.trim() || "";
   const uiNav = bySlug.get("ui-navigation")?.system_prompt?.trim() || "";
-  const tools = bySlug.get("tools-reference")?.system_prompt?.trim() || "";
+
+  // Tools assembly: prefer split modules; fall back to monolithic tools-reference if core split missing
+  const toolsCore = bySlug.get("tools-reference-core")?.system_prompt?.trim();
+  let toolsBlock = "";
+  const loadedToolSlugs: string[] = [];
+  if (toolsCore) {
+    const toolParts: string[] = [toolsCore];
+    loadedToolSlugs.push("tools-reference-core");
+    for (const ts of toolModuleSlugs) {
+      const t = bySlug.get(ts)?.system_prompt?.trim();
+      if (t) {
+        toolParts.push(`\n---\n\n${t}`);
+        loadedToolSlugs.push(ts);
+      }
+    }
+    toolsBlock = toolParts.join("\n");
+  } else {
+    // graceful fallback to legacy monolithic tools-reference
+    toolsBlock = bySlug.get("tools-reference")?.system_prompt?.trim() || "";
+    if (toolsBlock) loadedToolSlugs.push("tools-reference");
+  }
 
   const model =
     bySlug.get("master-agent-core")?.model_config?.model || "google/gemini-2.5-flash";
 
   const parts: string[] = [
-    `### AGENT IA IARCHE - PROMPT SYSTÈME MODULAIRE v6.0 (router=${intent})`,
-    `### Hiérarchie: governor → core → module(${moduleSlug}) → ui-navigation → tools-reference`,
+    `### AGENT IA IARCHE - PROMPT SYSTÈME MODULAIRE v6.1 (router=${intent})`,
+    `### Hiérarchie: governor → core → module(${moduleSlug}) → ui-navigation → tools(${loadedToolSlugs.join("+")})`,
     ``,
   ];
   if (governor) parts.push(`## NIVEAU 0 - GOUVERNEUR`, governor, ``, `---`, ``);
   parts.push(`## NIVEAU 1 - IDENTITÉ AGENT (CORE)`, core, ``, `---`, ``);
   parts.push(`## NIVEAU 1.B - MODULE SPÉCIALISÉ`, moduleBlock, ``, `---`, ``);
   if (uiNav) parts.push(`## NIVEAU 2 - NAVIGATION`, uiNav, ``, `---`, ``);
-  if (tools) parts.push(`## NIVEAU 3 - OUTILS`, tools);
+  if (toolsBlock) parts.push(`## NIVEAU 3 - OUTILS`, toolsBlock);
 
   const composed = parts.join("\n");
   const modulesLoaded = [
@@ -207,11 +243,11 @@ export async function composeSystemPromptForRequest(
     "master-agent-core",
     moduleSlug,
     "ui-navigation",
-    "tools-reference",
+    ...loadedToolSlugs,
   ].filter((s) => bySlug.has(s));
 
   console.log(
-    `[intent-router] intent=${intent} chars=${composed.length} modules=${modulesLoaded.length}`,
+    `[intent-router] intent=${intent} chars=${composed.length} modules=${modulesLoaded.length} tools=${loadedToolSlugs.join(",")}`,
   );
 
   return {
