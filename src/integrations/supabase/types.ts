@@ -3932,6 +3932,91 @@ export type Database = {
         }
         Relationships: []
       }
+      nps_responses: {
+        Row: {
+          category: string | null
+          comment: string | null
+          created_at: string
+          id: string
+          respondent_email: string | null
+          score: number
+          solution_id: string
+          user_id: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          category?: string | null
+          comment?: string | null
+          created_at?: string
+          id?: string
+          respondent_email?: string | null
+          score: number
+          solution_id: string
+          user_id?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          category?: string | null
+          comment?: string | null
+          created_at?: string
+          id?: string
+          respondent_email?: string | null
+          score?: number
+          solution_id?: string
+          user_id?: string | null
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nps_responses_solution_id_fkey"
+            columns: ["solution_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_milestones: {
+        Row: {
+          created_at: string
+          id: string
+          metadata: Json | null
+          milestone: string
+          reached_at: string
+          solution_id: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          milestone: string
+          reached_at?: string
+          solution_id: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          milestone?: string
+          reached_at?: string
+          solution_id?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_milestones_solution_id_fkey"
+            columns: ["solution_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       opportunities: {
         Row: {
           ai_metadata: Json | null
@@ -6270,6 +6355,75 @@ export type Database = {
         }
         Relationships: []
       }
+      tickets: {
+        Row: {
+          assigned_to: string | null
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          lead_id: string | null
+          priority: string
+          reporter_email: string | null
+          reporter_user_id: string | null
+          resolved_at: string | null
+          solution_id: string
+          status: string
+          subject: string
+          updated_at: string
+          workspace_id: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          lead_id?: string | null
+          priority?: string
+          reporter_email?: string | null
+          reporter_user_id?: string | null
+          resolved_at?: string | null
+          solution_id: string
+          status?: string
+          subject: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          lead_id?: string | null
+          priority?: string
+          reporter_email?: string | null
+          reporter_user_id?: string | null
+          resolved_at?: string | null
+          solution_id?: string
+          status?: string
+          subject?: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tickets_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_solution_id_fkey"
+            columns: ["solution_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transcription_participants: {
         Row: {
           ai_suggested_match: Json | null
@@ -8161,7 +8315,16 @@ export type Database = {
           query_normalized: string
         }[]
       }
+      get_solution_onboarding: {
+        Args: { p_solution_id: string }
+        Returns: Json
+      }
       get_solution_pipeline: { Args: { p_solution_id: string }; Returns: Json }
+      get_solution_revenue_detailed: {
+        Args: { p_solution_id: string }
+        Returns: Json
+      }
+      get_solution_support: { Args: { p_solution_id: string }; Returns: Json }
       get_solution_timeline: {
         Args: { p_limit?: number; p_solution_id: string }
         Returns: Json
