@@ -20,6 +20,7 @@ import Contact from "./pages/Contact";
 // Lazy load secondary public pages for bundle optimization
 const CasClients = lazy(() => import("./pages/CasClients"));
 const LivresBlancs = lazy(() => import("./pages/LivresBlancs"));
+const FAQ = lazy(() => import("./pages/FAQ"));
 const AteliersWebinaires = lazy(() => import("./pages/AteliersWebinaires"));
 const Newsletter = lazy(() => import("./pages/Newsletter"));
 const LivreOr = lazy(() => import("./pages/LivreOr"));
