@@ -9228,43 +9228,59 @@ serve(async (req) => {
       ? user_id
       : authedUserId;
 
-    const recentMemory = await getRecentMemory(supabase, workspace_id, safeUserId ?? undefined, session_id, 10);
+    // Phase IA-1 v6.2 : LAZY MEMORY LOADING
+    // Skip all 3 memory DB queries for short "general" intents (greetings,
+    // navigation, simple questions). Saves 3 DB calls + token bloat downstream.
+    const isShortGeneral =
+      routedIntent === "general" && (userQuery || "").trim().length < 40;
+
+    if (isShortGeneral) {
+      console.log(`[orchestrator] lazy-memory: skipping 3 memory queries (short general intent, query="${(userQuery || '').slice(0, 30)}")`);
+    }
+
+    const recentMemory: string[] = isShortGeneral
+      ? []
+      : await getRecentMemory(supabase, workspace_id, safeUserId ?? undefined, session_id, 10);
 
     // 2. Search relevant memory semantically
-    const relevantMemory = userQuery ? await searchMemory(supabase, userQuery, workspace_id, safeUserId ?? undefined, 5) : [];
-    
+    const relevantMemory: string[] = isShortGeneral || !userQuery
+      ? []
+      : await searchMemory(supabase, userQuery, workspace_id, safeUserId ?? undefined, 5);
+
     // 3. Fetch active entities from recent context (leads/partners mentioned recently)
     let activeEntities: { type: string; id: string; name: string; details: string }[] = [];
-    try {
-      // Build query with proper parameterized filters
-      let contextQuery = supabase
-        .from("ai_agent_memory")
-        .select("entity_type, entity_id, content")
-        .eq("memory_type", "context")
-        .eq("category", "active_entity");
-      
-      // Use validated inputs for the filter - proper parameterized approach
-      if (session_id) {
-        contextQuery = contextQuery.eq("session_id", session_id);
-      } else if (safeUserId) {
-        contextQuery = contextQuery.eq("user_id", safeUserId);
+    if (!isShortGeneral) {
+      try {
+        // Build query with proper parameterized filters
+        let contextQuery = supabase
+          .from("ai_agent_memory")
+          .select("entity_type, entity_id, content")
+          .eq("memory_type", "context")
+          .eq("category", "active_entity");
+
+        // Use validated inputs for the filter - proper parameterized approach
+        if (session_id) {
+          contextQuery = contextQuery.eq("session_id", session_id);
+        } else if (safeUserId) {
+          contextQuery = contextQuery.eq("user_id", safeUserId);
+        }
+
+        const { data: contextMemory } = await contextQuery
+          .gte("expires_at", new Date().toISOString())
+          .order("created_at", { ascending: false })
+          .limit(3); // Reduced from 5 to avoid context pollution
+
+        if (contextMemory && contextMemory.length > 0) {
+          activeEntities = contextMemory.map((m: { entity_type: string | null; entity_id: string | null; content: string }) => ({
+            type: m.entity_type || "unknown",
+            id: m.entity_id || "",
+            name: m.content.split(":")[0] || "",
+            details: m.content,
+          }));
+        }
+      } catch (err) {
+        console.error("Active entities fetch error (non-blocking):", err);
       }
-      
-      const { data: contextMemory } = await contextQuery
-        .gte("expires_at", new Date().toISOString())
-        .order("created_at", { ascending: false })
-        .limit(3); // Reduced from 5 to avoid context pollution
-      
-      if (contextMemory && contextMemory.length > 0) {
-        activeEntities = contextMemory.map((m: { entity_type: string | null; entity_id: string | null; content: string }) => ({
-          type: m.entity_type || "unknown",
-          id: m.entity_id || "",
-          name: m.content.split(":")[0] || "",
-          details: m.content,
-        }));
-      }
-    } catch (err) {
-      console.error("Active entities fetch error (non-blocking):", err);
     }
     
     // 3b. ADVANCED TOPIC CHANGE DETECTION
@@ -9343,22 +9359,28 @@ serve(async (req) => {
       }
     }
     
-    // Critical instruction ALWAYS included
-    memoryContext += `\n
+    // Phase IA-1 v6.2 : Anti-pollution rule ONLY when memory might bleed.
+    // Skip the ~600 chars block when no active entity & no relevant memory.
+    const hasMemoryRisk =
+      activeEntities.length > 0 || relevantMemory.length > 0 || recentMemory.length > 0;
+
+    if (hasMemoryRisk) {
+      memoryContext += `\n
 ⚠️ RÈGLE ABSOLUE - PRIORITÉ MAXIMALE ⚠️
 1. Lire et analyser UNIQUEMENT le dernier message de l'utilisateur
 2. Répondre UNIQUEMENT à ce qui est demandé dans ce message
 3. NE JAMAIS parler d'un RDV, lead ou sujet qui n'est PAS mentionné dans le message actuel
 4. Si le message demande des "infos sur X", parler SEULEMENT de X, pas d'autre chose
 5. IGNORER tout contexte précédent qui ne concerne pas la requête actuelle`;
-    
+    }
+
     if (recentMemory.length > 0 || relevantMemory.length > 0) {
       // Only include memory if it seems related to current query
       const queryWords = queryForTopicDetection.split(/\s+/).filter((w: string) => w.length > 3);
-      const relevantMemoryForQuery = relevantMemory.filter((m: string) => 
+      const relevantMemoryForQuery = relevantMemory.filter((m: string) =>
         queryWords.some((word: string) => m.toLowerCase().includes(word))
       );
-      
+
       if (relevantMemoryForQuery.length > 0) {
         memoryContext += "\n\nMÉMOIRE PERTINENTE (uniquement si en lien avec la requête) :";
         memoryContext += "\n" + relevantMemoryForQuery.slice(0, 2).join("\n");
@@ -9366,23 +9388,32 @@ serve(async (req) => {
     }
 
     // 4. Inject current date/time context - CRITICAL for agent temporal awareness
-    // Build explicit calendar reference to prevent day calculation errors
+    // Phase IA-1 v6.2 : LAZY DATE CONTEXT
+    // Full 14-day calendar (~1500 chars) only for date/scheduling queries.
+    // Other queries get a minimal date stub (~120 chars).
     const now = new Date();
     const dayNames = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
-    
-    // Build explicit week calendar with dates
-    const calendarRef: string[] = [];
-    for (let i = 0; i < 14; i++) {
-      const d = new Date(now);
-      d.setDate(d.getDate() + i);
-      const dayName = dayNames[d.getDay()];
-      const dateStr = d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-      const isoDate = d.toISOString().split('T')[0];
-      const label = i === 0 ? " (AUJOURD'HUI)" : i === 1 ? " (demain)" : "";
-      calendarRef.push(`  ${dayName} ${dateStr} = ${isoDate}${label}`);
-    }
-    
-    const dateContext = `\n\nCONTEXTE TEMPOREL (RÉFÉRENCE OBLIGATOIRE) :
+
+    const queryLowerForDate = (userQuery || "").toLowerCase();
+    const needsFullCalendar =
+      /\b(rdv|rendez|booking|planifi|reserver|calendar|agenda|demain|hier|lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche|semaine|prochain|prochaine|\d{1,2}h|\d{1,2}[\/\-]\d{1,2})\b/i.test(queryLowerForDate) ||
+      routedIntent === "doc_generation"; // devis often need date precision
+
+    let dateContext: string;
+    if (needsFullCalendar) {
+      // Build explicit week calendar with dates
+      const calendarRef: string[] = [];
+      for (let i = 0; i < 14; i++) {
+        const d = new Date(now);
+        d.setDate(d.getDate() + i);
+        const dayName = dayNames[d.getDay()];
+        const dateStr = d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const isoDate = d.toISOString().split('T')[0];
+        const label = i === 0 ? " (AUJOURD'HUI)" : i === 1 ? " (demain)" : "";
+        calendarRef.push(`  ${dayName} ${dateStr} = ${isoDate}${label}`);
+      }
+
+      dateContext = `\n\nCONTEXTE TEMPOREL (RÉFÉRENCE OBLIGATOIRE) :
 - Date du jour : ${now.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} (${now.toISOString().split('T')[0]})
 - Jour de la semaine actuel : ${dayNames[now.getDay()].toUpperCase()}
 - Heure actuelle : ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
@@ -9396,6 +9427,10 @@ ${calendarRef.join('\n')}
 - Quand l'utilisateur dit "vendredi", trouve la ligne contenant "vendredi" ci-dessus et utilise la date ISO (YYYY-MM-DD)
 - NE JAMAIS calculer les dates mentalement - TOUJOURS consulter le calendrier ci-dessus
 - Si aujourd'hui est lundi 06/01/2026, alors vendredi = 10/01/2026 SEULEMENT si le calendrier le confirme`;
+    } else {
+      dateContext = `\n\nCONTEXTE TEMPOREL : ${now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} (Europe/Paris, ISO ${now.toISOString().split('T')[0]}).`;
+      console.log(`[orchestrator] lazy-date: minimal stub (intent=${routedIntent})`);
+    }
 
     // 5. Save the user query to memory with entity detection
     if (userQuery) {
