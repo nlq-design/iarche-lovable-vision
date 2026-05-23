@@ -20,6 +20,7 @@ import Contact from "./pages/Contact";
 // Lazy load secondary public pages for bundle optimization
 const CasClients = lazy(() => import("./pages/CasClients"));
 const LivresBlancs = lazy(() => import("./pages/LivresBlancs"));
+const FAQ = lazy(() => import("./pages/FAQ"));
 const AteliersWebinaires = lazy(() => import("./pages/AteliersWebinaires"));
 const Newsletter = lazy(() => import("./pages/Newsletter"));
 const LivreOr = lazy(() => import("./pages/LivreOr"));
@@ -243,6 +244,11 @@ const App = () => (
           <Route path="/iarche-labs" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
               <IArcheLabs />
+            </Suspense>
+          } />
+          <Route path="/faq" element={
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+              <FAQ />
             </Suspense>
           } />
           
