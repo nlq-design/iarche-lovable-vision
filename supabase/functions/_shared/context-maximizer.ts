@@ -63,8 +63,22 @@ export interface RagChunkDebug {
   title: string;
   source_date: string | null;
   temporal_weight: number | null;
+  /** Similarity score (cosine) when retrieval is vector-based. Null pour les retrievers non-vectoriels (entity-scoped). */
+  similarity: number | null;
   chars: number;
   estimated_tokens: number;
+}
+
+/** Filtres RAG appliqués lors de la récupération — debug & audit multi-tenant. */
+export interface RagFilters {
+  workspace_id: string | null;
+  entity_type: string | null;
+  entity_id: string | null;
+  limit: number;
+  allowed_types: string[] | null;
+  similarity_threshold: number | null;
+  retriever: 'entity_scoped' | 'vector' | 'hybrid';
+  embedding_model?: string | null;
 }
 
 export interface MaxContextResult {
@@ -78,6 +92,8 @@ export interface MaxContextResult {
   warnings: string[];
   /** Chunks retournés par match_entity_resources (priority 4.5) — diagnostic */
   ragChunks: RagChunkDebug[];
+  /** Filtres RAG appliqués — affichés dans RagDiagnosticsDrawer (mode debug) */
+  filters: RagFilters;
   /** Token budget that was used */
   tokenBudget: number;
 }
