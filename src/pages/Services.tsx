@@ -1,4 +1,5 @@
 import { Helmet } from 'react-helmet-async';
+import { PageHero } from '@/components/sections/PageHero';
 import { Link } from 'react-router-dom';
 import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 import Header from '@/components/layout/Header';
@@ -171,15 +172,15 @@ const Services = () => {
       
       <main className="min-h-screen pt-4">
         <section className="max-w-6xl mx-auto px-6 py-4">
-          {/* En-tête */}
-          <div className="text-center mb-8">
-            <GradientTitle size="lg" as="h1" className="mb-6 animate-fadeIn [animation-delay:0.1s]">
-              Nos services
-            </GradientTitle>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto animate-fadeIn [animation-delay:0.2s]">
-              Audit, développement, accompagnement, conformité.
-            </p>
-          </div>
+          <PageHero
+            eyebrow="Notre offre"
+            title="Nos services"
+            subtitle="Audit, développement, accompagnement, conformité."
+            showMesh={false}
+            size="sm"
+            className="!pt-0 !pb-8"
+          />
+
 
           {/* Liste des services */}
           <div className="space-y-12">

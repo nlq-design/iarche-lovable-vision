@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { PageHero } from '@/components/sections/PageHero';
 import { Helmet } from 'react-helmet-async';
 import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 import Header from '@/components/layout/Header';
@@ -180,15 +181,15 @@ const Actualites = () => {
 
       <main className="min-h-screen pt-4">
         <section className="max-w-6xl mx-auto px-6 py-4">
-          {/* En-tête */}
-          <div className="text-center mb-8">
-            <GradientTitle size="lg" className="mb-6 animate-fadeIn [animation-delay:0.1s]">
-              Actualités
-            </GradientTitle>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto animate-fadeIn [animation-delay:0.3s]">
-              Guides pratiques, analyses techniques et retours d'expérience sur l'IA
-            </p>
-          </div>
+          <PageHero
+            eyebrow="À la une"
+            title="Actualités"
+            subtitle="Guides pratiques, analyses techniques et retours d'expérience sur l'IA."
+            showMesh={false}
+            size="sm"
+            className="!pt-0 !pb-8"
+          />
+
 
           {/* Filtres */}
           <div className="flex flex-wrap gap-4 mb-8 justify-center">
