@@ -379,7 +379,42 @@ async function handleMorningBriefing(supabase: SupabaseClientAny, chatId: string
   return "Échec d'envoi du briefing";
 }
 
-// ============ CRON HANDLERS ============
+// ---- Phase IA-2L — Notification "lacune contenu" Sentinel ----
+async function handleContentGapAlert(supabase: SupabaseClientAny, alertId: string, chatId: string): Promise<string> {
+  const alreadySent = await checkAlreadySent(supabase, chatId, "content_gap_alert", alertId);
+  if (alreadySent) return "Notification déjà envoyée";
+
+  const { data: alert } = await supabase
+    .from("ai_sentinel_alerts")
+    .select("id, severity, title, description, ai_metadata")
+    .eq("id", alertId)
+    .eq("category", "content_gap")
+    .single();
+
+  if (!alert) return "Alerte introuvable";
+
+  const meta = (alert.ai_metadata ?? {}) as Record<string, unknown>;
+  const severityIcon: Record<string, string> = { high: "🔴", medium: "🟡", low: "🟢" };
+  const samples = Array.isArray(meta.sample_queries) ? (meta.sample_queries as string[]).slice(0, 3) : [];
+
+  const message = `${severityIcon[alert.severity as string] || "📚"} <b>Lacune contenu public détectée</b>
+
+<b>${alert.title}</b>
+
+📊 ${meta.occurrences ?? "?"} questions similaires sur ${meta.window_days ?? "?"} jours
+${samples.length ? `\n💬 Exemples :\n${samples.map((q) => `  • <i>${q.slice(0, 100)}</i>`).join("\n")}\n` : ""}
+
+➡️ Action : créer un article ou enrichir la FAQ pour combler ce manque.
+
+🔗 <a href="https://iarche.fr/admin/observability/ai">Voir le dashboard</a>`;
+
+  const sent = await sendTelegramMessage(chatId, message);
+  if (sent) {
+    await markAsSent(supabase, chatId, "content_gap_alert", "content_gap", alertId);
+    return "Notification envoyée";
+  }
+  return "Échec d'envoi";
+}
 
 async function checkDueTaskReminders(supabase: SupabaseClientAny, chatId: string): Promise<{ sent: number; skipped: number }> {
   // Find tasks due in the next hour that haven't been reminded
