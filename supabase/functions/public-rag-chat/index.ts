@@ -21,7 +21,7 @@ const NO_MATCH_REPLY = `Je n'ai pas cette information précise dans nos contenus
 const EMBEDDING_MODEL = "openai/text-embedding-3-small";
 const CHAT_MODEL = "google/gemini-2.5-flash";
 const TOP_K = 5;
-const SIMILARITY_THRESHOLD = 0.65;
+const SIMILARITY_THRESHOLD = 0.35;
 
 function streamPlainTextAsSSE(text: string): ReadableStream {
   const encoder = new TextEncoder();
