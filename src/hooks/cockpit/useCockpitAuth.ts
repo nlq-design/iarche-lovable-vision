@@ -42,8 +42,9 @@ export const useCockpitAuth = () => {
         .select('role')
         .eq('user_id', user.id);
 
-      const hasCockpitUser = roles?.some(r => r.role === 'cockpit_user') ?? false;
-      const hasCockpitAdmin = roles?.some(r => r.role === 'cockpit_admin') ?? false;
+      const hasSuperAdmin = roles?.some(r => r.role === 'super_admin') ?? false;
+      const hasCockpitUser = hasSuperAdmin || (roles?.some(r => r.role === 'cockpit_user') ?? false);
+      const hasCockpitAdmin = hasSuperAdmin || (roles?.some(r => r.role === 'cockpit_admin') ?? false);
       const hasCockpitAccess = hasCockpitUser || hasCockpitAdmin;
 
       // Check MFA status
