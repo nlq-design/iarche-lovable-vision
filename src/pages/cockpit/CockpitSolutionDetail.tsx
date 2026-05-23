@@ -213,6 +213,18 @@ export default function CockpitSolutionDetail() {
               <Clock className="h-3.5 w-3.5" />
               Timeline
             </TabsTrigger>
+            <TabsTrigger value="onboarding" className="gap-1.5 text-sm h-7">
+              <Rocket className="h-3.5 w-3.5" />
+              Onboarding
+            </TabsTrigger>
+            <TabsTrigger value="revenue" className="gap-1.5 text-sm h-7">
+              <Euro className="h-3.5 w-3.5" />
+              Revenus
+            </TabsTrigger>
+            <TabsTrigger value="support" className="gap-1.5 text-sm h-7">
+              <LifeBuoy className="h-3.5 w-3.5" />
+              Support & NPS
+            </TabsTrigger>
             <TabsTrigger value="leads" className="gap-1.5 text-sm h-7">
               <Users className="h-3.5 w-3.5" />
               Prospects ({solutionLeads.length})
