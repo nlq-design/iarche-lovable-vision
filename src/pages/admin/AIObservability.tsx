@@ -45,17 +45,28 @@ interface ContentGapAlertRow {
   ai_metadata: Record<string, unknown> | null;
 }
 
+interface ThresholdRow {
+  workspace_id: string;
+  auto_action_confidence_threshold: number;
+  rag_similarity_threshold: number;
+  last_metrics: Record<string, unknown> | null;
+  updated_at: string;
+}
+
 export default function AIObservability() {
   const [metrics, setMetrics] = useState<MetricRow[]>([]);
   const [voice, setVoice] = useState<VoiceRow[]>([]);
   const [gaps, setGaps] = useState<ContentGapRow[]>([]);
   const [gapAlerts, setGapAlerts] = useState<ContentGapAlertRow[]>([]);
+  const [autoResolved, setAutoResolved] = useState<ContentGapAlertRow[]>([]);
+  const [thresholds, setThresholds] = useState<ThresholdRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       const since = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString().slice(0, 10);
-      const [m, v, g, ga] = await Promise.all([
+      const sinceIso = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString();
+      const [m, v, g, ga, ar, th] = await Promise.all([
         supabase.from("ai_cache_metrics" as any).select("*").gte("day", since).order("day", { ascending: false }),
         supabase.from("voice_usage_daily").select("*").gte("day", since).order("day", { ascending: false }),
         supabase.rpc("cluster_unanswered_rag" as any, { _days: 14, _min_count: 2, _sim_threshold: 0.85 }),
@@ -65,14 +76,27 @@ export default function AIObservability() {
           .is("resolved_at", null)
           .order("created_at", { ascending: false })
           .limit(20),
+        supabase.from("ai_sentinel_alerts" as any)
+          .select("id, severity, title, created_at, resolved_at, ai_metadata")
+          .eq("category", "content_gap")
+          .not("resolved_at", "is", null)
+          .gte("resolved_at", sinceIso)
+          .order("resolved_at", { ascending: false })
+          .limit(10),
+        supabase.from("workspace_ai_thresholds" as any)
+          .select("*")
+          .order("updated_at", { ascending: false }),
       ]);
       setMetrics((m.data as any) || []);
       setVoice((v.data as any) || []);
       setGaps((g.data as any) || []);
       setGapAlerts((ga.data as any) || []);
+      setAutoResolved((ar.data as any) || []);
+      setThresholds((th.data as any) || []);
       setLoading(false);
     })();
   }, []);
+
 
   const totals = metrics.reduce(
     (acc, r) => {
