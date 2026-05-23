@@ -774,6 +774,48 @@ serve(async (req) => {
           priority: "medium", due_in_days: 2,
         },
         ai_reasoning: `[Sentinelle] Concentration anormale du pipeline — risque de creux de revenu.`,
+      // === Phase E (v3) — Templates pour les 4 nouvelles règles risk ===
+      risk_churn_hot_lead: (a) => ({
+        action_type: "send_email",
+        action_label: `Sauver ${a.entity_name} (lead chaud inactif ${a.days_inactive}j)`,
+        action_payload: {
+          lead_id: a.entity_id,
+          email_type: "reengagement",
+          context: `Lead hot (BANT élevé) silencieux depuis ${a.days_inactive}j. Risque de churn imminent — angle de réengagement personnalisé requis.`,
+        },
+        ai_reasoning: `[Sentinelle v3] Lead BANT >70 inactif ${a.days_inactive}j. Probabilité de churn forte si pas d'email de réengagement sous 48h.`,
+      }),
+      risk_opportunity_dormant: (a) => ({
+        action_type: "create_note",
+        action_label: `Re-qualifier "${a.entity_name}" (${a.days_inactive}j sans activité)`,
+        action_payload: {
+          entity_type: "opportunity", entity_id: a.entity_id,
+          title: `Re-qualification opportunité dormante`,
+          content: `Opportunité au stage "${a.stage || "?"}" sans activité depuis ${a.days_inactive}j. Préparer 3 questions de re-qualification : intérêt résiduel, blocage, timing décision.`,
+        },
+        ai_reasoning: `[Sentinelle v3] Pré-zombie : agir maintenant évite la perte sèche d'une opportunité encore récupérable.`,
+      }),
+      risk_pipeline_stage_regression: (a) => ({
+        action_type: "create_task",
+        action_label: `Comprendre régression "${a.entity_name}" → ${a.stage}`,
+        action_payload: {
+          entity_type: "opportunity", entity_id: a.entity_id,
+          title: `Régression pipeline – ${a.entity_name}`,
+          description: `Stage régressé vers "${a.stage}". Identifier l'objection ou blocage (prix, timing, décideur) puis ajuster le plan d'action.`,
+          priority: "high", due_in_days: 1,
+        },
+        ai_reasoning: `[Sentinelle v3] Régression de stage = signal d'objection non traitée. Diagnostic rapide indispensable.`,
+      }),
+      risk_over_solicitation: (a) => ({
+        action_type: "create_task",
+        action_label: `Pause relance "${a.entity_name}" (sur-sollicité)`,
+        action_payload: {
+          entity_type: "lead", entity_id: a.entity_id,
+          title: `Sur-sollicitation détectée – ${a.entity_name}`,
+          description: `Plus de 3 emails envoyés en 7j sans réponse. Marquer pause 14j, varier le canal (LinkedIn / téléphone) au prochain contact.`,
+          priority: "high", due_in_days: 0,
+        },
+        ai_reasoning: `[Sentinelle v3] Sur-sollicitation = risque de spam et de brûlage de contact. Pause + changement de canal.`,
       }),
     };
 

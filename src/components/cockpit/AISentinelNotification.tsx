@@ -15,10 +15,14 @@ const severityConfig = {
   info: { icon: Info, color: 'text-blue-500', bg: 'bg-blue-500/10', badge: 'outline' as const },
 };
 
-const categoryLabels = {
+const categoryLabels: Record<string, string> = {
   incomplete: 'Données manquantes',
   inconsistency: 'Incohérence',
   inactivity: 'Inactivité',
+  risk: 'Risque',
+  duplicate: 'Doublon',
+  overdue: 'En retard',
+  imbalance: 'Déséquilibre',
 };
 
 function AlertItem({ alert, onDismiss, onNavigate }: { 
