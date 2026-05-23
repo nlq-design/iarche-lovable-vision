@@ -6,6 +6,7 @@ import { chatWithTools, completeLLM } from "../_shared/ai-legacy-bridge.ts";
 import type { AIMessage, AITool } from "../_shared/ai-types.ts";
 import { composeSystemPromptForRequest, type Intent } from "../_shared/intent-router.ts";
 import { buildCacheKey, buildContextFingerprint, lookupCache, storeCache, trackCacheTrace } from "../_shared/semantic-cache.ts";
+import { retrieveMemories, buildMemoryBlock, extractMemoriesFromConversation, storeMemories } from "../_shared/memory-enricher.ts";
 
 // Phase IA-2 — Cache sémantique orchestrator (general intent only, no tool_calls)
 const ORCHESTRATOR_CACHE_TTL_HOURS = 24;
