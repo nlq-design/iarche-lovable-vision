@@ -7,8 +7,56 @@
 // module) falls back to the legacy monolithic composition handled by
 // the caller (ai-agent-orchestrator).
 
+import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+
 const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const LOVABLE_EMBEDDINGS_URL = "https://ai.gateway.lovable.dev/v1/embeddings";
 const CLASSIFIER_MODEL = "google/gemini-2.5-flash-lite";
+const EMBEDDING_MODEL = "openai/text-embedding-3-small";
+const SEMANTIC_THRESHOLD = 0.75;
+const SEMANTIC_TIMEOUT_MS = 1500;
+
+// Lazy supabase admin client (intent-router internal)
+let _supa: SupabaseClient | null = null;
+function getSupa(): SupabaseClient | null {
+  if (_supa) return _supa;
+  const url = Deno.env.get("SUPABASE_URL");
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!url || !key) return null;
+  _supa = createClient(url, key, { auth: { persistSession: false } });
+  return _supa;
+}
+
+// Semantic routing : embed query → match_intent_anchor RPC
+async function classifyIntentSemantic(query: string, apiKey: string): Promise<{ intent: Intent; similarity: number } | null> {
+  const supa = getSupa();
+  if (!supa) return null;
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), SEMANTIC_TIMEOUT_MS);
+    const resp = await fetch(LOVABLE_EMBEDDINGS_URL, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      signal: ctrl.signal,
+      body: JSON.stringify({ model: EMBEDDING_MODEL, input: query.slice(0, 500), dimensions: 1536 }),
+    });
+    clearTimeout(timer);
+    if (!resp.ok) return null;
+    const json = await resp.json();
+    const vec: number[] = json?.data?.[0]?.embedding;
+    if (!vec?.length) return null;
+
+    const { data, error } = await supa.rpc("match_intent_anchor", {
+      query_embedding_text: `[${vec.join(",")}]`,
+      similarity_threshold: SEMANTIC_THRESHOLD,
+    });
+    if (error || !data?.[0]) return null;
+    const top = data[0];
+    return { intent: top.intent as Intent, similarity: Number(top.similarity) };
+  } catch {
+    return null;
+  }
+}
 
 export type Intent =
   | "crm_query"
@@ -84,6 +132,15 @@ export async function classifyIntent(query: string): Promise<Intent> {
     console.warn("[intent-router] LOVABLE_API_KEY missing, defaulting to general");
     return "general";
   }
+
+  // Phase C — Router Sémantique v2 : tentative embedding-based avant fallback LLM
+  const semantic = await classifyIntentSemantic(key, apiKey);
+  if (semantic && semantic.similarity >= SEMANTIC_THRESHOLD) {
+    console.log(`[intent-router] semantic hit intent=${semantic.intent} sim=${semantic.similarity.toFixed(3)}`);
+    cacheSet(key, semantic.intent);
+    return semantic.intent;
+  }
+
 
   try {
     const ctrl = new AbortController();
