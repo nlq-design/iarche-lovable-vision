@@ -13,7 +13,8 @@ import {
   Bot,
   Handshake,
   Send,
-  Settings
+  Settings,
+  UserCircle
 } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { Link, useLocation } from 'react-router-dom';
