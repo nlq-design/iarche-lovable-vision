@@ -1,4 +1,3 @@
-import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 interface AgentChatPreviewProps {
@@ -7,37 +6,17 @@ interface AgentChatPreviewProps {
 
 /**
  * AgentChatPreview — démo visuelle d'agent RAG IArche (Lot D2).
- * Tokens sémantiques uniquement, zéro emoji, respecte prefers-reduced-motion.
+ * Tokens sémantiques uniquement, zéro emoji.
  */
 export function AgentChatPreview({ className }: AgentChatPreviewProps) {
-  const [visible, setVisible] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setVisible(true);
-          io.disconnect();
-        }
-      },
-      { threshold: 0.2 },
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, []);
-
   return (
     <div
-      ref={ref}
       className={cn(
-        "relative mx-auto w-full max-w-3xl transition-all duration-700 ease-out",
-        visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6",
+        "relative mx-auto w-full max-w-3xl motion-safe:animate-fadeIn",
         className,
       )}
     >
+
       {/* Glow halo */}
       <div
         aria-hidden
