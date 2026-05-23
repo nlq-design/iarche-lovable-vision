@@ -572,7 +572,7 @@ serve(async (req) => {
             bold: true,
             size: TYPOGRAPHY.display.size,
             color: primaryColor,
-            font: 'Calibri',
+            font: headingFont,
           }),
         ],
         alignment: AlignmentType.CENTER,
@@ -867,7 +867,7 @@ serve(async (req) => {
         default: {
           document: {
             run: {
-              font: 'Calibri',
+              font: bodyFont,
               size: TYPOGRAPHY.body.size,
             },
           },
@@ -877,7 +877,7 @@ serve(async (req) => {
             id: "Normal",
             name: "Normal",
             run: {
-              font: "Calibri",
+              font: bodyFont,
               size: TYPOGRAPHY.body.size,
               color: COLORS.grisTexte,
             },
