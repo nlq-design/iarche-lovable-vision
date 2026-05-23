@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Helmet } from "react-helmet-async";
 import { UserCircle, Mail, ShieldCheck, Bell, Globe, LogOut, Sparkles } from "lucide-react";
-import { LoadingState } from "@/components/common/LoadingState";
+import { LoadingState } from "@/components/cockpit/common/LoadingState";
 
 const LOCALES = [
   { value: "fr", label: "Français" },
