@@ -77,7 +77,7 @@ const LivresBlancs = () => {
         <meta property="og:description" content="Livres blancs et guides complets sur l'IA pour les PME." />
         <meta property="og:url" content="https://iarche.fr/livres-blancs" />
         <meta property="og:type" content="website" />
-        <meta property="og:image" content="https://iarche.fr/og-image-v4.png" />
+        <meta property="og:image" content="https://iarche.fr/og/livres-blancs.png" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
         <meta property="og:locale" content="fr_FR" />
@@ -87,7 +87,7 @@ const LivresBlancs = () => {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Livres blancs IA · IArche" />
         <meta name="twitter:description" content="Guides et documentation sur l'IA pour PME." />
-        <meta name="twitter:image" content="https://iarche.fr/og-image-v4.png" />
+        <meta name="twitter:image" content="https://iarche.fr/og/livres-blancs.png" />
 
         {/* Schema.org BreadcrumbList */}
         <script type="application/ld+json">

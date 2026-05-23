@@ -80,9 +80,9 @@ const LivreOr = () => {
         <meta property="og:description" content="Découvrez les témoignages de nos clients. Ce qu'ils disent de leur collaboration avec IArche." />
         <meta property="og:url" content="https://iarche.fr/livre-or" />
         <meta property="og:type" content="website" />
-        <meta property="og:image" content="https://iarche.fr/og-image-v4.png" />
-        <meta property="og:image:width" content="1512" />
-        <meta property="og:image:height" content="794" />
+        <meta property="og:image" content="https://iarche.fr/og/livre-or.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
 
         {/* Schema.org BreadcrumbList */}
         <script type="application/ld+json">

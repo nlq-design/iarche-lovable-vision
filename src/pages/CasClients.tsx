@@ -77,9 +77,9 @@ const CasClients = () => {
         <meta property="og:description" content="Découvrez nos cas clients et projets d'intégration IA pour PME." />
         <meta property="og:url" content="https://iarche.fr/cas-clients" />
         <meta property="og:type" content="website" />
-        <meta property="og:image" content="https://iarche.fr/og-image-v4.png" />
-        <meta property="og:image:width" content="1512" />
-        <meta property="og:image:height" content="794" />
+        <meta property="og:image" content="https://iarche.fr/og/cas-clients.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
         <meta property="og:locale" content="fr_FR" />
         <meta property="og:site_name" content="IArche" />
         
@@ -87,7 +87,7 @@ const CasClients = () => {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Cas clients IA · IArche" />
         <meta name="twitter:description" content="Projets d'intégration IA réalisés pour PME." />
-        <meta name="twitter:image" content="https://iarche.fr/og-image-v4.png" />
+        <meta name="twitter:image" content="https://iarche.fr/og/cas-clients.png" />
 
         {/* Schema.org BreadcrumbList */}
         <script type="application/ld+json">

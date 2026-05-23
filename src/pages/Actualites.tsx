@@ -119,9 +119,9 @@ const Actualites = () => {
         <meta property="og:description" content="Articles de fond sur l'IA : guides pratiques, analyses techniques et retours d'expérience pour PME." />
         <meta property="og:url" content="https://iarche.fr/actualites" />
         <meta property="og:type" content="website" />
-        <meta property="og:image" content="https://iarche.fr/og-image-v4.png" />
-        <meta property="og:image:width" content="1512" />
-        <meta property="og:image:height" content="794" />
+        <meta property="og:image" content="https://iarche.fr/og/actualites.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
         <meta property="og:locale" content="fr_FR" />
         <meta property="og:site_name" content="IArche" />
         
@@ -129,7 +129,7 @@ const Actualites = () => {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Actualités IA · IArche" />
         <meta name="twitter:description" content="Guides pratiques et analyses techniques sur l'IA pour PME." />
-        <meta name="twitter:image" content="https://iarche.fr/og-image-v4.png" />
+        <meta name="twitter:image" content="https://iarche.fr/og/actualites.png" />
 
         {/* Schema.org BreadcrumbList */}
         <script type="application/ld+json">
