@@ -107,6 +107,7 @@ const navigationItems = [
   {
     group: 'Sécurité & IA',
     items: [
+      { title: 'Utilisateurs', url: '/admin/users', icon: Users },
       { title: 'Prompts IA', url: '/admin/ai-prompts', icon: Bot },
       { title: 'Bibliothèque API', url: '/admin/api-library', icon: Server },
       { title: 'Dashboard sécurité', url: '/admin/security-dashboard', icon: Shield },
