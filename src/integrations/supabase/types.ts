@@ -4843,8 +4843,10 @@ export type Database = {
           limits: Json
           name: string
           price_monthly_eur: number
+          price_yearly_eur: number | null
           slug: string
           stripe_price_id: string | null
+          stripe_price_id_yearly: string | null
           tier: string
           updated_at: string
         }
@@ -4856,8 +4858,10 @@ export type Database = {
           limits?: Json
           name: string
           price_monthly_eur?: number
+          price_yearly_eur?: number | null
           slug: string
           stripe_price_id?: string | null
+          stripe_price_id_yearly?: string | null
           tier: string
           updated_at?: string
         }
@@ -4869,8 +4873,10 @@ export type Database = {
           limits?: Json
           name?: string
           price_monthly_eur?: number
+          price_yearly_eur?: number | null
           slug?: string
           stripe_price_id?: string | null
+          stripe_price_id_yearly?: string | null
           tier?: string
           updated_at?: string
         }
