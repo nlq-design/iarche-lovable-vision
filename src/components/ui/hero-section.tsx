@@ -12,8 +12,41 @@ const HeroSection = () => {
   const [chatbotOpen, setChatbotOpen] = useState(false);
 
   return (
-    <div ref={heroRef} className="min-h-screen flex items-center justify-center relative">
+    <div ref={heroRef} className="min-h-screen flex items-center justify-center relative overflow-hidden">
+      {/* Ambient lights — IArche tokens only, light mode */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10 motion-reduce:hidden"
+      >
+        <div className="absolute -top-32 -left-24 h-[28rem] w-[28rem] rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute top-1/3 -right-32 h-[32rem] w-[32rem] rounded-full bg-accent/10 blur-3xl" />
+        <div className="absolute bottom-0 left-1/3 h-[24rem] w-[24rem] rounded-full bg-primary/5 blur-3xl" />
+      </div>
+
+      {/* Dotted grid — very subtle, charte-safe */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10 opacity-[0.18]"
+        style={{
+          backgroundImage:
+            'radial-gradient(hsl(var(--primary) / 0.35) 1px, transparent 1px)',
+          backgroundSize: '28px 28px',
+          maskImage:
+            'radial-gradient(ellipse at center, black 40%, transparent 75%)',
+          WebkitMaskImage:
+            'radial-gradient(ellipse at center, black 40%, transparent 75%)',
+        }}
+      />
+
       <div className="container text-center z-10 relative px-6 py-20">
+        {/* Badge "Nouveau" — outline charte */}
+        <div className="mb-10 flex justify-center animate-fadeIn">
+          <span className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/5 px-4 py-1.5 text-xs font-medium tracking-wide text-accent">
+            <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" />
+            Nouveau · Cockpit IArche disponible
+          </span>
+        </div>
+
         {/* Logo officiel SVG + Arc décoratif - LCP candidate, painted immediately */}
         <div className="mb-20 md:mb-28 animate-fadeIn flex flex-col items-center">
           <Logo variant="main" size="xl" priority />
