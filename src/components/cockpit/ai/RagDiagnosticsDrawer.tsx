@@ -89,7 +89,7 @@ export function RagDiagnosticsDrawer({ traceId, label = 'Contexte injecté' }: R
           </div>
         )}
 
-        {trace && (
+        {trace && !crossTenantLeak && (
           <div className="space-y-6 pt-6">
             {/* Cache status (M6) */}
             {trace.cache_status && (
