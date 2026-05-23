@@ -9554,6 +9554,73 @@ ${calendarRef.join('\n')}
       enableMetrics: true,
     });
 
+    // ============================================================
+    // PHASE IA-2 — Semantic cache lookup (general intent only)
+    // Cache uniquement les requêtes "general" sans entité active :
+    // greetings, FAQ IArche, questions de connaissance générique.
+    // Skip si entités actives ou mémoire pertinente (réponse contextuelle).
+    // ============================================================
+    const cacheEligible =
+      routedIntent === "general" &&
+      activeEntities.length === 0 &&
+      relevantMemory.length === 0 &&
+      (userQuery || "").trim().length > 0;
+
+    const orchestratorCacheKey = buildCacheKey({
+      workspaceId: workspace_id,
+      mode: "orchestrator_general",
+      entityType: "general",
+      entityId: "orchestrator",
+    });
+    const orchestratorFingerprint = cacheEligible
+      ? await buildContextFingerprint({
+          entityType: "general",
+          entityId: "orchestrator",
+          workspaceId: workspace_id,
+          userId: safeUserId ?? "anonymous",
+          entityUpdatedAt: null,
+          ragChunksCount: 0,
+          promptVersion: `modular:${routedModules.join("|")}`,
+          extra: { mode: responseMode },
+          cacheScope: "workspace",
+        })
+      : "";
+
+    if (cacheEligible) {
+      const cached = await lookupCache({
+        supabase,
+        workspaceId: workspace_id,
+        cacheKey: orchestratorCacheKey,
+        queryText: userQuery,
+        fingerprint: orchestratorFingerprint,
+        threshold: ORCHESTRATOR_CACHE_THRESHOLD,
+      });
+      if (cached.hit && typeof cached.response === "string") {
+        console.log(`[orchestrator] CACHE HIT sim=${cached.similarity.toFixed(3)} age=${cached.ageSeconds}s hits=${cached.hitCount}`);
+        return new Response(JSON.stringify({
+          ok: true,
+          message: cached.response,
+          tool_calls: [],
+          usage: {
+            prompt_tokens: 0,
+            completion_tokens: 0,
+            total_tokens: 0,
+            max_tokens: getModelContextWindow(selectedModel),
+            model_id: cached.model ?? selectedModel,
+            tokens_available: getModelContextWindow(selectedModel),
+            cache_mode: "hit",
+            cache_similarity: cached.similarity,
+            cache_age_seconds: cached.ageSeconds,
+          },
+          memory_used: false,
+          active_entities_count: 0,
+          performance: { tool_count: 0, total_tool_duration_ms: 0, iterations: 0 },
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json", "X-Cache": "HIT" },
+        });
+      }
+    }
+
     let aiResponse = await aiClient.complete({
       messages: fullMessages as AIMessage[],
       tools: AGENT_TOOLS as AITool[],
