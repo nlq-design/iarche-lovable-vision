@@ -90,7 +90,7 @@ export function useCockpitGeneratedDocuments(projectId?: string, opportunityId?:
       opportunity_id?: string;
       lead_id?: string;
       article_id?: string;
-      document_type: 'quote' | 'spec' | 'proposal' | 'invitation';
+      document_type: 'quote' | 'spec' | 'proposal' | 'invitation' | 'training_program';
       custom_instructions?: string;
       context?: Record<string, unknown>;
     }) => {

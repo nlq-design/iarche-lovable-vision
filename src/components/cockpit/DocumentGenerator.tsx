@@ -33,6 +33,7 @@ import {
   FileText,
   Receipt,
   FileSignature,
+  GraduationCap,
   Plus,
   Sparkles,
   Loader2,
@@ -58,10 +59,13 @@ interface DocumentGeneratorProps {
   opportunityId?: string;
 }
 
-const DOCUMENT_TYPES: { type: 'quote' | 'spec' | 'proposal'; label: string; icon: React.ReactNode; description: string }[] = [
+type GeneratableType = 'quote' | 'spec' | 'proposal' | 'training_program';
+
+const DOCUMENT_TYPES: { type: GeneratableType; label: string; icon: React.ReactNode; description: string }[] = [
   { type: 'quote', label: 'Devis', icon: <Receipt className="h-4 w-4" />, description: 'Génère un devis commercial structuré' },
   { type: 'spec', label: 'CDC', icon: <FileText className="h-4 w-4" />, description: 'Génère un cahier des charges détaillé' },
   { type: 'proposal', label: 'Proposition', icon: <FileSignature className="h-4 w-4" />, description: 'Génère une proposition commerciale' },
+  { type: 'training_program', label: 'Programme de formation', icon: <GraduationCap className="h-4 w-4" />, description: 'Génère un programme pédagogique minuté avec séquences et annexes' },
 ];
 
 export function DocumentGenerator({ projectId, opportunityId }: DocumentGeneratorProps) {
