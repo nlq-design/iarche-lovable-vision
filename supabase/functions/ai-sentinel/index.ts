@@ -152,17 +152,17 @@ serve(async (req) => {
   try {
     // SECURITY: resolve caller's workspace from JWT (never pick first row globally).
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
+    if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const userClient = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: userData, error: userErr } = await userClient.auth.getUser();
+    const token = authHeader.replace("Bearer ", "");
+    const userClient = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!);
+    const { data: userData, error: userErr } = await userClient.auth.getUser(token);
     if (userErr || !userData.user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      console.error("[ai-sentinel] auth failed:", userErr?.message);
+      return new Response(JSON.stringify({ error: "Unauthorized", detail: userErr?.message }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
