@@ -24,6 +24,30 @@ const OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
 type DocumentType = "quote" | "spec" | "proposal" | "invitation" | "training_program";
 type Provider = "lovable" | "openai" | "anthropic" | "openrouter";
 
+const DOCUMENT_TYPE_ALIASES: Record<string, DocumentType> = {
+  quote: "quote",
+  devis: "quote",
+  spec: "spec",
+  cdc: "spec",
+  cahier_des_charges: "spec",
+  proposal: "proposal",
+  proposition: "proposal",
+  rapport: "proposal",
+  report: "proposal",
+  invitation: "invitation",
+  programme: "invitation",
+  training_program: "training_program",
+  programme_formation: "training_program",
+  programme_de_formation: "training_program",
+  formation: "training_program",
+};
+
+function normalizeDocumentType(value: unknown): DocumentType | null {
+  if (typeof value !== "string") return null;
+  const key = value.trim().toLowerCase().replace(/[\s-]+/g, "_");
+  return DOCUMENT_TYPE_ALIASES[key] || null;
+}
+
 interface ModelConfig {
   model?: string;
   provider?: Provider;
@@ -752,10 +776,11 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const body: GenerateDocumentRequest & { workspace_id?: string } = await req.json();
-    const { project_id, opportunity_id, lead_id, article_id, document_type, custom_instructions, context: inputContext, existing_sections, billing_entity_id } = body;
+    const { project_id, opportunity_id, lead_id, article_id, custom_instructions, context: inputContext, existing_sections, billing_entity_id } = body;
+    const document_type = normalizeDocumentType(body.document_type);
 
     if (!document_type) {
-      return new Response(JSON.stringify({ error: "document_type required" }), {
+      return new Response(JSON.stringify({ error: "invalid_document_type", allowed: Object.keys(DOCUMENT_TYPE_ALIASES) }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

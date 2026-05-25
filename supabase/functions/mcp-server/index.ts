@@ -75,6 +75,30 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+type DocumentTemplateType = "quote" | "proposal" | "spec" | "invitation" | "training_program";
+
+const DOCUMENT_TEMPLATE_ALIASES: Record<string, DocumentTemplateType> = {
+  quote: "quote",
+  devis: "quote",
+  proposal: "proposal",
+  proposition: "proposal",
+  spec: "spec",
+  cdc: "spec",
+  cahier_des_charges: "spec",
+  invitation: "invitation",
+  programme_evenement: "invitation",
+  training_program: "training_program",
+  programme_formation: "training_program",
+  programme_de_formation: "training_program",
+  formation: "training_program",
+};
+
+function normalizeDocumentTemplateType(value: unknown): DocumentTemplateType | null {
+  if (typeof value !== "string") return null;
+  const key = value.trim().toLowerCase().replace(/[\s-]+/g, "_");
+  return DOCUMENT_TEMPLATE_ALIASES[key] || null;
+}
+
 // === SHA-256 helper ===
 async function sha256(message: string): Promise<string> {
   const msgBuffer = new TextEncoder().encode(message);
@@ -1464,6 +1488,11 @@ mcpServer.registerTool(
     if (!ctx) return authError();
 
     try {
+      const templateType = normalizeDocumentTemplateType(params.template_type);
+      if (!templateType) {
+        return { content: [{ type: "text" as const, text: `Erreur: template_type invalide. Valeurs acceptées: ${Object.keys(DOCUMENT_TEMPLATE_ALIASES).join(", ")}` }] };
+      }
+
       const res = await fetch(`${SUPABASE_URL}/functions/v1/generate-document`, {
         method: "POST",
         headers: {
@@ -1471,7 +1500,7 @@ mcpServer.registerTool(
           Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
         },
         body: JSON.stringify({
-          document_type: params.template_type,
+          document_type: templateType,
           lead_id: params.lead_id,
           project_id: params.project_id,
           context: params.custom_data,
