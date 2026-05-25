@@ -200,6 +200,7 @@ export function AIGenerationModal({
     quote: 'Devis',
     spec: 'Cahier des charges',
     proposal: 'Proposition commerciale',
+    training_program: 'Programme de formation',
   };
 
   return (
