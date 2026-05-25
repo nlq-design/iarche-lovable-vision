@@ -1451,9 +1451,9 @@ mcpServer.registerTool(
   "create_document",
   {
     title: "Create Document",
-    description: "Générer un document commercial (devis, proposition) via IA.",
+    description: "Générer un document commercial ou pédagogique (devis, proposition, cdc, programme de formation) via IA.",
     inputSchema: {
-      template_type: z.string().describe("Type de template (devis, proposition, cdc, rapport)"),
+      template_type: z.string().describe("Type de template : quote (devis), proposal (proposition), spec (cdc), training_program (programme de formation), invitation (programme événement)"),
       lead_id: z.string().describe("UUID du lead associé"),
       project_id: z.string().optional().describe("UUID du projet associé"),
       custom_data: z.record(z.unknown()).optional().describe("Données personnalisées pour le document"),

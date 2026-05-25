@@ -72,7 +72,7 @@ export function DocumentGenerator({ projectId, opportunityId }: DocumentGenerato
   const { documents, isLoading, generateDocument, deleteDocument, approveDocument } = useCockpitGeneratedDocuments(projectId, opportunityId);
   
   const [showGenerateDialog, setShowGenerateDialog] = useState(false);
-  const [selectedType, setSelectedType] = useState<'quote' | 'spec' | 'proposal' | null>(null);
+  const [selectedType, setSelectedType] = useState<GeneratableType | null>(null);
   const [customInstructions, setCustomInstructions] = useState('');
   const [showPreviewDialog, setShowPreviewDialog] = useState(false);
   const [previewDocument, setPreviewDocument] = useState<GeneratedDocument | null>(null);
