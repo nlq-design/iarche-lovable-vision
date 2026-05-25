@@ -1269,7 +1269,7 @@ ${custom_instructions}` : ''}
     // Call AI with appropriate provider
     let aiResult;
     try {
-      aiResult = await callAI(provider, model, systemPrompt, userPrompt, temperature);
+      aiResult = await callAI(provider, model, systemPromptWithJsonGuard, userPrompt, temperature);
     } catch (aiError: any) {
       console.error("AI call error:", aiError.message);
       
