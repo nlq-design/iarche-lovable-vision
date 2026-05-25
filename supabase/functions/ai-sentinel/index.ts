@@ -813,6 +813,7 @@ serve(async (req) => {
           priority: "medium", due_in_days: 2,
         },
         ai_reasoning: `[Sentinelle] Concentration anormale du pipeline — risque de creux de revenu.`,
+      }),
       // === Phase E (v3) — Templates pour les 4 nouvelles règles risk ===
       risk_churn_hot_lead: (a) => ({
         action_type: "send_email",
