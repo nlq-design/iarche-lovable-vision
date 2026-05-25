@@ -1471,10 +1471,10 @@ mcpServer.registerTool(
           Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
         },
         body: JSON.stringify({
-          template_type: params.template_type,
+          document_type: params.template_type,
           lead_id: params.lead_id,
           project_id: params.project_id,
-          custom_data: params.custom_data,
+          context: params.custom_data,
           workspace_id: ctx.wsId,
         }),
       });
