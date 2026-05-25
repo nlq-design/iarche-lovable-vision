@@ -56,12 +56,13 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 
-type DocumentType = 'quote' | 'spec' | 'proposal';
+type DocumentType = 'quote' | 'spec' | 'proposal' | 'training_program';
 
 const SLUG_PREFIX_MAP: Record<DocumentType, string> = {
   quote: 'devis',
   spec: 'cdc',
   proposal: 'proposition',
+  training_program: 'formation',
 };
 
 const CockpitDocuments = () => {
