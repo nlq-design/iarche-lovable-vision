@@ -1283,7 +1283,7 @@ ${custom_instructions}` : ''}
       // Try fallback to Lovable if other provider fails
       if (provider !== "lovable" && LOVABLE_API_KEY) {
         console.log("Falling back to Lovable AI...");
-        aiResult = await callAI("lovable", "google/gemini-2.5-flash", systemPrompt, userPrompt, temperature);
+        aiResult = await callAI("lovable", "google/gemini-2.5-flash", systemPromptWithJsonGuard, userPrompt, temperature);
       } else {
         throw aiError;
       }
