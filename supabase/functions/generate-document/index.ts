@@ -1296,18 +1296,26 @@ ${custom_instructions}` : ''}
     // Parse JSON from AI response
     let documentContent;
     try {
-      // 1) Remove markdown fences (the model sometimes wraps JSON)
-      let candidate = aiResult.content
-        .replace(/```\s*json\s*/gi, "")
-        .replace(/```/g, "")
-        .trim();
+      // Diagnostic log avant tout traitement
+      console.log("[generate-document] raw AI response (first 500 chars):", aiResult.content.slice(0, 500));
 
-      // 2) If there's any extra text around the JSON, keep only the outermost object
-      const firstBrace = candidate.indexOf("{");
-      const lastBrace = candidate.lastIndexOf("}");
-      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-        candidate = candidate.slice(firstBrace, lastBrace + 1);
+      // 1) Extraction robuste de l'objet JSON racine (gère fences, prose, BOM, multi-blocs)
+      let candidate: string;
+      try {
+        candidate = extractJsonObject(aiResult.content);
+      } catch (extractErr) {
+        console.warn("[generate-document] extractJsonObject failed, falling back to regex strip:", (extractErr as Error).message);
+        candidate = aiResult.content
+          .replace(/```\s*json\s*/gi, "")
+          .replace(/```/g, "")
+          .trim();
+        const firstBrace = candidate.indexOf("{");
+        const lastBrace = candidate.lastIndexOf("}");
+        if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+          candidate = candidate.slice(firstBrace, lastBrace + 1);
+        }
       }
+
 
       // 3) Repair common invalid JSON issues coming from LLM outputs:
       // - raw newlines inside quoted strings
