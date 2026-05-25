@@ -5,7 +5,7 @@ import { handleAIError } from '@/lib/ai-error-handler';
 
 const QUERY_KEY = 'cockpit-generated-documents';
 
-export type DocumentType = 'quote' | 'proposal' | 'spec' | 'report' | 'email' | 'contract' | 'invitation';
+export type DocumentType = 'quote' | 'proposal' | 'spec' | 'report' | 'email' | 'contract' | 'invitation' | 'training_program';
 export type DocumentStatus = 'draft' | 'review' | 'approved' | 'final' | 'sent' | 'cancelled';
 
 export interface GeneratedDocument {
@@ -46,6 +46,7 @@ export const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
   email: 'Email',
   contract: 'Contrat',
   invitation: 'Programme / Invitation',
+  training_program: 'Programme de formation',
 };
 
 export const DOCUMENT_STATUS_CONFIG: Record<DocumentStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
@@ -89,7 +90,7 @@ export function useCockpitGeneratedDocuments(projectId?: string, opportunityId?:
       opportunity_id?: string;
       lead_id?: string;
       article_id?: string;
-      document_type: 'quote' | 'spec' | 'proposal' | 'invitation';
+      document_type: 'quote' | 'spec' | 'proposal' | 'invitation' | 'training_program';
       custom_instructions?: string;
       context?: Record<string, unknown>;
     }) => {

@@ -94,6 +94,7 @@ const SLUG_PREFIX_MAP: Record<DocumentType, string> = {
   email: 'email',
   contract: 'contrat',
   invitation: 'programme',
+  training_program: 'formation',
 };
 
 // Check if quote document has new invoice-style format
