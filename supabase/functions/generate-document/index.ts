@@ -21,7 +21,7 @@ const OPENAI_ENDPOINT = "https://api.openai.com/v1/chat/completions";
 const ANTHROPIC_ENDPOINT = "https://api.anthropic.com/v1/messages";
 const OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
 
-type DocumentType = "quote" | "spec" | "proposal" | "invitation";
+type DocumentType = "quote" | "spec" | "proposal" | "invitation" | "training_program";
 type Provider = "lovable" | "openai" | "anthropic" | "openrouter";
 
 interface ModelConfig {
@@ -1259,6 +1259,7 @@ CONSIGNES:
       spec: `CDC - ${titleClientName}`,
       proposal: `Proposition - ${titleClientName}`,
       invitation: `Programme - ${article?.title || titleClientName}`,
+      training_program: `Programme de formation - ${(documentContent.metadata as any)?.training_title || titleClientName}`,
     };
 
     // Save to database with billing entity reference
