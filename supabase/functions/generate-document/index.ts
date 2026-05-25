@@ -1259,7 +1259,12 @@ ${custom_instructions}` : ''}
 8. Tableaux HTML pour grilles/comparatifs/scoring
 9. Réponds UNIQUEMENT avec le JSON complet`,
     };
-    const userPrompt = USER_PROMPTS[document_type];
+    const briefBlock = buildBriefBlock(document_type, inputContext as Record<string, any> | undefined);
+    console.log(`[generate-document] custom_data keys: ${inputContext ? Object.keys(inputContext).join(",") : "(none)"} | brief_injected=${briefBlock.length > 0}`);
+    const baseUserPrompt = USER_PROMPTS[document_type];
+    const userPrompt = briefBlock + baseUserPrompt;
+    const systemPromptWithJsonGuard = systemPrompt + `\n\nFORMAT DE RÉPONSE STRICT : retourne UNIQUEMENT un objet JSON valide. Aucun bloc markdown, aucun backtick, aucun texte avant ou après. Commence par { et termine par }.`;
+
 
     // Call AI with appropriate provider
     let aiResult;
