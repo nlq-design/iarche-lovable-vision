@@ -84,6 +84,7 @@ const DOCUMENT_TYPE_SLUG_MAP: Record<string, DocumentType> = {
   'cdc': 'spec',
   'proposition': 'proposal',
   'programme': 'invitation',
+  'formation': 'training_program',
 };
 
 const SLUG_PREFIX_MAP: Record<DocumentType, string> = {
