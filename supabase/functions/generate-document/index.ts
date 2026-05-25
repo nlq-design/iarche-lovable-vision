@@ -48,6 +48,69 @@ function normalizeDocumentType(value: unknown): DocumentType | null {
   return DOCUMENT_TYPE_ALIASES[key] || null;
 }
 
+// === Champs verrouillés par type de document (jamais à inventer si présents dans le brief) ===
+const FIELDS_TO_PRESERVE: Record<DocumentType, string[]> = {
+  training_program: ["date", "dates", "lieu", "stagiaires", "participants", "formateur", "formateurs", "organisme", "competences", "programme", "prix", "tarif", "duree", "horaires", "codes", "code_rome", "code_naf", "idcc"],
+  quote: ["client", "contact", "date", "montants", "prix", "tva", "echeance", "reference", "validite", "acompte"],
+  spec: ["perimetre", "livrables", "jalons", "budget", "delais", "contraintes", "stack"],
+  proposal: ["client", "contexte", "offre", "tarifs", "delais", "equipe"],
+  invitation: ["date", "heure", "lieu", "intervenants", "programme", "prix", "inscription"],
+};
+
+// === Construction du bloc brief prioritaire à partir de custom_data MCP ===
+function buildBriefBlock(documentType: DocumentType, customData: Record<string, any> | undefined | null): string {
+  if (!customData || typeof customData !== "object") return "";
+  // Retire les clefs "internes" non destinées au prompt
+  const { is_test, billingEntity, project, client, opportunity, solution, specifications, contextNotes, existing_sections, custom_instructions, cgv_available, ...userBrief } = customData as any;
+  if (!userBrief || Object.keys(userBrief).length === 0) return "";
+
+  const locked = FIELDS_TO_PRESERVE[documentType] || [];
+  const lockedLine = locked.length > 0 ? `- Utilise EXCLUSIVEMENT ces valeurs pour : ${locked.join(", ")}\n` : "";
+
+  return `╔══════════════════════════════════════════════════════════════════════════════╗
+║          BRIEF UTILISATEUR — PRIORITAIRE — À UTILISER TEL QUEL                ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+\`\`\`json
+${JSON.stringify(userBrief, null, 2)}
+\`\`\`
+
+RÈGLES IMPÉRATIVES (priorité absolue sur tout le reste) :
+${lockedLine}- N'INVENTE AUCUNE donnée présente dans le brief ci-dessus
+- Si une info verrouillée est ABSENTE du brief : écris littéralement [À COMPLÉTER]
+- Conserve EXACTEMENT noms propres, codes (ROME, NAF, IDCC), dates, prix et montants
+- N'écrase JAMAIS une valeur du brief par une valeur "réaliste" inventée
+
+`;
+}
+
+// === Extraction JSON robuste : ignore fences, prose, BOM, multi-blocs ===
+function extractJsonObject(text: string): string {
+  if (!text) throw new Error("empty");
+  // Strip BOM
+  const cleaned = text.replace(/^\uFEFF/, "");
+  const start = cleaned.indexOf("{");
+  if (start === -1) throw new Error("no_object_start");
+
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+
+  for (let i = start; i < cleaned.length; i++) {
+    const c = cleaned[i];
+    if (escape) { escape = false; continue; }
+    if (c === "\\") { escape = true; continue; }
+    if (c === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (c === "{") depth++;
+    else if (c === "}") {
+      depth--;
+      if (depth === 0) return cleaned.slice(start, i + 1);
+    }
+  }
+  throw new Error("unbalanced_braces");
+}
+
+
 interface ModelConfig {
   model?: string;
   provider?: Provider;
