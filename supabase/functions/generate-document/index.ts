@@ -1120,6 +1120,54 @@ CONSIGNES:
 3. Crée un programme attractif et professionnel qui donne envie de s'inscrire
 4. Si des données manquent, invente des valeurs réalistes et cohérentes avec le thème
 5. Le ton doit être dynamique et orienté bénéfices pour le participant`,
+
+      training_program: `GÉNÈRE MAINTENANT LE JSON DU PROGRAMME DE FORMATION PÉDAGOGIQUE. Ne pose aucune question.
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                           CLIENT / COMMANDITAIRE                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+• Contact : ${clientName}${clientPosition ? ` — ${clientPosition}` : ''}
+• Organisation : ${clientCompany}
+• Secteur : ${clientIndustry}
+${clientSize ? `• Taille : ${clientSize}` : ''}
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                           SUJET DE LA FORMATION                               ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+• Thème : ${projectName}
+• Description : ${projectDescription}
+${article?.title ? `• Référence article/atelier : ${article.title}` : ''}
+${article?.duree_heures ? `• Durée indicative : ${article.duree_heures}h` : ''}
+${article?.niveau ? `• Niveau public : ${article.niveau}` : ''}
+${article?.prerequis ? `• Prérequis : ${article.prerequis}` : ''}
+
+${contextNotes.length > 0 ? `╔══════════════════════════════════════════════════════════════════════════════╗
+║                           NOTES DE CONTEXTE                                   ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+${contextNotes.map(n => `• ${typeof n === 'string' ? n : n.content}`).join('\n')}` : ''}
+
+${specifications.length > 0 ? `╔══════════════════════════════════════════════════════════════════════════════╗
+║                       SPÉCIFICATIONS / CDC EXISTANT                           ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+${specifications.map(s => `• ${s.title}: ${typeof s.content === 'string' ? s.content.substring(0, 400) : '...'}`).join('\n')}` : ''}
+
+${custom_instructions ? `╔══════════════════════════════════════════════════════════════════════════════╗
+║                       INSTRUCTIONS SPÉCIFIQUES                                ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+${custom_instructions}` : ''}
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                       CONSIGNES DE RÉDACTION                                  ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+1. Construis un programme RICHE et MINUTÉ adapté au sujet (typiquement 1 jour = 7h utiles)
+2. Découpe en séquences claires avec horaire/durée/modalité (Théorie/Démo/Pratique)
+3. Inclus des exemples concrets, prompts complets, cas pratiques sectoriels
+4. Balise les pauses (☕ pause matin, 🍽 déjeuner, ☕ pause après-midi)
+5. Ajoute un récap exécutif minuté avec ratio modalités à la fin
+6. Annexes (QCM, satisfaction, plan d'action, prompts) UNIQUEMENT si pertinent
+7. AUCUN placeholder : utilise les vraies données ci-dessus ou invente du réaliste
+8. Tableaux HTML pour grilles/comparatifs/scoring
+9. Réponds UNIQUEMENT avec le JSON complet`,
     };
     const userPrompt = USER_PROMPTS[document_type];
 
