@@ -188,8 +188,10 @@ async function callAI(
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt },
           ],
+          response_format: { type: "json_object" },
         }),
       });
+
       
       if (response.status === 429) throw new Error("rate_limited");
       if (response.status === 402) throw new Error("credits_exhausted");
