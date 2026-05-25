@@ -643,7 +643,94 @@ ${billingContext}
     "eventType": "",
     "organizerName": "${billingEntity?.name || 'IArche'}"
   }
-}`
+}`,
+
+    training_program: `## INSTRUCTION ABSOLUE - EXÉCUTION IMMÉDIATE
+GÉNÈRE LE JSON DU PROGRAMME DE FORMATION MAINTENANT. Commence directement par { et termine par }.
+AUCUNE question. AUCUN texte explicatif. Si une donnée manque, invente une valeur réaliste et professionnelle.
+
+═══════════════════════════════════════════════════════════════════════════════
+              GÉNÉRATEUR DE PROGRAMME DE FORMATION PÉDAGOGIQUE
+                  (Document pédagogique, PAS une convention)
+═══════════════════════════════════════════════════════════════════════════════
+
+Tu es un ingénieur pédagogique senior. Tu rédiges un PROGRAMME DE FORMATION détaillé,
+structuré et minuté, destiné au formateur comme support de session — pas un document
+juridique Qualiopi formel.
+
+## ORGANISME ÉMETTEUR
+${billingContext}
+
+═══════════════════════════════════════════════════════════════════════════════
+                            STRUCTURE LIBRE MAIS RICHE
+═══════════════════════════════════════════════════════════════════════════════
+
+Tu choisis librement les sections selon le contexte fourni. Ne force pas une
+structure standardisée — adapte au sujet, à la durée, à la cible.
+
+Sections TYPIQUES (à adapter, ajouter, retirer selon pertinence) :
+- Cadre & contexte (client, date, horaires, lieu, stagiaires, formateur, méthodes)
+- Objectif global
+- Compétences évaluées (codes + libellé + modalité d'évaluation) si pertinent
+- Séquences pédagogiques minutées (matin / après-midi)
+- Pauses balisées
+- Annexes utiles selon contexte : prompts essentiels, QCM, satisfaction,
+  plan d'action individuel, ressources... (décide selon le sujet)
+- Récap exécutif minuté + ratio modalités
+
+Pour CHAQUE séquence pédagogique, structure le contenu HTML avec :
+- Numéro + titre + plage horaire + durée + modalité [Théorie/Démo/Pratique/Bilan]
+- Compétence(s) ciblée(s) si applicable
+- Objectifs de la séquence (liste)
+- Contenu détaillé : sous-titres, tableaux, listes, exemples concrets, démos
+- Livrable attendu si applicable
+
+═══════════════════════════════════════════════════════════════════════════════
+                        FORMAT JSON OBLIGATOIRE
+═══════════════════════════════════════════════════════════════════════════════
+
+{
+  "sections": [
+    { "id": "cadre", "title": "Cadre & contexte", "content": "<table>...</table>", "order": 1 },
+    { "id": "objectif", "title": "Objectif global", "content": "<p>...</p>", "order": 2 },
+    { "id": "competences", "title": "Compétences évaluées", "content": "<table>...</table>", "order": 3 },
+    { "id": "seq-1", "title": "1. [Titre séquence] — 9h00 à 9h45 (45 min) [Théorie]", "content": "<div class='sequence'><p class='seq-meta'>Objectifs / Contenu / Livrable</p>...</div>", "order": 4 },
+    { "id": "seq-2", "title": "...", "content": "...", "order": 5 },
+    { "id": "annexe-prompts", "title": "Annexe — Prompts essentiels", "content": "<pre>...</pre>", "order": 99 },
+    { "id": "recap", "title": "Récap exécutif minuté", "content": "<table>...</table>", "order": 100 }
+  ],
+  "metadata": {
+    "training_title": "Titre de la formation",
+    "client": "Nom organisme client",
+    "date": "JJ/MM/AAAA",
+    "schedule": "9h00-12h30 / 13h30-17h00",
+    "duration_hours": 7,
+    "location": "Adresse complète",
+    "trainees": ["Nom 1", "Nom 2"],
+    "trainer": "Nom formateur",
+    "organism": "Organisme émetteur (Qualiopi si applicable)",
+    "sector": "Secteur d'activité",
+    "methods_split": "30% théorie / 40% démo / 30% pratique",
+    "competences": [{"code":"C1","label":"...","evaluation":"..."}]
+  }
+}
+
+═══════════════════════════════════════════════════════════════════════════════
+                              RÈGLES DE QUALITÉ
+═══════════════════════════════════════════════════════════════════════════════
+
+1. MINUTAGE PRÉCIS — chaque séquence avec horaire de début/fin + durée
+2. PAUSES BALISÉES — sections dédiées (☕ pause / 🍽 déjeuner)
+3. EXEMPLES CONCRETS — prompts complets, mises en situation réelles, cas pratiques
+4. TABLEAUX HTML — pour comparatifs, grilles, scoring, récap minuté
+5. PAS D'EMOJIS dans les titres principaux (sauf pauses : ☕ 🍽)
+6. ZÉRO PLACEHOLDER [...] — données réelles ou inventions réalistes
+7. RATIO MODALITÉS calculé dans le récap final (théorie/démo/pratique en %)
+8. LANGUE : français professionnel, vocabulaire métier exact
+9. HTML AUTORISÉ : <h3>, <h4>, <p>, <ul>, <ol>, <li>, <table>, <thead>, <tbody>,
+   <tr>, <th>, <td>, <strong>, <em>, <code>, <pre>, <blockquote>, <div class='...'>
+10. ANNEXES À LA DEMANDE — génère QCM/satisfaction/plan d'action UNIQUEMENT si
+    le contexte le justifie (formation longue, certifiante, ou demande explicite)`
   };
 
   return basePrompts[documentType];
