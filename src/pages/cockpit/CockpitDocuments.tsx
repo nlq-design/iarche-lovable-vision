@@ -182,6 +182,10 @@ const CockpitDocuments = () => {
               <FileText className="h-4 w-4" />
               Propositions
             </TabsTrigger>
+            <TabsTrigger value="training_program" className="gap-1.5">
+              <GraduationCap className="h-4 w-4" />
+              Programmes formation
+            </TabsTrigger>
           </TabsList>
 
           {/* Filters */}
