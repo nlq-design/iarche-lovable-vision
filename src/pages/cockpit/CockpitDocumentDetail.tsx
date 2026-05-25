@@ -285,7 +285,7 @@ export default function CockpitDocumentDetail() {
 
   // New document mode - redirect to editor
   if (isNewDocument && documentTypeFromSlug) {
-    const editorType = documentTypeFromSlug as 'quote' | 'spec' | 'proposal';
+    const editorType = documentTypeFromSlug as 'quote' | 'spec' | 'proposal' | 'training_program';
     return (
       <CockpitLayout>
         <DevisCDCEditor
@@ -456,7 +456,7 @@ export default function CockpitDocumentDetail() {
               <TabsContent value="edition" className="mt-4">
                 <DevisCDCEditor
                   documentId={document.id}
-                  documentType={document.document_type as 'quote' | 'spec' | 'proposal'}
+                  documentType={document.document_type as 'quote' | 'spec' | 'proposal' | 'training_program'}
                   onBack={() => setActiveTab('apercu')}
                   onSave={() => {
                     refetch();

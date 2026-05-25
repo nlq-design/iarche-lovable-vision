@@ -169,7 +169,7 @@ export const DevisCDCPreview = forwardRef<HTMLDivElement, DevisCDCPreviewProps>(
         sections,
         metadata,
         theme,
-        documentType: document.document_type as 'quote' | 'spec' | 'proposal',
+        documentType: document.document_type as 'quote' | 'spec' | 'proposal' | 'training_program',
         documentId: document.id,
       });
     };
