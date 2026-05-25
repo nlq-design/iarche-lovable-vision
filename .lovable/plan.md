@@ -1,74 +1,50 @@
-# Audit & plan — Étanchéité multi-tenant + Scaling cockpit
+## Plan v2 — correction `create_document` (custom_data + parsing JSON)
 
-## Constat (compte `membre@nlq.fr` / workspace NLQ Test)
+### 1. Injection du brief MCP — généralisée (ajustement A)
+Dans `supabase/functions/generate-document/index.ts`, ajouter un bloc prompt **prioritaire** construit à partir de `inputContext` (= `custom_data` MCP), commun à tous les types :
 
-J'ai audité la base. Les fuites viennent de **policies RLS legacy non-scopées** qui coexistent avec les bonnes policies `workspace_id`. Comme Postgres applique un **OR** entre toutes les policies SELECT, la legacy ouverte annule la stricte.
+- Table `FIELDS_TO_PRESERVE` par `document_type` (training_program, quote, spec, proposal, invitation) listant les champs verrouillés (date, lieu, stagiaires, formateur, organisme, montants, TVA, périmètre, livrables, etc.).
+- Bloc injecté en tête du `userPrompt` :
+  ```
+  BRIEF UTILISATEUR (PRIORITAIRE — UTILISER TEL QUEL)
+  ```json
+  {custom_data}
+  ```
+  Règles :
+  - Utilise EXCLUSIVEMENT ces valeurs pour : {lockedFields}
+  - N'invente AUCUNE donnée présente dans le brief
+  - Si une info verrouillée manque : écris littéralement [À COMPLÉTER]
+  - Conserve noms propres, codes (ROME, NAF, IDCC), prix et dates EXACTS
+  ```
+- Remplacer la consigne actuelle "invente du réaliste" du `training_program` par "absent → [À COMPLÉTER]". Garder l’inventivité uniquement pour les sections rédactionnelles non verrouillées (objectifs pédagogiques, structure narrative).
 
-### Constat précis sur `projects`
-Deux policies SELECT actives simultanément :
-- `projects_select` → `can_access_entity_workspace(workspace_id, auth.uid())` (OK, stricte)
-- `Cockpit users can view projects` → `has_role('cockpit_user') OR has_role('cockpit_admin')` (**FUITE** : tout cockpit_user voit TOUS les projets)
+### 2. Contrat MCP → Edge — inchangé
+`mcp-server.create_document` continue d’envoyer `custom_data` dans `context`. Aucun breaking change. Ajout d’un log côté Edge : `console.log("[generate-document] custom_data keys:", Object.keys(inputContext||{}))` pour traçabilité (clés seulement, pas de valeurs).
 
-C'est exactement le bug rencontré hier sur `leads`. Il faut faire le même nettoyage sur **toutes** les tables du périmètre cockpit.
+### 3. Parsing JSON — diagnostic d’abord, refactor ensuite (ajustement B)
+- **Avant** de remplacer le parser : `console.log("[generate-document] raw AI response (first 500 chars):", aiResult.content.slice(0,500))` pour comprendre pourquoi le strip actuel a échoué (fences mal positionnées, prose avant, BOM, multiples blocs).
+- Remplacer le strip regex par une fonction `extractJsonObject(text)` à compteur d’accolades, qui ignore les `{` à l’intérieur de chaînes JSON, gère les échappements, et retourne l’objet racine quel que soit le bruit autour (fences, prose, BOM).
+- Conserver le `sanitizeJsonString` existant comme étape 2 (réparation `\'`, newlines bruts).
+- Côté prompt système : ajouter "Réponds UNIQUEMENT par un objet JSON. AUCUN bloc markdown, AUCUN backtick, AUCUN texte avant ou après."
+- Si l’AI Gateway Lovable supporte `response_format: { type: "json_object" }`, l’ajouter dans `callAI("lovable", ...)` (vérification rapide avant). Sinon le nettoyage défensif suffit.
 
-### Sanctuaire Solutions
-- `/cockpit/solutions` et `/cockpit/solutions/:id` (App.tsx l.767-772) sont aujourd'hui accessibles à tout détenteur du rôle `cockpit_user`.
-- Pas de table `solutions` en BDD : c'est un module éditorial NLQ (catalogue interne de solutions IA proposées par NLQ aux clients). Il doit rester **réservé au workspace interne NLQ** (super_admin uniquement).
+### 4. Plan de test (ajustement C + D)
+| # | Test | Validation |
+|---|------|------------|
+| 1 | `custom_data` 8 marqueurs `XXXTEST_*` | Tous présents dans le doc |
+| 2 | `custom_data` partiel (3/10 champs, marqueur `is_test:true`) | Marqueurs présents + `[À COMPLÉTER]` sur champs absents, zéro hallucination |
+| 3 | 5 appels successifs payload complet | Zéro `invalid_ai_response` |
+| 4 | Payload ATEKA réel | Doc 1-1 avec le brief préparé |
+| 5 | `get_document_detail` sur doc final | Sections + metadata cohérentes |
 
-### Branding / charte graphique utilisateur
-- Aucune table `branding_settings` ni `workspace_branding` n'existe.
-- `generated_documents` n'a aucun champ branding ; les exports utilisent une charte hardcodée NLQ.
-- Pour scaler vers d'autres clients, il faut un **workspace_branding** (logo, couleurs, police, mentions légales) injecté dans les générateurs.
+Convention : tout test passe par `custom_data.is_test = true` pour nettoyage ultérieur facile (filtre SQL).
 
----
+### Détails techniques
+- Fichier touché : `supabase/functions/generate-document/index.ts` (prompts + parser).
+- Fichier audité sans modif : `supabase/functions/mcp-server/index.ts` (contrat déjà bon).
+- Pas de migration BDD.
+- Déploiement auto Edge + redéploiement explicite via `deploy_edge_functions` pour forcer la prise d’effet.
+- Vérification post-deploy via `curl_edge_functions` test #1 avant de rendre la main.
 
-## Plan d'action (3 lots, livrables séquentiels)
-
-### Lot 1 — Étanchéité RLS cockpit (CRITIQUE, à faire en premier)
-
-Migration unique qui :
-1. **Drop** des policies legacy non-scopées sur :
-   - `projects` (`Cockpit users can view projects`)
-   - Audit complet pg_policies → toute policy qui contient `has_role('cockpit_user')` ou `has_role('cockpit_admin')` **sans** `is_workspace_member` ni `can_access_entity_workspace` est purgée.
-2. **Vérification** que chaque table métier (`projects`, `project_documents`, `project_notes`, `project_contacts`, `opportunities`, `tasks`, `contacts`, `generated_documents`, `bookings`, `meeting_notes`, `tickets`, `invoices`, `subscriptions`) a bien une policy SELECT/UPDATE/DELETE scopée `can_access_entity_workspace` OU `is_workspace_member` + fallback super_admin.
-3. **Conserver** les policies partner (`is_partner_user() AND is_project_partner(...)`) qui sont déjà bien scopées.
-
-Résultat attendu : `membre@nlq.fr` ne voit plus aucun projet/contact/opportunity/document hors de son workspace NLQ Test.
-
-### Lot 2 — Sanctuarisation `/cockpit/solutions` (NLQ-only)
-
-1. Créer un helper `is_nlq_internal_user(user_id)` → `true` si membre du workspace `00000000-0000-0000-0000-000000000001` (IArche Interne).
-2. Créer un composant `ProtectedNLQRoute` dans `src/components/cockpit/` qui :
-   - attend `isLoading` (auth + role + workspace) avant de juger,
-   - autorise uniquement `super_admin` OU membre du workspace interne NLQ,
-   - sinon redirige vers `/cockpit` avec toast "Module réservé".
-3. Wrapper les routes `/cockpit/solutions` et `/cockpit/solutions/:id` (App.tsx).
-4. Masquer l'item "Solutions" du `CockpitSidebar` pour les non-NLQ.
-
-### Lot 3 — Charte graphique workspace + injection dans les exports
-
-1. **Migration** : table `workspace_branding`
-   - `workspace_id` (PK, FK), `logo_url`, `logo_dark_url`, `primary_color`, `secondary_color`, `accent_color`, `font_family`, `legal_footer`, `email_signature`, `cover_image_url`.
-   - Bucket Storage `workspace-branding` (public read, write réservé aux owners du workspace).
-   - RLS : SELECT par membre du workspace, UPDATE par owner uniquement.
-2. **UI** : nouvelle page `/cockpit/parametres/charte` (owner only) — upload logos, color picker, preview live.
-3. **Injection** dans les générateurs existants :
-   - `generate-cdc-devis`, `generate-document`, edge functions de PDF → charger `workspace_branding` du `workspace_id` du lead/projet et l'injecter dans le template HTML/PDF.
-   - Fallback : charte NLQ si workspace sans branding défini.
-4. **Email** : signature et logo dynamiques dans les templates Resend (override `email_signature` par workspace).
-
-### Technique transversal (scaling)
-
-- Toutes les futures tables métier doivent porter `workspace_id NOT NULL` + RLS via `can_access_entity_workspace` (déjà la norme — cf. mémoire `Multi-tenant Pivots v1`).
-- Les edge functions cockpit qui bypassent RLS doivent **toujours** résoudre le `workspace_id` depuis le JWT user et l'injecter dans les writes (pattern déjà en place sur `stripe-checkout-session` après correctif d'hier).
-- Aucune donnée NLQ ne doit fuiter vers d'autres workspaces, ni l'inverse.
-
----
-
-## Ordre d'exécution proposé
-
-1. **Maintenant** : Lot 1 (migration RLS) → fix immédiat de la fuite projets/contacts/etc. visible sur `membre@nlq.fr`.
-2. **Ensuite** : Lot 2 (sanctuaire Solutions) → 1 migration + 1 composant + wrapping routes.
-3. **Puis** : Lot 3 (branding) → plus gros chantier (table + UI + refonte générateurs + emails).
-
-Confirme-moi si je démarre directement par le **Lot 1** (purge des policies legacy), ou si tu veux que j'enchaîne Lot 1+2 dans la foulée avant d'attaquer le branding.
+### Contraintes timing
+Périmètre serré, livrable visé < 30 min de build pour laisser le temps des 5 tests avant 22h. Si le diagnostic du raw response (étape 3) révèle une cause inattendue, je m’arrête et redemande arbitrage avant d’étendre le scope.
