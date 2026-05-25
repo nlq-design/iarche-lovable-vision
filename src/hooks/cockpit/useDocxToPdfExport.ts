@@ -17,7 +17,7 @@ interface ExportParams {
     accentColor: string;
     useGradient: boolean;
   };
-  documentType: 'quote' | 'spec' | 'proposal';
+  documentType: 'quote' | 'spec' | 'proposal' | 'training_program';
   documentId?: string;
   saveToStorage?: boolean;
 }

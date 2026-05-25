@@ -51,7 +51,7 @@ import { QuoteRIBEditor, QuoteQRCodeSelector, type RIBData } from './quote-edito
 
 interface DevisCDCEditorProps {
   documentId: string | null;
-  documentType: 'quote' | 'spec' | 'proposal';
+  documentType: 'quote' | 'spec' | 'proposal' | 'training_program';
   onBack: () => void;
   onSave: () => void;
 }

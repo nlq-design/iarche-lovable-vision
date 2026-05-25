@@ -131,7 +131,7 @@ interface RequestBody {
   sections: DocumentSection[];
   metadata: DocumentMetadata;
   theme: DocumentTheme;
-  documentType: 'quote' | 'spec' | 'proposal';
+  documentType: 'quote' | 'spec' | 'proposal' | 'training_program';
   exportSettings?: ExportSettings;
 }
 
