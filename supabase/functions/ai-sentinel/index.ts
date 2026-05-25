@@ -150,12 +150,51 @@ serve(async (req) => {
   const now = new Date();
 
   try {
-    const { data: ws } = await supabase.from("workspaces").select("id").limit(1).single();
-    if (!ws?.id) {
+    // SECURITY: resolve caller's workspace from JWT (never pick first row globally).
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const userClient = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: userData, error: userErr } = await userClient.auth.getUser();
+    if (userErr || !userData.user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Membership lookup (active member first, else owned workspace)
+    const { data: membership } = await supabase
+      .from("workspace_members")
+      .select("workspace_id, role, status, created_at")
+      .eq("user_id", userData.user.id)
+      .eq("status", "active")
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    let workspaceId = membership?.workspace_id as string | undefined;
+    if (!workspaceId) {
+      const { data: owned } = await supabase
+        .from("workspaces")
+        .select("id")
+        .eq("owner_id", userData.user.id)
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      workspaceId = owned?.id;
+    }
+
+    if (!workspaceId) {
       return new Response(JSON.stringify({ alerts: [], total: 0 }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const ws = { id: workspaceId };
 
     // ============================================================
     // PHASE 1: Collect raw anomalies from DB (fast SQL checks)
