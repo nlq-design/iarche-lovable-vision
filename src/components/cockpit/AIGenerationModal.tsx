@@ -39,7 +39,7 @@ import { toast } from 'sonner';
 interface AIGenerationModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  documentType: 'quote' | 'spec' | 'proposal';
+  documentType: 'quote' | 'spec' | 'proposal' | 'training_program';
   onGenerated: () => void;
 }
 
@@ -200,6 +200,7 @@ export function AIGenerationModal({
     quote: 'Devis',
     spec: 'Cahier des charges',
     proposal: 'Proposition commerciale',
+    training_program: 'Programme de formation',
   };
 
   return (

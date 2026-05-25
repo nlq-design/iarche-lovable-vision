@@ -23,7 +23,8 @@ import {
   Brain,
   ChevronDown,
   ChevronUp,
-  Settings
+  Settings,
+  GraduationCap
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCockpitGeneratedDocuments, DOCUMENT_TYPE_LABELS, DOCUMENT_STATUS_CONFIG } from '@/hooks/cockpit/useCockpitGeneratedDocuments';
@@ -55,12 +56,13 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 
-type DocumentType = 'quote' | 'spec' | 'proposal';
+type DocumentType = 'quote' | 'spec' | 'proposal' | 'training_program';
 
 const SLUG_PREFIX_MAP: Record<DocumentType, string> = {
   quote: 'devis',
   spec: 'cdc',
   proposal: 'proposition',
+  training_program: 'formation',
 };
 
 const CockpitDocuments = () => {
@@ -179,6 +181,10 @@ const CockpitDocuments = () => {
             <TabsTrigger value="proposal" className="gap-1.5">
               <FileText className="h-4 w-4" />
               Propositions
+            </TabsTrigger>
+            <TabsTrigger value="training_program" className="gap-1.5">
+              <GraduationCap className="h-4 w-4" />
+              Programmes formation
             </TabsTrigger>
           </TabsList>
 
