@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { CockpitLayout } from "@/components/cockpit/CockpitLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FolderKanban, Clock, CheckCircle2, AlertCircle, PauseCircle, Calendar, Users, Plus, Mic } from "lucide-react";
+import { FolderKanban, Clock, CheckCircle2, AlertCircle, PauseCircle, Calendar, Users, Plus, Mic, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useCockpitProjects } from "@/hooks/cockpit";
 import { useCockpitVoiceTranscriptions } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
@@ -29,10 +30,15 @@ const STATUS_CONFIG: Record<string, { label: string; icon: typeof Clock; color: 
 };
 
 const HEALTH_CONFIG: Record<string, { label: string; color: string }> = {
+  on_track: { label: 'Sain', color: 'bg-green-500' },
   healthy: { label: 'Sain', color: 'bg-green-500' },
   at_risk: { label: 'À risque', color: 'bg-yellow-500' },
+  off_track: { label: 'En difficulté', color: 'bg-red-500' },
   critical: { label: 'Critique', color: 'bg-red-500' },
 };
+
+const ACTIVE_PROJECT_STATUSES = new Set(['active', 'in_progress', 'planning', 'scoping']);
+type ProjectFilter = 'all' | 'active' | 'risk' | 'paused' | 'closed';
 
 const CockpitProjects = () => {
   const { projects, stats, isLoading, createProject } = useCockpitProjects();
