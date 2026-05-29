@@ -37,6 +37,10 @@ const HEALTH_CONFIG: Record<string, { label: string; color: string }> = {
 const ACTIVE_PROJECT_STATUSES = new Set(['active', 'in_progress', 'planning', 'scoping']);
 type ProjectFilter = 'all' | 'active' | 'risk' | 'paused' | 'closed';
 
+const getProjectContactCount = (project: { project_contacts?: unknown[] }) => (
+  Array.isArray(project.project_contacts) ? project.project_contacts.length : 0
+);
+
 const CockpitProjects = () => {
   const { projects, stats, isLoading, createProject } = useCockpitProjects();
   const { transcriptions } = useCockpitVoiceTranscriptions();
@@ -288,7 +292,7 @@ const CockpitProjects = () => {
                           <p className="text-muted-foreground mb-1">Contacts</p>
                           <div className="flex items-center gap-2">
                             <Users className="h-4 w-4 text-muted-foreground" />
-                            <span>{(project as any).project_contacts?.length || 0} contact(s)</span>
+                            <span>{getProjectContactCount(project)} contact(s)</span>
                           </div>
                         </div>
                       </div>
