@@ -5543,7 +5543,7 @@ const _EXPOSED_TOOLS = new Set([
   // CORE CRM
   'get_leads', 'get_lead_detail', 'create_lead', 'update_lead',
   'get_opportunities', 'upsert_opportunity',
-  'get_activity_log', 'create_activity_note',
+  'get_activity_log', 'create_activity_note', 'delete_activity_note',
   'get_tasks', 'create_task', 'update_task',
   'get_contacts', 'get_lead_contacts', 'create_lead_contact',
   // INTELLIGENCE
