@@ -2641,6 +2641,164 @@ mcpServer.registerTool(
 );
 
 // ============================================================
+// TOOL 58b: update_transcription
+// Modifier les liens CRM (project, lead, contact) ou metadata d'une transcription existante.
+// Note: pas d'opportunity_id en schéma voice_transcriptions.
+// ============================================================
+mcpServer.registerTool(
+  "update_transcription",
+  {
+    title: "Update Transcription",
+    description: "Modifier les liens CRM (project_id, lead_id, lead_contact_id, contact_ids[]) ou metadata (title, status) d'une transcription. Trigger synthesis_stale=true sur ancien + nouveau lead/project. Note: opportunity_id non supporté côté schéma.",
+    inputSchema: {
+      transcription_id: z.string().uuid().describe("UUID de la transcription"),
+      project_id: z.string().uuid().nullable().optional().describe("UUID projet (null pour délier)"),
+      lead_id: z.string().uuid().nullable().optional().describe("UUID lead (null pour délier)"),
+      lead_contact_id: z.string().uuid().nullable().optional().describe("UUID contact principal (null pour délier)"),
+      contact_ids: z.array(z.string().uuid()).optional().describe("UUIDs des contacts mentionnés (sync transcription_participants linked_entity_type=contact)"),
+      title: z.string().optional().describe("Nouveau titre"),
+      status: z.string().optional().describe("Nouveau statut (done, pending, error, archived)"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+
+    // 1. Lire l'existant (workspace check)
+    const { data: existing, error: readErr } = await supabaseAdmin
+      .from("voice_transcriptions")
+      .select("id, workspace_id, lead_id, project_id")
+      .eq("id", params.transcription_id)
+      .eq("workspace_id", ctx.wsId)
+      .single();
+    if (readErr || !existing) return { content: [{ type: "text" as const, text: `Erreur: transcription introuvable ou hors workspace` }] };
+
+    // 2. Patch partiel
+    const patch: Record<string, unknown> = {};
+    if (params.project_id !== undefined) patch.project_id = params.project_id;
+    if (params.lead_id !== undefined) patch.lead_id = params.lead_id;
+    if (params.lead_contact_id !== undefined) patch.lead_contact_id = params.lead_contact_id;
+    if (params.title !== undefined) patch.title = params.title;
+    if (params.status !== undefined) patch.status = params.status;
+
+    let updated = existing;
+    if (Object.keys(patch).length > 0) {
+      patch.synthesis_stale = true;
+      const { data, error } = await supabaseAdmin
+        .from("voice_transcriptions")
+        .update(patch)
+        .eq("id", params.transcription_id)
+        .eq("workspace_id", ctx.wsId)
+        .select("*")
+        .single();
+      if (error) return { content: [{ type: "text" as const, text: `Erreur update: ${error.message}` }] };
+      updated = data;
+    }
+
+    // 3. Cascade synthesis_stale sur ancien + nouveau lead/project
+    const staleLeadIds = new Set<string>();
+    const staleProjectIds = new Set<string>();
+    if (existing.lead_id) staleLeadIds.add(existing.lead_id);
+    if (params.lead_id) staleLeadIds.add(params.lead_id);
+    if (existing.project_id) staleProjectIds.add(existing.project_id);
+    if (params.project_id) staleProjectIds.add(params.project_id);
+
+    if (staleLeadIds.size > 0) {
+      await supabaseAdmin.from("leads").update({ synthesis_stale: true }).in("id", [...staleLeadIds]).eq("workspace_id", ctx.wsId);
+    }
+    if (staleProjectIds.size > 0) {
+      await supabaseAdmin.from("projects").update({ synthesis_stale: true }).in("id", [...staleProjectIds]).eq("workspace_id", ctx.wsId);
+    }
+
+    // 4. Sync contact_ids dans transcription_participants
+    if (params.contact_ids) {
+      const { data: existingContacts } = await supabaseAdmin
+        .from("transcription_participants")
+        .select("id, linked_entity_id")
+        .eq("transcription_id", params.transcription_id)
+        .eq("linked_entity_type", "contact");
+      const existingIds = new Set((existingContacts || []).map((p: { linked_entity_id: string }) => p.linked_entity_id));
+      const desiredIds = new Set(params.contact_ids);
+
+      const toRemove = (existingContacts || []).filter((p: { linked_entity_id: string }) => !desiredIds.has(p.linked_entity_id)).map((p: { id: string }) => p.id);
+      const toAdd = [...desiredIds].filter((id) => !existingIds.has(id));
+
+      if (toRemove.length > 0) {
+        await supabaseAdmin.from("transcription_participants").delete().in("id", toRemove);
+      }
+      if (toAdd.length > 0) {
+        await supabaseAdmin.from("transcription_participants").insert(
+          toAdd.map((contactId) => ({
+            transcription_id: params.transcription_id,
+            linked_entity_type: "contact",
+            linked_entity_id: contactId,
+            name: null,
+          }))
+        );
+      }
+    }
+
+    const { data: participants } = await supabaseAdmin
+      .from("transcription_participants")
+      .select("*")
+      .eq("transcription_id", params.transcription_id);
+
+    return { content: [{ type: "text" as const, text: JSON.stringify({ success: true, transcription: updated, participants: participants || [], cascaded: { leads: [...staleLeadIds], projects: [...staleProjectIds] } }) }] };
+  }
+);
+
+// ============================================================
+// TOOL 58c: delete_activity_note
+// Soft (default) ou hard delete d'une activity note manuelle.
+// Bloque la suppression des entrées auto-générées (is_ai_generated=true ou activity_type LIKE 'transcription_%').
+// ============================================================
+mcpServer.registerTool(
+  "delete_activity_note",
+  {
+    title: "Delete Activity Note",
+    description: "Supprime (soft par défaut, hard sur demande) une activity note manuelle. Refuse les entrées auto-générées (transcription_*, is_ai_generated=true).",
+    inputSchema: {
+      activity_id: z.string().uuid().describe("UUID de l'activity note"),
+      mode: z.enum(["soft", "hard"]).optional().describe("soft = archived_at (défaut), hard = DELETE SQL"),
+      reason: z.string().optional().describe("Raison de suppression (logguée dans archive_reason)"),
+    },
+  },
+  async (params) => {
+    const ctx = getAuthContext();
+    if (!ctx) return authError();
+    const mode = params.mode ?? "soft";
+
+    const { data: row, error: readErr } = await supabaseAdmin
+      .from("activity_log")
+      .select("id, workspace_id, is_ai_generated, activity_type, archived_at")
+      .eq("id", params.activity_id)
+      .eq("workspace_id", ctx.wsId)
+      .single();
+    if (readErr || !row) return { content: [{ type: "text" as const, text: `Erreur: activity introuvable ou hors workspace` }] };
+
+    if (row.is_ai_generated === true || (typeof row.activity_type === "string" && row.activity_type.startsWith("transcription_"))) {
+      return { content: [{ type: "text" as const, text: `Erreur: Cannot delete auto-generated activity (is_ai_generated=${row.is_ai_generated}, activity_type=${row.activity_type})` }] };
+    }
+
+    if (mode === "hard") {
+      const { error } = await supabaseAdmin.from("activity_log").delete().eq("id", params.activity_id).eq("workspace_id", ctx.wsId);
+      if (error) return { content: [{ type: "text" as const, text: `Erreur delete: ${error.message}` }] };
+      return { content: [{ type: "text" as const, text: JSON.stringify({ success: true, mode: "hard", activity_id: params.activity_id }) }] };
+    }
+
+    const { error } = await supabaseAdmin
+      .from("activity_log")
+      .update({ archived_at: new Date().toISOString(), archived_by: ctx.userId || null, archive_reason: params.reason || null })
+      .eq("id", params.activity_id)
+      .eq("workspace_id", ctx.wsId);
+    if (error) return { content: [{ type: "text" as const, text: `Erreur archive: ${error.message}` }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ success: true, mode: "soft", activity_id: params.activity_id }) }] };
+  }
+);
+
+
+
+// ============================================================
 // TOOL 59: get_transcriptions [DEPRECATED — removal 2026-05-20]
 // Thin wrapper → list_transcriptions
 // ============================================================
