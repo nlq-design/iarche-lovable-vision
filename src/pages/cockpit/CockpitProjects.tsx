@@ -148,11 +148,41 @@ const CockpitProjects = () => {
           </div>
         </div>
 
-        {/* Active Projects */}
+        {/* Projects */}
         <Card className="border shadow-sm">
-          <CardHeader className="py-3 px-4 border-b bg-muted/30 flex flex-row items-center justify-between">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Projets actifs</CardTitle>
-            <Badge variant="secondary" className="text-xs">{activeProjects.length}</Badge>
+          <CardHeader className="py-3 px-4 border-b bg-muted/30 space-y-3">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Projets consultables</CardTitle>
+                <Badge variant="secondary" className="text-xs">{visibleProjects.length}</Badge>
+              </div>
+              <div className="relative w-full lg:max-w-xs">
+                <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Rechercher un projet"
+                  className="h-8 pl-8 text-sm"
+                />
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {filterOptions.map((option) => (
+                <Button
+                  key={option.value}
+                  type="button"
+                  variant={projectFilter === option.value ? 'default' : 'outline'}
+                  size="sm"
+                  className="h-8 gap-1.5 text-xs"
+                  onClick={() => setProjectFilter(option.value)}
+                >
+                  {option.label}
+                  <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+                    {option.count}
+                  </Badge>
+                </Button>
+              ))}
+            </div>
           </CardHeader>
           <CardContent className="p-4">
             {isLoading ? (
@@ -161,15 +191,15 @@ const CockpitProjects = () => {
                   <Skeleton key={i} className="h-20 w-full" />
                 ))}
               </div>
-            ) : activeProjects.length === 0 ? (
+            ) : visibleProjects.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
                 <FolderKanban className="h-10 w-10 mb-3 opacity-40" />
-                <p className="font-medium">Aucun projet en cours</p>
-                <p className="text-sm">Créez votre premier projet</p>
+                <p className="font-medium">Aucun projet trouvé</p>
+                <p className="text-sm">Ajustez le filtre ou la recherche</p>
               </div>
             ) : (
               <div className="space-y-3">
-                {activeProjects.map((project) => {
+                {visibleProjects.map((project) => {
                   const statusConfig = STATUS_CONFIG[project.status] || STATUS_CONFIG.planning;
                   const healthConfig = HEALTH_CONFIG[project.health_status] || HEALTH_CONFIG.healthy;
                   const progress = getProgressPercentage(
