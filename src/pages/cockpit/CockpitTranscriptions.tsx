@@ -143,6 +143,7 @@ export default function CockpitTranscriptions() {
   }, []);
 
   const AUDIO_TYPES = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4', 'audio/webm', 'audio/x-m4a', 'audio/flac', 'audio/aac'];
+  const MEDIA_EXT_RE = /\.(mp3|wav|ogg|m4a|webm|flac|aac|mp4|mov|mkv|m4v|3gp|ogv|avi)$/i;
 
   const handleDragEnter = useCallback((e: React.DragEvent) => {
     e.preventDefault();
