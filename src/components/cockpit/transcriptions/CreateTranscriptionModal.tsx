@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
-import { Upload, Mic, MicOff, Loader2, Check, CalendarIcon, Sparkles, Zap, Plus } from 'lucide-react';
+import { Upload, Mic, MicOff, Loader2, Check, CalendarIcon, Sparkles, Zap, Plus, Film } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCockpitVoiceTranscriptions, useAIPromptProfiles, type ExpectedParticipant } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
 import { useCockpitLeads, useCockpitProjects, useCockpitMeetingNotes } from '@/hooks/cockpit';
@@ -32,6 +32,7 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { useWorkspaceId } from '@/contexts/WorkspaceContext';
 import { DEFAULT_WORKSPACE_ID } from '@/lib/constants/workspace';
+import { isVideoFile, extractAudioFromVideo } from '@/lib/videoAudioExtractor';
 // Audio chunking no longer needed client-side — transcription-worker handles it server-side
 
 interface CreateTranscriptionModalProps {
