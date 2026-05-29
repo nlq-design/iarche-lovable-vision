@@ -20,6 +20,8 @@ type Project = Database['public']['Tables']['projects']['Row'];
 
 const STATUS_CONFIG: Record<string, { label: string; icon: typeof Clock; color: string }> = {
   planning: { label: 'Planification', icon: Clock, color: 'text-slate-600' },
+  scoping: { label: 'Cadrage', icon: Clock, color: 'text-slate-600' },
+  active: { label: 'En cours', icon: Clock, color: 'text-blue-600' },
   in_progress: { label: 'En cours', icon: Clock, color: 'text-blue-600' },
   on_hold: { label: 'En pause', icon: PauseCircle, color: 'text-amber-600' },
   completed: { label: 'Terminé', icon: CheckCircle2, color: 'text-green-600' },
