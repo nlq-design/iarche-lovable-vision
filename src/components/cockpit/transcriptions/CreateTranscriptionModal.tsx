@@ -427,7 +427,7 @@ export function CreateTranscriptionModal({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="audio/*"
+                accept="audio/*,video/*,.mp4,.mov,.webm,.mkv,.m4v"
                 multiple
                 onChange={handleFileChange}
                 className="hidden"
@@ -444,10 +444,13 @@ export function CreateTranscriptionModal({
                 <div className="space-y-2">
                   <Upload className="h-10 w-10 text-muted-foreground mx-auto" />
                   <p className="text-muted-foreground">
-                    Cliquez ou glissez des fichiers audio
+                    Cliquez ou glissez des fichiers audio ou vidéo
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    MP3, M4A, WAV, WebM (max 500 MB par fichier) — <strong>Multi-sélection possible</strong>
+                    MP3, M4A, WAV, WebM, MP4, MOV (max 500 MB) — <strong>Multi-sélection</strong>
+                  </p>
+                  <p className="text-[11px] text-muted-foreground/80 flex items-center justify-center gap-1">
+                    <Film className="h-3 w-3" /> Vidéo : l'audio est extrait localement avant envoi
                   </p>
                 </div>
               )}
