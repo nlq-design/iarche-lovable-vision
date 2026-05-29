@@ -61,6 +61,7 @@ export function CreateTranscriptionModal({
   const [activeTab, setActiveTab] = useState<'upload' | 'record'>('upload');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
+  const [extractStatus, setExtractStatus] = useState<{ name: string; ratio: number } | null>(null);
   // Chunking progress removed — server-side processing
   const [isRecording, setIsRecording] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
