@@ -21,6 +21,7 @@ const authStore = new AsyncLocalStorage<{ workspace_id: string; user_id?: string
 function _sh(base: any) {
   const s: any = { ...base };
   s.optional = () => _sh({ ...base, _opt: true });
+  s.nullable = () => _sh({ ...base, _nullable: true });
   s.describe = (d: string) => _sh({ ...base, _desc: d });
   s.uuid = () => _sh({ ...base, _format: 'uuid' });
   s.int = () => _sh({ ...base, _int: true });
@@ -51,6 +52,7 @@ function _toJsonSchema(schema: any): any {
     if (x._enum) p.enum = x._enum;
     if (x._format) p.format = x._format;
     if (x._int) p.type = 'integer';
+    if (x._nullable) p.type = [p.type, 'null'];
     if (typeof x._min === 'number') p.minimum = x._min;
     if (typeof x._max === 'number') p.maximum = x._max;
     if (x._default !== undefined) p.default = x._default;
