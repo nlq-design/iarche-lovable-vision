@@ -43,7 +43,7 @@ const CockpitProjects = () => {
   );
 
   const activeProjects = projects?.filter(p => 
-    p.status === 'in_progress' || p.status === 'planning'
+    p.status === 'active' || p.status === 'in_progress' || p.status === 'planning' || p.status === 'scoping'
   ) || [];
 
   const formatCurrency = (value: number) => {
