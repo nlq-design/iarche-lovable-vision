@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { CockpitLayout } from "@/components/cockpit/CockpitLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FolderKanban, Clock, CheckCircle2, AlertCircle, PauseCircle, Calendar, Users, Plus, Mic } from "lucide-react";
+import { FolderKanban, Clock, CheckCircle2, AlertCircle, PauseCircle, Calendar, Users, Plus, Mic, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useCockpitProjects } from "@/hooks/cockpit";
 import { useCockpitVoiceTranscriptions } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
@@ -14,9 +15,6 @@ import { ProjectTimeline } from '@/components/cockpit/ProjectTimeline';
 import { format, differenceInDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
-import type { Database } from '@/integrations/supabase/types';
-
-type Project = Database['public']['Tables']['projects']['Row'];
 
 const STATUS_CONFIG: Record<string, { label: string; icon: typeof Clock; color: string }> = {
   planning: { label: 'Planification', icon: Clock, color: 'text-slate-600' },
@@ -29,14 +27,27 @@ const STATUS_CONFIG: Record<string, { label: string; icon: typeof Clock; color: 
 };
 
 const HEALTH_CONFIG: Record<string, { label: string; color: string }> = {
+  on_track: { label: 'Sain', color: 'bg-green-500' },
   healthy: { label: 'Sain', color: 'bg-green-500' },
   at_risk: { label: 'À risque', color: 'bg-yellow-500' },
+  off_track: { label: 'En difficulté', color: 'bg-red-500' },
   critical: { label: 'Critique', color: 'bg-red-500' },
+};
+
+const ACTIVE_PROJECT_STATUSES = new Set(['active', 'in_progress', 'planning', 'scoping']);
+type ProjectFilter = 'all' | 'active' | 'risk' | 'paused' | 'closed';
+
+const getProjectContactCount = (project: unknown) => {
+  if (!project || typeof project !== 'object' || !('project_contacts' in project)) return 0;
+  const contacts = (project as { project_contacts?: unknown }).project_contacts;
+  return Array.isArray(contacts) ? contacts.length : 0;
 };
 
 const CockpitProjects = () => {
   const { projects, stats, isLoading, createProject } = useCockpitProjects();
   const { transcriptions } = useCockpitVoiceTranscriptions();
+  const [projectFilter, setProjectFilter] = useState<ProjectFilter>('active');
+  const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
 
   // Get project IDs that have transcriptions
@@ -44,9 +55,37 @@ const CockpitProjects = () => {
     transcriptions?.filter(t => t.project_id).map(t => t.project_id) || []
   );
 
-  const activeProjects = projects?.filter(p => 
-    p.status === 'active' || p.status === 'in_progress' || p.status === 'planning' || p.status === 'scoping'
-  ) || [];
+  const activeProjects = useMemo(() => (
+    projects?.filter(p => ACTIVE_PROJECT_STATUSES.has(p.status)) || []
+  ), [projects]);
+
+  const visibleProjects = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+
+    return (projects || []).filter((project) => {
+      const matchesFilter =
+        projectFilter === 'all'
+        || (projectFilter === 'active' && ACTIVE_PROJECT_STATUSES.has(project.status))
+        || (projectFilter === 'risk' && (project.health_status === 'at_risk' || project.health_status === 'off_track' || project.health_status === 'critical'))
+        || (projectFilter === 'paused' && project.status === 'on_hold')
+        || (projectFilter === 'closed' && (project.status === 'completed' || project.status === 'cancelled'));
+
+      if (!matchesFilter) return false;
+      if (!normalizedSearch) return true;
+
+      return [project.name, project.description, project.status, project.health_status]
+        .filter(Boolean)
+        .some(value => String(value).toLowerCase().includes(normalizedSearch));
+    });
+  }, [projectFilter, projects, searchTerm]);
+
+  const filterOptions: Array<{ value: ProjectFilter; label: string; count: number }> = [
+    { value: 'active', label: 'Actifs', count: activeProjects.length },
+    { value: 'risk', label: 'À risque', count: stats.atRisk },
+    { value: 'paused', label: 'Pause', count: stats.onHold },
+    { value: 'closed', label: 'Clos', count: stats.completed + (projects?.filter(p => p.status === 'cancelled').length || 0) },
+    { value: 'all', label: 'Tous', count: projects?.length || 0 },
+  ];
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('fr-FR', {
@@ -112,11 +151,41 @@ const CockpitProjects = () => {
           </div>
         </div>
 
-        {/* Active Projects */}
+        {/* Projects */}
         <Card className="border shadow-sm">
-          <CardHeader className="py-3 px-4 border-b bg-muted/30 flex flex-row items-center justify-between">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Projets actifs</CardTitle>
-            <Badge variant="secondary" className="text-xs">{activeProjects.length}</Badge>
+          <CardHeader className="py-3 px-4 border-b bg-muted/30 space-y-3">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Projets consultables</CardTitle>
+                <Badge variant="secondary" className="text-xs">{visibleProjects.length}</Badge>
+              </div>
+              <div className="relative w-full lg:max-w-xs">
+                <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Rechercher un projet"
+                  className="h-8 pl-8 text-sm"
+                />
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {filterOptions.map((option) => (
+                <Button
+                  key={option.value}
+                  type="button"
+                  variant={projectFilter === option.value ? 'default' : 'outline'}
+                  size="sm"
+                  className="h-8 gap-1.5 text-xs"
+                  onClick={() => setProjectFilter(option.value)}
+                >
+                  {option.label}
+                  <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+                    {option.count}
+                  </Badge>
+                </Button>
+              ))}
+            </div>
           </CardHeader>
           <CardContent className="p-4">
             {isLoading ? (
@@ -125,15 +194,15 @@ const CockpitProjects = () => {
                   <Skeleton key={i} className="h-20 w-full" />
                 ))}
               </div>
-            ) : activeProjects.length === 0 ? (
+            ) : visibleProjects.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
                 <FolderKanban className="h-10 w-10 mb-3 opacity-40" />
-                <p className="font-medium">Aucun projet en cours</p>
-                <p className="text-sm">Créez votre premier projet</p>
+                <p className="font-medium">Aucun projet trouvé</p>
+                <p className="text-sm">Ajustez le filtre ou la recherche</p>
               </div>
             ) : (
               <div className="space-y-3">
-                {activeProjects.map((project) => {
+                {visibleProjects.map((project) => {
                   const statusConfig = STATUS_CONFIG[project.status] || STATUS_CONFIG.planning;
                   const healthConfig = HEALTH_CONFIG[project.health_status] || HEALTH_CONFIG.healthy;
                   const progress = getProgressPercentage(
@@ -225,7 +294,7 @@ const CockpitProjects = () => {
                           <p className="text-muted-foreground mb-1">Contacts</p>
                           <div className="flex items-center gap-2">
                             <Users className="h-4 w-4 text-muted-foreground" />
-                            <span>{(project as any).project_contacts?.length || 0} contact(s)</span>
+                            <span>{getProjectContactCount(project)} contact(s)</span>
                           </div>
                         </div>
                       </div>
