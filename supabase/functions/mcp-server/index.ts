@@ -2669,7 +2669,7 @@ mcpServer.registerTool(
     // 1. Lire l'existant (workspace check)
     const { data: existing, error: readErr } = await supabaseAdmin
       .from("voice_transcriptions")
-      .select("id, workspace_id, lead_id, project_id")
+      .select("id, workspace_id, lead_id, project_id, lead_contact_id")
       .eq("id", params.transcription_id)
       .eq("workspace_id", ctx.wsId)
       .single();
@@ -2700,10 +2700,27 @@ mcpServer.registerTool(
     // 3. Cascade synthesis_stale sur ancien + nouveau lead/project
     const staleLeadIds = new Set<string>();
     const staleProjectIds = new Set<string>();
+    const cascadedContactIds = new Set<string>();
     if (existing.lead_id) staleLeadIds.add(existing.lead_id);
     if (params.lead_id) staleLeadIds.add(params.lead_id);
     if (existing.project_id) staleProjectIds.add(existing.project_id);
     if (params.project_id) staleProjectIds.add(params.project_id);
+
+    // 3b. Cascade lead_contact_id → lead parent (lead_contacts n'a pas synthesis_stale propre)
+    const contactIdsToResolve = new Set<string>();
+    if (existing.lead_contact_id) contactIdsToResolve.add(existing.lead_contact_id);
+    if (params.lead_contact_id) contactIdsToResolve.add(params.lead_contact_id);
+    if (contactIdsToResolve.size > 0) {
+      const { data: parentLeads } = await supabaseAdmin
+        .from("lead_contacts")
+        .select("id, lead_id")
+        .in("id", [...contactIdsToResolve])
+        .eq("workspace_id", ctx.wsId);
+      for (const lc of parentLeads || []) {
+        cascadedContactIds.add(lc.id);
+        if (lc.lead_id) staleLeadIds.add(lc.lead_id);
+      }
+    }
 
     if (staleLeadIds.size > 0) {
       await supabaseAdmin.from("leads").update({ synthesis_stale: true }).in("id", [...staleLeadIds]).eq("workspace_id", ctx.wsId);
@@ -2745,7 +2762,7 @@ mcpServer.registerTool(
       .select("*")
       .eq("transcription_id", params.transcription_id);
 
-    return { content: [{ type: "text" as const, text: JSON.stringify({ success: true, transcription: updated, participants: participants || [], cascaded: { leads: [...staleLeadIds], projects: [...staleProjectIds] } }) }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ success: true, transcription: updated, participants: participants || [], cascaded: { leads: [...staleLeadIds], projects: [...staleProjectIds], contacts: [...cascadedContactIds] } }) }] };
   }
 );
 
