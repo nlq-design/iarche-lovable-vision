@@ -143,6 +143,7 @@ export default function CockpitTranscriptions() {
   }, []);
 
   const AUDIO_TYPES = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4', 'audio/webm', 'audio/x-m4a', 'audio/flac', 'audio/aac'];
+  const MEDIA_EXT_RE = /\.(mp3|wav|ogg|m4a|webm|flac|aac|mp4|mov|mkv|m4v|3gp|ogv|avi)$/i;
 
   const handleDragEnter = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -174,17 +175,19 @@ export default function CockpitTranscriptions() {
     dragCounterRef.current = 0;
 
     const files = Array.from(e.dataTransfer.files);
-    const audioFiles = files.filter(f => 
-      AUDIO_TYPES.includes(f.type) || 
-      /\.(mp3|wav|ogg|m4a|webm|flac|aac|mp4)$/i.test(f.name)
+    const mediaFiles = files.filter(f =>
+      AUDIO_TYPES.includes(f.type) ||
+      f.type.startsWith('audio/') ||
+      f.type.startsWith('video/') ||
+      MEDIA_EXT_RE.test(f.name)
     );
 
-    if (audioFiles.length === 0) {
-      toast.error('Aucun fichier audio détecté. Formats acceptés : MP3, WAV, M4A, OGG, FLAC, AAC');
+    if (mediaFiles.length === 0) {
+      toast.error('Aucun fichier audio/vidéo détecté. Formats : MP3, WAV, M4A, MP4, MOV, WebM...');
       return;
     }
 
-    setDroppedFiles(audioFiles);
+    setDroppedFiles(mediaFiles);
     setCreateModalOpen(true);
   }, []);
 

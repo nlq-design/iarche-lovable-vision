@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
-import { Upload, Mic, MicOff, Loader2, Check, CalendarIcon, Sparkles, Zap, Plus } from 'lucide-react';
+import { Upload, Mic, MicOff, Loader2, Check, CalendarIcon, Sparkles, Zap, Plus, Film } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCockpitVoiceTranscriptions, useAIPromptProfiles, type ExpectedParticipant } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
 import { useCockpitLeads, useCockpitProjects, useCockpitMeetingNotes } from '@/hooks/cockpit';
@@ -32,6 +32,7 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { useWorkspaceId } from '@/contexts/WorkspaceContext';
 import { DEFAULT_WORKSPACE_ID } from '@/lib/constants/workspace';
+import { isVideoFile, extractAudioFromVideo } from '@/lib/videoAudioExtractor';
 // Audio chunking no longer needed client-side — transcription-worker handles it server-side
 
 interface CreateTranscriptionModalProps {
@@ -60,6 +61,7 @@ export function CreateTranscriptionModal({
   const [activeTab, setActiveTab] = useState<'upload' | 'record'>('upload');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
+  const [extractStatus, setExtractStatus] = useState<{ name: string; ratio: number } | null>(null);
   // Chunking progress removed — server-side processing
   const [isRecording, setIsRecording] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
@@ -310,10 +312,24 @@ export function CreateTranscriptionModal({
       let errorCount = 0;
 
       for (let i = 0; i < filesToUpload.length; i++) {
-        const audioBlob = filesToUpload[i];
+        let audioBlob = filesToUpload[i];
         setUploadProgress({ current: i + 1, total: filesToUpload.length });
 
         try {
+          // If a video file was selected, extract audio client-side first.
+          // Saves ~95% of Storage volume and avoids resumable-upload complexity.
+          if (audioBlob instanceof File && isVideoFile(audioBlob)) {
+            const sourceName = audioBlob.name;
+            setExtractStatus({ name: sourceName, ratio: 0 });
+            try {
+              audioBlob = await extractAudioFromVideo(audioBlob, (ratio) =>
+                setExtractStatus({ name: sourceName, ratio })
+              );
+            } finally {
+              setExtractStatus(null);
+            }
+          }
+
           const fileExt = activeTab === 'upload' && audioBlob instanceof File
             ? audioBlob.name.split('.').pop() || 'm4a'
             : 'webm';
@@ -322,7 +338,7 @@ export function CreateTranscriptionModal({
 
           // Get audio metadata first to determine if chunking is needed
           const audioMeta = await getAudioMetadata(audioBlob);
-          
+
           // Upload file to storage (server-side worker will handle transcription)
           const { error: uploadError } = await supabase.storage
             .from('voice-transcriptions')
@@ -411,7 +427,7 @@ export function CreateTranscriptionModal({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="audio/*"
+                accept="audio/*,video/*,.mp4,.mov,.webm,.mkv,.m4v"
                 multiple
                 onChange={handleFileChange}
                 className="hidden"
@@ -428,10 +444,13 @@ export function CreateTranscriptionModal({
                 <div className="space-y-2">
                   <Upload className="h-10 w-10 text-muted-foreground mx-auto" />
                   <p className="text-muted-foreground">
-                    Cliquez ou glissez des fichiers audio
+                    Cliquez ou glissez des fichiers audio ou vidéo
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    MP3, M4A, WAV, WebM (max 500 MB par fichier) — <strong>Multi-sélection possible</strong>
+                    MP3, M4A, WAV, WebM, MP4, MOV (max 500 MB) — <strong>Multi-sélection</strong>
+                  </p>
+                  <p className="text-[11px] text-muted-foreground/80 flex items-center justify-center gap-1">
+                    <Film className="h-3 w-3" /> Vidéo : l'audio est extrait localement avant envoi
                   </p>
                 </div>
               )}
@@ -633,6 +652,18 @@ export function CreateTranscriptionModal({
 
         {/* Server-side processing — no client-side progress needed */}
 
+        {/* Extraction audio (vidéo → MP3 client-side) */}
+        {extractStatus && (
+          <div className="rounded-md border border-primary/20 bg-primary/5 p-3 space-y-2">
+            <div className="flex items-center gap-2 text-xs text-foreground">
+              <Film className="h-3.5 w-3.5 text-primary" />
+              <span className="truncate flex-1">Extraction audio : {extractStatus.name}</span>
+              <span className="text-muted-foreground">{Math.round(extractStatus.ratio * 100)}%</span>
+            </div>
+            <Progress value={extractStatus.ratio * 100} className="h-1" />
+          </div>
+        )}
+
         {/* Actions */}
         <div className="flex justify-end gap-2 pt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isUploading}>
@@ -645,9 +676,11 @@ export function CreateTranscriptionModal({
             {isUploading ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                {uploadProgress.total > 1 
-                  ? `Upload ${uploadProgress.current}/${uploadProgress.total}...`
-                  : 'Upload en cours...'}
+                {extractStatus
+                  ? 'Extraction audio...'
+                  : uploadProgress.total > 1 
+                    ? `Upload ${uploadProgress.current}/${uploadProgress.total}...`
+                    : 'Upload en cours...'}
               </>
             ) : (
               selectedFiles.length > 1 
