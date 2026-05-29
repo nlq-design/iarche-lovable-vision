@@ -1174,6 +1174,7 @@ mcpServer.registerTool(
       lead_id: z.string().optional().describe("Filtrer par lead"),
       project_id: z.string().optional().describe("Filtrer par projet"),
       limit: z.number().optional().describe("Nombre max (défaut 30)"),
+      include_archived: z.boolean().optional().describe("Inclure les notes archivées (défaut false)"),
     },
   },
   async (params) => {
@@ -1182,11 +1183,12 @@ mcpServer.registerTool(
 
     let query = supabaseAdmin
       .from("activity_log")
-      .select("id, entity_type, entity_id, activity_type, title, content, lead_id, project_id, created_at, is_ai_generated")
+      .select("id, entity_type, entity_id, activity_type, title, content, lead_id, project_id, created_at, is_ai_generated, archived_at")
       .eq("workspace_id", ctx.wsId)
       .order("created_at", { ascending: false })
       .limit(params.limit || 30);
 
+    if (!params.include_archived) query = query.is("archived_at", null);
     if (params.entity_type) query = query.eq("entity_type", params.entity_type);
     if (params.entity_id) query = query.eq("entity_id", params.entity_id);
     if (params.lead_id) query = query.or(`lead_id.eq.${params.lead_id},and(entity_type.eq.lead,entity_id.eq.${params.lead_id})`);
