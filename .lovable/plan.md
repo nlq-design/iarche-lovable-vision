@@ -1,50 +1,57 @@
-## Plan v2 — correction `create_document` (custom_data + parsing JSON)
+# Fix MCP Cockpit — activity notes & transcriptions (3 bugs)
 
-### 1. Injection du brief MCP — généralisée (ajustement A)
-Dans `supabase/functions/generate-document/index.ts`, ajouter un bloc prompt **prioritaire** construit à partir de `inputContext` (= `custom_data` MCP), commun à tous les types :
+## État des lieux (audit codebase + BDD)
 
-- Table `FIELDS_TO_PRESERVE` par `document_type` (training_program, quote, spec, proposal, invitation) listant les champs verrouillés (date, lieu, stagiaires, formateur, organisme, montants, TVA, périmètre, livrables, etc.).
-- Bloc injecté en tête du `userPrompt` :
-  ```
-  BRIEF UTILISATEUR (PRIORITAIRE — UTILISER TEL QUEL)
-  ```json
-  {custom_data}
-  ```
-  Règles :
-  - Utilise EXCLUSIVEMENT ces valeurs pour : {lockedFields}
-  - N'invente AUCUNE donnée présente dans le brief
-  - Si une info verrouillée manque : écris littéralement [À COMPLÉTER]
-  - Conserve noms propres, codes (ROME, NAF, IDCC), prix et dates EXACTS
-  ```
-- Remplacer la consigne actuelle "invente du réaliste" du `training_program` par "absent → [À COMPLÉTER]". Garder l’inventivité uniquement pour les sections rédactionnelles non verrouillées (objectifs pédagogiques, structure narrative).
+- **Bug #1 (lecture activity notes manuelles)** : déjà corrigé au tour précédent. `get_activity_log` lit bien `entity_id/entity_type` (ligne 1191-1192) + 39 entrées fantômes du 29/05 confirmées en BDD. Reste un **defect résiduel** : `create_activity_note` force `is_ai_generated: true` (ligne 808) pour TOUTES les notes — donc impossible de distinguer manuel/auto, et la garde anti-suppression du Bug #3 deviendrait inutilisable. À corriger.
+- **Bug #2** : aucun tool `update_transcription` exposé. Table `voice_transcriptions` a `lead_id`, `project_id`, `lead_contact_id`, `title`, `status`, `synthesis_stale` — **pas d'`opportunity_id`**. Multi-contacts via `transcription_participants(linked_entity_type, linked_entity_id)`.
+- **Bug #3** : aucun tool `delete_activity_note`. Table `activity_log` n'a **pas de colonne `archived_at`** — à ajouter pour soft-delete.
 
-### 2. Contrat MCP → Edge — inchangé
-`mcp-server.create_document` continue d’envoyer `custom_data` dans `context`. Aucun breaking change. Ajout d’un log côté Edge : `console.log("[generate-document] custom_data keys:", Object.keys(inputContext||{}))` pour traçabilité (clés seulement, pas de valeurs).
+## Plan d'exécution
 
-### 3. Parsing JSON — diagnostic d’abord, refactor ensuite (ajustement B)
-- **Avant** de remplacer le parser : `console.log("[generate-document] raw AI response (first 500 chars):", aiResult.content.slice(0,500))` pour comprendre pourquoi le strip actuel a échoué (fences mal positionnées, prose avant, BOM, multiples blocs).
-- Remplacer le strip regex par une fonction `extractJsonObject(text)` à compteur d’accolades, qui ignore les `{` à l’intérieur de chaînes JSON, gère les échappements, et retourne l’objet racine quel que soit le bruit autour (fences, prose, BOM).
-- Conserver le `sanitizeJsonString` existant comme étape 2 (réparation `\'`, newlines bruts).
-- Côté prompt système : ajouter "Réponds UNIQUEMENT par un objet JSON. AUCUN bloc markdown, AUCUN backtick, AUCUN texte avant ou après."
-- Si l’AI Gateway Lovable supporte `response_format: { type: "json_object" }`, l’ajouter dans `callAI("lovable", ...)` (vérification rapide avant). Sinon le nettoyage défensif suffit.
+### 1. Migration SQL (1 seule)
+- `ALTER TABLE public.activity_log ADD COLUMN archived_at timestamptz NULL, ADD COLUMN archived_by uuid NULL, ADD COLUMN archive_reason text NULL;`
+- Index partiel : `CREATE INDEX activity_log_active_idx ON activity_log(workspace_id, created_at DESC) WHERE archived_at IS NULL;`
+- **Purge automatique des 39 fantômes du 29/05** : `UPDATE activity_log SET archived_at = now(), archive_reason = 'ghost-cleanup-2026-05-29' WHERE created_at >= '2026-05-29 19:00:00' AND entity_type IN ('lead','project') AND entity_id NOT IN (SELECT id FROM leads UNION ALL SELECT id FROM projects) AND archived_at IS NULL;`
 
-### 4. Plan de test (ajustement C + D)
-| # | Test | Validation |
-|---|------|------------|
-| 1 | `custom_data` 8 marqueurs `XXXTEST_*` | Tous présents dans le doc |
-| 2 | `custom_data` partiel (3/10 champs, marqueur `is_test:true`) | Marqueurs présents + `[À COMPLÉTER]` sur champs absents, zéro hallucination |
-| 3 | 5 appels successifs payload complet | Zéro `invalid_ai_response` |
-| 4 | Payload ATEKA réel | Doc 1-1 avec le brief préparé |
-| 5 | `get_document_detail` sur doc final | Sections + metadata cohérentes |
+### 2. Edits `supabase/functions/mcp-server/index.ts`
 
-Convention : tout test passe par `custom_data.is_test = true` pour nettoyage ultérieur facile (filtre SQL).
+**a) `create_activity_note`** (ligne 808) : remplacer `is_ai_generated: true` codé en dur par un paramètre optionnel `is_ai_generated: z.boolean().optional()` défaut `false`. Les notes manuelles deviennent donc supprimables ; les workflows IA passeront le flag explicitement.
 
-### Détails techniques
-- Fichier touché : `supabase/functions/generate-document/index.ts` (prompts + parser).
-- Fichier audité sans modif : `supabase/functions/mcp-server/index.ts` (contrat déjà bon).
-- Pas de migration BDD.
-- Déploiement auto Edge + redéploiement explicite via `deploy_edge_functions` pour forcer la prise d’effet.
-- Vérification post-deploy via `curl_edge_functions` test #1 avant de rendre la main.
+**b) `get_activity_log`** (ligne 1182-1194) : ajouter `.is('archived_at', null)` pour exclure les archivés. Ajouter param optionnel `include_archived: boolean` (défaut false) pour debug.
 
-### Contraintes timing
-Périmètre serré, livrable visé < 30 min de build pour laisser le temps des 5 tests avant 22h. Si le diagnostic du raw response (étape 3) révèle une cause inattendue, je m’arrête et redemande arbitrage avant d’étendre le scope.
+**c) Nouveau tool `update_transcription`** (après TOOL 58) :
+- Params : `transcription_id` (req), `project_id?`, `lead_id?`, `lead_contact_id?`, `contact_ids?: string[]`, `title?`, `status?`.
+- (Note : pas d'`opportunity_id` en schéma — exclu du tool, documenté dans la description.)
+- Build patch dict partiel (uniquement les champs fournis, accepte `null` pour unlink).
+- Lit anciennes valeurs avant update pour marquer `synthesis_stale=true` sur ancien + nouveau `lead_id`/`project_id` (UPDATE sur `leads`/`projects`/`voice_transcriptions`).
+- Si `contact_ids` fourni : upsert dans `transcription_participants` (insert manquants avec `linked_entity_type='contact'`, supprime les liens contact retirés).
+- Filtre `workspace_id = ctx.wsId` strict.
+- Retourne la transcription mise à jour + participants.
+
+**d) Nouveau tool `delete_activity_note`** :
+- Params : `activity_id` (req), `mode: 'soft'|'hard'` défaut `soft`, `reason?`.
+- Pré-check : SELECT, refuse si `is_ai_generated = true` OU `activity_type LIKE 'transcription_%'` → erreur `"Cannot delete auto-generated activity"`.
+- Vérifie `workspace_id = ctx.wsId`.
+- `soft` : UPDATE `archived_at=now(), archived_by=ctx.userId, archive_reason=reason`.
+- `hard` : DELETE strict.
+- Retour `{ success, mode, activity_id }`.
+
+**e) Registry** (ligne 5385) : ajouter `'update_transcription', 'delete_activity_note'` à la whitelist des tools exposés.
+
+### 3. Déploiement & validation
+- Déployer `mcp-server`.
+- Test acceptance :
+  1. `create_activity_note` (sans flag) → `get_activity_log` retourne la note (is_ai_generated=false).
+  2. `delete_activity_note(soft)` → disparaît du `get_activity_log`, présente en BDD avec `archived_at`.
+  3. `delete_activity_note` sur entrée `transcription_completed` → rejet.
+  4. `update_transcription({transcription_id, project_id: X})` → `get_transcription_detail` montre nouveau lien + `synthesis_stale=true` sur ancien & nouveau projet.
+- Compter en BDD que les 39 fantômes du 29/05 ont bien `archived_at IS NOT NULL`.
+
+## Hors scope (volontaire)
+- Pas d'`opportunity_id` sur transcriptions (colonne inexistante — nécessiterait migration séparée, non demandée explicitement).
+- Pas d'`audit_log` table dédiée (réutilise `archive_reason` + `archived_by` sur la ligne elle-même).
+- Pas de hard-delete bulk : workflow recommandé = soft systématique.
+
+## Mémoires à mettre à jour après build
+- `mem://cockpit/transcriptions/...` : ajouter référence au nouveau tool `update_transcription`.
+- Nouvelle mémoire `mem://infrastructure/mcp/activity-log-soft-delete-v1` : flag manuel/auto, soft-delete, garde anti-suppression auto.
