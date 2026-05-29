@@ -5573,7 +5573,7 @@ const _EXPOSED_TOOLS = new Set([
   // FORMULAIRES
   'get_forms', 'create_form', 'update_form',
   // TRANSCRIPTIONS
-  'get_transcriptions', 'get_transcription_detail', 'list_transcriptions', 'get_transcription',
+  'get_transcriptions', 'get_transcription_detail', 'list_transcriptions', 'get_transcription', 'update_transcription',
   // PREFERENCES
   'save_preference',
 ]);
