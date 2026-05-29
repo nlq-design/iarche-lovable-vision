@@ -132,6 +132,9 @@ export type Database = {
           activity_type: string
           ai_metadata: Json | null
           ai_reviewed_at: string | null
+          archive_reason: string | null
+          archived_at: string | null
+          archived_by: string | null
           content: string | null
           created_at: string | null
           created_by: string | null
@@ -151,6 +154,9 @@ export type Database = {
           activity_type: string
           ai_metadata?: Json | null
           ai_reviewed_at?: string | null
+          archive_reason?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
           content?: string | null
           created_at?: string | null
           created_by?: string | null
@@ -170,6 +176,9 @@ export type Database = {
           activity_type?: string
           ai_metadata?: Json | null
           ai_reviewed_at?: string | null
+          archive_reason?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
           content?: string | null
           created_at?: string | null
           created_by?: string | null
