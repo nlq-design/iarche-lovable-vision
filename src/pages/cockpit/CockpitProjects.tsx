@@ -43,6 +43,8 @@ type ProjectFilter = 'all' | 'active' | 'risk' | 'paused' | 'closed';
 const CockpitProjects = () => {
   const { projects, stats, isLoading, createProject } = useCockpitProjects();
   const { transcriptions } = useCockpitVoiceTranscriptions();
+  const [projectFilter, setProjectFilter] = useState<ProjectFilter>('active');
+  const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
 
   // Get project IDs that have transcriptions
@@ -50,9 +52,37 @@ const CockpitProjects = () => {
     transcriptions?.filter(t => t.project_id).map(t => t.project_id) || []
   );
 
-  const activeProjects = projects?.filter(p => 
-    p.status === 'active' || p.status === 'in_progress' || p.status === 'planning' || p.status === 'scoping'
-  ) || [];
+  const activeProjects = useMemo(() => (
+    projects?.filter(p => ACTIVE_PROJECT_STATUSES.has(p.status)) || []
+  ), [projects]);
+
+  const visibleProjects = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+
+    return (projects || []).filter((project) => {
+      const matchesFilter =
+        projectFilter === 'all'
+        || (projectFilter === 'active' && ACTIVE_PROJECT_STATUSES.has(project.status))
+        || (projectFilter === 'risk' && (project.health_status === 'at_risk' || project.health_status === 'off_track' || project.health_status === 'critical'))
+        || (projectFilter === 'paused' && project.status === 'on_hold')
+        || (projectFilter === 'closed' && (project.status === 'completed' || project.status === 'cancelled'));
+
+      if (!matchesFilter) return false;
+      if (!normalizedSearch) return true;
+
+      return [project.name, project.description, project.status, project.health_status]
+        .filter(Boolean)
+        .some(value => String(value).toLowerCase().includes(normalizedSearch));
+    });
+  }, [projectFilter, projects, searchTerm]);
+
+  const filterOptions: Array<{ value: ProjectFilter; label: string; count: number }> = [
+    { value: 'active', label: 'Actifs', count: activeProjects.length },
+    { value: 'risk', label: 'À risque', count: stats.atRisk },
+    { value: 'paused', label: 'Pause', count: stats.onHold },
+    { value: 'closed', label: 'Clos', count: stats.completed + (projects?.filter(p => p.status === 'cancelled').length || 0) },
+    { value: 'all', label: 'Tous', count: projects?.length || 0 },
+  ];
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('fr-FR', {
