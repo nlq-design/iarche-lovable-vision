@@ -2667,7 +2667,7 @@ mcpServer.registerTool(
     // 1. Lire l'existant (workspace check)
     const { data: existing, error: readErr } = await supabaseAdmin
       .from("voice_transcriptions")
-      .select("id, workspace_id, lead_id, project_id")
+      .select("id, workspace_id, lead_id, project_id, lead_contact_id")
       .eq("id", params.transcription_id)
       .eq("workspace_id", ctx.wsId)
       .single();
@@ -2702,6 +2702,22 @@ mcpServer.registerTool(
     if (params.lead_id) staleLeadIds.add(params.lead_id);
     if (existing.project_id) staleProjectIds.add(existing.project_id);
     if (params.project_id) staleProjectIds.add(params.project_id);
+
+    // 3b. Cascade aussi via lead_contact_id (ancien + nouveau) en remontant
+    //     au lead parent (lead_contacts n'a pas sa propre colonne synthesis_stale).
+    const contactIds = new Set<string>();
+    if (existing.lead_contact_id) contactIds.add(existing.lead_contact_id);
+    if (params.lead_contact_id) contactIds.add(params.lead_contact_id);
+    if (contactIds.size > 0) {
+      const { data: parentLeads } = await supabaseAdmin
+        .from("lead_contacts")
+        .select("lead_id")
+        .in("id", [...contactIds])
+        .eq("workspace_id", ctx.wsId);
+      for (const row of parentLeads || []) {
+        if ((row as { lead_id?: string }).lead_id) staleLeadIds.add((row as { lead_id: string }).lead_id);
+      }
+    }
 
     if (staleLeadIds.size > 0) {
       await supabaseAdmin.from("leads").update({ synthesis_stale: true }).in("id", [...staleLeadIds]).eq("workspace_id", ctx.wsId);
@@ -2743,7 +2759,7 @@ mcpServer.registerTool(
       .select("*")
       .eq("transcription_id", params.transcription_id);
 
-    return { content: [{ type: "text" as const, text: JSON.stringify({ success: true, transcription: updated, participants: participants || [], cascaded: { leads: [...staleLeadIds], projects: [...staleProjectIds] } }) }] };
+    return { content: [{ type: "text" as const, text: JSON.stringify({ success: true, transcription: updated, participants: participants || [], cascaded: { leads: [...staleLeadIds], projects: [...staleProjectIds], contacts: [...contactIds] } }) }] };
   }
 );
 
