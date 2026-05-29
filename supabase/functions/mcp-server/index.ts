@@ -257,8 +257,8 @@ mcpServer.registerTool(
       supabaseAdmin
         .from("activity_log")
         .select("id, activity_type, title, content, created_at")
-        .eq("lead_id", params.lead_id)
         .eq("workspace_id", ctx.wsId)
+        .or(`lead_id.eq.${params.lead_id},and(entity_type.eq.lead,entity_id.eq.${params.lead_id})`)
         .order("created_at", { ascending: false })
         .limit(5),
     ]);
@@ -792,6 +792,9 @@ mcpServer.registerTool(
     const ctx = getAuthContext();
     if (!ctx) return authError();
 
+    const linkedLeadId = params.lead_id || (params.entity_type === "lead" ? params.entity_id : null);
+    const linkedProjectId = params.project_id || (params.entity_type === "project" ? params.entity_id : null);
+
     const { data, error } = await supabaseAdmin.from("activity_log").insert({
       workspace_id: ctx.wsId,
       entity_type: params.entity_type,
@@ -799,8 +802,8 @@ mcpServer.registerTool(
       activity_type: params.activity_type,
       title: params.title,
       content: params.content || null,
-      lead_id: params.lead_id || null,
-      project_id: params.project_id || null,
+      lead_id: linkedLeadId,
+      project_id: linkedProjectId,
       visibility: params.visibility || "internal",
       is_ai_generated: true,
       created_by: ctx.userId || null,
@@ -1185,8 +1188,8 @@ mcpServer.registerTool(
 
     if (params.entity_type) query = query.eq("entity_type", params.entity_type);
     if (params.entity_id) query = query.eq("entity_id", params.entity_id);
-    if (params.lead_id) query = query.eq("lead_id", params.lead_id);
-    if (params.project_id) query = query.eq("project_id", params.project_id);
+    if (params.lead_id) query = query.or(`lead_id.eq.${params.lead_id},and(entity_type.eq.lead,entity_id.eq.${params.lead_id})`);
+    if (params.project_id) query = query.or(`project_id.eq.${params.project_id},and(entity_type.eq.project,entity_id.eq.${params.project_id})`);
 
     const { data, error } = await query;
     if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
