@@ -312,10 +312,24 @@ export function CreateTranscriptionModal({
       let errorCount = 0;
 
       for (let i = 0; i < filesToUpload.length; i++) {
-        const audioBlob = filesToUpload[i];
+        let audioBlob = filesToUpload[i];
         setUploadProgress({ current: i + 1, total: filesToUpload.length });
 
         try {
+          // If a video file was selected, extract audio client-side first.
+          // Saves ~95% of Storage volume and avoids resumable-upload complexity.
+          if (audioBlob instanceof File && isVideoFile(audioBlob)) {
+            const sourceName = audioBlob.name;
+            setExtractStatus({ name: sourceName, ratio: 0 });
+            try {
+              audioBlob = await extractAudioFromVideo(audioBlob, (ratio) =>
+                setExtractStatus({ name: sourceName, ratio })
+              );
+            } finally {
+              setExtractStatus(null);
+            }
+          }
+
           const fileExt = activeTab === 'upload' && audioBlob instanceof File
             ? audioBlob.name.split('.').pop() || 'm4a'
             : 'webm';
@@ -324,7 +338,7 @@ export function CreateTranscriptionModal({
 
           // Get audio metadata first to determine if chunking is needed
           const audioMeta = await getAudioMetadata(audioBlob);
-          
+
           // Upload file to storage (server-side worker will handle transcription)
           const { error: uploadError } = await supabase.storage
             .from('voice-transcriptions')
