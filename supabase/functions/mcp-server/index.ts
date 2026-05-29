@@ -786,6 +786,7 @@ mcpServer.registerTool(
       project_id: z.string().optional().describe("UUID projet lié"),
       task_id: z.string().optional().describe("UUID tâche liée"),
       visibility: z.string().optional().describe("Visibilité: internal, team, public (défaut: internal)"),
+      is_ai_generated: z.boolean().optional().describe("True si auto-générée par un workflow IA (non supprimable). Défaut: false = note manuelle."),
     },
   },
   async (params) => {
@@ -805,9 +806,9 @@ mcpServer.registerTool(
       lead_id: linkedLeadId,
       project_id: linkedProjectId,
       visibility: params.visibility || "internal",
-      is_ai_generated: true,
+      is_ai_generated: params.is_ai_generated ?? false,
       created_by: ctx.userId || null,
-    }).select("id, title, activity_type, entity_type, created_at").single();
+    }).select("id, title, activity_type, entity_type, created_at, is_ai_generated").single();
 
     if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
     return { content: [{ type: "text" as const, text: JSON.stringify({ success: true, activity: data }) }] };
