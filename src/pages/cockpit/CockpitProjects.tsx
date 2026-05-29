@@ -15,9 +15,6 @@ import { ProjectTimeline } from '@/components/cockpit/ProjectTimeline';
 import { format, differenceInDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
-import type { Database } from '@/integrations/supabase/types';
-
-type Project = Database['public']['Tables']['projects']['Row'];
 
 const STATUS_CONFIG: Record<string, { label: string; icon: typeof Clock; color: string }> = {
   planning: { label: 'Planification', icon: Clock, color: 'text-slate-600' },
