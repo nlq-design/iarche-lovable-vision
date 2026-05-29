@@ -652,6 +652,18 @@ export function CreateTranscriptionModal({
 
         {/* Server-side processing — no client-side progress needed */}
 
+        {/* Extraction audio (vidéo → MP3 client-side) */}
+        {extractStatus && (
+          <div className="rounded-md border border-primary/20 bg-primary/5 p-3 space-y-2">
+            <div className="flex items-center gap-2 text-xs text-foreground">
+              <Film className="h-3.5 w-3.5 text-primary" />
+              <span className="truncate flex-1">Extraction audio : {extractStatus.name}</span>
+              <span className="text-muted-foreground">{Math.round(extractStatus.ratio * 100)}%</span>
+            </div>
+            <Progress value={extractStatus.ratio * 100} className="h-1" />
+          </div>
+        )}
+
         {/* Actions */}
         <div className="flex justify-end gap-2 pt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isUploading}>
@@ -664,9 +676,11 @@ export function CreateTranscriptionModal({
             {isUploading ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                {uploadProgress.total > 1 
-                  ? `Upload ${uploadProgress.current}/${uploadProgress.total}...`
-                  : 'Upload en cours...'}
+                {extractStatus
+                  ? 'Extraction audio...'
+                  : uploadProgress.total > 1 
+                    ? `Upload ${uploadProgress.current}/${uploadProgress.total}...`
+                    : 'Upload en cours...'}
               </>
             ) : (
               selectedFiles.length > 1 
