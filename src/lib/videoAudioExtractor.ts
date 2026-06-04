@@ -30,13 +30,33 @@ async function getFFmpeg() {
       const { FFmpeg } = await import("@ffmpeg/ffmpeg");
       const { toBlobURL } = await import("@ffmpeg/util");
       const ffmpeg = new FFmpeg();
-      // Single-threaded core (no SharedArrayBuffer required)
-      const baseURL = "https://unpkg.com/@ffmpeg/[email protected]/dist/umd";
-      await ffmpeg.load({
-        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
-        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
-      });
-      return ffmpeg;
+      // Single-threaded core (no SharedArrayBuffer required).
+      // jsDelivr is primary (more reliable for large wasm than unpkg);
+      // unpkg kept as fallback in case jsDelivr is unreachable.
+      const CDN_BASES = [
+        "https://cdn.jsdelivr.net/npm/@ffmpeg/[email protected]/dist/umd",
+        "https://unpkg.com/@ffmpeg/[email protected]/dist/umd",
+      ];
+      const loadFromBase = async (baseURL: string) => {
+        const [coreURL, wasmURL] = await Promise.all([
+          toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
+          toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
+        ]);
+        await ffmpeg.load({ coreURL, wasmURL });
+      };
+      let lastErr: unknown;
+      for (const base of CDN_BASES) {
+        try {
+          await loadFromBase(base);
+          return ffmpeg;
+        } catch (err) {
+          console.warn(`[ffmpeg] CDN failed (${base}), trying next`, err);
+          lastErr = err;
+        }
+      }
+      // Reset so a subsequent attempt can retry instead of caching the failure.
+      ffmpegPromise = null;
+      throw lastErr ?? new Error("ffmpeg-core: all CDNs unreachable");
     })();
   }
   return ffmpegPromise;
