@@ -73,18 +73,50 @@ export async function extractAudioFromVideo(
   const ffmpeg = await getFFmpeg();
   const { fetchFile } = await import("@ffmpeg/util");
 
-  const inputName = `in_${Date.now()}.${video.name.split(".").pop() || "mp4"}`;
-  const outputName = `out_${Date.now()}.mp3`;
+  const ts = Date.now();
+  const ext = video.name.split(".").pop()?.toLowerCase() || "mp4";
+  const inputName = `in_${ts}.${ext}`;
+  const baseName = video.name.replace(/\.[^.]+$/, "");
 
   const progressHandler = ({ progress }: { progress: number }) => {
     if (onProgress && progress >= 0 && progress <= 1) onProgress(progress);
   };
   ffmpeg.on("progress", progressHandler);
 
+  const cleanup = async (name: string) => {
+    try { await ffmpeg.deleteFile(name); } catch { /* noop */ }
+  };
+
   try {
     await ffmpeg.writeFile(inputName, await fetchFile(video));
-    // -vn: no video, -ac 1: mono, -ar 16000: 16 kHz, -b:a 64k: 64 kbps
-    // AssemblyAI is optimal at 16 kHz mono; lower rates hurt diarization.
+
+    // ---- Fast path: stream-copy the audio track (no re-encode).
+    // Most MP4/MOV/M4V contain AAC → remux to .m4a in ~1-2s even for 1h videos.
+    // AssemblyAI accepts m4a/aac natively.
+    const fastOut = `out_${ts}.m4a`;
+    try {
+      await ffmpeg.exec([
+        "-i", inputName,
+        "-vn",
+        "-acodec", "copy",
+        "-movflags", "+faststart",
+        fastOut,
+      ]);
+      const data = await ffmpeg.readFile(fastOut);
+      const buf = data instanceof Uint8Array ? data : new Uint8Array(data as ArrayBuffer);
+      if (buf.byteLength > 1024) {
+        const audioBuffer = buf.slice().buffer;
+        await cleanup(fastOut);
+        return new File([audioBuffer], `${baseName}.m4a`, { type: "audio/mp4" });
+      }
+      await cleanup(fastOut);
+    } catch (err) {
+      console.warn("[ffmpeg] stream-copy failed, falling back to MP3 re-encode", err);
+      await cleanup(fastOut);
+    }
+
+    // ---- Fallback: re-encode to MP3 mono 16 kHz (slower but universal).
+    const slowOut = `out_${ts}.mp3`;
     await ffmpeg.exec([
       "-i", inputName,
       "-vn",
@@ -92,19 +124,15 @@ export async function extractAudioFromVideo(
       "-ar", "16000",
       "-b:a", "64k",
       "-f", "mp3",
-      outputName,
+      slowOut,
     ]);
-
-    const data = await ffmpeg.readFile(outputName);
-    const buffer = data instanceof Uint8Array ? data : new Uint8Array(data as ArrayBuffer);
-    // Copy into a fresh ArrayBuffer to satisfy the Blob/File constructor signature
-    const audioBuffer = buffer.slice().buffer;
-    const baseName = video.name.replace(/\.[^.]+$/, "");
+    const data = await ffmpeg.readFile(slowOut);
+    const buf = data instanceof Uint8Array ? data : new Uint8Array(data as ArrayBuffer);
+    const audioBuffer = buf.slice().buffer;
+    await cleanup(slowOut);
     return new File([audioBuffer], `${baseName}.mp3`, { type: "audio/mpeg" });
   } finally {
     ffmpeg.off("progress", progressHandler);
-    // Best-effort cleanup — ignore errors if files were never written
-    try { await ffmpeg.deleteFile(inputName); } catch { /* noop */ }
-    try { await ffmpeg.deleteFile(outputName); } catch { /* noop */ }
+    await cleanup(inputName);
   }
 }
