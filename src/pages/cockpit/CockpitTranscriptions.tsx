@@ -229,15 +229,35 @@ export default function CockpitTranscriptions() {
   const filteredTranscriptions = useMemo(() => {
     return transcriptions.filter(t => {
       const searchLower = searchQuery.toLowerCase();
-      const matchesSearch = searchQuery === '' || 
-        t.title?.toLowerCase().includes(searchLower) ||
-        (typeof t.summary?.title === 'string' && t.summary.title.toLowerCase().includes(searchLower)) ||
-        t.lead?.name?.toLowerCase().includes(searchLower) ||
-        t.lead?.company?.toLowerCase().includes(searchLower) ||
-        t.project?.name?.toLowerCase().includes(searchLower) ||
-        t.solution?.title?.toLowerCase().includes(searchLower) ||
-        t.lead_contact?.name?.toLowerCase().includes(searchLower);
-      
+      let matchesSearch = searchQuery === '';
+      if (!matchesSearch) {
+        const haystackParts: (string | null | undefined)[] = [
+          t.title,
+          typeof t.summary?.title === 'string' ? t.summary.title : null,
+          t.lead?.name,
+          t.lead?.company,
+          t.project?.name,
+          t.solution?.title,
+          t.lead_contact?.name,
+          // Synthèse IA (sujets / mots-clés / contenu)
+          t.summary?.executive_summary,
+          ...(t.summary?.topics ?? []),
+          ...(t.summary?.key_points ?? []),
+          ...(t.summary?.decisions ?? []),
+          ...(t.summary?.risks_blockers ?? []),
+          ...(t.summary?.questions_open ?? []),
+          ...((t.summary?.action_items ?? []).flatMap(a => [a.task, a.title, a.owner, a.assignee])),
+          ...((t.summary?.next_steps ?? []).flatMap(s => [s.action, s.owner])),
+          // Participants détectés par l'IA
+          ...((t.summary?.participants ?? []).flatMap(p => [p.name, p.company, p.role])),
+          // Participants attendus (saisis à la création) + partenaires liés
+          ...(((t.ai_metadata as Record<string, unknown>)?.expected_participants as Array<{ name?: string; company?: string }> | undefined ?? [])
+            .flatMap(p => [p?.name, p?.company])),
+          ...((t.partners ?? []).map(p => p.partner?.name)),
+        ];
+        matchesSearch = haystackParts.some(v => typeof v === 'string' && v.toLowerCase().includes(searchLower));
+      }
+
       const matchesStatus = statusFilter === 'all' || t.status === statusFilter;
       const matchesLead = leadFilter === 'all' || t.lead?.id === leadFilter;
       const matchesProject = projectFilter === 'all' || t.project?.id === projectFilter;
@@ -250,6 +270,7 @@ export default function CockpitTranscriptions() {
       return matchesSearch && matchesStatus && matchesLead && matchesProject && matchesSolution && matchesSource && matchesLink;
     });
   }, [transcriptions, searchQuery, statusFilter, leadFilter, projectFilter, solutionFilter, sourceFilter, linkFilter]);
+
 
   const activeFiltersCount = [statusFilter, leadFilter, projectFilter, solutionFilter, sourceFilter, linkFilter].filter(v => v !== 'all').length + (searchQuery ? 1 : 0);
 
