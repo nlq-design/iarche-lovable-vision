@@ -563,6 +563,36 @@ export function CreateTranscriptionModal({
               )}
             </div>
           </TabsContent>
+
+          <TabsContent value="paste" className="space-y-3 pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="pasted-title">Titre du compte-rendu (optionnel)</Label>
+              <Input
+                id="pasted-title"
+                value={pastedTitle}
+                onChange={(e) => setPastedTitle(e.target.value)}
+                placeholder="Ex: Visio prépa Clipper AI — 27/05/2026"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="pasted-text">Texte de la transcription / compte-rendu</Label>
+              <textarea
+                id="pasted-text"
+                value={pastedText}
+                onChange={(e) => setPastedText(e.target.value)}
+                placeholder="Collez ici le texte brut d'une transcription Zoom, Otter, Fireflies, ou un compte-rendu rédigé. L'IA structurera résumé + actions à partir de ce texte sans ré-inventer le contenu."
+                rows={10}
+                className="w-full px-3 py-2 text-sm border rounded-md resize-y focus:outline-none focus:ring-2 focus:ring-ring font-mono"
+              />
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>{pastedText.trim().length.toLocaleString('fr-FR')} caractères</span>
+                <span className="flex items-center gap-1">
+                  <Zap className="h-3 w-3 text-primary" />
+                  Zéro coût AssemblyAI — analyse IA uniquement
+                </span>
+              </div>
+            </div>
+          </TabsContent>
         </Tabs>
 
         {/* Transcription date + Entity linking */}
