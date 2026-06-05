@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
-import { Upload, Mic, MicOff, Loader2, Check, CalendarIcon, Sparkles, Zap, Plus, Film } from 'lucide-react';
+import { Upload, Mic, MicOff, Loader2, Check, CalendarIcon, Sparkles, Zap, Plus, Film, ClipboardPaste } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCockpitVoiceTranscriptions, useAIPromptProfiles, type ExpectedParticipant } from '@/hooks/cockpit/useCockpitVoiceTranscriptions';
 import { useCockpitLeads, useCockpitProjects, useCockpitMeetingNotes } from '@/hooks/cockpit';
@@ -58,7 +58,7 @@ export function CreateTranscriptionModal({
   defaultMeetingNoteId,
   defaultFiles,
 }: CreateTranscriptionModalProps) {
-  const [activeTab, setActiveTab] = useState<'upload' | 'record'>('upload');
+  const [activeTab, setActiveTab] = useState<'upload' | 'record' | 'paste'>('upload');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
   const [extractStatus, setExtractStatus] = useState<{ name: string; ratio: number } | null>(null);
@@ -66,6 +66,8 @@ export function CreateTranscriptionModal({
   const [isRecording, setIsRecording] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [pastedText, setPastedText] = useState<string>('');
+  const [pastedTitle, setPastedTitle] = useState<string>('');
 
   // Set files from drag & drop
   useEffect(() => {
@@ -145,6 +147,8 @@ export function CreateTranscriptionModal({
   const resetForm = useCallback(() => {
     setSelectedFiles([]);
     setRecordedBlob(null);
+    setPastedText('');
+    setPastedTitle('');
     setEntitySelection({ leadId: null, leadContactId: null, projectId: null, solutionId: null, meetingNoteId: null });
     setPromptProfileId('');
     setAutoCreateTasks(true);
@@ -284,6 +288,48 @@ export function CreateTranscriptionModal({
   };
 
   const handleSubmit = async () => {
+    // === PASTE BRANCH : import manuel d'un texte déjà transcrit (zéro coût AssemblyAI) ===
+    if (activeTab === 'paste') {
+      const trimmed = pastedText.trim();
+      if (trimmed.length < 50) {
+        toast.error('Le texte collé est trop court (min. 50 caractères)');
+        return;
+      }
+      setIsUploading(true);
+      try {
+        const sentinelPath = `pasted/${crypto.randomUUID()}_no_file`;
+        const job = await createTranscription.mutateAsync({
+          storage_path: sentinelPath,
+          source: 'pasted',
+          lead_id: entitySelection.leadId || null,
+          lead_contact_id: entitySelection.leadContactId || null,
+          project_id: entitySelection.projectId || null,
+          solution_id: entitySelection.solutionId || null,
+          meeting_note_id: entitySelection.meetingNoteId || null,
+          auto_create_tasks: autoCreateTasks,
+          prompt_profile_id: promptProfileId || null,
+          transcription_date: transcriptionDate || null,
+          pre_transcribed_text: trimmed,
+          original_filename: pastedTitle.trim() || 'Import manuel',
+          file_size_bytes: new Blob([trimmed]).size,
+          analysis_context: analysisContext.trim() || null,
+          expected_participants: expectedParticipants.length > 0 ? expectedParticipants : null,
+          quality_mode: 'standard',
+        });
+        // Force re-analyze only (no AssemblyAI call) — worker reconnaît `_no_file` mais on est explicite
+        processTranscription.mutate({ jobId: job.id, forceReanalyze: true });
+        toast.success('Texte importé, analyse IA en cours...');
+        resetForm();
+        onSuccess();
+      } catch (error) {
+        console.error('Paste import error:', error);
+        toast.error(`Erreur: ${error instanceof Error ? error.message : "Échec de l'import"}`);
+      } finally {
+        setIsUploading(false);
+      }
+      return;
+    }
+
     const filesToUpload = activeTab === 'upload' ? selectedFiles : (recordedBlob ? [recordedBlob] : []);
 
 
@@ -407,8 +453,8 @@ export function CreateTranscriptionModal({
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'upload' | 'record')}>
-          <TabsList className="grid w-full grid-cols-2">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'upload' | 'record' | 'paste')}>
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="upload" className="flex items-center gap-2">
               <Upload className="h-4 w-4" />
               Importer
@@ -416,6 +462,10 @@ export function CreateTranscriptionModal({
             <TabsTrigger value="record" className="flex items-center gap-2">
               <Mic className="h-4 w-4" />
               Enregistrer
+            </TabsTrigger>
+            <TabsTrigger value="paste" className="flex items-center gap-2">
+              <ClipboardPaste className="h-4 w-4" />
+              Coller
             </TabsTrigger>
           </TabsList>
 
@@ -511,6 +561,36 @@ export function CreateTranscriptionModal({
                   </p>
                 </div>
               )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="paste" className="space-y-3 pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="pasted-title">Titre du compte-rendu (optionnel)</Label>
+              <Input
+                id="pasted-title"
+                value={pastedTitle}
+                onChange={(e) => setPastedTitle(e.target.value)}
+                placeholder="Ex: Visio prépa Clipper AI — 27/05/2026"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="pasted-text">Texte de la transcription / compte-rendu</Label>
+              <textarea
+                id="pasted-text"
+                value={pastedText}
+                onChange={(e) => setPastedText(e.target.value)}
+                placeholder="Collez ici le texte brut d'une transcription Zoom, Otter, Fireflies, ou un compte-rendu rédigé. L'IA structurera résumé + actions à partir de ce texte sans ré-inventer le contenu."
+                rows={10}
+                className="w-full px-3 py-2 text-sm border rounded-md resize-y focus:outline-none focus:ring-2 focus:ring-ring font-mono"
+              />
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>{pastedText.trim().length.toLocaleString('fr-FR')} caractères</span>
+                <span className="flex items-center gap-1">
+                  <Zap className="h-3 w-3 text-primary" />
+                  Zéro coût AssemblyAI — analyse IA uniquement
+                </span>
+              </div>
             </div>
           </TabsContent>
         </Tabs>
@@ -671,17 +751,26 @@ export function CreateTranscriptionModal({
           </Button>
           <Button 
             onClick={handleSubmit} 
-            disabled={isUploading || (selectedFiles.length === 0 && !recordedBlob)}
+            disabled={
+              isUploading ||
+              (activeTab === 'upload' && selectedFiles.length === 0) ||
+              (activeTab === 'record' && !recordedBlob) ||
+              (activeTab === 'paste' && pastedText.trim().length < 50)
+            }
           >
             {isUploading ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                {extractStatus
-                  ? 'Extraction audio...'
-                  : uploadProgress.total > 1 
-                    ? `Upload ${uploadProgress.current}/${uploadProgress.total}...`
-                    : 'Upload en cours...'}
+                {activeTab === 'paste'
+                  ? 'Import en cours...'
+                  : extractStatus
+                    ? 'Extraction audio...'
+                    : uploadProgress.total > 1 
+                      ? `Upload ${uploadProgress.current}/${uploadProgress.total}...`
+                      : 'Upload en cours...'}
               </>
+            ) : activeTab === 'paste' ? (
+              'Importer & analyser'
             ) : (
               selectedFiles.length > 1 
                 ? `Lancer ${selectedFiles.length} transcriptions`
