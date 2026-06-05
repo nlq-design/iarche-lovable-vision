@@ -126,7 +126,7 @@ export interface ExpectedParticipant {
 
 export interface CreateTranscriptionInput {
   storage_path: string;
-  source: 'upload' | 'recording';
+  source: 'upload' | 'recording' | 'pasted';
   lead_id?: string | null;
   lead_contact_id?: string | null;
   project_id?: string | null;
