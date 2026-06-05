@@ -507,11 +507,13 @@ export default function CockpitTranscriptions() {
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
-                placeholder="Rechercher..."
+                placeholder="Rechercher (titre, lead, projet, participants, sujets, mots-clés…)"
+                title="Recherche dans : titre, lead, contact, projet, solution, partenaires, participants, synthèse IA (sujets, points clés, décisions, actions, risques)"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-8 h-8 text-sm"
               />
+
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-full sm:w-[150px] h-8 text-sm">
