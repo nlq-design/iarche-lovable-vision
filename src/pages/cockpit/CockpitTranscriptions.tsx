@@ -227,33 +227,36 @@ export default function CockpitTranscriptions() {
   }, [transcriptions]);
 
   const filteredTranscriptions = useMemo(() => {
+    const toArr = <T,>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
     return transcriptions.filter(t => {
       const searchLower = searchQuery.toLowerCase();
       let matchesSearch = searchQuery === '';
       if (!matchesSearch) {
+        const s = t.summary ?? undefined;
+        const meta = (t.ai_metadata ?? {}) as Record<string, unknown>;
         const haystackParts: (string | null | undefined)[] = [
           t.title,
-          typeof t.summary?.title === 'string' ? t.summary.title : null,
+          typeof s?.title === 'string' ? s.title : null,
           t.lead?.name,
           t.lead?.company,
           t.project?.name,
           t.solution?.title,
           t.lead_contact?.name,
-          // Synthèse IA (sujets / mots-clés / contenu)
-          t.summary?.executive_summary,
-          ...(t.summary?.topics ?? []),
-          ...(t.summary?.key_points ?? []),
-          ...(t.summary?.decisions ?? []),
-          ...(t.summary?.risks_blockers ?? []),
-          ...(t.summary?.questions_open ?? []),
-          ...((t.summary?.action_items ?? []).flatMap(a => [a.task, a.title, a.owner, a.assignee])),
-          ...((t.summary?.next_steps ?? []).flatMap(s => [s.action, s.owner])),
-          // Participants détectés par l'IA
-          ...((t.summary?.participants ?? []).flatMap(p => [p.name, p.company, p.role])),
-          // Participants attendus (saisis à la création) + partenaires liés
-          ...(((t.ai_metadata as Record<string, unknown>)?.expected_participants as Array<{ name?: string; company?: string }> | undefined ?? [])
-            .flatMap(p => [p?.name, p?.company])),
-          ...((t.partners ?? []).map(p => p.partner?.name)),
+          typeof s?.executive_summary === 'string' ? s.executive_summary : null,
+          ...toArr<string>(s?.topics),
+          ...toArr<string>(s?.key_points),
+          ...toArr<string>(s?.decisions),
+          ...toArr<string>(s?.risks_blockers),
+          ...toArr<string>(s?.questions_open),
+          ...toArr<{ task?: string; title?: string; owner?: string | null; assignee?: string | null }>(s?.action_items)
+            .flatMap(a => [a.task, a.title, a.owner, a.assignee]),
+          ...toArr<{ action?: string; owner?: string | null }>(s?.next_steps)
+            .flatMap(n => [n.action, n.owner]),
+          ...toArr<{ name?: string; company?: string; role?: string }>(s?.participants)
+            .flatMap(p => [p.name, p.company, p.role]),
+          ...toArr<{ name?: string; company?: string }>(meta.expected_participants)
+            .flatMap(p => [p?.name, p?.company]),
+          ...toArr<{ partner?: { name?: string } }>(t.partners).map(p => p.partner?.name),
         ];
         matchesSearch = haystackParts.some(v => typeof v === 'string' && v.toLowerCase().includes(searchLower));
       }
@@ -270,6 +273,7 @@ export default function CockpitTranscriptions() {
       return matchesSearch && matchesStatus && matchesLead && matchesProject && matchesSolution && matchesSource && matchesLink;
     });
   }, [transcriptions, searchQuery, statusFilter, leadFilter, projectFilter, solutionFilter, sourceFilter, linkFilter]);
+
 
 
   const activeFiltersCount = [statusFilter, leadFilter, projectFilter, solutionFilter, sourceFilter, linkFilter].filter(v => v !== 'all').length + (searchQuery ? 1 : 0);
