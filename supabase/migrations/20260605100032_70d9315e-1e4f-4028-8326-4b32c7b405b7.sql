@@ -1,0 +1,2 @@
+ALTER TABLE public.voice_transcriptions DROP CONSTRAINT voice_transcriptions_source_check;
+ALTER TABLE public.voice_transcriptions ADD CONSTRAINT voice_transcriptions_source_check CHECK (source = ANY (ARRAY['upload'::text, 'recording'::text, 'pasted'::text]));
