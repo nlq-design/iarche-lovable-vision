@@ -58,7 +58,7 @@ export function CreateTranscriptionModal({
   defaultMeetingNoteId,
   defaultFiles,
 }: CreateTranscriptionModalProps) {
-  const [activeTab, setActiveTab] = useState<'upload' | 'record'>('upload');
+  const [activeTab, setActiveTab] = useState<'upload' | 'record' | 'paste'>('upload');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
   const [extractStatus, setExtractStatus] = useState<{ name: string; ratio: number } | null>(null);
@@ -66,6 +66,8 @@ export function CreateTranscriptionModal({
   const [isRecording, setIsRecording] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [pastedText, setPastedText] = useState<string>('');
+  const [pastedTitle, setPastedTitle] = useState<string>('');
 
   // Set files from drag & drop
   useEffect(() => {
