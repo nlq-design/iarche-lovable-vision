@@ -453,8 +453,8 @@ export function CreateTranscriptionModal({
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'upload' | 'record')}>
-          <TabsList className="grid w-full grid-cols-2">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'upload' | 'record' | 'paste')}>
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="upload" className="flex items-center gap-2">
               <Upload className="h-4 w-4" />
               Importer
@@ -462,6 +462,10 @@ export function CreateTranscriptionModal({
             <TabsTrigger value="record" className="flex items-center gap-2">
               <Mic className="h-4 w-4" />
               Enregistrer
+            </TabsTrigger>
+            <TabsTrigger value="paste" className="flex items-center gap-2">
+              <ClipboardPaste className="h-4 w-4" />
+              Coller
             </TabsTrigger>
           </TabsList>
 
