@@ -751,17 +751,26 @@ export function CreateTranscriptionModal({
           </Button>
           <Button 
             onClick={handleSubmit} 
-            disabled={isUploading || (selectedFiles.length === 0 && !recordedBlob)}
+            disabled={
+              isUploading ||
+              (activeTab === 'upload' && selectedFiles.length === 0) ||
+              (activeTab === 'record' && !recordedBlob) ||
+              (activeTab === 'paste' && pastedText.trim().length < 50)
+            }
           >
             {isUploading ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                {extractStatus
-                  ? 'Extraction audio...'
-                  : uploadProgress.total > 1 
-                    ? `Upload ${uploadProgress.current}/${uploadProgress.total}...`
-                    : 'Upload en cours...'}
+                {activeTab === 'paste'
+                  ? 'Import en cours...'
+                  : extractStatus
+                    ? 'Extraction audio...'
+                    : uploadProgress.total > 1 
+                      ? `Upload ${uploadProgress.current}/${uploadProgress.total}...`
+                      : 'Upload en cours...'}
               </>
+            ) : activeTab === 'paste' ? (
+              'Importer & analyser'
             ) : (
               selectedFiles.length > 1 
                 ? `Lancer ${selectedFiles.length} transcriptions`
