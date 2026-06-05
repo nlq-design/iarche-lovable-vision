@@ -147,6 +147,8 @@ export function CreateTranscriptionModal({
   const resetForm = useCallback(() => {
     setSelectedFiles([]);
     setRecordedBlob(null);
+    setPastedText('');
+    setPastedTitle('');
     setEntitySelection({ leadId: null, leadContactId: null, projectId: null, solutionId: null, meetingNoteId: null });
     setPromptProfileId('');
     setAutoCreateTasks(true);
