@@ -288,6 +288,48 @@ export function CreateTranscriptionModal({
   };
 
   const handleSubmit = async () => {
+    // === PASTE BRANCH : import manuel d'un texte déjà transcrit (zéro coût AssemblyAI) ===
+    if (activeTab === 'paste') {
+      const trimmed = pastedText.trim();
+      if (trimmed.length < 50) {
+        toast.error('Le texte collé est trop court (min. 50 caractères)');
+        return;
+      }
+      setIsUploading(true);
+      try {
+        const sentinelPath = `pasted://${crypto.randomUUID()}.txt`;
+        const job = await createTranscription.mutateAsync({
+          storage_path: sentinelPath,
+          source: 'pasted',
+          lead_id: entitySelection.leadId || null,
+          lead_contact_id: entitySelection.leadContactId || null,
+          project_id: entitySelection.projectId || null,
+          solution_id: entitySelection.solutionId || null,
+          meeting_note_id: entitySelection.meetingNoteId || null,
+          auto_create_tasks: autoCreateTasks,
+          prompt_profile_id: promptProfileId || null,
+          transcription_date: transcriptionDate || null,
+          pre_transcribed_text: trimmed,
+          original_filename: pastedTitle.trim() || 'Import manuel',
+          file_size_bytes: new Blob([trimmed]).size,
+          analysis_context: analysisContext.trim() || null,
+          expected_participants: expectedParticipants.length > 0 ? expectedParticipants : null,
+          quality_mode: 'standard',
+        });
+        // Trigger analysis immediately (status déjà = analyzing côté edge fn)
+        processTranscription.mutate({ jobId: job.id });
+        toast.success('Texte importé, analyse IA en cours...');
+        resetForm();
+        onSuccess();
+      } catch (error) {
+        console.error('Paste import error:', error);
+        toast.error(`Erreur: ${error instanceof Error ? error.message : "Échec de l'import"}`);
+      } finally {
+        setIsUploading(false);
+      }
+      return;
+    }
+
     const filesToUpload = activeTab === 'upload' ? selectedFiles : (recordedBlob ? [recordedBlob] : []);
 
 
