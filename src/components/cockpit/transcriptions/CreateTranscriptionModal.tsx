@@ -297,7 +297,7 @@ export function CreateTranscriptionModal({
       }
       setIsUploading(true);
       try {
-        const sentinelPath = `pasted://${crypto.randomUUID()}.txt`;
+        const sentinelPath = `pasted/${crypto.randomUUID()}_no_file`;
         const job = await createTranscription.mutateAsync({
           storage_path: sentinelPath,
           source: 'pasted',
@@ -316,8 +316,8 @@ export function CreateTranscriptionModal({
           expected_participants: expectedParticipants.length > 0 ? expectedParticipants : null,
           quality_mode: 'standard',
         });
-        // Trigger analysis immediately (status déjà = analyzing côté edge fn)
-        processTranscription.mutate({ jobId: job.id });
+        // Force re-analyze only (no AssemblyAI call) — worker reconnaît `_no_file` mais on est explicite
+        processTranscription.mutate({ jobId: job.id, forceReanalyze: true });
         toast.success('Texte importé, analyse IA en cours...');
         resetForm();
         onSuccess();
