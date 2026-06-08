@@ -42,6 +42,7 @@ import { useCockpitVoiceTranscriptions, TRANSCRIPTION_STATUSES, type VoiceTransc
 import { CreateTranscriptionModal } from '@/components/cockpit/transcriptions/CreateTranscriptionModal';
 import { ZoomImportModal } from '@/components/cockpit/transcriptions/ZoomImportModal';
 import { toast } from 'sonner';
+import { safeParseSummary, safeParseAiMetadata } from '@/components/cockpit/transcriptions/shared/summarySchema';
 
 const STATUS_ICONS: Record<string, React.ReactNode> = {
   queued: <Clock className="h-4 w-4" />,
