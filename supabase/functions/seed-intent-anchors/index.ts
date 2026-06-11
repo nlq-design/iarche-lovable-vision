@@ -1,5 +1,5 @@
 // Phase C — Seed des ancres d'intent (one-shot, idempotent admin-only)
-// Génère les embeddings via Lovable AI (openai/text-embedding-3-small, 1536d)
+// Génère les embeddings via OpenAI (text-embedding-3-small, 1536d)
 // et insère/met à jour les phrases canoniques dans ai_intent_anchors.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -71,11 +71,11 @@ const ANCHORS: Record<string, string[]> = {
 };
 
 async function embed(text: string, apiKey: string): Promise<number[]> {
-  const resp = await fetch("https://ai.gateway.lovable.dev/v1/embeddings", {
+  const resp = await fetch("https://api.openai.com/v1/embeddings", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "openai/text-embedding-3-small",
+      model: "text-embedding-3-small",
       input: text,
       dimensions: 1536,
     }),
@@ -88,9 +88,9 @@ async function embed(text: string, apiKey: string): Promise<number[]> {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  const apiKey = Deno.env.get("LOVABLE_API_KEY");
+  const apiKey = Deno.env.get("OPENAI_API_KEY");
   if (!apiKey) {
-    return new Response(JSON.stringify({ error: "LOVABLE_API_KEY missing" }), {
+    return new Response(JSON.stringify({ error: "OPENAI_API_KEY missing" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }

@@ -10,13 +10,11 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 // API Keys for different providers
-const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
 
 // API Endpoints
-const LOVABLE_AI_GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const OPENAI_ENDPOINT = "https://api.openai.com/v1/chat/completions";
 const ANTHROPIC_ENDPOINT = "https://api.anthropic.com/v1/messages";
 const OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
@@ -174,37 +172,6 @@ async function callAI(
   console.log(`Calling AI: provider=${provider}, model=${model}`);
   
   switch (provider) {
-    case "lovable": {
-      if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
-      const response = await fetch(LOVABLE_AI_GATEWAY, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userPrompt },
-          ],
-          response_format: { type: "json_object" },
-        }),
-      });
-
-      
-      if (response.status === 429) throw new Error("rate_limited");
-      if (response.status === 402) throw new Error("credits_exhausted");
-      if (!response.ok) throw new Error(`Lovable AI error: ${await response.text()}`);
-      
-      const result = await response.json();
-      return {
-        content: result.choices?.[0]?.message?.content || "",
-        model,
-        provider: "lovable"
-      };
-    }
-    
     case "openai": {
       if (!OPENAI_API_KEY) throw new Error("OPENAI_API_KEY not configured");
       const response = await fetch(OPENAI_ENDPOINT, {
@@ -260,6 +227,8 @@ async function callAI(
       };
     }
     
+    // 'lovable' déprécié (migration Supabase autonome) → routé vers OpenRouter.
+    case "lovable":
     case "openrouter": {
       if (!OPENROUTER_API_KEY) throw new Error("OPENROUTER_API_KEY not configured");
       const response = await fetch(OPENROUTER_ENDPOINT, {
@@ -277,11 +246,14 @@ async function callAI(
             { role: "user", content: userPrompt },
           ],
           temperature,
+          response_format: { type: "json_object" },
         }),
       });
-      
+
+      if (response.status === 429) throw new Error("rate_limited");
+      if (response.status === 402) throw new Error("credits_exhausted");
       if (!response.ok) throw new Error(`OpenRouter error: ${await response.text()}`);
-      
+
       const result = await response.json();
       return {
         content: result.choices?.[0]?.message?.content || "",
@@ -924,7 +896,7 @@ serve(async (req) => {
       .single();
 
     const modelConfig: ModelConfig = (aiPromptData?.model_config as ModelConfig) || {};
-    const provider: Provider = modelConfig.provider || "lovable";
+    const provider: Provider = modelConfig.provider || "openrouter";
     const model = modelConfig.model || "google/gemini-2.5-flash";
     const temperature = modelConfig.temperature || 0.7;
 
@@ -1280,10 +1252,13 @@ ${custom_instructions}` : ''}
         return new Response(JSON.stringify({ error: "credits_exhausted" }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       
-      // Try fallback to Lovable if other provider fails
-      if (provider !== "lovable" && LOVABLE_API_KEY) {
-        console.log("Falling back to Lovable AI...");
-        aiResult = await callAI("lovable", "google/gemini-2.5-flash", systemPromptWithJsonGuard, userPrompt, temperature);
+      // Fallback cross-provider : OpenAI puis OpenRouter (Gemini)
+      if (provider !== "openai" && OPENAI_API_KEY) {
+        console.log("Falling back to OpenAI...");
+        aiResult = await callAI("openai", "gpt-4o-mini", systemPromptWithJsonGuard, userPrompt, temperature);
+      } else if (provider !== "openrouter" && OPENROUTER_API_KEY) {
+        console.log("Falling back to OpenRouter...");
+        aiResult = await callAI("openrouter", "google/gemini-2.5-flash", systemPromptWithJsonGuard, userPrompt, temperature);
       } else {
         throw aiError;
       }

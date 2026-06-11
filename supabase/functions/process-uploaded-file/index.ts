@@ -186,7 +186,7 @@ serve(async (req) => {
   }
 });
 
-// Extract text from DOCX files using Lovable AI Gateway
+// Extract text from DOCX files using OpenRouter (Gemini), fallback OpenAI
 async function extractDocxViaLLM(
   supabase: any,
   file: any,
@@ -205,15 +205,17 @@ async function extractDocxViaLLM(
     const arrayBuffer = await fileData.arrayBuffer();
     const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
 
-    // Use Lovable AI Gateway (Gemini supports file inputs better for DOCX)
-    const lovableKey = Deno.env.get("LOVABLE_API_KEY");
-    if (lovableKey) {
+    // Use OpenRouter (Gemini supports file inputs better for DOCX)
+    const openrouterKey = Deno.env.get("OPENROUTER_API_KEY");
+    if (openrouterKey) {
       try {
-        const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${lovableKey}`,
+            Authorization: `Bearer ${openrouterKey}`,
             "Content-Type": "application/json",
+            "HTTP-Referer": "https://iarche.com",
+            "X-Title": "IArche Platform",
           },
           body: JSON.stringify({
             model: "google/gemini-2.5-flash",
@@ -247,13 +249,13 @@ async function extractDocxViaLLM(
           const result = await response.json();
           const text = result.choices?.[0]?.message?.content || "";
           if (text.length > 50) {
-            return { success: true, text, provider: "lovable-gemini" };
+            return { success: true, text, provider: "openrouter-gemini" };
           }
         } else {
-          console.warn("[DOCX] Lovable AI failed:", await response.text());
+          console.warn("[DOCX] OpenRouter failed:", await response.text());
         }
       } catch (e) {
-        console.warn("[DOCX] Lovable AI error:", e);
+        console.warn("[DOCX] OpenRouter error:", e);
       }
     }
 

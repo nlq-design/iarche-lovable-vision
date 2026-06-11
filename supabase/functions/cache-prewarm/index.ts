@@ -11,7 +11,7 @@ const corsHeaders = {
 };
 
 const THROTTLE_HOURS = 6;
-const EMBEDDING_MODEL = "openai/text-embedding-3-small";
+const EMBEDDING_MODEL = "text-embedding-3-small";
 const CLASSIFIER_MODEL = "google/gemini-2.5-flash-lite";
 const SEMANTIC_THRESHOLD = 0.75;
 
@@ -44,11 +44,11 @@ const PREWARM_QUERIES: string[] = [
   "rappelle-moi ma stratégie",
 ];
 
-async function embed(text: string, apiKey: string): Promise<number[] | null> {
+async function embed(text: string, openaiKey: string): Promise<number[] | null> {
   try {
-    const r = await fetch("https://ai.gateway.lovable.dev/v1/embeddings", {
+    const r = await fetch("https://api.openai.com/v1/embeddings", {
       method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      headers: { Authorization: `Bearer ${openaiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({ model: EMBEDDING_MODEL, input: text.slice(0, 500), dimensions: 1536 }),
     });
     if (!r.ok) return null;
@@ -59,11 +59,16 @@ async function embed(text: string, apiKey: string): Promise<number[] | null> {
   }
 }
 
-async function classifyLlm(text: string, apiKey: string): Promise<string> {
+async function classifyLlm(text: string, openrouterKey: string): Promise<string> {
   try {
-    const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const r = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${openrouterKey}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://iarche.com",
+        "X-Title": "IArche Platform",
+      },
       body: JSON.stringify({
         model: CLASSIFIER_MODEL,
         messages: [
@@ -87,9 +92,10 @@ async function classifyLlm(text: string, apiKey: string): Promise<string> {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  const apiKey = Deno.env.get("LOVABLE_API_KEY");
-  if (!apiKey) {
-    return new Response(JSON.stringify({ error: "LOVABLE_API_KEY missing" }), {
+  const openaiKey = Deno.env.get("OPENAI_API_KEY");
+  const openrouterKey = Deno.env.get("OPENROUTER_API_KEY");
+  if (!openaiKey || !openrouterKey) {
+    return new Response(JSON.stringify({ error: "OPENAI_API_KEY / OPENROUTER_API_KEY missing" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
@@ -167,7 +173,7 @@ serve(async (req) => {
     if (existing) { cacheHits++; continue; }
 
     // 2. Try semantic match
-    const vec = await embed(q, apiKey);
+    const vec = await embed(q, openaiKey);
     let intent = "general";
     let similarity: number | null = null;
     let source: "semantic" | "llm" = "llm";
@@ -185,11 +191,11 @@ serve(async (req) => {
         semanticHits++;
       } else {
         similarity = top ? Number(top.similarity) : null;
-        intent = await classifyLlm(q, apiKey);
+        intent = await classifyLlm(q, openrouterKey);
         llmCalls++;
       }
     } else {
-      intent = await classifyLlm(q, apiKey);
+      intent = await classifyLlm(q, openrouterKey);
       llmCalls++;
     }
 

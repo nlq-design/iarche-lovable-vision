@@ -20,7 +20,7 @@ const corsHeaders = {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
-// Note: LOVABLE_API_KEY and OPENAI_API_KEY are now managed by the centralized AI client
+// Note: provider API keys (OpenRouter/OpenAI/Anthropic) are managed by the centralized AI client
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const OPENAI_EMBEDDINGS_URL = "https://api.openai.com/v1/embeddings";
 

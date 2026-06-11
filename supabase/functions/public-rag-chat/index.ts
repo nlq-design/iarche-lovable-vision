@@ -1,7 +1,7 @@
 // Public RAG chatbot — vrai RAG vectoriel sur contenus publics (Phase IA-0)
 // 1. Embed query utilisateur
 // 2. Recherche vectorielle sur resource_embeddings WHERE is_public = true
-// 3. Si match : injecte contexte dans prompt Nicolas (DB) + stream Lovable AI
+// 3. Si match : injecte contexte dans prompt Nicolas (DB) + stream OpenRouter
 // 4. Si no-match : fallback humain zero-LLM (économie tokens)
 
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -23,8 +23,8 @@ const FALLBACK_PROMPT = `Tu es Nicolas, l'assistant IArche (Bayonne, expert IA p
 
 const NO_MATCH_REPLY = `Je n'ai pas cette information précise dans nos contenus publics. Le mieux est d'en parler de vive voix avec l'équipe : rendez-vous sur /contact pour échanger directement avec un expert IArche.`;
 
-// Doit matcher le modèle utilisé pour indexer resource_embeddings (cf. _shared/ai-client.ts → preferredOrder embed = openai)
-const EMBEDDING_MODEL = "openai/text-embedding-3-small";
+// Doit matcher le modèle utilisé pour indexer resource_embeddings (OpenAI direct)
+const EMBEDDING_MODEL = "text-embedding-3-small";
 const CHAT_MODEL = "google/gemini-2.5-flash";
 const TOP_K = 5;
 const SIMILARITY_THRESHOLD = 0.35;
@@ -56,10 +56,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+    const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    if (!LOVABLE_API_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    if (!OPENAI_API_KEY || !OPENROUTER_API_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
       return new Response(JSON.stringify({ error: "Server misconfigured" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -77,11 +78,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ---- 1. Embed user query ----
-    const embedRes = await fetch("https://ai.gateway.lovable.dev/v1/embeddings", {
+    // ---- 1. Embed user query (OpenAI direct) ----
+    const embedRes = await fetch("https://api.openai.com/v1/embeddings", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -209,13 +210,15 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ---- 5. Stream LLM (cache miss) ----
+    // ---- 5. Stream LLM (cache miss) via OpenRouter ----
     const missStart = Date.now();
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${OPENROUTER_API_KEY}`,
         "Content-Type": "application/json",
+        "HTTP-Referer": "https://iarche.com",
+        "X-Title": "IArche Platform",
       },
       body: JSON.stringify({
         model,

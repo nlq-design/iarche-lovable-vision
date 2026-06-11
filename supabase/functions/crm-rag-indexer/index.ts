@@ -25,7 +25,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const EMBED_MODEL = "openai/text-embedding-3-small"; // 1536d natif
+const EMBED_MODEL = "text-embedding-3-small"; // 1536d natif (OpenAI direct)
 const CHUNK_SIZE = 1500;
 const CHUNK_OVERLAP = 200;
 const MAX_CHUNKS_PER_DOC = 80; // garde-fou (transcription 41KB ~ 28 chunks)
@@ -892,28 +892,29 @@ function chunkText(input: string, size: number, overlap: number): string[] {
 }
 
 async function embedTexts(texts: string[]): Promise<number[][]> {
-  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-  if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+  const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+  if (!OPENAI_API_KEY) throw new Error("OPENAI_API_KEY is not configured");
 
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/embeddings", {
+  const res = await fetch("https://api.openai.com/v1/embeddings", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
+      Authorization: `Bearer ${OPENAI_API_KEY}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
       model: EMBED_MODEL,
       input: texts,
+      dimensions: 1536,
     }),
   });
 
   if (!res.ok) {
     const body = await res.text();
     if (res.status === 429) {
-      throw new Error("Rate limited by Lovable AI Gateway (429). Retry later.");
+      throw new Error("Rate limited by OpenAI embeddings (429). Retry later.");
     }
     if (res.status === 402) {
-      throw new Error("Payment required: add credits to Lovable AI workspace.");
+      throw new Error("Payment required: add credits to the OpenAI account.");
     }
     throw new Error(`Embedding API ${res.status}: ${body}`);
   }
