@@ -47,14 +47,19 @@ const ChatbotDialog: React.FC<ChatbotDialogProps> = ({ open, onOpenChange }) => 
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
     try {
-      const response = await fetch('https://mgjyhlyrwnnioctkbdkk.supabase.co/functions/v1/chat', {
+      // Cible : edge function `public-rag-chat` (RAG vectoriel public, verify_jwt=false).
+      // Elle attend `{ messages: [{role, content}, …] }` et lit le dernier message user.
+      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+      const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/public-rag-chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
         },
         body: JSON.stringify({
-          message: inputValue,
-          conversationHistory: messages
+          messages: [...messages, userMessage]
         }),
         signal: controller.signal
       });

@@ -12,7 +12,7 @@
  * dans l'email mais ne bloque pas le rendu (alt text + couleurs de fallback).
  */
 
-const PROJECT_REF = 'mgjyhlyrwnnioctkbdkk';
+const PROJECT_REF = import.meta.env.VITE_SUPABASE_PROJECT_ID;
 const STORAGE_BASE = `https://${PROJECT_REF}.supabase.co/storage/v1/object/public/email-assets`;
 
 export const EMAIL_ASSETS = {
