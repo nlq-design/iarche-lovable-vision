@@ -28,7 +28,11 @@ const validateFileUrl = (url: string | null | undefined): string => {
   if (!url) return '';
   try {
     const parsed = new URL(url);
-    const trustedDomains = ['iarche.fr', 'mgjyhlyrwnnioctkbdkk.supabase.co'];
+    // Domaine Supabase dérivé de l'env (projet-agnostique) + domaines marque.
+    const supabaseHost = (() => {
+      try { return new URL(Deno.env.get("SUPABASE_URL") ?? "").hostname; } catch { return ""; }
+    })();
+    const trustedDomains = ['iarche.fr', supabaseHost].filter(Boolean);
     if (trustedDomains.some(domain => parsed.hostname.endsWith(domain))) {
       return url;
     }
