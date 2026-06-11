@@ -55,15 +55,15 @@ Deno.test("AI Types - Message roles are valid", () => {
 // ============================================================================
 
 Deno.test({
-  name: "AI Providers - Lovable AI availability check",
-  ignore: !Deno.env.get("LOVABLE_API_KEY"),
+  name: "AI Providers - OpenRouter availability check",
+  ignore: !Deno.env.get("OPENROUTER_API_KEY"),
   fn: async () => {
-    const { LovableAIAdapter } = await import("./ai-providers.ts");
-    const adapter = new LovableAIAdapter();
-    
-    // Should be available if LOVABLE_API_KEY is set
+    const { OpenRouterAdapter } = await import("./ai-providers.ts");
+    const adapter = new OpenRouterAdapter();
+
+    // Should be available if OPENROUTER_API_KEY is set
     assertEquals(adapter.isAvailable(), true);
-    assertEquals(adapter.name, "lovable_ai");
+    assertEquals(adapter.name, "openrouter");
   },
 });
 
@@ -83,9 +83,9 @@ Deno.test({
 Deno.test({
   name: "AI Providers - Default models by category",
   fn: async () => {
-    const { LovableAIAdapter } = await import("./ai-providers.ts");
-    const adapter = new LovableAIAdapter();
-    
+    const { OpenRouterAdapter } = await import("./ai-providers.ts");
+    const adapter = new OpenRouterAdapter();
+
     const chatModel = adapter.getDefaultModel("chat");
     const reasoningModel = adapter.getDefaultModel("reasoning");
     const visionModel = adapter.getDefaultModel("vision");
@@ -104,9 +104,10 @@ Deno.test({
   fn: async () => {
     const { createProviderAdapter, getAvailableProviders } = await import("./ai-providers.ts");
     
-    // Should be able to create adapters for all known providers
-    const providers: AIProviderName[] = ["lovable_ai", "openai", "anthropic", "openrouter"];
-    
+    // Should be able to create adapters for all active providers
+    // (lovable_ai est déprécié → routé vers OpenRouter, exclu de cette assertion)
+    const providers: AIProviderName[] = ["openai", "anthropic", "openrouter"];
+
     for (const name of providers) {
       const adapter = createProviderAdapter(name);
       assertExists(adapter);
@@ -124,8 +125,8 @@ Deno.test({
 // ============================================================================
 
 Deno.test({
-  name: "AI Client - Live completion (Lovable AI)",
-  ignore: !Deno.env.get("LOVABLE_API_KEY") || !Deno.env.get("SUPABASE_URL"),
+  name: "AI Client - Live completion (OpenRouter)",
+  ignore: !Deno.env.get("OPENROUTER_API_KEY") || !Deno.env.get("SUPABASE_URL"),
   fn: async () => {
     const { callLLM } = await import("./ai-client.ts");
     

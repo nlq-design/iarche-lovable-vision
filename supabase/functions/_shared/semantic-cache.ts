@@ -17,11 +17,11 @@
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const EMBED_MODEL = "openai/text-embedding-3-small";
+const EMBED_MODEL = "text-embedding-3-small";
 const EMBED_DIMS = 1536;
 const DEFAULT_THRESHOLD = 0.93;
 const DEFAULT_TTL_HOURS = 24;
-const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/embeddings";
+const GATEWAY_URL = "https://api.openai.com/v1/embeddings";
 
 // Contract v1.1 (2026-05-23) : ajout `public_rag` + `orchestrator_general`
 // pour cache cross-pipeline (public-rag-chat + ai-agent-orchestrator).
@@ -110,11 +110,11 @@ export function buildCacheKey(p: {
   return `${p.workspaceId}:${p.mode}:${p.entityType}:${p.entityId}`;
 }
 
-/** Embed cache query via Lovable AI Gateway. Returns null on failure (cache becomes pass-through). */
+/** Embed cache query via OpenAI (text-embedding-3-small). Returns null on failure (cache becomes pass-through). */
 export async function embedCacheQuery(text: string): Promise<number[] | null> {
-  const apiKey = Deno.env.get("LOVABLE_API_KEY");
+  const apiKey = Deno.env.get("OPENAI_API_KEY");
   if (!apiKey) {
-    console.warn("[semantic-cache] LOVABLE_API_KEY missing, skipping cache");
+    console.warn("[semantic-cache] OPENAI_API_KEY missing, skipping cache");
     return null;
   }
   // Truncate to 8000 chars to stay well below 32KB gateway limit

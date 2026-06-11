@@ -17,93 +17,6 @@ import {
 } from "./ai-types.ts";
 
 // =============================================================================
-// LOVABLE AI ADAPTER (Gateway to Gemini/GPT)
-// =============================================================================
-
-export class LovableAIAdapter implements AIProviderAdapter {
-  name: AIProviderName = 'lovable_ai';
-  private baseUrl = 'https://ai.gateway.lovable.dev/v1';
-  private apiKey: string | undefined;
-
-  constructor() {
-    this.apiKey = Deno.env.get('LOVABLE_API_KEY');
-  }
-
-  isAvailable(): boolean {
-    return !!this.apiKey;
-  }
-
-  getDefaultModel(category: AIModelCategory): string {
-    switch (category) {
-      case 'reasoning':
-        return 'google/gemini-2.5-pro';
-      case 'vision':
-        return 'google/gemini-2.5-flash';
-      case 'embedding':
-        return 'text-embedding-3-small'; // Via OpenAI
-      default:
-        return 'google/gemini-2.5-flash';
-    }
-  }
-
-  async complete(request: AICompletionRequest): Promise<AICompletionResponse> {
-    const startTime = Date.now();
-    const model = request.model || this.getDefaultModel(request.category || 'chat');
-
-    const body: Record<string, unknown> = {
-      model,
-      messages: request.messages,
-      stream: request.stream || false,
-    };
-
-    if (request.temperature !== undefined) body.temperature = request.temperature;
-    if (request.max_tokens !== undefined) body.max_tokens = request.max_tokens;
-    if (request.tools) body.tools = request.tools;
-    if (request.tool_choice) body.tool_choice = request.tool_choice;
-    if (request.response_format) body.response_format = request.response_format;
-
-    const response = await fetch(`${this.baseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${this.apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      if (response.status === 429) {
-        throw new AIRateLimitError('lovable_ai');
-      }
-      if (response.status === 402) {
-        throw new AIQuotaExceededError('lovable_ai');
-      }
-      throw new AIProviderError(
-        `Lovable AI error: ${response.status} - ${errorText}`,
-        'lovable_ai',
-        response.status,
-        response.status >= 500
-      );
-    }
-
-    const data = await response.json();
-    const choice = data.choices?.[0];
-
-    return {
-      id: data.id || crypto.randomUUID(),
-      provider: 'lovable_ai',
-      model,
-      content: choice?.message?.content || '',
-      tool_calls: choice?.message?.tool_calls,
-      usage: data.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
-      finish_reason: choice?.finish_reason || 'stop',
-      latency_ms: Date.now() - startTime,
-    };
-  }
-}
-
-// =============================================================================
 // OPENAI ADAPTER
 // =============================================================================
 
@@ -439,20 +352,24 @@ export class OpenRouterAdapter implements AIProviderAdapter {
 
 export function createProviderAdapter(name: AIProviderName): AIProviderAdapter {
   switch (name) {
+    // Migration Supabase autonome : l'ancien provider Lovable AI Gateway est
+    // déprécié. Toute config résiduelle 'lovable_ai' (DB ai_provider_config /
+    // edge_function_model_config) est transparemment routée vers OpenRouter.
     case 'lovable_ai':
-      return new LovableAIAdapter();
+    case 'openrouter':
+      return new OpenRouterAdapter();
     case 'openai':
       return new OpenAIAdapter();
     case 'anthropic':
       return new AnthropicAdapter();
-    case 'openrouter':
-      return new OpenRouterAdapter();
     default:
       throw new Error(`Unknown provider: ${name}`);
   }
 }
 
 export function getAvailableProviders(): AIProviderName[] {
-  const providers: AIProviderName[] = ['lovable_ai', 'openai', 'anthropic', 'openrouter'];
+  // Ordre de la chaîne de fallback par défaut : OpenRouter (chat) en tête,
+  // puis OpenAI, puis Anthropic. (Embeddings : OpenAI prioritaire, cf. ai-client.embed.)
+  const providers: AIProviderName[] = ['openrouter', 'openai', 'anthropic'];
   return providers.filter(name => createProviderAdapter(name).isAvailable());
 }

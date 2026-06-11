@@ -174,7 +174,7 @@ export class AIClient {
 
   private getEnvVarForProvider(name: AIProviderName): string {
     const map: Record<AIProviderName, string> = {
-      lovable_ai: 'LOVABLE_API_KEY',
+      lovable_ai: 'OPENROUTER_API_KEY', // déprécié → routé vers OpenRouter
       openai: 'OPENAI_API_KEY',
       anthropic: 'ANTHROPIC_API_KEY',
       openrouter: 'OPENROUTER_API_KEY',
@@ -184,7 +184,7 @@ export class AIClient {
 
   private getBaseUrlForProvider(name: AIProviderName): string {
     const map: Record<AIProviderName, string> = {
-      lovable_ai: 'https://ai.gateway.lovable.dev/v1',
+      lovable_ai: 'https://openrouter.ai/api/v1', // déprécié → routé vers OpenRouter
       openai: 'https://api.openai.com/v1',
       anthropic: 'https://api.anthropic.com/v1',
       openrouter: 'https://openrouter.ai/api/v1',

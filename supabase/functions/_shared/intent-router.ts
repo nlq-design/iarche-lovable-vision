@@ -9,10 +9,10 @@
 
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
-const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const LOVABLE_EMBEDDINGS_URL = "https://ai.gateway.lovable.dev/v1/embeddings";
+const OPENROUTER_CHAT_URL = "https://openrouter.ai/api/v1/chat/completions";
+const OPENAI_EMBEDDINGS_URL = "https://api.openai.com/v1/embeddings";
 const CLASSIFIER_MODEL = "google/gemini-2.5-flash-lite";
-const EMBEDDING_MODEL = "openai/text-embedding-3-small";
+const EMBEDDING_MODEL = "text-embedding-3-small";
 const SEMANTIC_THRESHOLD = 0.75;
 const SEMANTIC_TIMEOUT_MS = 1500;
 
@@ -29,15 +29,15 @@ function getSupa(): SupabaseClient | null {
 
 // Semantic routing : embed query → match_intent_anchor RPC
 // Returns best match (similarity unfiltered) so caller can log score on LLM fallback.
-async function classifyIntentSemantic(query: string, apiKey: string): Promise<{ intent: Intent; similarity: number } | null> {
+async function classifyIntentSemantic(query: string, openaiKey: string): Promise<{ intent: Intent; similarity: number } | null> {
   const supa = getSupa();
   if (!supa) return null;
   try {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), SEMANTIC_TIMEOUT_MS);
-    const resp = await fetch(LOVABLE_EMBEDDINGS_URL, {
+    const resp = await fetch(OPENAI_EMBEDDINGS_URL, {
       method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      headers: { Authorization: `Bearer ${openaiKey}`, "Content-Type": "application/json" },
       signal: ctrl.signal,
       body: JSON.stringify({ model: EMBEDDING_MODEL, input: query.slice(0, 500), dimensions: 1536 }),
     });
@@ -153,14 +153,15 @@ export async function classifyIntent(query: string): Promise<Intent> {
     return persisted;
   }
 
-  const apiKey = Deno.env.get("LOVABLE_API_KEY");
-  if (!apiKey) {
-    console.warn("[intent-router] LOVABLE_API_KEY missing, defaulting to general");
+  const openaiKey = Deno.env.get("OPENAI_API_KEY");
+  const openrouterKey = Deno.env.get("OPENROUTER_API_KEY");
+  if (!openaiKey && !openrouterKey) {
+    console.warn("[intent-router] OPENAI_API_KEY & OPENROUTER_API_KEY missing, defaulting to general");
     return "general";
   }
 
-  // Phase C — Router Sémantique v2 : tentative embedding-based avant fallback LLM
-  const semantic = await classifyIntentSemantic(key, apiKey);
+  // Phase C — Router Sémantique v2 : tentative embedding-based (OpenAI) avant fallback LLM
+  const semantic = openaiKey ? await classifyIntentSemantic(key, openaiKey) : null;
   if (semantic && semantic.similarity >= SEMANTIC_THRESHOLD) {
     console.log(`[intent-router] semantic hit intent=${semantic.intent} sim=${semantic.similarity.toFixed(3)}`);
     cacheSet(key, semantic.intent);
@@ -169,15 +170,22 @@ export async function classifyIntent(query: string): Promise<Intent> {
   }
   const similarityBest = semantic ? semantic.similarity : null;
 
+  // Fallback LLM (classifieur) via OpenRouter. Si pas de clé, défaut sûr.
+  if (!openrouterKey) {
+    logFallback(query, "general", similarityBest);
+    return "general";
+  }
 
   try {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 4000);
-    const resp = await fetch(LOVABLE_AI_URL, {
+    const resp = await fetch(OPENROUTER_CHAT_URL, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: `Bearer ${openrouterKey}`,
         "Content-Type": "application/json",
+        "HTTP-Referer": "https://iarche.com",
+        "X-Title": "IArche Platform",
       },
       signal: ctrl.signal,
       body: JSON.stringify({
