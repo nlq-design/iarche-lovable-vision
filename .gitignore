@@ -27,3 +27,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Fichiers de migration locaux (secrets/connection strings — JAMAIS committés)
+.migration/*
+!.migration/*.example
