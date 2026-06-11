@@ -1,3 +1,6 @@
+-- Migration autonome : type vector dans le schéma extensions → résolution du nom non qualifié.
+SET search_path TO public, extensions;
+
 -- Create a wrapper function that accepts text and casts to vector
 CREATE OR REPLACE FUNCTION public.search_similar_resources_text(
   query_embedding_text text,

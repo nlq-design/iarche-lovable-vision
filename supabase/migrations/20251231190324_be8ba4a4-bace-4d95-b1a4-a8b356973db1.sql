@@ -1,3 +1,6 @@
+-- Migration autonome : type vector dans le schéma extensions → résolution du nom non qualifié.
+SET search_path TO public, extensions;
+
 -- 1. Corriger la fonction search_similar_resources pour le bon schéma vector
 DROP FUNCTION IF EXISTS public.search_similar_resources(extensions.vector, double precision, integer, text[]);
 

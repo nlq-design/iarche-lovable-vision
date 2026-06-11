@@ -6,7 +6,8 @@ VALUES (
   true,
   10485760, -- 10MB limit
   ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml']
-);
+)
+ON CONFLICT (id) DO NOTHING;
 
 -- Create storage policies for media-library bucket
 CREATE POLICY "Admins can upload to media-library"

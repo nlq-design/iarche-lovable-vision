@@ -1,3 +1,6 @@
+-- Migration autonome : type vector dans le schéma extensions → résolution du nom non qualifié.
+SET search_path TO public, extensions;
+
 -- M6 Semantic Cache infrastructure (retry: index partiel WHERE now() retiré)
 CREATE TABLE IF NOT EXISTS public.ai_semantic_cache (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

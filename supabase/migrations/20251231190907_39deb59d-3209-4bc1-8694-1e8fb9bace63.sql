@@ -1,3 +1,6 @@
+-- Migration autonome : opclass vector_cosine_ops dans le schéma extensions → résolution non qualifiée.
+SET search_path TO public, extensions;
+
 -- Table pour la mémoire persistante de l'agent IA
 CREATE TABLE public.ai_agent_memory (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,

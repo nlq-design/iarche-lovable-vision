@@ -151,7 +151,8 @@ VALUES (
     'image/png',
     'image/webp'
   ]
-);
+)
+ON CONFLICT (id) DO NOTHING;
 
 -- 8. Storage RLS Policies
 CREATE POLICY "cockpit_uploads_select"

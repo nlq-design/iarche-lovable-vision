@@ -1,6 +1,7 @@
 -- Create storage bucket for brochure images
-INSERT INTO storage.buckets (id, name, public) 
-VALUES ('brochure-images', 'brochure-images', true);
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('brochure-images', 'brochure-images', true)
+ON CONFLICT (id) DO NOTHING;
 
 -- Create storage policies for brochure images
 CREATE POLICY "Admins can upload brochure images"
