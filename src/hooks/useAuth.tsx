@@ -75,7 +75,8 @@ export const useAuth = () => {
         setIsSuperAdmin(false);
       } else {
         const roles = (data as Array<{ role: string }>).map((r) => r.role);
-        setIsAdmin(roles.includes('admin'));
+        // super_admin est un sur-ensemble : il implique l'accès admin (cf. has_role en DB).
+        setIsAdmin(roles.includes('admin') || roles.includes('super_admin'));
         setIsSuperAdmin(roles.includes('super_admin'));
       }
     } catch {
