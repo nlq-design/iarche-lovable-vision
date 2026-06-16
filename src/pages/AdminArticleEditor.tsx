@@ -62,6 +62,7 @@ const AdminArticleEditor = () => {
     if (path.includes('/admin/cas-clients/new')) return 'cas-client';
     if (path.includes('/admin/livres-blancs/new')) return 'livre-blanc';
     if (path.includes('/admin/ateliers-webinaires/new')) return 'atelier-webinaire';
+    if (path.includes('/admin/solutions/new')) return 'solution';
     if (path.includes('/admin/articles/new')) return 'article';
     return 'actualite'; // Défaut
   };
@@ -74,6 +75,7 @@ const AdminArticleEditor = () => {
       'cas-client': `/cas-clients/${articleSlug}`,
       'livre-blanc': `/livres-blancs/${articleSlug}`,
       'atelier-webinaire': `/ateliers-webinaires/${articleSlug}`,
+      'solution': `/solutions/${articleSlug}`,
     };
     return urlMap[resourceType] || `/actualites/${articleSlug}`;
   };
@@ -94,6 +96,18 @@ const AdminArticleEditor = () => {
   
   // Champs spécifiques aux types de contenu
   const [resourceType, setResourceType] = useState<string>(() => !id ? getResourceTypeFromPath() : 'actualite');
+
+  // Champs produit (solution_meta) — visibles quand resourceType === 'solution'
+  const [smLandingUrl, setSmLandingUrl] = useState('');
+  const [smIsExternal, setSmIsExternal] = useState(true);
+  const [smStatus, setSmStatus] = useState<'live' | 'soon' | 'internal'>('soon');
+  const [smLogoUrl, setSmLogoUrl] = useState('');
+  const [smAccentColor, setSmAccentColor] = useState('');
+  const [smShortPitch, setSmShortPitch] = useState('');
+  const [smDisplayOrder, setSmDisplayOrder] = useState(100);
+  const [smFeatured, setSmFeatured] = useState(false);
+  const [metaTitle, setMetaTitle] = useState('');
+  const [metaDescription, setMetaDescription] = useState('');
   const [eventDate, setEventDate] = useState<Date | undefined>();
   const [eventLocation, setEventLocation] = useState('');
   const [registrationOpen, setRegistrationOpen] = useState(true);
@@ -417,6 +431,27 @@ const AdminArticleEditor = () => {
       setCtaEvenementPersonnalise(data.cta_evenement_personnalise || '');
       setRelatedSolutionSlug(data.related_solution_slug || '');
       setCustomCreatedAt(data.created_at ? new Date(data.created_at) : undefined);
+      setMetaTitle(data.meta_title || '');
+      setMetaDescription(data.meta_description || '');
+
+      // Charger les métadonnées produit (solution_meta) si c'est une solution
+      if (data.resource_type === 'solution') {
+        const { data: sm } = await supabase
+          .from('solution_meta')
+          .select('*')
+          .eq('solution_id', id)
+          .maybeSingle();
+        if (sm) {
+          setSmLandingUrl(sm.landing_url || '');
+          setSmIsExternal(sm.is_external ?? true);
+          setSmStatus((sm.status as 'live' | 'soon' | 'internal') || 'soon');
+          setSmLogoUrl(sm.logo_url || '');
+          setSmAccentColor(sm.accent_color || '');
+          setSmShortPitch(sm.short_pitch || '');
+          setSmDisplayOrder(sm.display_order ?? 100);
+          setSmFeatured(sm.featured ?? false);
+        }
+      }
 
       // Charger les catégories de l'article
       const { data: articleCategories } = await supabase
@@ -834,7 +869,36 @@ const AdminArticleEditor = () => {
       rappels_automatiques: rappelsAutomatiques,
       cta_evenement_personnalise: ctaEvenementPersonnalise || null,
       related_solution_slug: relatedSolutionSlug || null,
+      meta_title: metaTitle || null,
+      meta_description: metaDescription || null,
     });
+
+    // Upsert des métadonnées produit (solution_meta) pour une solution.
+    const upsertSolutionMeta = async (solutionId: string) => {
+      if (resourceType !== 'solution') return;
+      const { error: smError } = await supabase.from('solution_meta').upsert(
+        {
+          solution_id: solutionId,
+          landing_url: smLandingUrl || null,
+          is_external: smIsExternal,
+          status: smStatus,
+          logo_url: smLogoUrl || null,
+          accent_color: smAccentColor || null,
+          short_pitch: smShortPitch || null,
+          display_order: smDisplayOrder,
+          featured: smFeatured,
+        },
+        { onConflict: 'solution_id' },
+      );
+      if (smError) {
+        console.error('Erreur upsert solution_meta:', smError);
+        toast({
+          title: 'Solution enregistrée, mais…',
+          description: "Les métadonnées produit (URL/statut) n'ont pas pu être sauvegardées.",
+          variant: 'destructive',
+        });
+      }
+    };
 
     console.log('📦 Données article finales:', articleData);
 
@@ -904,6 +968,9 @@ const AdminArticleEditor = () => {
           );
         }
 
+        // Métadonnées produit (solution_meta)
+        await upsertSolutionMeta(id);
+
         // Send newsletter if article is being published for the first time
         if (isBeingPublished) {
           try {
@@ -963,6 +1030,9 @@ const AdminArticleEditor = () => {
           );
         }
 
+        // Métadonnées produit (solution_meta)
+        await upsertSolutionMeta(newArticle.id);
+
         toast({
           title: 'Article créé',
           description: 'L\'article a été créé avec succès',
@@ -994,6 +1064,7 @@ const AdminArticleEditor = () => {
             'cas-client': '/admin/cas-clients',
             'livre-blanc': '/admin/livres-blancs',
             'atelier-webinaire': '/admin/ateliers-webinaires',
+            'solution': '/admin/solutions',
           };
           navigate(adminRedirectMap[resourceType] || '/admin');
         }
@@ -1231,6 +1302,7 @@ const AdminArticleEditor = () => {
                       <SelectItem value="cas-client">Cas client</SelectItem>
                       <SelectItem value="livre-blanc">Livre blanc</SelectItem>
                       <SelectItem value="atelier-webinaire">Atelier/Webinaire</SelectItem>
+                      <SelectItem value="solution">Solution</SelectItem>
                     </SelectContent>
                   </Select>
                   {!id && (
@@ -1239,6 +1311,95 @@ const AdminArticleEditor = () => {
                     </p>
                   )}
                 </div>
+
+                {/* ── Panneau produit (solution_meta) ─────────────────── */}
+                {resourceType === 'solution' && (
+                  <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-semibold text-foreground">Fiche produit (solution)</h3>
+                      <span className="text-xs text-muted-foreground">— pilote le hub /solutions</span>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="smLandingUrl">Destination (landing) *</Label>
+                      <Input
+                        id="smLandingUrl"
+                        value={smLandingUrl}
+                        onChange={(e) => setSmLandingUrl(e.target.value)}
+                        placeholder="https://anomia.iarche.fr ou /cockpit"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Où mène la carte : un sous-domaine (https://…) ou une route interne (/cockpit).
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label htmlFor="smIsExternal">Lien externe (sous-domaine)</Label>
+                        <p className="text-xs text-muted-foreground">Désactivé = route interne iarche.fr</p>
+                      </div>
+                      <Switch id="smIsExternal" checked={smIsExternal} onCheckedChange={setSmIsExternal} />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="smStatus">Statut</Label>
+                        <Select value={smStatus} onValueChange={(v) => setSmStatus(v as 'live' | 'soon' | 'internal')}>
+                          <SelectTrigger id="smStatus">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="live">En ligne</SelectItem>
+                            <SelectItem value="soon">Bientôt</SelectItem>
+                            <SelectItem value="internal">Interne</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="smOrder">Ordre d'affichage</Label>
+                        <Input
+                          id="smOrder"
+                          type="number"
+                          value={smDisplayOrder}
+                          onChange={(e) => setSmDisplayOrder(parseInt(e.target.value, 10) || 0)}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="smPitch">Pitch court (hub)</Label>
+                      <Input
+                        id="smPitch"
+                        value={smShortPitch}
+                        onChange={(e) => setSmShortPitch(e.target.value)}
+                        placeholder="L'agent de marque & RAG avancé"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="smLogo">Logo (URL)</Label>
+                        <Input id="smLogo" value={smLogoUrl} onChange={(e) => setSmLogoUrl(e.target.value)} placeholder="/logos/…svg" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="smAccent">Couleur d'accent</Label>
+                        <Input id="smAccent" value={smAccentColor} onChange={(e) => setSmAccentColor(e.target.value)} placeholder="#B04A32" />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="smFeatured">Mise en avant</Label>
+                      <Switch id="smFeatured" checked={smFeatured} onCheckedChange={setSmFeatured} />
+                    </div>
+
+                    <div className="space-y-2 border-t border-border pt-3">
+                      <Label htmlFor="metaTitle">SEO — Meta title</Label>
+                      <Input id="metaTitle" value={metaTitle} onChange={(e) => setMetaTitle(e.target.value)} placeholder="Laisser vide = titre par défaut" />
+                      <Label htmlFor="metaDescription" className="mt-2 block">SEO — Meta description</Label>
+                      <Textarea id="metaDescription" value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} rows={2} />
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="coverImageUrl">Image de couverture (URL)</Label>

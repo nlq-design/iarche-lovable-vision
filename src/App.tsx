@@ -12,6 +12,7 @@ import CharteGraphique from "./pages/CharteGraphique";
 import Services from "./pages/Services";
 import ServiceDetail from "./pages/ServiceDetail";
 import Solutions from "./pages/Solutions";
+import SolutionRedirect from "./pages/SolutionRedirect";
 import Actualites from "./pages/Actualites";
 import Articles from "./pages/Articles";
 import ArticleDetail from "./pages/ArticleDetail";
@@ -222,7 +223,7 @@ const App = () => (
           <Route path="/services" element={<Services />} />
           <Route path="/services/:slug" element={<ServiceDetail />} />
           <Route path="/solutions" element={<Solutions />} />
-          <Route path="/solutions/:slug" element={<ArticleDetail />} />
+          <Route path="/solutions/:slug" element={<SolutionRedirect />} />
           <Route path="/actualites" element={<Actualites />} />
           <Route path="/articles" element={<Articles />} />
           <Route path="/cas-clients" element={

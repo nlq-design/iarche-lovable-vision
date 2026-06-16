@@ -10,7 +10,32 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.5"
+    PostgrestVersion: "14.5"
+  }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
@@ -3299,16 +3324,10 @@ export type Database = {
           context_type: string
           created_at: string | null
           created_by: string | null
-          detected_count: number
-          first_detected_at: string | null
           id: string
           is_active: boolean | null
           phonetic_key: string | null
-          source_examples: Json | null
-          status: string
           updated_at: string | null
-          validated_at: string | null
-          validated_by: string | null
         }
         Insert: {
           alias: string
@@ -3316,16 +3335,10 @@ export type Database = {
           context_type?: string
           created_at?: string | null
           created_by?: string | null
-          detected_count?: number
-          first_detected_at?: string | null
           id?: string
           is_active?: boolean | null
           phonetic_key?: string | null
-          source_examples?: Json | null
-          status?: string
           updated_at?: string | null
-          validated_at?: string | null
-          validated_by?: string | null
         }
         Update: {
           alias?: string
@@ -3333,16 +3346,10 @@ export type Database = {
           context_type?: string
           created_at?: string | null
           created_by?: string | null
-          detected_count?: number
-          first_detected_at?: string | null
           id?: string
           is_active?: boolean | null
           phonetic_key?: string | null
-          source_examples?: Json | null
-          status?: string
           updated_at?: string | null
-          validated_at?: string | null
-          validated_by?: string | null
         }
         Relationships: []
       }
@@ -4864,7 +4871,6 @@ export type Database = {
           partner_type: string
           phone: string | null
           scope: Json
-          slug: string
           specialties: string[] | null
           status: string
           suspended_at: string | null
@@ -4894,7 +4900,6 @@ export type Database = {
           partner_type: string
           phone?: string | null
           scope?: Json
-          slug: string
           specialties?: string[] | null
           status?: string
           suspended_at?: string | null
@@ -4924,7 +4929,6 @@ export type Database = {
           partner_type?: string
           phone?: string | null
           scope?: Json
-          slug?: string
           specialties?: string[] | null
           status?: string
           suspended_at?: string | null
@@ -5725,6 +5729,59 @@ export type Database = {
             foreignKeyName: "solution_leads_solution_id_fkey"
             columns: ["solution_id"]
             isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      solution_meta: {
+        Row: {
+          accent_color: string | null
+          created_at: string
+          display_order: number
+          featured: boolean
+          is_external: boolean
+          landing_url: string | null
+          logo_url: string | null
+          og_image_url: string | null
+          short_pitch: string | null
+          solution_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          accent_color?: string | null
+          created_at?: string
+          display_order?: number
+          featured?: boolean
+          is_external?: boolean
+          landing_url?: string | null
+          logo_url?: string | null
+          og_image_url?: string | null
+          short_pitch?: string | null
+          solution_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          accent_color?: string | null
+          created_at?: string
+          display_order?: number
+          featured?: boolean
+          is_external?: boolean
+          landing_url?: string | null
+          logo_url?: string | null
+          og_image_url?: string | null
+          short_pitch?: string | null
+          solution_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solution_meta_solution_id_fkey"
+            columns: ["solution_id"]
+            isOneToOne: true
             referencedRelation: "articles"
             referencedColumns: ["id"]
           },
@@ -7426,7 +7483,6 @@ export type Database = {
           scoring_criteria: Json | null
           siren: string | null
           siret: string | null
-          slug: string | null
           source: string
           source_file: string | null
           status: string | null
@@ -7473,7 +7529,6 @@ export type Database = {
           scoring_criteria?: Json | null
           siren?: string | null
           siret?: string | null
-          slug?: string | null
           source: string
           source_file?: string | null
           status?: string | null
@@ -7520,7 +7575,6 @@ export type Database = {
           scoring_criteria?: Json | null
           siren?: string | null
           siret?: string | null
-          slug?: string | null
           source?: string
           source_file?: string | null
           status?: string | null
@@ -9056,9 +9110,8 @@ export type Database = {
           total_hits: number
         }[]
       }
-      show_limit: { Args: never; Returns: number }
-      show_trgm: { Args: { "": string }; Returns: string[] }
       slugify: { Args: { input_text: string }; Returns: string }
+      telegram_notify: { Args: { payload: Json }; Returns: undefined }
       unlock_expired_accounts: { Args: never; Returns: undefined }
       update_lead_familiarity: {
         Args: { p_lead_id: string }
@@ -9251,6 +9304,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       app_role: [
