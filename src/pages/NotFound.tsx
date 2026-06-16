@@ -33,7 +33,7 @@ const NotFound = () => {
         </Link>
 
         {/* 404 */}
-        <p className="text-7xl font-bold text-primary mb-4" style={{ fontFamily: 'Manrope, sans-serif' }}>
+        <p className="text-7xl font-bold text-foreground mb-4" style={{ fontFamily: 'Manrope, sans-serif' }}>
           404
         </p>
         <h1 className="text-2xl font-semibold text-foreground mb-2">
@@ -51,7 +51,7 @@ const NotFound = () => {
               to={to}
               className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
             >
-              <Icon className="h-4 w-4 text-primary shrink-0" />
+              <Icon className="h-4 w-4 text-foreground shrink-0" />
               {label}
             </Link>
           ))}
@@ -60,7 +60,7 @@ const NotFound = () => {
         {/* CTA principal */}
         <Link
           to="/"
-          className="inline-flex items-center gap-2 rounded-md px-6 py-3 text-sm font-medium text-primary-foreground transition-colors"
+          className="inline-flex items-center gap-2 rounded-md px-6 py-3 text-sm font-medium text-secondary-foreground transition-colors"
           style={{ backgroundColor: '#D15A3E' }}
           onMouseEnter={e => (e.currentTarget.style.opacity = '0.9')}
           onMouseLeave={e => (e.currentTarget.style.opacity = '1')}

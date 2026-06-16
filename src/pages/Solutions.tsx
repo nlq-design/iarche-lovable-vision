@@ -7,10 +7,10 @@ import BreadcrumbNav from '@/components/ui/BreadcrumbNav';
 import { supabase } from '@/integrations/supabase/client';
 import GradientLink from '@/components/ui/GradientLink';
 import { useCTATracking } from '@/hooks/useCTATracking';
-import GradientTitle from '@/components/ui/GradientTitle';
 import { Loader2 } from 'lucide-react';
 import ArticlePlaceholder from '@/components/ui/ArticlePlaceholder';
-import ResourceCard from '@/components/ui/ResourceCard';
+import { NavLink } from '@/components/NavLink';
+import { Section, Reveal, SectionTitle, SolidCard } from '@/components/brand';
 
 interface Solution {
   id: string;
@@ -102,33 +102,35 @@ const Solutions = () => {
       <Header />
       <BreadcrumbNav />
       
-      <main className="min-h-screen pt-4">
-        <section className="max-w-6xl mx-auto px-6 py-4">
-          {/* En-tête */}
-          <div className="text-center mb-8">
-            <GradientTitle size="lg" className="mb-6 animate-fadeIn [animation-delay:0.1s]">
-              Nos solutions
-            </GradientTitle>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto animate-fadeIn [animation-delay:0.2s]">
-              <span className="hero-gradient-text">IArche</span> déploie des solutions SaaS conçues à partir de besoins concrets identifiés sur le terrain.
-            </p>
-          </div>
+      <main className="min-h-screen">
+        {/* Hero — ton sombre */}
+        <Section tone="dark" spacing="hero">
+          <SectionTitle
+            as="h1"
+            center
+            eyebrow="Nos plateformes"
+            lede="IArche déploie des solutions SaaS conçues à partir de besoins concrets identifiés sur le terrain."
+          >
+            Nos <em>solutions</em>.
+          </SectionTitle>
 
           {/* CTA en-tête */}
-          <div className="text-center mb-10 animate-fadeIn [animation-delay:0.3s]">
-            <GradientLink 
-              href="/contact" 
-              className="text-lg"
+          <div className="mt-8 text-center">
+            <GradientLink
+              href="/contact"
+              className="text-lg text-[hsl(var(--accent-soft))]"
               onClick={() => trackCTAClick('en_savoir_plus', 'solutions_page_top')}
             >
               Je veux en savoir plus
             </GradientLink>
           </div>
+        </Section>
 
-          {/* Liste des solutions */}
+        {/* Liste des solutions — ton clair */}
+        <Section tone="light">
           {loading ? (
             <div className="flex justify-center items-center py-20">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              <Loader2 className="w-8 h-8 animate-spin text-foreground" />
             </div>
           ) : solutions.length === 0 ? (
             <div className="text-center py-20">
@@ -140,37 +142,36 @@ const Solutions = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {solutions.map((solution, index) => (
-                <ResourceCard
-                  key={solution.id}
-                  id={solution.id}
-                  title={solution.title}
-                  slug={solution.slug}
-                  excerpt={solution.excerpt}
-                  coverImageUrl={solution.cover_image_url}
-                  createdAt={solution.created_at}
-                  basePath="/solutions"
-                  index={index}
-                  showDate={false}
-                  onClick={() => trackCTAClick('solution_card', 'solutions_page', solution.slug)}
-                />
+                <Reveal key={solution.id} delay={index * 80}>
+                  <NavLink
+                    to={`/solutions/${solution.slug}`}
+                    className="group block h-full"
+                    onClick={() => trackCTAClick('solution_card', 'solutions_page', solution.slug)}
+                  >
+                    <SolidCard num={String(index + 1).padStart(2, '0')} className="h-full">
+                      <h3>{solution.title}</h3>
+                      {solution.excerpt && <p>{solution.excerpt}</p>}
+                    </SolidCard>
+                  </NavLink>
+                </Reveal>
               ))}
             </div>
           )}
 
           {/* CTA bas de page */}
-          <div className="text-center mt-12 animate-fadeIn [animation-delay:0.8s]">
+          <div className="text-center mt-12">
             <p className="text-lg text-foreground mb-6">
               Envie de créer votre propre solution ?
             </p>
-            <GradientLink 
-              href="/contact" 
+            <GradientLink
+              href="/contact"
               className="text-lg"
               onClick={() => trackCTAClick('discuter_projet', 'solutions_page_bottom')}
             >
               Discuter de votre projet
             </GradientLink>
           </div>
-        </section>
+        </Section>
       </main>
       
       <Footer />

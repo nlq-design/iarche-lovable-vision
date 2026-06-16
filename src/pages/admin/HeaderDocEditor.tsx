@@ -94,7 +94,7 @@ export default function HeaderDocEditor() {
                       <RadioGroupItem value={size} id={`bar-${size}`} className="peer sr-only" />
                       <Label
                         htmlFor={`bar-${size}`}
-                        className="px-3 py-1.5 rounded-md border cursor-pointer text-sm peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground peer-data-[state=checked]:border-primary"
+                        className="px-3 py-1.5 rounded-md border cursor-pointer text-sm peer-data-[state=checked]:bg-secondary peer-data-[state=checked]:text-secondary-foreground peer-data-[state=checked]:border-secondary"
                       >
                         {size.toUpperCase()}
                       </Label>

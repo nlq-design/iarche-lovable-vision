@@ -100,7 +100,7 @@ const AdminLivresBlancs = () => {
     return (
       <AdminLayout>
         <div className="min-h-screen flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <Loader2 className="h-8 w-8 animate-spin text-foreground" />
         </div>
       </AdminLayout>
     );
@@ -149,7 +149,7 @@ const AdminLivresBlancs = () => {
                         </span>
                         {article.has_faq && (
                           <span title="FAQ générée">
-                            <HelpCircle className="h-4 w-4 text-accent" />
+                            <HelpCircle className="h-4 w-4 text-primary" />
                           </span>
                         )}
                         <span>

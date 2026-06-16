@@ -442,7 +442,7 @@ const CockpitProjectDetail = () => {
                       </SelectContent>
                     </Select>
                     {linkedSolution && (
-                      <p className="text-xs text-primary mt-1">{linkedSolution.title}</p>
+                      <p className="text-xs text-foreground mt-1">{linkedSolution.title}</p>
                     )}
                   </div>
                   <div className="grid grid-cols-2 gap-3 pt-2">
@@ -487,7 +487,7 @@ const CockpitProjectDetail = () => {
                       </div>
                       <div className="grid grid-cols-1 gap-2 text-sm">
                         {linkedLead.email && (
-                          <a href={`mailto:${linkedLead.email}`} className="flex items-center gap-2 text-primary hover:underline text-xs">
+                          <a href={`mailto:${linkedLead.email}`} className="flex items-center gap-2 text-foreground hover:underline text-xs">
                             <Mail className="h-3 w-3" />
                             {linkedLead.email}
                           </a>
@@ -563,7 +563,7 @@ const CockpitProjectDetail = () => {
                           href={(linkedLead as any).website.startsWith('http') ? (linkedLead as any).website : `https://${(linkedLead as any).website}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-2 text-primary hover:underline text-xs pt-2 border-t"
+                          className="flex items-center gap-2 text-foreground hover:underline text-xs pt-2 border-t"
                         >
                           <Globe className="h-3 w-3" />
                           {(linkedLead as any).website}
@@ -665,7 +665,7 @@ const CockpitProjectDetail = () => {
                       </div>
                       <div className="h-2 bg-muted rounded-full overflow-hidden">
                         <div 
-                          className="h-full bg-primary rounded-full transition-all"
+                          className="h-full bg-secondary rounded-full transition-all"
                           style={{ width: `${Math.min(100, (Number(project.consumed_amount || 0) / Number(project.budget_amount)) * 100)}%` }}
                         />
                       </div>

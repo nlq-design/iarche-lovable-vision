@@ -42,12 +42,12 @@ export function PartnerConsulteSection() {
   };
 
   return (
-    <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-background">
+    <Card className="border-secondary/20 bg-gradient-to-br from-secondary/5 to-background">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <Bot className="h-5 w-5 text-primary" />
+            <div className="p-2 rounded-lg bg-secondary/10">
+              <Bot className="h-5 w-5 text-foreground" />
             </div>
             <div>
               <CardTitle className="text-lg flex items-center gap-2">
@@ -171,7 +171,7 @@ export function PartnerConsulteSection() {
                       th: ({ children }) => <th className="border border-border px-2 py-1 bg-muted text-left font-medium">{children}</th>,
                       td: ({ children }) => <td className="border border-border px-2 py-1">{children}</td>,
                       hr: () => <hr className="my-3 border-border" />,
-                      blockquote: ({ children }) => <blockquote className="border-l-2 border-primary/30 pl-3 my-2 italic text-muted-foreground">{children}</blockquote>,
+                      blockquote: ({ children }) => <blockquote className="border-l-2 border-secondary/30 pl-3 my-2 italic text-muted-foreground">{children}</blockquote>,
                     }}
                   >
                     {synthesis}

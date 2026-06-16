@@ -107,7 +107,7 @@ export function AIHealthDashboard() {
       </div>
 
       {/* Module Navigation Cards */}
-      <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+      <Card className="border-secondary/20 bg-gradient-to-br from-secondary/5 to-transparent">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-medium flex items-center gap-2">
             <Settings className="h-4 w-4" />
@@ -123,7 +123,7 @@ export function AIHealthDashboard() {
                 className="p-3 rounded-lg border bg-background/80 hover:bg-muted/50 transition-colors space-y-2"
               >
                 <div className="flex items-center gap-2">
-                  <div className="p-1.5 rounded-md bg-primary/10 text-primary">
+                  <div className="p-1.5 rounded-md bg-secondary/10 text-foreground">
                     {mod.icon}
                   </div>
                   <span className="text-sm font-medium">{mod.label}</span>
@@ -383,7 +383,7 @@ export function AIHealthDashboard() {
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
               <div>
-                <div className="text-2xl font-bold text-primary">{stats.totalTools}</div>
+                <div className="text-2xl font-bold text-foreground">{stats.totalTools}</div>
                 <p className="text-xs text-muted-foreground">Outils</p>
               </div>
               <div>
@@ -408,7 +408,7 @@ export function AIHealthDashboard() {
       )}
 
       {/* Infrastructure complète */}
-      <Card className="border-primary/20">
+      <Card className="border-secondary/20">
         <CardHeader>
           <CardTitle className="text-sm font-medium flex items-center gap-2">
             <Server className="h-4 w-4" />

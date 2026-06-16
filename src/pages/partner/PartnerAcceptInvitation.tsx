@@ -140,7 +140,7 @@ export default function PartnerAcceptInvitation() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-4">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
+          <Loader2 className="h-12 w-12 animate-spin text-foreground mx-auto" />
           <p className="text-muted-foreground">Vérification de l'invitation...</p>
         </div>
       </div>
@@ -193,7 +193,7 @@ export default function PartnerAcceptInvitation() {
             </CardDescription>
           </CardHeader>
           <CardContent className="flex justify-center">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            <Loader2 className="h-6 w-6 animate-spin text-foreground" />
           </CardContent>
         </Card>
       </div>
@@ -205,8 +205,8 @@ export default function PartnerAcceptInvitation() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="max-w-md w-full">
         <CardHeader className="text-center">
-          <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-            <span className="text-primary font-bold text-xl">IA</span>
+          <div className="h-12 w-12 rounded-full bg-secondary/10 flex items-center justify-center mx-auto mb-4">
+            <span className="text-foreground font-bold text-xl">IA</span>
           </div>
           <CardTitle>Bienvenue, {partnerName} !</CardTitle>
           <CardDescription>

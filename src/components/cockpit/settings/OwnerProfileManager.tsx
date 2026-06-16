@@ -86,7 +86,7 @@ export function OwnerProfileManager() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <UserCircle className="h-5 w-5 text-primary" />
+              <UserCircle className="h-5 w-5 text-foreground" />
               <div>
                 <CardTitle className="text-lg">Profil Propriétaire</CardTitle>
                 <CardDescription>Informations internes — non visibles par vos clients</CardDescription>
@@ -110,7 +110,7 @@ export function OwnerProfileManager() {
             <div className="flex items-center gap-4">
               <Avatar className="h-14 w-14">
                 <AvatarImage src={ownerProfile.avatar_url ?? undefined} />
-                <AvatarFallback className="bg-primary/10 text-primary text-lg font-semibold">
+                <AvatarFallback className="bg-secondary/10 text-foreground text-lg font-semibold">
                   {initials}
                 </AvatarFallback>
               </Avatar>

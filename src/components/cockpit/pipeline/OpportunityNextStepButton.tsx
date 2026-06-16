@@ -75,11 +75,11 @@ export function OpportunityNextStepButton({ opportunityId, workspaceId }: Props)
             <Button
               variant="ghost"
               size="sm"
-              className="h-6 w-6 p-0 hover:bg-primary/10"
+              className="h-6 w-6 p-0 hover:bg-secondary/10"
               onClick={(e) => e.stopPropagation()}
               aria-label="Prochaine étape IA"
             >
-              <Sparkles className="h-3.5 w-3.5 text-primary" />
+              <Sparkles className="h-3.5 w-3.5 text-foreground" />
             </Button>
           </PopoverTrigger>
         </TooltipTrigger>
@@ -97,7 +97,7 @@ export function OpportunityNextStepButton({ opportunityId, workspaceId }: Props)
       >
         <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/30">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-3.5 w-3.5 text-primary" />
+            <Sparkles className="h-3.5 w-3.5 text-foreground" />
             <span className="text-sm font-semibold">Prochaine étape IA</span>
           </div>
           {cache && (
@@ -157,7 +157,7 @@ export function OpportunityNextStepButton({ opportunityId, workspaceId }: Props)
                   <ul className="space-y-1">
                     {suggestion.talking_points.map((p, i) => (
                       <li key={i} className="text-xs text-foreground/80 flex gap-1.5">
-                        <span className="text-primary shrink-0">•</span>
+                        <span className="text-foreground shrink-0">•</span>
                         <span>{p}</span>
                       </li>
                     ))}

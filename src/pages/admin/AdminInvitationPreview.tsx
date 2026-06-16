@@ -283,7 +283,7 @@ const AdminInvitationPreview = () => {
     return (
       <AdminLayout>
         <div className="min-h-screen flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <Loader2 className="h-8 w-8 animate-spin text-foreground" />
         </div>
       </AdminLayout>
     );
@@ -586,7 +586,7 @@ const AdminInvitationPreview = () => {
                       dangerouslySetInnerHTML={{ __html: editMetadata.qrDescription || defaultQrDesc }}
                       onBlur={e => updateMetadata('qrDescription', e.currentTarget.innerHTML)}
                     />
-                    <p className="text-primary font-medium text-sm break-all">{publicUrl}</p>
+                    <p className="text-foreground font-medium text-sm break-all">{publicUrl}</p>
                   </div>
                 </div>
               </div>

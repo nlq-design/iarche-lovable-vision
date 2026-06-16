@@ -271,7 +271,7 @@ export const CreateTaskDialog = ({ open, onOpenChange, defaultEntityType, defaul
               />
               <div className="flex-1">
                 <Label htmlFor="addToAgenda" className="flex items-center gap-2 cursor-pointer">
-                  <Calendar className="h-4 w-4 text-primary" />
+                  <Calendar className="h-4 w-4 text-foreground" />
                   Ajouter à l'agenda
                 </Label>
                 <p className="text-xs text-muted-foreground">

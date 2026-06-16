@@ -164,7 +164,7 @@ function GraphCanvas({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <Loader2 className="w-8 h-8 animate-spin text-foreground" />
       </div>
     );
   }
@@ -256,7 +256,7 @@ function EmptyStatePicker() {
   return (
     <div className="max-w-4xl mx-auto p-8 space-y-6">
       <div className="text-center space-y-2">
-        <Network className="w-12 h-12 mx-auto text-primary" />
+        <Network className="w-12 h-12 mx-auto text-foreground" />
         <h2 className="text-2xl font-bold">Graphe relationnel CRM</h2>
         <p className="text-muted-foreground">
           Sélectionnez une entité à explorer pour visualiser son réseau de relations.
@@ -367,7 +367,7 @@ export default function VivierGraph() {
         <SidebarInset className="flex-1 flex flex-col">
           <header className="h-14 border-b border-border flex items-center px-4 gap-2">
             <SidebarTrigger />
-            <Network className="w-5 h-5 text-primary" />
+            <Network className="w-5 h-5 text-foreground" />
             <h1 className="font-semibold">Graphe relationnel</h1>
           </header>
 

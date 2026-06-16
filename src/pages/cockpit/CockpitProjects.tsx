@@ -228,8 +228,8 @@ const CockpitProjects = () => {
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger>
-                                    <Badge variant="outline" className="text-xs px-1 py-0 h-5 bg-primary/10 border-primary/30">
-                                      <Mic className="h-3 w-3 text-primary" />
+                                    <Badge variant="outline" className="text-xs px-1 py-0 h-5 bg-secondary/10 border-secondary/30">
+                                      <Mic className="h-3 w-3 text-foreground" />
                                     </Badge>
                                   </TooltipTrigger>
                                   <TooltipContent>

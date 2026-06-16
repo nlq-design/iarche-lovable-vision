@@ -245,8 +245,8 @@ export default function AIQuotasManager() {
         <Card>
           <CardContent className="pt-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Building2 className="h-5 w-5 text-primary" />
+              <div className="p-2 rounded-lg bg-secondary/10">
+                <Building2 className="h-5 w-5 text-foreground" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{globalStats.configuredQuotas}/{globalStats.totalWorkspaces}</p>
@@ -304,7 +304,7 @@ export default function AIQuotasManager() {
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle className="text-lg flex items-center gap-2">
-              <Gauge className="h-5 w-5 text-primary" />
+              <Gauge className="h-5 w-5 text-foreground" />
               Quotas par Workspace
             </CardTitle>
             <CardDescription>

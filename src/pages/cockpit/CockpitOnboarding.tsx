@@ -61,7 +61,7 @@ export default function CockpitOnboarding() {
       <Card className="w-full max-w-2xl">
         <CardHeader>
           <div className="flex items-center gap-3 mb-2">
-            <Rocket className="h-6 w-6 text-primary" />
+            <Rocket className="h-6 w-6 text-foreground" />
             <CardTitle className="text-2xl">Bienvenue sur le Cockpit</CardTitle>
           </div>
           <CardDescription>
@@ -171,8 +171,8 @@ export default function CockpitOnboarding() {
 
           {step === 4 && (
             <div className="text-center space-y-4 py-6">
-              <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                <Check className="h-8 w-8 text-primary" />
+              <div className="mx-auto w-16 h-16 rounded-full bg-secondary/10 flex items-center justify-center">
+                <Check className="h-8 w-8 text-foreground" />
               </div>
               <div>
                 <h3 className="text-xl font-semibold">Tout est prêt</h3>

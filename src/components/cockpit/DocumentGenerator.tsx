@@ -207,8 +207,8 @@ export function DocumentGenerator({ projectId, opportunityId }: DocumentGenerato
           </div>
           
           {proposal.executive_summary && (
-            <div className="p-3 bg-primary/5 rounded-lg">
-              <p className="font-medium text-xs text-primary mb-1">Résumé</p>
+            <div className="p-3 bg-secondary/5 rounded-lg">
+              <p className="font-medium text-xs text-foreground mb-1">Résumé</p>
               <p>{proposal.executive_summary}</p>
             </div>
           )}
@@ -242,7 +242,7 @@ export function DocumentGenerator({ projectId, opportunityId }: DocumentGenerato
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-primary" />
+          <Sparkles className="h-4 w-4 text-foreground" />
           Documents IA
         </h3>
         <Button size="sm" className="h-7" onClick={() => setShowGenerateDialog(true)}>
@@ -275,10 +275,10 @@ export function DocumentGenerator({ projectId, opportunityId }: DocumentGenerato
                 <CardContent className="p-3">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <div className="p-1.5 bg-primary/10 rounded">
-                        {doc.document_type === 'quote' && <Receipt className="h-3.5 w-3.5 text-primary" />}
-                        {doc.document_type === 'spec' && <FileText className="h-3.5 w-3.5 text-primary" />}
-                        {doc.document_type === 'proposal' && <FileSignature className="h-3.5 w-3.5 text-primary" />}
+                      <div className="p-1.5 bg-secondary/10 rounded">
+                        {doc.document_type === 'quote' && <Receipt className="h-3.5 w-3.5 text-foreground" />}
+                        {doc.document_type === 'spec' && <FileText className="h-3.5 w-3.5 text-foreground" />}
+                        {doc.document_type === 'proposal' && <FileSignature className="h-3.5 w-3.5 text-foreground" />}
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium truncate">{doc.title}</p>
@@ -340,7 +340,7 @@ export function DocumentGenerator({ projectId, opportunityId }: DocumentGenerato
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" />
+              <Sparkles className="h-5 w-5 text-foreground" />
               Générer un document
             </DialogTitle>
             <DialogDescription>
@@ -356,11 +356,11 @@ export function DocumentGenerator({ projectId, opportunityId }: DocumentGenerato
                   onClick={() => setSelectedType(docType.type)}
                   className={`flex items-center gap-3 p-3 rounded-lg border text-left transition-colors ${
                     selectedType === docType.type 
-                      ? 'border-primary bg-primary/5' 
+                      ? 'border-secondary bg-secondary/5' 
                       : 'hover:bg-muted'
                   }`}
                 >
-                  <div className={`p-2 rounded ${selectedType === docType.type ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                  <div className={`p-2 rounded ${selectedType === docType.type ? 'bg-secondary text-secondary-foreground' : 'bg-muted'}`}>
                     {docType.icon}
                   </div>
                   <div>

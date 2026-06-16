@@ -184,7 +184,7 @@ const AdminAteliersWebinaires = () => {
     return (
       <AdminLayout>
         <div className="min-h-screen flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <Loader2 className="h-8 w-8 animate-spin text-foreground" />
         </div>
       </AdminLayout>
     );
@@ -283,14 +283,14 @@ const AdminAteliersWebinaires = () => {
                           </span>
 
                           {article.has_faq && (
-                            <span title="FAQ générée"><HelpCircle className="h-4 w-4 text-accent" /></span>
+                            <span title="FAQ générée"><HelpCircle className="h-4 w-4 text-primary" /></span>
                           )}
 
                           {/* Linked form */}
                           {article.linked_form ? (
                             <button
                               onClick={() => navigate(`/admin/formulaires/${article.linked_form!.id}`)}
-                              className="flex items-center gap-1 px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"
+                              className="flex items-center gap-1 px-2 py-0.5 rounded bg-secondary/10 text-foreground text-xs font-medium hover:bg-secondary/20 transition-colors"
                             >
                               Formulaire ({article.linked_form.submissions_count} rép.)
                             </button>

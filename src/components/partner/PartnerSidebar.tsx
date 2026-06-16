@@ -97,8 +97,8 @@ export function PartnerSidebar() {
     <Sidebar className="border-r border-border">
       <SidebarHeader className="p-4 border-b border-border">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-            <span className="text-primary font-semibold text-lg">
+          <div className="h-10 w-10 rounded-full bg-secondary/10 flex items-center justify-center">
+            <span className="text-foreground font-semibold text-lg">
               {partnerData?.name?.charAt(0) || 'P'}
             </span>
           </div>

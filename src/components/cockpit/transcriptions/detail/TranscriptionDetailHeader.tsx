@@ -67,7 +67,7 @@ export function TranscriptionDetailHeader({
             </div>
           ) : (
             <h1
-              className="text-xl font-semibold cursor-pointer hover:text-primary transition-colors"
+              className="text-xl font-semibold cursor-pointer hover:text-foreground transition-colors"
               onClick={() => { setTitleDraft(displayTitle); setEditingTitle(true); }}
               title="Cliquer pour modifier"
             >
@@ -98,7 +98,7 @@ export function TranscriptionDetailHeader({
               </Popover>
             ) : (
               <span
-                className="flex items-center gap-1 cursor-pointer hover:text-primary transition-colors"
+                className="flex items-center gap-1 cursor-pointer hover:text-foreground transition-colors"
                 onClick={() => setEditingDate(true)}
                 title="Cliquer pour modifier la date"
               >

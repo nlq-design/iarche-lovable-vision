@@ -385,7 +385,7 @@ const AdminSettings = () => {
               <CardContent>
                 {loadingSessions ? (
                   <div className="flex justify-center py-8">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <Loader2 className="h-8 w-8 animate-spin text-foreground" />
                   </div>
                 ) : sessions.length === 0 ? (
                   <p className="text-center text-muted-foreground py-8">
@@ -396,7 +396,7 @@ const AdminSettings = () => {
                     {sessions.map((session) => (
                       <div
                         key={session.id}
-                        className="flex items-start justify-between p-4 border border-border rounded-lg hover:border-primary/50 transition-colors"
+                        className="flex items-start justify-between p-4 border border-border rounded-lg hover:border-secondary/50 transition-colors"
                       >
                         <div className="flex gap-4 flex-1">
                           <div className="text-muted-foreground mt-1">
@@ -524,7 +524,7 @@ const AdminSettings = () => {
                   <div className="space-y-6">
                     <div className="space-y-4">
                       <div className="flex flex-col items-center gap-4 p-6 bg-muted/50 rounded-lg">
-                        <QrCode className="h-8 w-8 text-primary" />
+                        <QrCode className="h-8 w-8 text-foreground" />
                         <h3 className="font-semibold text-lg">Scannez le QR code</h3>
                         <div className="bg-white p-4 rounded-lg">
                           <img src={qrCode} alt="QR Code 2FA" className="w-64 h-64" />

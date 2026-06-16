@@ -165,14 +165,14 @@ export function AdminSidebar() {
                             end={item.exact ? true : undefined}
                             className={`flex items-center gap-2 px-2 py-1.5 rounded-lg transition-colors ${
                               isHighlight 
-                                ? 'bg-gradient-to-r from-primary/20 to-primary/10 hover:from-primary/30 hover:to-primary/20 border border-primary/20' 
+                                ? 'bg-gradient-to-r from-secondary/20 to-secondary/10 hover:from-secondary/30 hover:to-secondary/20 border border-secondary/20' 
                                 : 'hover:bg-muted/50'
                             }`}
-                            activeClassName="bg-primary/10 text-primary font-medium"
+                            activeClassName="bg-secondary/10 text-foreground font-medium"
                           >
-                            <item.icon className={`h-4 w-4 flex-shrink-0 ${isHighlight ? 'text-primary' : ''}`} />
+                            <item.icon className={`h-4 w-4 flex-shrink-0 ${isHighlight ? 'text-foreground' : ''}`} />
                             {!isCollapsed && (
-                              <span className={`text-sm ${isHighlight ? 'font-medium text-primary' : ''}`}>
+                              <span className={`text-sm ${isHighlight ? 'font-medium text-foreground' : ''}`}>
                                 {item.title}
                               </span>
                             )}

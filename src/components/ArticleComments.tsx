@@ -132,7 +132,7 @@ export const ArticleComments = ({ articleId }: ArticleCommentsProps) => {
         <CardContent className="pt-0 pb-4">
           {loading ? (
             <div className="flex justify-center py-4">
-              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              <Loader2 className="h-4 w-4 animate-spin text-foreground" />
             </div>
           ) : comments.length === 0 ? (
             <p className="text-muted-foreground text-center py-4 text-sm">

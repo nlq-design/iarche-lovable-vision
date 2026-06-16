@@ -38,7 +38,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
               <div className="flex items-center gap-4">
                 <SidebarTrigger className="lg:hidden" />
                 <Link to="/admin" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                  <div className="w-8 h-8 bg-primary rounded flex items-center justify-center">
+                  <div className="w-8 h-8 bg-secondary rounded flex items-center justify-center">
                     <span className="text-white font-bold text-sm">IA</span>
                   </div>
                   <span className="font-semibold text-lg">Back-office</span>

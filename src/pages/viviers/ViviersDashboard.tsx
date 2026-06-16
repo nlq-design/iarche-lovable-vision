@@ -82,7 +82,7 @@ export default function ViviersDashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">En attente scoring</CardTitle>
-              <Target className="h-4 w-4 text-accent" />
+              <Target className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.pendingScoring}</div>
@@ -104,7 +104,7 @@ export default function ViviersDashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Campagnes actives</CardTitle>
-              <Mail className="h-4 w-4 text-primary" />
+              <Mail className="h-4 w-4 text-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{campaignStats?.activeCampaigns || 0}</div>
@@ -140,7 +140,7 @@ export default function ViviersDashboard() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-accent" />
+                <Sparkles className="h-5 w-5 text-primary" />
                 Actions rapides
               </CardTitle>
               <CardDescription>
@@ -179,8 +179,8 @@ export default function ViviersDashboard() {
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-primary rounded flex items-center justify-center">
-                    <Mail className="w-4 h-4 text-primary-foreground" />
+                  <div className="w-8 h-8 bg-secondary rounded flex items-center justify-center">
+                    <Mail className="w-4 h-4 text-secondary-foreground" />
                   </div>
                   <div>
                     <p className="font-medium text-sm">Instantly</p>
@@ -194,7 +194,7 @@ export default function ViviersDashboard() {
 
               <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-accent rounded flex items-center justify-center">
+                  <div className="w-8 h-8 bg-primary rounded flex items-center justify-center">
                     <Mail className="w-4 h-4 text-accent-foreground" />
                   </div>
                   <div>

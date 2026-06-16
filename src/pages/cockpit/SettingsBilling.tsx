@@ -261,7 +261,7 @@ export default function SettingsBilling() {
                                 href={inv.invoice_pdf}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-sm text-primary hover:underline inline-flex items-center gap-1"
+                                className="text-sm text-foreground hover:underline inline-flex items-center gap-1"
                               >
                                 PDF
                                 <ExternalLink className="h-3 w-3" />

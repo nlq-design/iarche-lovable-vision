@@ -208,7 +208,7 @@ export function AIGenerationModal({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
+            <Sparkles className="h-5 w-5 text-foreground" />
             Générer un {documentTypeLabels[documentType]} avec IA
           </DialogTitle>
           <DialogDescription>
@@ -249,7 +249,7 @@ export function AIGenerationModal({
                 </Select>
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  Aucune société configurée. <a href="/cockpit/documents/settings" className="text-primary underline">Configurer</a>
+                  Aucune société configurée. <a href="/cockpit/documents/settings" className="text-foreground underline">Configurer</a>
                 </p>
               )}
             </div>

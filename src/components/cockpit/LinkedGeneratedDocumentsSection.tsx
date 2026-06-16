@@ -147,8 +147,8 @@ export function LinkedGeneratedDocumentsSection({
                   onClick={() => navigate(`/cockpit/documents/${getDocumentSlug(doc)}`)}
                 >
                   <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center shrink-0">
-                      <FileText className="h-4 w-4 text-primary" />
+                    <div className="h-8 w-8 rounded bg-secondary/10 flex items-center justify-center shrink-0">
+                      <FileText className="h-4 w-4 text-foreground" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium truncate">{doc.title}</p>

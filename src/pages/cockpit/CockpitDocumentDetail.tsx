@@ -337,7 +337,7 @@ export default function CockpitDocumentDetail() {
             </Button>
             <div>
               <div className="flex items-center gap-3 mb-1">
-                <DocIcon className="h-5 w-5 text-primary" />
+                <DocIcon className="h-5 w-5 text-foreground" />
                 {isEditing ? (
                   <Input
                     value={editTitle}
@@ -537,7 +537,7 @@ export default function CockpitDocumentDetail() {
                       to={`/cockpit/projects/${linkedProject.id}`}
                       className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
                     >
-                      <Building2 className="h-4 w-4 text-primary" />
+                      <Building2 className="h-4 w-4 text-foreground" />
                       <span className="text-sm font-medium">{linkedProject.name}</span>
                     </Link>
                   ) : (
@@ -570,7 +570,7 @@ export default function CockpitDocumentDetail() {
                       to={`/cockpit/leads/${linkedLead.id}`}
                       className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
                     >
-                      <User className="h-4 w-4 text-primary" />
+                      <User className="h-4 w-4 text-foreground" />
                       <span className="text-sm font-medium">{linkedLead.name}</span>
                       {linkedLead.company && (
                         <span className="text-xs text-muted-foreground">({linkedLead.company})</span>
@@ -689,7 +689,7 @@ export default function CockpitDocumentDetail() {
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-primary" />
+                    <Sparkles className="h-4 w-4 text-foreground" />
                     Métadonnées IA
                   </CardTitle>
                 </CardHeader>

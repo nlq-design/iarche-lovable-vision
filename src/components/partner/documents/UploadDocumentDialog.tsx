@@ -101,7 +101,7 @@ export function UploadDocumentDialog({ children }: UploadDocumentDialogProps) {
           {/* Drag & Drop Zone */}
           <div
             className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-              dragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'
+              dragActive ? 'border-secondary bg-secondary/5' : 'border-muted-foreground/25'
             }`}
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
@@ -110,7 +110,7 @@ export function UploadDocumentDialog({ children }: UploadDocumentDialogProps) {
           >
             {file ? (
               <div className="space-y-2">
-                <FileUp className="h-8 w-8 mx-auto text-primary" />
+                <FileUp className="h-8 w-8 mx-auto text-foreground" />
                 <p className="font-medium">{file.name}</p>
                 <p className="text-sm text-muted-foreground">{formatFileSize(file.size)}</p>
                 <Button
@@ -129,7 +129,7 @@ export function UploadDocumentDialog({ children }: UploadDocumentDialogProps) {
                   Glissez un fichier ici ou
                 </p>
                 <Label htmlFor="file-upload" className="cursor-pointer">
-                  <span className="text-primary hover:underline">parcourez vos fichiers</span>
+                  <span className="text-foreground hover:underline">parcourez vos fichiers</span>
                   <Input
                     id="file-upload"
                     type="file"

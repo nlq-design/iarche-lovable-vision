@@ -58,7 +58,7 @@ const FileField = ({ field, value, onChange, error, colors }: FileFieldProps) =>
     <FieldWrapper field={field} error={error} colors={colors}>
       <div
         className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-          dragOver ? 'border-primary bg-primary/5' : 'border-gray-300'
+          dragOver ? 'border-secondary bg-secondary/5' : 'border-gray-300'
         }`}
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}

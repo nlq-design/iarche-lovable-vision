@@ -61,14 +61,14 @@ export default function PartnerAnnouncements() {
             {announcements.map((announcement) => (
               <Card 
                 key={announcement.id} 
-                className={`hover:shadow-md transition-shadow ${announcement.is_pinned ? 'border-primary/50 bg-primary/5' : ''}`}
+                className={`hover:shadow-md transition-shadow ${announcement.is_pinned ? 'border-secondary/50 bg-secondary/5' : ''}`}
               >
                 <CardContent className="p-6">
                   <div className="space-y-3">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex items-center gap-2">
                         {announcement.is_pinned && (
-                          <Pin className="h-4 w-4 text-primary" />
+                          <Pin className="h-4 w-4 text-foreground" />
                         )}
                         <h3 className="font-semibold text-lg">{announcement.title}</h3>
                       </div>

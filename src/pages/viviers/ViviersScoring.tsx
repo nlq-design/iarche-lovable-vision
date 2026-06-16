@@ -38,7 +38,7 @@ export default function ViviersScoring() {
                   <p className="text-sm text-muted-foreground">En attente</p>
                   <p className="text-2xl font-bold">{stats.pendingScoring.toLocaleString('fr-FR')}</p>
                 </div>
-                <Target className="h-8 w-8 text-accent" />
+                <Target className="h-8 w-8 text-primary" />
               </div>
             </CardContent>
           </Card>
@@ -87,7 +87,7 @@ export default function ViviersScoring() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-accent" />
+              <Sparkles className="h-5 w-5 text-primary" />
               Configuration du scoring
             </CardTitle>
             <CardDescription>

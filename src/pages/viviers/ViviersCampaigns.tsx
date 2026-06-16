@@ -56,7 +56,7 @@ export default function ViviersCampaigns() {
                   <p className="text-sm text-muted-foreground">Emails envoyés</p>
                   <p className="text-2xl font-bold">{stats.totalSent.toLocaleString('fr-FR')}</p>
                 </div>
-                <Send className="h-8 w-8 text-primary" />
+                <Send className="h-8 w-8 text-foreground" />
               </div>
             </CardContent>
           </Card>
@@ -80,7 +80,7 @@ export default function ViviersCampaigns() {
                   <p className="text-2xl font-bold">{stats.totalClicks.toLocaleString('fr-FR')}</p>
                   <p className="text-xs text-muted-foreground">{stats.avgClickRate > 0 ? `${stats.avgClickRate.toFixed(1)}%` : '-'}</p>
                 </div>
-                <MousePointerClick className="h-8 w-8 text-accent" />
+                <MousePointerClick className="h-8 w-8 text-primary" />
               </div>
             </CardContent>
           </Card>

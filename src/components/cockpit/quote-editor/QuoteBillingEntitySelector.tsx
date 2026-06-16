@@ -67,7 +67,7 @@ export const QuoteBillingEntitySelector: React.FC<QuoteBillingEntitySelectorProp
         {/* Selected entity preview */}
         {selectedEntity && (
           <div className="p-3 rounded-lg bg-muted/50 border text-xs space-y-1">
-            <div className="flex items-center gap-1.5 text-primary font-medium">
+            <div className="flex items-center gap-1.5 text-foreground font-medium">
               <Check className="h-3 w-3" />
               {selectedEntity.name}
             </div>

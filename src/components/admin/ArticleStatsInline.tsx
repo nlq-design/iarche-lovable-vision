@@ -132,10 +132,10 @@ export const ArticleStatsInline = ({ articleId, resourceType }: ArticleStatsInli
   }
 
   return (
-    <Card className="mb-6 border-accent/20 bg-accent/5">
+    <Card className="mb-6 border-primary/20 bg-primary/5">
       <CardContent className="pt-6">
         <div className="flex items-center gap-2 mb-3">
-          <TrendingUp className="w-4 h-4 text-accent" />
+          <TrendingUp className="w-4 h-4 text-primary" />
           <span className="text-sm font-semibold">Performance de l'article</span>
         </div>
         <div className="flex flex-wrap gap-3">

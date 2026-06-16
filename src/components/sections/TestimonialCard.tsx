@@ -37,7 +37,7 @@ export function TestimonialCard({
       className={cn(
         "group relative flex h-full flex-col justify-between gap-8 rounded-xl border p-7 md:p-8 transition-shadow",
         isNight
-          ? "border-white/10 bg-gradient-night text-primary-foreground shadow-night"
+          ? "border-white/10 bg-gradient-night text-secondary-foreground shadow-night"
           : "border-border-subtle bg-card text-foreground shadow-soft-sm hover:shadow-soft-md",
         className,
       )}
@@ -46,13 +46,13 @@ export function TestimonialCard({
         aria-hidden
         className={cn(
           "h-8 w-8 shrink-0",
-          isNight ? "text-accent" : "text-accent/80",
+          isNight ? "text-primary" : "text-primary/80",
         )}
       />
       <blockquote
         className={cn(
           "text-lg leading-relaxed md:text-xl",
-          isNight ? "text-primary-foreground/90" : "text-foreground/90",
+          isNight ? "text-secondary-foreground/90" : "text-foreground/90",
         )}
       >
         {quote}
@@ -71,7 +71,7 @@ export function TestimonialCard({
               aria-hidden
               className={cn(
                 "flex h-11 w-11 items-center justify-center rounded-full text-sm font-semibold",
-                isNight ? "bg-white/10 text-primary-foreground" : "bg-secondary text-primary",
+                isNight ? "bg-white/10 text-secondary-foreground" : "bg-muted text-foreground",
               )}
             >
               {author
@@ -88,7 +88,7 @@ export function TestimonialCard({
               <span
                 className={cn(
                   "text-xs",
-                  isNight ? "text-primary-foreground/70" : "text-text-subtle",
+                  isNight ? "text-secondary-foreground/70" : "text-text-subtle",
                 )}
               >
                 {[role, company].filter(Boolean).join(" — ")}
@@ -103,7 +103,7 @@ export function TestimonialCard({
           href={caseStudyHref}
           className={cn(
             "story-link text-sm font-medium",
-            isNight ? "text-accent" : "text-accent",
+            isNight ? "text-primary" : "text-primary",
           )}
         >
           {caseStudyLabel} →

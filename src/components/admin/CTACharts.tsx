@@ -18,7 +18,7 @@ export const CTAClicksBarChart = ({ data }: CTAChartProps) => (
       <YAxis />
       <Tooltip />
       <Legend />
-      <Bar dataKey="clicks" fill="hsl(var(--primary))" />
+      <Bar dataKey="clicks" fill="hsl(var(--secondary))" />
     </BarChart>
   </ResponsiveContainer>
 );
@@ -54,8 +54,8 @@ export const ConversionLineChart = ({ data }: CTAChartProps) => (
       <YAxis />
       <Tooltip />
       <Legend />
-      <Line type="monotone" dataKey="clicks" stroke="hsl(var(--primary))" strokeWidth={2} />
-      <Line type="monotone" dataKey="conversions" stroke="hsl(var(--accent))" strokeWidth={2} />
+      <Line type="monotone" dataKey="clicks" stroke="hsl(var(--secondary))" strokeWidth={2} />
+      <Line type="monotone" dataKey="conversions" stroke="hsl(var(--primary))" strokeWidth={2} />
     </LineChart>
   </ResponsiveContainer>
 );

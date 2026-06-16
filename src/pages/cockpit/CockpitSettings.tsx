@@ -19,7 +19,7 @@ export default function CockpitSettings() {
     <CockpitLayout>
       <div className="space-y-6">
         <div className="flex items-center gap-3">
-          <Settings className="h-6 w-6 text-primary" />
+          <Settings className="h-6 w-6 text-foreground" />
           <div>
             <h1 className="text-2xl font-bold text-foreground">Paramètres</h1>
             <p className="text-muted-foreground">Configuration de votre espace IArche.</p>
@@ -35,9 +35,9 @@ export default function CockpitSettings() {
         <div className="grid gap-4 sm:grid-cols-2">
           {NAV.map((n) => (
             <Link key={n.to} to={n.to} className="block group">
-              <Card className="transition-colors group-hover:border-primary/40">
+              <Card className="transition-colors group-hover:border-secondary/40">
                 <CardHeader className="flex flex-row items-center gap-3 space-y-0">
-                  <n.icon className="h-5 w-5 text-primary" />
+                  <n.icon className="h-5 w-5 text-foreground" />
                   <CardTitle className="text-base">{n.title}</CardTitle>
                 </CardHeader>
                 <CardContent className="text-sm text-muted-foreground">

@@ -502,8 +502,8 @@ export const CompositionPresets = ({
             onClick={() => onSelectPreset(preset)}
             className={`flex items-start gap-3 p-3 rounded-lg border-2 transition-colors text-left ${
               selectedPreset === preset.id 
-                ? 'border-accent bg-accent/10' 
-                : 'border-border hover:border-accent/50'
+                ? 'border-primary bg-primary/10' 
+                : 'border-border hover:border-primary/50'
             }`}
           >
             <div className="text-muted-foreground mt-0.5">
@@ -533,8 +533,8 @@ export const CompositionPresets = ({
                   onClick={() => onSelectPreset(preset)}
                   className={`flex items-start gap-3 p-3 rounded-lg border-2 transition-colors text-left w-full ${
                     selectedPreset === preset.id 
-                      ? 'border-accent bg-accent/10' 
-                      : 'border-border hover:border-accent/50'
+                      ? 'border-primary bg-primary/10' 
+                      : 'border-border hover:border-primary/50'
                   }`}
                 >
                   <div className="text-muted-foreground mt-0.5">

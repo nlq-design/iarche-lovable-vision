@@ -336,7 +336,7 @@ const BrochureSVGExport = ({ brochure, isOpen, onClose }: BrochureSVGExportProps
                     key={i}
                     onClick={() => setCurrentSlide(i)}
                     className={`w-2 h-2 rounded-full transition-colors ${
-                      i === currentSlide ? 'bg-accent' : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                      i === currentSlide ? 'bg-primary' : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
                     }`}
                   />
                 ))}
@@ -400,15 +400,15 @@ const BrochureSVGExport = ({ brochure, isOpen, onClose }: BrochureSVGExportProps
                   <label 
                     htmlFor="pdf-hd-mode" 
                     className={`flex items-start gap-3 p-3 border-2 rounded-lg cursor-pointer transition-colors ${
-                      mode === 'pdf-hd' ? 'border-accent bg-accent/5' : 'border-border hover:border-accent/50'
+                      mode === 'pdf-hd' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
                     }`}
                   >
                     <RadioGroupItem value="pdf-hd" id="pdf-hd-mode" className="mt-0.5" />
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4 text-accent" />
+                        <FileText className="h-4 w-4 text-primary" />
                         <span className="font-medium text-sm">PDF Haute-Fidélité</span>
-                        <span className="text-[10px] bg-accent/20 text-accent px-1.5 py-0.5 rounded-full">
+                        <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full">
                           Recommandé
                         </span>
                       </div>
@@ -422,7 +422,7 @@ const BrochureSVGExport = ({ brochure, isOpen, onClose }: BrochureSVGExportProps
                   <label 
                     htmlFor="multi-png-mode" 
                     className={`flex items-start gap-3 p-3 border-2 rounded-lg cursor-pointer transition-colors ${
-                      mode === 'multi-png' ? 'border-accent bg-accent/5' : 'border-border hover:border-accent/50'
+                      mode === 'multi-png' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
                     }`}
                   >
                     <RadioGroupItem value="multi-png" id="multi-png-mode" className="mt-0.5" />
@@ -441,7 +441,7 @@ const BrochureSVGExport = ({ brochure, isOpen, onClose }: BrochureSVGExportProps
                   <label 
                     htmlFor="single-png-mode" 
                     className={`flex items-start gap-3 p-3 border-2 rounded-lg cursor-pointer transition-colors ${
-                      mode === 'single-png' ? 'border-accent bg-accent/5' : 'border-border hover:border-accent/50'
+                      mode === 'single-png' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
                     }`}
                   >
                     <RadioGroupItem value="single-png" id="single-png-mode" className="mt-0.5" />
@@ -468,7 +468,7 @@ const BrochureSVGExport = ({ brochure, isOpen, onClose }: BrochureSVGExportProps
                     key={index}
                     onClick={() => setCurrentSlide(index)}
                     className={`aspect-[3/4] rounded border-2 overflow-hidden transition-colors ${
-                      index === currentSlide ? 'border-accent' : 'border-border hover:border-accent/50'
+                      index === currentSlide ? 'border-primary' : 'border-border hover:border-primary/50'
                     }`}
                   >
                     <div className="w-full h-full bg-muted/50 flex items-center justify-center">
@@ -482,7 +482,7 @@ const BrochureSVGExport = ({ brochure, isOpen, onClose }: BrochureSVGExportProps
             </div>
 
             {/* Info */}
-            <div className="bg-secondary/50 rounded-lg p-3 space-y-1">
+            <div className="bg-muted/50 rounded-lg p-3 space-y-1">
               <h4 className="font-medium text-xs">
                 {mode === 'pdf-hd' ? 'Avantages PDF HD' : 'Export sélectionné'}
               </h4>
@@ -501,7 +501,7 @@ const BrochureSVGExport = ({ brochure, isOpen, onClose }: BrochureSVGExportProps
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-4 border-t bg-secondary/30">
+          <div className="px-6 py-4 border-t bg-muted/30">
             {isGenerating && (
               <div className="mb-3">
                 <Progress value={progress} className="h-2" />

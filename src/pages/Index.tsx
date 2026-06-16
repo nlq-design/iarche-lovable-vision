@@ -1,14 +1,15 @@
 import HeroSection from "@/components/ui/hero-section";
 import Header from "@/components/layout/Header";
 import AccrocheSection from "@/components/sections/AccrocheSection";
+import ConvictionSection from "@/components/sections/ConvictionSection";
 import ServicesSection from "@/components/sections/ServicesSection";
-import PresentationSection from "@/components/sections/PresentationSection";
 import ExemplesSection from "@/components/sections/ExemplesSection";
 import SolutionsCTASection from "@/components/sections/SolutionsCTASection";
+import LocalSection from "@/components/sections/LocalSection";
 import NewsletterSection from "@/components/sections/NewsletterSection";
 import Footer from "@/components/layout/Footer";
 import BackgroundLayout from "@/components/layouts/BackgroundLayout";
-import GradientDivider from "@/components/ui/GradientDivider";
+import { Section, Signoff } from "@/components/brand";
 import { Helmet } from "react-helmet-async";
 
 const Index = () => {
@@ -110,14 +111,29 @@ const Index = () => {
 
       {/* BackgroundLayout démarre après le header */}
       <BackgroundLayout>
+        {/* Hero — manifeste */}
         <HeroSection />
+        {/* 01 — Le constat */}
         <AccrocheSection />
+        {/* 02 — Notre conviction */}
+        <ConvictionSection />
+        {/* 03 — De l'audit à l'autonomie */}
         <ServicesSection />
-        <GradientDivider height="sm" showLogo={true} />
-        <PresentationSection />
+        {/* 04 — La preuve */}
         <ExemplesSection />
+        {/* 05 — Nos plateformes */}
         <SolutionsCTASection />
+        {/* 06 — Ici, et partout */}
+        <LocalSection />
+        {/* Premier échange */}
         <NewsletterSection />
+        {/* Signoff */}
+        <Section tone="light" spacing="compact" container="default">
+          <Signoff
+            slogan={<>L'IA <em>se construit</em> avec vous.</>}
+            baseline="IArche · Architecte IA · Bayonne, Pays Basque"
+          />
+        </Section>
         <Footer />
       </BackgroundLayout>
     </>

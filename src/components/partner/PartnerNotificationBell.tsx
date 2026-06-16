@@ -52,7 +52,7 @@ function NotificationItem({ notification, onRead }: { notification: PartnerNotif
     <Link
       to={getLink()}
       className={`block p-3 hover:bg-muted/50 transition-colors ${
-        !notification.is_read ? 'bg-primary/5' : ''
+        !notification.is_read ? 'bg-secondary/5' : ''
       }`}
       onClick={() => !notification.is_read && onRead(notification.id)}
     >
@@ -64,7 +64,7 @@ function NotificationItem({ notification, onRead }: { notification: PartnerNotif
               {typeLabels[notification.type] || notification.type}
             </span>
             {!notification.is_read && (
-              <span className="h-2 w-2 rounded-full bg-primary" />
+              <span className="h-2 w-2 rounded-full bg-secondary" />
             )}
           </div>
           <p className="font-medium text-sm truncate">{notification.title}</p>

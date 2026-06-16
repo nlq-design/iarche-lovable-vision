@@ -145,7 +145,7 @@ const AdvancedStats = () => {
     return (
       <AdminLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <Loader2 className="w-8 h-8 animate-spin text-foreground" />
         </div>
       </AdminLayout>
     );
@@ -177,7 +177,7 @@ const AdvancedStats = () => {
                   <p className="text-sm text-muted-foreground">Articles publiés</p>
                   <p className="text-2xl font-bold">{stats?.publishedArticles}</p>
                 </div>
-                <FileText className="h-8 w-8 text-primary opacity-50" />
+                <FileText className="h-8 w-8 text-foreground opacity-50" />
               </div>
             </CardContent>
           </Card>
@@ -203,7 +203,7 @@ const AdvancedStats = () => {
                   <p className="text-2xl font-bold">{stats?.totalComments}</p>
                   <p className="text-xs text-muted-foreground mt-1">{commentApprovalRate}% approuvés</p>
                 </div>
-                <MessageCircle className="h-8 w-8 text-accent opacity-50" />
+                <MessageCircle className="h-8 w-8 text-primary opacity-50" />
               </div>
             </CardContent>
           </Card>

@@ -99,7 +99,7 @@ export function CityAutocomplete({
         placeholder={placeholder}
         className={cn(
           "pl-8 h-9 w-[160px] pr-8",
-          selectedCity && "border-primary/50 bg-primary/5"
+          selectedCity && "border-secondary/50 bg-secondary/5"
         )}
         value={inputValue}
         onChange={handleInputChange}
@@ -166,8 +166,8 @@ export function CityAutocomplete({
       {/* Selected indicator */}
       {selectedCity && (
         <div className="absolute -top-1 -right-1">
-          <div className="h-3 w-3 rounded-full bg-primary flex items-center justify-center">
-            <Check className="h-2 w-2 text-primary-foreground" />
+          <div className="h-3 w-3 rounded-full bg-secondary flex items-center justify-center">
+            <Check className="h-2 w-2 text-secondary-foreground" />
           </div>
         </div>
       )}

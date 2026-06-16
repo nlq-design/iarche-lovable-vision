@@ -3,6 +3,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import BackgroundLayout from "@/components/layouts/BackgroundLayout";
 import GradientDivider from "@/components/ui/GradientDivider";
+import { Section, SectionTitle } from "@/components/brand";
 import {
   Accordion,
   AccordionContent,
@@ -118,21 +119,22 @@ const FAQ = () => {
       <BackgroundLayout>
         <Header />
 
-        <main className="pt-24 pb-16">
-          <section className="container mx-auto px-4 md:px-6 max-w-4xl">
-            <div className="text-center mb-12">
-              <span className="text-xs font-semibold tracking-[0.2em] uppercase text-terracotta mb-3 block">
-                FAQ
-              </span>
-              <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-4 leading-tight">
-                Questions fréquentes
-              </h1>
-              <p className="text-muted-foreground text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
-                Tout ce que vous devez savoir sur l'intelligence artificielle pour votre PME,
-                nos services et notre méthodologie d'accompagnement.
-              </p>
-            </div>
+        <main>
+          {/* Hero — fond sombre charte v4.0 */}
+          <Section tone="dark" spacing="hero">
+            <SectionTitle
+              as="h1"
+              center
+              arc
+              eyebrow="Questions fréquentes"
+              lede="Tout ce que vous devez savoir sur l'intelligence artificielle pour votre PME, nos services et notre méthodologie d'accompagnement."
+            >
+              Questions <em>fréquentes.</em>
+            </SectionTitle>
+          </Section>
 
+          {/* Accordéon — fond clair, lisible */}
+          <Section tone="light" container="narrow">
             <Accordion type="single" collapsible className="space-y-4">
               {faqData.map((item, index) => (
                 <AccordionItem
@@ -149,24 +151,24 @@ const FAQ = () => {
                 </AccordionItem>
               ))}
             </Accordion>
-          </section>
 
-          <GradientDivider />
+            <GradientDivider />
 
-          <section className="container mx-auto px-4 md:px-6 max-w-3xl text-center mt-16">
-            <h2 className="text-2xl font-bold text-foreground mb-4">
-              Vous ne trouvez pas votre réponse ?
-            </h2>
-            <p className="text-muted-foreground mb-8 leading-relaxed">
-              Contactez-nous directement. Nous vous répondrons sous 24 heures ouvrées.
-            </p>
-            <a
-              href="/contact"
-              className="inline-flex items-center justify-center rounded-lg bg-night-blue px-8 py-3 text-sm font-medium text-white shadow-sm hover:bg-night-blue/90 transition-colors"
-            >
-              Nous contacter
-            </a>
-          </section>
+            <div className="max-w-3xl mx-auto text-center mt-16">
+              <h2 className="text-2xl font-bold text-foreground mb-4">
+                Vous ne trouvez pas votre réponse ?
+              </h2>
+              <p className="text-muted-foreground mb-8 leading-relaxed">
+                Contactez-nous directement. Nous vous répondrons sous 24 heures ouvrées.
+              </p>
+              <a
+                href="/contact"
+                className="inline-flex items-center justify-center rounded-lg bg-night-blue px-8 py-3 text-sm font-medium text-white shadow-sm hover:bg-night-blue/90 transition-colors"
+              >
+                Nous contacter
+              </a>
+            </div>
+          </Section>
         </main>
 
         <Footer />

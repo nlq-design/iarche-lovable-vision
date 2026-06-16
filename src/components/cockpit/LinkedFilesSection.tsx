@@ -138,7 +138,7 @@ export function LinkedFilesSection({ entityType, entityId, title = 'Documents' }
                     onClick={() => handleViewFile(file)}
                   >
                     <div className="p-1.5 bg-muted rounded">
-                      <FileIcon className="h-4 w-4 text-primary" />
+                      <FileIcon className="h-4 w-4 text-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{file.original_filename}</p>

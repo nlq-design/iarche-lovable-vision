@@ -7,8 +7,8 @@ import BreadcrumbNav from '@/components/ui/BreadcrumbNav';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
 import ArticlePlaceholder from '@/components/ui/ArticlePlaceholder';
-import GradientTitle from '@/components/ui/GradientTitle';
 import ResourceCard from '@/components/ui/ResourceCard';
+import { Section, SectionTitle } from '@/components/brand';
 import { usePagination } from '@/hooks/usePagination';
 import {
   Pagination,
@@ -136,22 +136,26 @@ const LivresBlancs = () => {
       <Header />
       <BreadcrumbNav />
 
-      <main className="min-h-screen pt-4">
-        <section className="max-w-6xl mx-auto px-6 py-4">
-          {/* En-tête */}
-          <div className="text-center mb-8">
-            <GradientTitle size="lg" className="mb-6 animate-fadeIn [animation-delay:0.1s]">
-              Livres blancs
-            </GradientTitle>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto animate-fadeIn [animation-delay:0.2s]">
-              Guides complets, méthodologies et bonnes pratiques IA
-            </p>
-          </div>
+      <main className="min-h-screen">
+        {/* Hero sombre - charte v4.0 */}
+        <Section tone="dark" spacing="hero">
+          <SectionTitle
+            as="h1"
+            center
+            arc
+            eyebrow="Ressources"
+            lede="Guides complets, méthodologies et bonnes pratiques IA"
+          >
+            Livres <em>blancs</em>
+          </SectionTitle>
+        </Section>
 
+        {/* Corps clair */}
+        <Section tone="light">
           {/* Liste des livres blancs */}
           {loading ? (
             <div className="flex justify-center items-center py-20">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              <Loader2 className="w-8 h-8 animate-spin text-foreground" />
             </div>
           ) : livresBlancs.length === 0 ? (
             <div className="text-center py-20">
@@ -215,7 +219,7 @@ const LivresBlancs = () => {
               )}
             </>
           )}
-        </section>
+        </Section>
       </main>
 
       <Footer />

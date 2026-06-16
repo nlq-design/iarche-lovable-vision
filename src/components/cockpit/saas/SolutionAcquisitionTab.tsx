@@ -88,7 +88,7 @@ export function SolutionAcquisitionTab({ solutionId }: Props) {
                     <span className="text-xs text-muted-foreground">{s.leads} · {qualPct}% qualif.</span>
                   </div>
                   <div className="h-2 bg-muted rounded overflow-hidden">
-                    <div className="h-full bg-primary/70" style={{ width: `${pct}%` }} />
+                    <div className="h-full bg-secondary/70" style={{ width: `${pct}%` }} />
                   </div>
                 </div>
               );
@@ -133,7 +133,7 @@ export function SolutionAcquisitionTab({ solutionId }: Props) {
                 return (
                   <div key={m.month} className="flex-1 flex flex-col items-center gap-1 group">
                     <div className="text-[10px] text-muted-foreground opacity-0 group-hover:opacity-100">{m.leads}</div>
-                    <div className="w-full bg-primary/70 rounded-t" style={{ height: `${pct}%` }} title={`${m.month}: ${m.leads}`} />
+                    <div className="w-full bg-secondary/70 rounded-t" style={{ height: `${pct}%` }} title={`${m.month}: ${m.leads}`} />
                     <div className="text-[10px] text-muted-foreground truncate w-full text-center">{m.month.slice(5)}</div>
                   </div>
                 );

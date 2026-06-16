@@ -142,7 +142,7 @@ export default function SavedTemplatesPanel({
                 <>
                   <button
                     onClick={() => onLoadTemplate(template.template_data)}
-                    className="flex-1 text-left text-sm font-medium truncate hover:text-primary"
+                    className="flex-1 text-left text-sm font-medium truncate hover:text-foreground"
                   >
                     {template.name}
                   </button>

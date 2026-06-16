@@ -86,7 +86,7 @@ export default function PartnerTranscriptions() {
                           </h3>
                           <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
                           {transcription.is_own && (
-                            <Badge className="bg-primary/10 text-primary border-primary/20">
+                            <Badge className="bg-secondary/10 text-foreground border-secondary/20">
                               Créée par vous
                             </Badge>
                           )}

@@ -59,7 +59,7 @@ export function StatCounter({
 
   return (
     <div ref={ref} className={cn("flex flex-col gap-2", className)}>
-      <span className={cn("font-bold tabular-nums text-primary", sizeClass)}>
+      <span className={cn("font-bold tabular-nums text-foreground", sizeClass)}>
         {prefix}
         {formatted}
         {suffix}

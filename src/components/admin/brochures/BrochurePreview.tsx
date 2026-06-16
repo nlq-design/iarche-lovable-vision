@@ -18,8 +18,8 @@ const BrochurePreview = ({ brochure }: BrochurePreviewProps) => {
     (customStyle as any)['--brochure-accent'] = custom_colors.accent;
   }
 
-  const primaryColor = custom_colors?.primary || 'hsl(var(--primary))';
-  const accentColor = custom_colors?.accent || 'hsl(var(--accent))';
+  const primaryColor = custom_colors?.primary || 'hsl(var(--secondary))';
+  const accentColor = custom_colors?.accent || 'hsl(var(--primary))';
 
   return (
     <div className="min-h-screen" style={{ ...customStyle, backgroundColor: '#FAF9F7' }}>
@@ -72,7 +72,7 @@ const BrochurePreview = ({ brochure }: BrochurePreviewProps) => {
 
       {/* Key Points */}
       {sections.keyPoints.enabled && sections.keyPoints.points.length > 0 && (
-        <section className="relative px-6 py-16 bg-secondary/30">
+        <section className="relative px-6 py-16 bg-muted/30">
           <div className="max-w-5xl mx-auto">
             <h2 className="text-3xl font-bold text-center mb-12" style={{ color: primaryColor }}>
               Points clés
@@ -111,7 +111,7 @@ const BrochurePreview = ({ brochure }: BrochurePreviewProps) => {
 
       {/* Pricing */}
       {sections.pricing.enabled && sections.pricing.plans.length > 0 && (
-        <section className="relative px-6 py-16 bg-secondary/30">
+        <section className="relative px-6 py-16 bg-muted/30">
           <div className="max-w-5xl mx-auto">
             <h2 className="text-3xl font-bold text-center mb-12" style={{ color: primaryColor }}>
               {sections.pricing.title}
@@ -150,7 +150,7 @@ const BrochurePreview = ({ brochure }: BrochurePreviewProps) => {
       {/* Testimonial */}
       {sections.testimonial.enabled && sections.testimonial.quote && (
         <section className="relative px-6 py-16 max-w-3xl mx-auto">
-          <div className="bg-primary/5 p-8 rounded-lg border-l-4" style={{ borderColor: accentColor }}>
+          <div className="bg-secondary/5 p-8 rounded-lg border-l-4" style={{ borderColor: accentColor }}>
             <Quote className="h-8 w-8 mb-4" style={{ color: accentColor }} />
             <blockquote className="text-lg italic text-foreground mb-4">
               "{sections.testimonial.quote}"

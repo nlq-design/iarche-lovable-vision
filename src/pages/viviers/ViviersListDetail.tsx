@@ -178,7 +178,7 @@ export default function ViviersListDetail() {
     return (
       <VivierLayout>
         <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <Loader2 className="w-8 h-8 animate-spin text-foreground" />
         </div>
       </VivierLayout>
     );

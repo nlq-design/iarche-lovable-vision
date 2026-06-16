@@ -103,11 +103,11 @@ function FileCard({
   const StatusIcon = status.icon;
 
   return (
-    <Card className="hover:border-primary/50 transition-colors">
+    <Card className="hover:border-secondary/50 transition-colors">
       <CardContent className="p-4">
         <div className="flex items-start gap-4">
           <div className="p-3 bg-muted rounded-lg">
-            <FileIcon className="h-6 w-6 text-primary" />
+            <FileIcon className="h-6 w-6 text-foreground" />
           </div>
           
           <div className="flex-1 min-w-0">
@@ -548,8 +548,8 @@ export default function CockpitUploads() {
                 <div
                   className={cn(
                     "border-2 border-dashed rounded-lg p-8 text-center transition-colors",
-                    dragActive ? "border-primary bg-primary/5" : "border-muted-foreground/25",
-                    "cursor-pointer hover:border-primary/50"
+                    dragActive ? "border-secondary bg-secondary/5" : "border-muted-foreground/25",
+                    "cursor-pointer hover:border-secondary/50"
                   )}
                   onDragEnter={handleDrag}
                   onDragLeave={handleDrag}

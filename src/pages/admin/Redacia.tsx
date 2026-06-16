@@ -375,7 +375,7 @@ const Redacia = () => {
               <select
                 value={resourceType}
                 onChange={(e) => setResourceType(e.target.value as 'article' | 'actualite' | 'cas-client')}
-                className="w-full border border-border rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-background"
+                className="w-full border border-border rounded-lg px-4 py-3 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none bg-background"
               >
                 <option value="article">Article (fond)</option>
                 <option value="actualite">Actualité</option>
@@ -393,7 +393,7 @@ const Redacia = () => {
               <select
                 value={selectedTemplate}
                 onChange={(e) => handleTemplateChange(e.target.value)}
-                className="w-full border border-border rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-background"
+                className="w-full border border-border rounded-lg px-4 py-3 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none bg-background"
               >
                 {PROMPT_TEMPLATES.map(template => (
                   <option key={template.id} value={template.id}>
@@ -417,7 +417,7 @@ const Redacia = () => {
                 onChange={(e) => setBrief(e.target.value)}
                 placeholder="Ex: Écrire un article sur l'implémentation CLM pour les directions juridiques. Points clés : phases du projet, facteurs de succès, rôle du Legal Ops..."
                 rows={selectedTemplate === 'custom' ? 4 : 8}
-                className="w-full border border-border rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-primary outline-none resize-none bg-background"
+                className="w-full border border-border rounded-lg px-4 py-3 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none resize-none bg-background"
               />
             </div>
             
@@ -427,7 +427,7 @@ const Redacia = () => {
                 <select
                   value={tone}
                   onChange={(e) => setTone(e.target.value as any)}
-                  className="w-full border border-border rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-background"
+                  className="w-full border border-border rounded-lg px-4 py-3 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none bg-background"
                 >
                   <option value="expert">Expert (B2B, décideurs)</option>
                   <option value="vulgarise">Vulgarisé (grand public)</option>
@@ -440,7 +440,7 @@ const Redacia = () => {
                 <select
                   value={length}
                   onChange={(e) => setLength(e.target.value as any)}
-                  className="w-full border border-border rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-background"
+                  className="w-full border border-border rounded-lg px-4 py-3 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none bg-background"
                 >
                   <option value="court">Court (~800 mots)</option>
                   <option value="moyen">Moyen (~1500 mots)</option>
@@ -453,7 +453,7 @@ const Redacia = () => {
                 <select
                   value={generationMode}
                   onChange={(e) => setGenerationMode(e.target.value as any)}
-                  className="w-full border border-border rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-background"
+                  className="w-full border border-border rounded-lg px-4 py-3 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none bg-background"
                 >
                   <option value="arena">🏟️ Arena (Claude + GPT)</option>
                   <option value="claude">Claude uniquement</option>

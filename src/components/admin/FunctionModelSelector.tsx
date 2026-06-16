@@ -312,7 +312,7 @@ export default function FunctionModelSelector({ functionName, currentProvider, o
                           onClick={() => setSelectedModel(model.id)}
                           className={`w-full text-left p-3 rounded-md transition-colors ${
                             selectedModel === model.id
-                              ? "bg-primary/10 border border-primary"
+                              ? "bg-secondary/10 border border-secondary"
                               : "hover:bg-muted"
                           }`}
                         >
@@ -321,7 +321,7 @@ export default function FunctionModelSelector({ functionName, currentProvider, o
                               <div className="flex items-center gap-2">
                                 <span className="font-medium truncate">{model.name}</span>
                                 {selectedModel === model.id && (
-                                  <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                                  <Check className="h-4 w-4 text-foreground flex-shrink-0" />
                                 )}
                               </div>
                               <p className="text-xs text-muted-foreground font-mono truncate">

@@ -174,7 +174,7 @@ const FormResponses = () => {
     return (
       <AdminLayout>
         <div className="flex items-center justify-center h-screen">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-secondary" />
         </div>
       </AdminLayout>
     );
@@ -195,7 +195,7 @@ const FormResponses = () => {
             Retour
           </Button>
           <div>
-            <h1 className="text-xl font-bold text-primary">Réponses : {form.title}</h1>
+            <h1 className="text-xl font-bold text-foreground">Réponses : {form.title}</h1>
             <p className="text-sm text-muted-foreground">{responses.length} réponses</p>
           </div>
         </div>
@@ -204,15 +204,15 @@ const FormResponses = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="bg-card border rounded-lg p-4">
             <p className="text-sm text-muted-foreground">Total réponses</p>
-            <p className="text-2xl font-bold text-primary">{form.submissions_count}</p>
+            <p className="text-2xl font-bold text-foreground">{form.submissions_count}</p>
           </div>
           <div className="bg-card border rounded-lg p-4">
             <p className="text-sm text-muted-foreground">Taux de conversion</p>
-            <p className="text-2xl font-bold text-primary">{conversionRate}%</p>
+            <p className="text-2xl font-bold text-foreground">{conversionRate}%</p>
           </div>
           <div className="bg-card border rounded-lg p-4">
             <p className="text-sm text-muted-foreground">Vues totales</p>
-            <p className="text-2xl font-bold text-primary">{form.views_count}</p>
+            <p className="text-2xl font-bold text-foreground">{form.views_count}</p>
           </div>
         </div>
 

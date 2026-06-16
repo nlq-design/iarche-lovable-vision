@@ -96,7 +96,7 @@ export function LeadCard({ lead }: LeadCardProps) {
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="outline">{sourceLabel}</Badge>
                 {isCreator ? (
-                  <Badge className="bg-primary/10 text-primary border-primary/20">
+                  <Badge className="bg-secondary/10 text-foreground border-secondary/20">
                     Créé par vous
                   </Badge>
                 ) : lead.role && (

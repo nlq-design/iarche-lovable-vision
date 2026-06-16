@@ -64,7 +64,7 @@ import { SpeakerMappingChips, parseSpeakerLabels, buildSpeakerMap, extractUnique
 
 function PresenceIcon({ status }: { status: PresenceStatus }) {
   switch (status) {
-    case 'present': return <UserCheck className="h-3.5 w-3.5 text-primary" />;
+    case 'present': return <UserCheck className="h-3.5 w-3.5 text-foreground" />;
     case 'mentioned': return <MessageSquare className="h-3.5 w-3.5 text-accent-foreground" />;
     case 'observer': return <Eye className="h-3.5 w-3.5 text-muted-foreground" />;
   }
@@ -410,7 +410,7 @@ function ParticipantRow({
           <div className="flex items-center gap-1.5">
             <span className="text-sm font-medium truncate">{participant.name}</span>
             {participant.ai_suggested_match && !participant.linked_entity_id && (
-              <Sparkles className="h-3 w-3 text-primary shrink-0" />
+              <Sparkles className="h-3 w-3 text-foreground shrink-0" />
             )}
             {historyCount !== undefined && historyCount > 0 && (
               <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
@@ -433,7 +433,7 @@ function ParticipantRow({
             ) : participant.linked_entity_type && participant.linked_entity_id ? (
               <Badge 
                 variant="secondary" 
-                className={`text-[10px] h-4 ${entityUrl ? 'cursor-pointer hover:bg-primary/20 transition-colors' : ''}`}
+                className={`text-[10px] h-4 ${entityUrl ? 'cursor-pointer hover:bg-secondary/20 transition-colors' : ''}`}
                 onClick={entityUrl ? () => navigate(entityUrl) : undefined}
               >
                 {ENTITY_TYPE_LABELS[participant.linked_entity_type]}
@@ -444,7 +444,7 @@ function ParticipantRow({
               </Badge>
             ) : participant.ai_suggested_match ? (
               <button
-                className="inline-flex items-center gap-1 text-[10px] text-primary hover:text-primary/80 transition-colors"
+                className="inline-flex items-center gap-1 text-[10px] text-foreground hover:text-foreground/80 transition-colors"
                 onClick={() => {
                   const match = participant.ai_suggested_match as { type: string; id: string; name: string; confidence: number };
                   onLink(participant.id, match.type as LinkedEntityType, match.id, match.name);
@@ -750,7 +750,7 @@ export function TranscriptionParticipantsSection({
       <CardHeader className="pb-2">
         <CardTitle className="text-sm flex items-center justify-between">
           <span className="flex items-center gap-2">
-            <Users className="h-4 w-4 text-primary" />
+            <Users className="h-4 w-4 text-foreground" />
             Participants ({participants.length})
           </span>
           <div className="flex items-center gap-2">
@@ -810,7 +810,7 @@ export function TranscriptionParticipantsSection({
 
             {/* AI suggestion hint */}
             {participants.some(p => p.ai_suggested_match && !p.linked_entity_id) && (
-              <p className="text-[10px] text-primary mt-2 flex items-center gap-1">
+              <p className="text-[10px] text-foreground mt-2 flex items-center gap-1">
                 <Sparkles className="h-3 w-3" />
                 Des suggestions IA sont disponibles — cliquez sur <Link2 className="h-3 w-3 inline" /> pour lier
               </p>

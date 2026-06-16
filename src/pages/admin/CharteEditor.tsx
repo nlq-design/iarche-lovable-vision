@@ -501,7 +501,7 @@ const CharteCompletePDF = () => (
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Focus States</Text>
         <Text style={{ fontSize: 8, color: '#4A5568', fontFamily: 'Courier' }}>
-          focus-visible: ring-2 ring-accent (Terracotta) · Pas de outline par défaut
+          focus-visible: ring-2 ring-primary (Terracotta) · Pas de outline par défaut
         </Text>
       </View>
 
@@ -562,7 +562,7 @@ const CharteCompletePDF = () => (
           <Text style={styles.doItem}>• Utiliser les tokens CSS (--primary, --accent...)</Text>
           <Text style={styles.doItem}>• Respecter les zones de protection du logo</Text>
           <Text style={styles.doItem}>• Maintenir contrastes WCAG AA</Text>
-          <Text style={styles.doItem}>• Focus-visible avec ring-accent</Text>
+          <Text style={styles.doItem}>• Focus-visible avec ring-primary</Text>
           <Text style={styles.doItem}>• Export haute résolution (pixelRatio: 3)</Text>
           <Text style={styles.doItem}>• Inclure prefers-reduced-motion</Text>
         </View>
@@ -712,7 +712,7 @@ export default function CharteEditor() {
             <CardContent className="space-y-2">
               {TYPOGRAPHY.slice(0, 5).map((typo) => (
                 <div key={typo.level} className="flex items-center gap-2">
-                  <span className="w-12 text-xs font-mono text-accent">{typo.level}</span>
+                  <span className="w-12 text-xs font-mono text-primary">{typo.level}</span>
                   <span className="text-xs text-muted-foreground">{typo.size}</span>
                 </div>
               ))}
@@ -751,7 +751,7 @@ export default function CharteEditor() {
             <CardContent className="space-y-2">
               {ANIMATIONS.map((anim) => (
                 <div key={anim.name} className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-semibold text-primary">{anim.name}</span>
+                  <span className="text-xs font-mono font-semibold text-foreground">{anim.name}</span>
                   <span className="text-xs text-muted-foreground">{anim.duration}</span>
                 </div>
               ))}
@@ -794,7 +794,7 @@ export default function CharteEditor() {
               <ul className="space-y-1 text-sm text-green-800">
                 <li>• Utiliser les tokens CSS</li>
                 <li>• Respecter les contrastes WCAG AA</li>
-                <li>• Focus-visible avec ring-accent</li>
+                <li>• Focus-visible avec ring-primary</li>
                 <li>• Export haute résolution (pixelRatio: 3)</li>
               </ul>
             </CardContent>

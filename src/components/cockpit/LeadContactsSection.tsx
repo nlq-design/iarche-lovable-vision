@@ -233,7 +233,7 @@ export function LeadContactsSection({ leadId }: LeadContactsSectionProps) {
                       {contact.email && (
                         <a
                           href={`mailto:${contact.email}`}
-                          className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1"
+                          className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
                         >
                           <Mail className="h-3 w-3" />
                           {contact.email}
@@ -242,7 +242,7 @@ export function LeadContactsSection({ leadId }: LeadContactsSectionProps) {
                       {contact.phone && (
                         <a
                           href={`tel:${contact.phone}`}
-                          className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1"
+                          className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
                         >
                           <Phone className="h-3 w-3" />
                           {contact.phone}

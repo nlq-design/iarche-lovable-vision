@@ -109,7 +109,7 @@ export function CampaignScheduler({
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-primary" />
+            <Calendar className="w-5 h-5 text-foreground" />
             <div>
               <CardTitle>Planning d'envoi</CardTitle>
               <CardDescription>

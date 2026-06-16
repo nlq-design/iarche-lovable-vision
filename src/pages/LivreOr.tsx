@@ -4,7 +4,7 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import BreadcrumbNav from '@/components/ui/BreadcrumbNav';
 import { Button } from '@/components/ui/button';
-import LogoArc from '@/components/ui/LogoArc';
+import { Section, SectionTitle } from '@/components/brand';
 import { Star } from 'lucide-react';
 
 const testimonials = [
@@ -142,40 +142,42 @@ const LivreOr = () => {
       <Header />
       <BreadcrumbNav />
       
-      <main className="min-h-screen pt-4">
-        <section className="max-w-6xl mx-auto px-6 py-4">
-          {/* En-tête */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl md:text-5xl font-bold hero-gradient-text mb-2 animate-fadeIn [animation-delay:0.1s]">
-              Livre d'Or
-            </h1>
-            <LogoArc size="md" className="mx-auto mb-6 animate-fadeIn [animation-delay:0.15s]" />
-            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto animate-fadeIn [animation-delay:0.2s]">
-              Ce que nos clients disent de nous
-            </p>
-            
-            {/* Note globale */}
-            <div className="flex items-center justify-center gap-2 mt-4 animate-fadeIn [animation-delay:0.25s]">
-              <div className="flex">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="h-5 w-5 fill-accent text-accent" />
-                ))}
-              </div>
-              <span className="text-lg font-semibold text-foreground">{averageRating}/5</span>
-              <span className="text-muted-foreground">({reviewCount} avis)</span>
-            </div>
-          </div>
+      <main className="min-h-screen">
+        {/* Hero */}
+        <Section tone="dark" spacing="hero">
+          <SectionTitle
+            as="h1"
+            center
+            arc
+            eyebrow="Ils témoignent"
+            lede="Ce que nos clients disent de nous"
+          >
+            Livre <em>d'Or</em>
+          </SectionTitle>
 
-          {/* Témoignages */}
+          {/* Note globale */}
+          <div className="flex items-center justify-center gap-2 mt-8 animate-fadeIn [animation-delay:0.25s]">
+            <div className="flex">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} className="h-5 w-5 fill-[hsl(var(--cream))] text-[hsl(var(--cream))]" />
+              ))}
+            </div>
+            <span className="text-lg font-semibold text-[hsl(var(--cream))]">{averageRating}/5</span>
+            <span className="text-[hsl(var(--cream))]/70">({reviewCount} avis)</span>
+          </div>
+        </Section>
+
+        {/* Témoignages (fond clair pour la lisibilité) */}
+        <Section tone="light" spacing="section">
           <div className="grid gap-6 md:grid-cols-2 max-w-4xl mx-auto animate-fadeIn [animation-delay:0.3s]">
             {testimonials.map((testimonial, index) => (
               <div 
                 key={index}
-                className="bg-secondary/50 rounded-lg p-6 border border-border hover:border-accent/30 transition-colors"
+                className="bg-muted/50 rounded-lg p-6 border border-border hover:border-primary/30 transition-colors"
               >
                 <div className="flex items-center gap-1 mb-3">
                   {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-accent text-accent" />
+                    <Star key={i} className="h-4 w-4 fill-primary text-primary" />
                   ))}
                 </div>
                 <p className="text-foreground mb-4 italic">"{testimonial.content}"</p>
@@ -200,13 +202,13 @@ const LivreOr = () => {
             <a href="mailto:nlq@iarche.fr?subject=Témoignage client">
               <Button 
                 size="lg"
-                className="bg-accent hover:bg-accent/90 text-white px-8 py-6 text-base"
+                className="bg-primary hover:bg-primary/90 text-white px-8 py-6 text-base"
               >
                 Laisser un avis
               </Button>
             </a>
           </div>
-        </section>
+        </Section>
       </main>
       
       <Footer />

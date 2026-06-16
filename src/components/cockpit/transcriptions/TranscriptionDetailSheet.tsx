@@ -206,7 +206,7 @@ export function TranscriptionDetailSheet({
                   </div>
                 ) : (
                   <SheetTitle 
-                    className="text-lg cursor-pointer hover:text-primary transition-colors truncate"
+                    className="text-lg cursor-pointer hover:text-foreground transition-colors truncate"
                     onClick={() => setEditingTitle(true)}
                     title="Cliquer pour modifier"
                   >
@@ -237,7 +237,7 @@ export function TranscriptionDetailSheet({
                     </Popover>
                   ) : (
                     <span 
-                      className="flex items-center gap-1 cursor-pointer hover:text-primary transition-colors"
+                      className="flex items-center gap-1 cursor-pointer hover:text-foreground transition-colors"
                       onClick={() => setEditingDate(true)}
                       title="Cliquer pour modifier la date"
                     >
@@ -383,7 +383,7 @@ export function TranscriptionDetailSheet({
                 ) : (
                   <Card>
                     <CardContent className="p-6 text-center">
-                      <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+                      <Loader2 className="h-12 w-12 animate-spin text-foreground mx-auto mb-4" />
                       <h3 className="font-medium mb-2">Traitement en cours</h3>
                       <p className="text-sm text-muted-foreground">
                         {transcription?.status === 'transcribing' 
@@ -403,10 +403,10 @@ export function TranscriptionDetailSheet({
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full bg-primary/5 border-primary/20 hover:bg-primary/10"
+                className="w-full bg-secondary/5 border-secondary/20 hover:bg-secondary/10"
                 onClick={() => setShowEmailDialog(true)}
               >
-                <Mail className="h-4 w-4 mr-2 text-primary" />
+                <Mail className="h-4 w-4 mr-2 text-foreground" />
                 Rédiger mail de suivi
               </Button>
             )}

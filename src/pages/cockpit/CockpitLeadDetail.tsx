@@ -594,7 +594,7 @@ const CockpitLeadDetail = () => {
                         href={formData.website.startsWith('http') ? formData.website : `https://${formData.website}`} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="text-xs text-primary hover:underline flex items-center gap-1"
+                        className="text-xs text-foreground hover:underline flex items-center gap-1"
                       >
                         <Globe className="h-3 w-3" />
                         Site web

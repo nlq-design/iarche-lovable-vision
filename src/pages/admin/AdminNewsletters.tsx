@@ -152,7 +152,7 @@ const AdminNewsletters = () => {
     return (
       <AdminLayout>
         <div className="min-h-screen flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <Loader2 className="h-8 w-8 animate-spin text-foreground" />
         </div>
       </AdminLayout>
     );
@@ -199,7 +199,7 @@ const AdminNewsletters = () => {
                 <CardTitle className="text-sm font-medium text-muted-foreground">Derniers 7 jours</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-bold text-primary">{stats.last7Days}</p>
+                <p className="text-2xl font-bold text-foreground">{stats.last7Days}</p>
               </CardContent>
             </Card>
             <Card>
@@ -207,7 +207,7 @@ const AdminNewsletters = () => {
                 <CardTitle className="text-sm font-medium text-muted-foreground">Derniers 30 jours</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-bold text-accent">{stats.last30Days}</p>
+                <p className="text-2xl font-bold text-primary">{stats.last30Days}</p>
               </CardContent>
             </Card>
           </div>
@@ -285,7 +285,7 @@ const AdminNewsletters = () => {
                           <td className="px-4 py-3">
                             <a
                               href={`mailto:${subscriber.email}`}
-                              className="flex items-center gap-2 text-sm text-primary hover:underline font-medium"
+                              className="flex items-center gap-2 text-sm text-foreground hover:underline font-medium"
                             >
                               <Mail className="h-4 w-4" />
                               {subscriber.email}

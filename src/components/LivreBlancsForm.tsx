@@ -189,8 +189,8 @@ const LivreBlancsForm = ({ articleId, articleTitle }: LivreBlancsFormProps) => {
   // Si inscription réussie, afficher message de confirmation
   if (isSuccess) {
     return (
-      <div className="bg-primary/5 rounded-lg p-8 border-2 border-primary/20 text-center animate-fadeIn">
-        <CheckCircle className="w-16 h-16 text-primary mx-auto mb-4" />
+      <div className="bg-secondary/5 rounded-lg p-8 border-2 border-secondary/20 text-center animate-fadeIn">
+        <CheckCircle className="w-16 h-16 text-foreground mx-auto mb-4" />
         <h3 className="text-2xl font-bold text-foreground mb-2">
           Merci pour votre inscription !
         </h3>
@@ -206,7 +206,7 @@ const LivreBlancsForm = ({ articleId, articleTitle }: LivreBlancsFormProps) => {
 
   // Formulaire de capture
   return (
-    <div className="bg-secondary/30 rounded-lg p-8 border border-border animate-fadeIn">
+    <div className="bg-muted/30 rounded-lg p-8 border border-border animate-fadeIn">
       <h3 className="text-2xl font-bold text-foreground mb-2">
         Recevoir ce livre blanc
       </h3>

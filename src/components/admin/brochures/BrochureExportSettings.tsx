@@ -36,7 +36,7 @@ const BrochureExportSettings = ({ settings, onChange }: BrochureExportSettingsPr
                 <label 
                   htmlFor="vertical" 
                   className={`flex flex-col items-center gap-2 p-4 border-2 rounded-lg cursor-pointer transition-colors ${
-                    settings.web_scroll === 'vertical' ? 'border-accent bg-accent/5' : 'border-border hover:border-accent/50'
+                    settings.web_scroll === 'vertical' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
                   }`}
                 >
                   <RadioGroupItem value="vertical" id="vertical" className="sr-only" />
@@ -49,7 +49,7 @@ const BrochureExportSettings = ({ settings, onChange }: BrochureExportSettingsPr
                 <label 
                   htmlFor="horizontal" 
                   className={`flex flex-col items-center gap-2 p-4 border-2 rounded-lg cursor-pointer transition-colors ${
-                    settings.web_scroll === 'horizontal' ? 'border-accent bg-accent/5' : 'border-border hover:border-accent/50'
+                    settings.web_scroll === 'horizontal' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
                   }`}
                 >
                   <RadioGroupItem value="horizontal" id="horizontal" className="sr-only" />
@@ -84,7 +84,7 @@ const BrochureExportSettings = ({ settings, onChange }: BrochureExportSettingsPr
                 <label 
                   htmlFor="portrait" 
                   className={`flex flex-col items-center gap-2 p-4 border-2 rounded-lg cursor-pointer transition-colors ${
-                    settings.pdf_orientation === 'portrait' ? 'border-accent bg-accent/5' : 'border-border hover:border-accent/50'
+                    settings.pdf_orientation === 'portrait' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
                   }`}
                 >
                   <RadioGroupItem value="portrait" id="portrait" className="sr-only" />
@@ -95,7 +95,7 @@ const BrochureExportSettings = ({ settings, onChange }: BrochureExportSettingsPr
                 <label 
                   htmlFor="landscape" 
                   className={`flex flex-col items-center gap-2 p-4 border-2 rounded-lg cursor-pointer transition-colors ${
-                    settings.pdf_orientation === 'landscape' ? 'border-accent bg-accent/5' : 'border-border hover:border-accent/50'
+                    settings.pdf_orientation === 'landscape' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
                   }`}
                 >
                   <RadioGroupItem value="landscape" id="landscape" className="sr-only" />
@@ -123,7 +123,7 @@ const BrochureExportSettings = ({ settings, onChange }: BrochureExportSettingsPr
       </Card>
 
       {/* Preview info */}
-      <div className="bg-secondary/50 rounded-lg p-4 text-sm">
+      <div className="bg-muted/50 rounded-lg p-4 text-sm">
         <p className="text-muted-foreground">
           <strong className="text-foreground">Aperçu web</strong> : {settings.web_scroll === 'vertical' ? 'Défilement vertical classique' : 'Navigation horizontale par slides'}
         </p>

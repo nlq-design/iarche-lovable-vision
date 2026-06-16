@@ -223,7 +223,7 @@ const RedacNews = () => {
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
                 placeholder="Ex: Nouveautés IA de mars 2025"
-                className="w-full border border-border rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-background"
+                className="w-full border border-border rounded-lg px-4 py-3 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none bg-background"
               />
             </div>
             
@@ -247,7 +247,7 @@ const RedacNews = () => {
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as 'draft' | 'ready')}
-                className="w-full border border-border rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-background"
+                className="w-full border border-border rounded-lg px-4 py-3 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none bg-background"
               >
                 <option value="draft">Brouillon</option>
                 <option value="ready">Prête à envoyer</option>
@@ -258,7 +258,7 @@ const RedacNews = () => {
               <button
                 onClick={handleSave}
                 disabled={isSaving || !subject.trim() || !content.trim()}
-                className="flex-1 flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 flex items-center justify-center gap-2 bg-secondary text-secondary-foreground px-6 py-3 rounded-lg hover:bg-secondary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSaving ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -286,7 +286,7 @@ const RedacNews = () => {
           
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              <Loader2 className="w-8 h-8 animate-spin text-foreground" />
             </div>
           ) : newsletters.length === 0 ? (
             <p className="text-center text-muted-foreground py-12">

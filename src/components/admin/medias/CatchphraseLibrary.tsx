@@ -108,7 +108,7 @@ export default function CatchphraseLibrary({ onSelect, compact = false }: Catchp
     return (
       <div className="space-y-2">
         <Label className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-accent" />
+          <Sparkles className="h-4 w-4 text-primary" />
           Phrases d'accroche
         </Label>
         <ScrollArea className="h-[200px] rounded-md border p-2">
@@ -132,7 +132,7 @@ export default function CatchphraseLibrary({ onSelect, compact = false }: Catchp
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <Label className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-accent" />
+          <Sparkles className="h-4 w-4 text-primary" />
           Bibliothèque d'accroches
         </Label>
         <Badge variant="secondary">{filteredPhrases.length} phrases</Badge>

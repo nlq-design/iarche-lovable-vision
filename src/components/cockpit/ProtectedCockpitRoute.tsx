@@ -66,7 +66,7 @@ const ProtectedCockpitRoute = ({ children }: ProtectedCockpitRouteProps) => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-4">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
+          <Loader2 className="h-12 w-12 animate-spin text-foreground mx-auto" />
           <p className="text-muted-foreground">Vérification des accès...</p>
         </div>
       </div>
@@ -133,7 +133,7 @@ const ProtectedCockpitRoute = ({ children }: ProtectedCockpitRouteProps) => {
         <div className="min-h-screen flex items-center justify-center bg-background p-4">
           <Card className="max-w-md w-full">
             <CardHeader className="text-center">
-              <ShieldAlert className="h-12 w-12 text-primary mx-auto mb-2" />
+              <ShieldAlert className="h-12 w-12 text-foreground mx-auto mb-2" />
               <CardTitle>Vérification requise</CardTitle>
               <CardDescription>
                 Une vérification de sécurité supplémentaire est nécessaire pour accéder au Cockpit Commercial.

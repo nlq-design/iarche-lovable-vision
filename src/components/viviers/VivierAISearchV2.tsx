@@ -478,11 +478,11 @@ export function VivierAISearchV2({ onFiltersApply, onResultsFound, currentFilter
   };
 
   return (
-    <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-transparent to-transparent">
+    <Card className="border-secondary/20 bg-gradient-to-br from-secondary/5 via-transparent to-transparent">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-lg">
-            <Sparkles className="w-5 h-5 text-primary" />
+            <Sparkles className="w-5 h-5 text-foreground" />
             Recherche IA
             <Badge variant="outline" className="ml-2 text-xs">V3</Badge>
           </div>
@@ -588,7 +588,7 @@ export function VivierAISearchV2({ onFiltersApply, onResultsFound, currentFilter
                   onClick={() => setQuery(s.query)}
                   className={`text-xs px-2 py-1 rounded-full border transition-colors flex items-center gap-1 ${
                     s.type === 'refine' 
-                      ? 'border-primary/30 text-primary hover:bg-primary/10' 
+                      ? 'border-secondary/30 text-foreground hover:bg-secondary/10' 
                       : 'border-muted text-muted-foreground hover:bg-muted'
                   }`}
                 >
@@ -609,7 +609,7 @@ export function VivierAISearchV2({ onFiltersApply, onResultsFound, currentFilter
                 <button
                   key={i}
                   onClick={() => setQuery(example)}
-                  className="text-xs text-primary hover:underline"
+                  className="text-xs text-foreground hover:underline"
                 >
                   {example}
                 </button>
@@ -649,7 +649,7 @@ export function VivierAISearchV2({ onFiltersApply, onResultsFound, currentFilter
             {/* Stats cards */}
             <div className="grid grid-cols-5 gap-2">
               <div className="bg-muted/50 rounded-lg p-2 text-center">
-                <div className="text-lg font-bold text-primary">{result.totalCount.toLocaleString('fr-FR')}</div>
+                <div className="text-lg font-bold text-foreground">{result.totalCount.toLocaleString('fr-FR')}</div>
                 <div className="text-xs text-muted-foreground">Total</div>
               </div>
               <div className="bg-muted/50 rounded-lg p-2 text-center">
@@ -683,7 +683,7 @@ export function VivierAISearchV2({ onFiltersApply, onResultsFound, currentFilter
             <div className="flex items-center justify-between bg-muted/50 rounded-lg p-3">
               <div className="text-sm">
                 {selectedLeads.size > 0 ? (
-                  <span><span className="font-semibold text-primary">{selectedLeads.size}</span> sélectionnés</span>
+                  <span><span className="font-semibold text-foreground">{selectedLeads.size}</span> sélectionnés</span>
                 ) : (
                   <span>Sélectionnez des leads ou exportez tout</span>
                 )}
@@ -731,7 +731,7 @@ export function VivierAISearchV2({ onFiltersApply, onResultsFound, currentFilter
                             toggleSelectAll();
                           }
                         }}
-                        className="text-primary hover:underline cursor-pointer"
+                        className="text-foreground hover:underline cursor-pointer"
                       >
                         {selectedLeads.size === result.results.length ? 'Tout désélectionner' : 'Tout sélectionner'}
                       </span>
@@ -746,7 +746,7 @@ export function VivierAISearchV2({ onFiltersApply, onResultsFound, currentFilter
                         <div 
                           key={lead.id} 
                           className={`text-xs p-3 rounded border bg-background flex items-start gap-3 cursor-pointer transition-colors ${
-                            selectedLeads.has(lead.id) ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
+                            selectedLeads.has(lead.id) ? 'border-secondary bg-secondary/5' : 'hover:bg-muted/50'
                           }`}
                           onClick={() => toggleLead(lead.id)}
                         >

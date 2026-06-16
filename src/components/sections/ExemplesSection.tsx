@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { NavLink } from '../NavLink';
 import { Loader2 } from 'lucide-react';
-import GradientLink from '../ui/GradientLink';
 import { useCTATracking } from '@/hooks/useCTATracking';
+import { Section, SectionTitle, GlassCard, Reveal } from '@/components/brand';
 
 interface CasClient {
   id: string;
@@ -40,50 +40,49 @@ const ExemplesSection = () => {
       setLoading(false);
     }
   };
+
+  if (!loading && casClients.length === 0) return null;
+
   return (
-    <section id="exemples" className="py-8 md:py-12 bg-muted">
-      <div className="container mx-auto px-6">
-        <div className="rounded-lg p-8 md:p-10">
-            <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide text-center mb-8 md:mb-12">
-              Nos derniers projets
-            </h2>
-            {loading ? (
-              <div className="flex justify-center items-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : (
-              <div className="max-w-4xl mx-auto space-y-3 invisible animate-fadeIn [animation-delay:0.2s]">
-                {casClients.map((casClient, index) => (
-                  <NavLink key={casClient.id} to={`/cas-clients/${casClient.slug}`}>
-                    <div className="relative rounded-lg p-[2px] bg-gradient-to-r from-primary via-accent to-primary bg-[length:200%_100%] hover:bg-[length:100%_100%] transition-all duration-500 cursor-pointer group">
-                      <div 
-                        className="bg-background rounded-lg p-3 h-full"
-                      >
-                        <div className="flex flex-col gap-1.5">
-                          <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
-                            {casClient.title}
-                          </h3>
-                          <p className="text-sm text-muted-foreground leading-relaxed">
-                            {casClient.excerpt}
-                          </p>
-                          <div>
-                            <GradientLink 
-                              href={`/cas-clients/${casClient.slug}`}
-                              onClick={() => trackCTAClick('voir_projet', 'exemples_section', casClient.slug)}
-                            >
-                              Voir le projet
-                            </GradientLink>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </NavLink>
-                ))}
-              </div>
-            )}
-        </div>
+    <Section tone="dark" id="exemples">
+      <div className="flex flex-col items-center text-center">
+        <SectionTitle
+          center
+          eyebrow="04 — La preuve"
+          lede="Pas de promesses en l'air : des cas réels, sur le terrain, chez des dirigeants comme vous."
+        >
+          La preuve par <em>le terrain.</em>
+        </SectionTitle>
       </div>
-    </section>
+
+      {loading ? (
+        <div className="flex justify-center items-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-[hsl(var(--accent-soft))]" />
+        </div>
+      ) : (
+        <div className="mt-12 grid gap-[18px] grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto">
+          {casClients.map((casClient, index) => (
+            <Reveal key={casClient.id} delay={index * 80}>
+              <NavLink to={`/cas-clients/${casClient.slug}`}>
+                <GlassCard num={String(index + 1).padStart(2, '0')} className="h-full cursor-pointer">
+                  <h3>{casClient.title}</h3>
+                  <p>{casClient.excerpt}</p>
+                  <div className="mt-4">
+                    <span
+                      onClick={(e) => { e.preventDefault(); trackCTAClick('voir_projet', 'exemples_section', casClient.slug); }}
+                      className="inline-flex items-center gap-2 text-sm font-medium text-[hsl(var(--accent-soft))] group-hover:text-[hsl(var(--cream))]"
+                    >
+                      Voir le projet
+                      <span aria-hidden="true">→</span>
+                    </span>
+                  </div>
+                </GlassCard>
+              </NavLink>
+            </Reveal>
+          ))}
+        </div>
+      )}
+    </Section>
   );
 };
 

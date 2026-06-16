@@ -140,7 +140,7 @@ export function InterviewModeDialog({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <MessageCircle className="h-5 w-5 text-primary" />
+            <MessageCircle className="h-5 w-5 text-foreground" />
             Enrichir {entityType}
           </DialogTitle>
           <DialogDescription>
@@ -152,7 +152,7 @@ export function InterviewModeDialog({
         <div className="space-y-2">
           <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
             <div
-              className="bg-primary h-full transition-all duration-300"
+              className="bg-secondary h-full transition-all duration-300"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
@@ -166,7 +166,7 @@ export function InterviewModeDialog({
               className={cn(
                 'p-3 rounded-lg',
                 msg.role === 'user'
-                  ? 'bg-primary text-primary-foreground ml-auto max-w-[80%]'
+                  ? 'bg-secondary text-secondary-foreground ml-auto max-w-[80%]'
                   : 'bg-muted text-foreground max-w-[80%]'
               )}
             >
@@ -182,8 +182,8 @@ export function InterviewModeDialog({
           )}
 
           {interviewContext.completed && (
-            <div className="p-3 rounded-lg bg-accent/50 border border-border flex items-start gap-2">
-              <AlertCircle className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+            <div className="p-3 rounded-lg bg-primary/50 border border-border flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 text-foreground mt-0.5 shrink-0" />
               <p className="text-sm text-foreground">
                 Enrichissement terminé ! Les données ont été mises à jour.
               </p>

@@ -37,7 +37,7 @@ export function AIFeedbackButtons({
       <Button
         variant="ghost"
         size={size === 'sm' ? 'icon' : 'default'}
-        className="h-6 w-6 text-muted-foreground hover:text-primary"
+        className="h-6 w-6 text-muted-foreground hover:text-foreground"
         onClick={(e) => { e.stopPropagation(); handleClick(1); }}
         disabled={submitFeedback.isPending}
       >

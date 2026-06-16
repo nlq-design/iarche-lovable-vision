@@ -208,7 +208,7 @@ const AdminAtelierInscriptions = () => {
     return (
       <AdminLayout>
         <div className="min-h-screen flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <Loader2 className="h-8 w-8 animate-spin text-foreground" />
         </div>
       </AdminLayout>
     );
@@ -248,7 +248,7 @@ const AdminAtelierInscriptions = () => {
                 <CardTitle className="text-sm font-medium text-muted-foreground">Ateliers actifs</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-bold text-primary">{uniqueAteliers}</p>
+                <p className="text-2xl font-bold text-foreground">{uniqueAteliers}</p>
               </CardContent>
             </Card>
             <Card>
@@ -256,7 +256,7 @@ const AdminAtelierInscriptions = () => {
                 <CardTitle className="text-sm font-medium text-muted-foreground">Dernières 7 jours</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-bold text-accent">
+                <p className="text-2xl font-bold text-primary">
                   {inscriptions.filter(i => 
                     new Date(i.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
                   ).length}
@@ -372,7 +372,7 @@ const AdminAtelierInscriptions = () => {
                           <td className="px-4 py-3">
                             <a
                               href={`mailto:${inscription.lead.email}`}
-                              className="flex items-center gap-2 text-sm text-primary hover:underline"
+                              className="flex items-center gap-2 text-sm text-foreground hover:underline"
                             >
                               <Mail className="h-4 w-4" />
                               {inscription.lead.email}

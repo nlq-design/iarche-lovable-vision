@@ -1230,10 +1230,10 @@ export default function ViviersImport() {
         {/* Mapping Preview Step */}
         {mappingPreview && !parsedData ? (
           <div className="space-y-6">
-            <Card className="border-primary/30 bg-primary/5">
+            <Card className="border-secondary/30 bg-secondary/5">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <FileSpreadsheet className="w-5 h-5 text-primary" />
+                  <FileSpreadsheet className="w-5 h-5 text-foreground" />
                   Prévisualisation du Mapping
                 </CardTitle>
                 <CardDescription>
@@ -1295,7 +1295,7 @@ export default function ViviersImport() {
                               </span>
                             )}
                             {m.manualColumn && (
-                              <span className="text-xs text-primary mt-1 block">
+                              <span className="text-xs text-foreground mt-1 block">
                                 Manuel
                               </span>
                             )}
@@ -1421,8 +1421,8 @@ export default function ViviersImport() {
               <Card>
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-full bg-primary/10">
-                      <CheckCircle2 className="w-5 h-5 text-primary" />
+                    <div className="p-2 rounded-full bg-secondary/10">
+                      <CheckCircle2 className="w-5 h-5 text-foreground" />
                     </div>
                     <div>
                       <p className="text-2xl font-bold">{selectedCount}</p>
@@ -1557,7 +1557,7 @@ export default function ViviersImport() {
                   </div>
                   <div className="h-2 bg-muted rounded-full overflow-hidden">
                     <div 
-                      className="h-full bg-primary transition-all duration-300 ease-out"
+                      className="h-full bg-secondary transition-all duration-300 ease-out"
                       style={{ width: `${importProgress}%` }}
                     />
                   </div>
@@ -1608,7 +1608,7 @@ export default function ViviersImport() {
                 <CardContent>
                   <div 
                     className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors cursor-pointer ${
-                      dragActive ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50 hover:bg-muted/30'
+                      dragActive ? 'border-secondary bg-secondary/5' : 'border-border hover:border-secondary/50 hover:bg-muted/30'
                     }`}
                     onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
                     onDragLeave={() => setDragActive(false)}
@@ -1625,7 +1625,7 @@ export default function ViviersImport() {
                     />
                     {isAnalyzing ? (
                       <div className="space-y-4">
-                        <Loader2 className="w-12 h-12 text-primary mx-auto animate-spin" />
+                        <Loader2 className="w-12 h-12 text-foreground mx-auto animate-spin" />
                         <h3 className="text-lg font-semibold">
                           {isProcessingQueue ? 'Lecture des fichiers...' : 'Analyse des doublons...'}
                         </h3>
@@ -1639,7 +1639,7 @@ export default function ViviersImport() {
                                   <div className="w-4 h-4 rounded-full border-2 border-muted-foreground/30" />
                                 )}
                                 {item.status === 'processing' && (
-                                  <Loader2 className="w-4 h-4 text-primary animate-spin" />
+                                  <Loader2 className="w-4 h-4 text-foreground animate-spin" />
                                 )}
                                 {item.status === 'done' && (
                                   <CheckCircle2 className="w-4 h-4 text-green-500" />

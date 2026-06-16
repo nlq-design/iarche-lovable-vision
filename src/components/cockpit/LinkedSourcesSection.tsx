@@ -277,11 +277,11 @@ export function LinkedSourcesSection({
                   className="flex items-center gap-3 p-2 border rounded-lg hover:bg-muted/30 transition-colors group"
                 >
                   <div className="p-1.5 bg-muted rounded">
-                    <Icon className="h-4 w-4 text-primary" />
+                    <Icon className="h-4 w-4 text-foreground" />
                   </div>
                   <div className="flex-1 min-w-0">
                     {linkPath ? (
-                      <Link to={linkPath} className="text-sm font-medium hover:text-primary truncate block">
+                      <Link to={linkPath} className="text-sm font-medium hover:text-foreground truncate block">
                         {source.name}
                       </Link>
                     ) : (

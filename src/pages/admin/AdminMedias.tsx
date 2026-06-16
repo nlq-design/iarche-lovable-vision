@@ -279,7 +279,7 @@ const AdminMedias = () => {
                 return (
                   <Card 
                     key={template.id} 
-                    className="group cursor-pointer border-2 border-transparent hover:border-accent/50 transition-all duration-200 hover:shadow-lg"
+                    className="group cursor-pointer border-2 border-transparent hover:border-primary/50 transition-all duration-200 hover:shadow-lg"
                     onClick={() => navigate(template.route)}
                   >
                     <CardHeader className="pb-3">
@@ -328,7 +328,7 @@ const AdminMedias = () => {
                 {carouselTemplates.map((template) => (
                   <Card 
                     key={template.id} 
-                    className="group cursor-pointer border-2 border-transparent hover:border-accent/50 transition-all duration-200 hover:shadow-lg" 
+                    className="group cursor-pointer border-2 border-transparent hover:border-primary/50 transition-all duration-200 hover:shadow-lg" 
                     onClick={() => handleSelectTemplate('carousel', template.id)}
                   >
                     <CardHeader className="pb-3">
@@ -353,7 +353,7 @@ const AdminMedias = () => {
                 {presentationTemplates.map((template) => (
                   <Card 
                     key={template.id} 
-                    className="group cursor-pointer border-2 border-transparent hover:border-accent/50 transition-all duration-200 hover:shadow-lg" 
+                    className="group cursor-pointer border-2 border-transparent hover:border-primary/50 transition-all duration-200 hover:shadow-lg" 
                     onClick={() => handleSelectTemplate('presentation', template.id)}
                   >
                     <CardHeader className="pb-3">
@@ -378,7 +378,7 @@ const AdminMedias = () => {
                 {wordTemplates.map((template) => (
                   <Card 
                     key={template.id} 
-                    className="group cursor-pointer border-2 border-transparent hover:border-accent/50 transition-all duration-200 hover:shadow-lg" 
+                    className="group cursor-pointer border-2 border-transparent hover:border-primary/50 transition-all duration-200 hover:shadow-lg" 
                     onClick={() => handleSelectTemplate('word', template.id)}
                   >
                     <CardHeader className="pb-3">
@@ -409,7 +409,7 @@ const AdminMedias = () => {
                 return (
                   <Card 
                     key={template.id} 
-                    className="group cursor-pointer border-2 border-transparent hover:border-accent/50 transition-all duration-200 hover:shadow-lg" 
+                    className="group cursor-pointer border-2 border-transparent hover:border-primary/50 transition-all duration-200 hover:shadow-lg" 
                     onClick={() => navigate(template.route)}
                   >
                     <CardHeader className="pb-3">

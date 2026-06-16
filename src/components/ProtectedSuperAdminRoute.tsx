@@ -29,7 +29,7 @@ const ProtectedSuperAdminRoute = ({ children }: ProtectedSuperAdminRouteProps) =
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted/30">
         <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
+          <Loader2 className="w-8 h-8 animate-spin text-foreground mx-auto mb-4" />
           <p className="text-sm text-muted-foreground">Vérification des accès super-admin...</p>
         </div>
       </div>

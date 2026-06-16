@@ -261,7 +261,7 @@ function PromptAccordions({ masterPrompt, onMasterChange }: PromptAccordionsProp
             <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <Bot className="h-5 w-5 text-primary" />
+                  <Bot className="h-5 w-5 text-foreground" />
                   <div>
                     <CardTitle className="text-base">Prompt Système (master-agent)</CardTitle>
                     <CardDescription>Identité, règles d'exécution, formats de réponse</CardDescription>
@@ -1115,12 +1115,12 @@ function DynamicModulesOverview() {
   return (
     <div className="space-y-4">
       {/* Agent Overview Stats - Dynamic */}
-      <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+      <Card className="border-secondary/20 bg-gradient-to-br from-secondary/5 to-transparent">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Bot className="h-6 w-6 text-primary" />
+              <div className="p-2 rounded-lg bg-secondary/10">
+                <Bot className="h-6 w-6 text-foreground" />
               </div>
               <div>
                 <CardTitle>Agent IA IArche v5.3 - Vue d'ensemble</CardTitle>
@@ -1137,7 +1137,7 @@ function DynamicModulesOverview() {
                 href="/docs/CDC_AI_AGENT_REFONTE_V3.md" 
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
                 <FileCode className="h-3 w-3" />
                 CDC v3.0
@@ -1149,7 +1149,7 @@ function DynamicModulesOverview() {
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
             <div className="p-3 rounded-lg bg-background border text-center">
-              <p className="text-2xl font-bold text-primary">{stats.totalTools}</p>
+              <p className="text-2xl font-bold text-foreground">{stats.totalTools}</p>
               <p className="text-xs text-muted-foreground">Outils Agent</p>
             </div>
             <div className="p-3 rounded-lg bg-background border text-center">
@@ -1568,7 +1568,7 @@ function DynamicModulesOverview() {
                 key={module.name}
                 className="p-3 rounded-lg bg-muted/50 border flex items-start gap-3"
               >
-                <div className="p-1.5 rounded bg-primary/10 text-primary">
+                <div className="p-1.5 rounded bg-secondary/10 text-foreground">
                   {getModuleIcon(module.path)}
                 </div>
                 <div>
@@ -1593,7 +1593,7 @@ function DynamicModulesOverview() {
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {stats.aiTablesList.map((table) => (
               <div key={table.name} className="p-3 rounded-lg bg-muted/30 border">
-                <code className="text-xs font-mono text-primary">{table.name}</code>
+                <code className="text-xs font-mono text-foreground">{table.name}</code>
                 <p className="text-xs text-muted-foreground mt-1">{table.description}</p>
               </div>
             ))}
@@ -2229,7 +2229,7 @@ export default function AdminAIPrompts() {
       <div className="space-y-6 p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Bot className="h-8 w-8 text-primary" />
+            <Bot className="h-8 w-8 text-foreground" />
             <div>
               <h1 className="text-2xl font-bold">Assistant IA</h1>
               <p className="text-muted-foreground">

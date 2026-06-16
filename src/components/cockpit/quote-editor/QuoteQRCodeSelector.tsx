@@ -212,7 +212,7 @@ export const QuoteQRCodeSelector: React.FC<QuoteQRCodeSelectorProps> = ({
           <TabsContent value="library" className="mt-3">
             {isLoading ? (
               <div className="flex justify-center py-8">
-                <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
+                <div className="animate-spin h-6 w-6 border-2 border-secondary border-t-transparent rounded-full" />
               </div>
             ) : savedQRCodes.length === 0 ? (
               <div className="text-center py-6 text-sm text-muted-foreground">
@@ -236,8 +236,8 @@ export const QuoteQRCodeSelector: React.FC<QuoteQRCodeSelectorProps> = ({
                     <button
                       key={qr.name}
                       onClick={() => handleSelectFromLibrary(qr.url)}
-                      className={`relative p-2 rounded-lg border bg-white hover:border-primary transition-colors ${
-                        selectedQR === qr.url ? 'border-primary ring-2 ring-primary/20' : ''
+                      className={`relative p-2 rounded-lg border bg-white hover:border-secondary transition-colors ${
+                        selectedQR === qr.url ? 'border-secondary ring-2 ring-secondary/20' : ''
                       }`}
                     >
                       <img
@@ -246,7 +246,7 @@ export const QuoteQRCodeSelector: React.FC<QuoteQRCodeSelectorProps> = ({
                         className="w-full aspect-square object-contain"
                       />
                       {selectedQR === qr.url && (
-                        <div className="absolute top-1 right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
+                        <div className="absolute top-1 right-1 w-4 h-4 bg-secondary rounded-full flex items-center justify-center">
                           <Check className="h-3 w-3 text-white" />
                         </div>
                       )}

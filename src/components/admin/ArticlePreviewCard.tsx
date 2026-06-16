@@ -32,7 +32,7 @@ const ArticlePreviewCard = ({ article, onPreview, onSave }: Props) => {
         </button>
         <button
           onClick={onSave}
-          className="flex-1 flex items-center justify-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors text-sm"
+          className="flex-1 flex items-center justify-center gap-2 bg-secondary text-secondary-foreground px-4 py-2 rounded-lg hover:bg-secondary/90 transition-colors text-sm"
         >
           <Save className="w-4 h-4" />
           Sauvegarder

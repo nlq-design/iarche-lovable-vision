@@ -393,7 +393,7 @@ export default function AdminAPILibrary() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Server className="h-6 w-6 text-primary" />
+              <Server className="h-6 w-6 text-foreground" />
               Bibliothèque API
             </h1>
             <p className="text-muted-foreground">
@@ -439,7 +439,7 @@ export default function AdminAPILibrary() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <Shield className="h-5 w-5 text-primary" />
+                  <Shield className="h-5 w-5 text-foreground" />
                   Providers IA - Chaîne de Fallback
                 </CardTitle>
                 <CardDescription>
@@ -457,7 +457,7 @@ export default function AdminAPILibrary() {
                         key={provider.id} 
                         className={`border-l-4 transition-all ${
                           provider.is_active 
-                            ? provider.is_default ? 'border-l-primary bg-primary/5' : 'border-l-green-500' 
+                            ? provider.is_default ? 'border-l-primary bg-secondary/5' : 'border-l-green-500' 
                             : 'border-l-muted opacity-60'
                         }`}
                       >
@@ -497,7 +497,7 @@ export default function AdminAPILibrary() {
                                 <div className="flex items-center gap-2">
                                   <span className="font-semibold">{provider.display_name}</span>
                                   {provider.is_default && (
-                                    <Badge className="bg-primary/10 text-primary text-xs">
+                                    <Badge className="bg-secondary/10 text-foreground text-xs">
                                       Par défaut
                                     </Badge>
                                   )}
@@ -703,7 +703,7 @@ export default function AdminAPILibrary() {
                             </TableCell>
                             <TableCell className="text-right">
                               {model.is_default_for_category ? (
-                                <Badge className="bg-primary/10 text-primary">
+                                <Badge className="bg-secondary/10 text-foreground">
                                   <CheckCircle2 className="h-3 w-3 mr-1" />
                                   Défaut
                                 </Badge>
@@ -740,8 +740,8 @@ export default function AdminAPILibrary() {
               <Card>
                 <CardContent className="pt-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <Code className="h-5 w-5 text-primary" />
+                    <div className="p-2 rounded-lg bg-secondary/10">
+                      <Code className="h-5 w-5 text-foreground" />
                     </div>
                     <div>
                       <p className="text-2xl font-bold">{functionStats.total}</p>
@@ -827,7 +827,7 @@ export default function AdminAPILibrary() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <Code className="h-5 w-5 text-primary" />
+                  <Code className="h-5 w-5 text-foreground" />
                   Mapping Fonction → Provider
                 </CardTitle>
                 <CardDescription>
@@ -1049,14 +1049,14 @@ export default function AdminAPILibrary() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5 text-primary" />
+                  <BarChart3 className="h-5 w-5 text-foreground" />
                   Résumé (7 derniers jours)
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-4 gap-6">
                   <div className="text-center">
-                    <p className="text-3xl font-bold text-primary">
+                    <p className="text-3xl font-bold text-foreground">
                       {usageMetrics?.length || 0}
                     </p>
                     <p className="text-sm text-muted-foreground">Requêtes totales</p>

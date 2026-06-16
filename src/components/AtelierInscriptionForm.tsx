@@ -216,8 +216,8 @@ const AtelierInscriptionForm = ({
   // Si inscription réussie, afficher message de confirmation
   if (isSuccess) {
     return (
-      <div className="bg-primary/5 rounded-lg p-8 border-2 border-primary/20 text-center animate-fadeIn">
-        <CheckCircle className="w-16 h-16 text-primary mx-auto mb-4" />
+      <div className="bg-secondary/5 rounded-lg p-8 border-2 border-secondary/20 text-center animate-fadeIn">
+        <CheckCircle className="w-16 h-16 text-foreground mx-auto mb-4" />
         <h3 className="text-2xl font-bold text-foreground mb-2">
           Inscription confirmée !
         </h3>
@@ -236,16 +236,16 @@ const AtelierInscriptionForm = ({
 
   // Formulaire d'inscription avec infos de l'événement
   return (
-    <div className="bg-secondary/30 rounded-lg p-8 border border-border animate-fadeIn">
+    <div className="bg-muted/30 rounded-lg p-8 border border-border animate-fadeIn">
       {/* Informations de l'événement */}
-      <div className="mb-8 p-6 bg-primary/5 border border-primary/20 rounded-lg">
+      <div className="mb-8 p-6 bg-secondary/5 border border-secondary/20 rounded-lg">
         <h3 className="text-xl font-bold text-foreground mb-4">
           Informations de la session
         </h3>
         <div className="space-y-3">
           {eventDate && (
             <div className="flex items-start gap-3">
-              <Calendar className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+              <Calendar className="w-5 h-5 text-foreground flex-shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm font-semibold text-foreground">Date</p>
                 <p className="text-sm text-muted-foreground">
@@ -258,7 +258,7 @@ const AtelierInscriptionForm = ({
           
           {eventLocation && (
             <div className="flex items-start gap-3">
-              <MapPin className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+              <MapPin className="w-5 h-5 text-foreground flex-shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm font-semibold text-foreground">Lieu</p>
                 <p className="text-sm text-muted-foreground">{eventLocation}</p>
@@ -268,7 +268,7 @@ const AtelierInscriptionForm = ({
           
           {typeEvenement && (
             <div className="flex items-start gap-3">
-              <Clock className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+              <Clock className="w-5 h-5 text-foreground flex-shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm font-semibold text-foreground">Format</p>
                 <p className="text-sm text-muted-foreground">{typeEvenement}</p>
@@ -278,7 +278,7 @@ const AtelierInscriptionForm = ({
 
           {showParticipantsCount && maxParticipants > 0 && (
             <div className="flex items-start gap-3">
-              <Users className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+              <Users className="w-5 h-5 text-foreground flex-shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm font-semibold text-foreground">Places disponibles</p>
                 <p className="text-sm text-muted-foreground">

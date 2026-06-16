@@ -60,7 +60,7 @@ export function SolutionPipelineTab({ solutionId }: Props) {
                   <div key={s.stage} className="flex items-center gap-3">
                     <div className="w-32 text-xs text-muted-foreground">{STAGE_LABELS[s.stage] ?? s.stage}</div>
                     <div className="flex-1 bg-muted rounded h-6 relative overflow-hidden">
-                      <div className="absolute inset-y-0 left-0 bg-primary/60" style={{ width: `${pct}%` }} />
+                      <div className="absolute inset-y-0 left-0 bg-secondary/60" style={{ width: `${pct}%` }} />
                       <div className="absolute inset-0 flex items-center justify-between px-2 text-xs">
                         <span className="font-medium">{s.count}</span>
                         <span>{fmtEur(Number(s.value_eur))}</span>

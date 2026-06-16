@@ -108,7 +108,7 @@ const Onboarding = () => {
   if (loading || checking) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-8 w-8 animate-spin text-foreground" />
       </div>
     );
   }
@@ -127,7 +127,7 @@ const Onboarding = () => {
         </p>
         <Button
           onClick={handleConfirm}
-          className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+          className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90"
           disabled={submitting}
         >
           {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

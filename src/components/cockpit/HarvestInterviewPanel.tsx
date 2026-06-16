@@ -141,10 +141,10 @@ export function HarvestInterviewPanel({ workspaceId, autoStart = false }: Harves
     return (
       <div className="flex flex-col items-center justify-center py-10 text-center">
         <div className="relative mb-4">
-          <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center">
-            <Wheat className="h-7 w-7 text-primary" />
+          <div className="h-14 w-14 rounded-2xl bg-secondary/10 flex items-center justify-center">
+            <Wheat className="h-7 w-7 text-foreground" />
           </div>
-          <Sparkles className="h-4 w-4 text-primary absolute -top-1 -right-1 animate-pulse" />
+          <Sparkles className="h-4 w-4 text-foreground absolute -top-1 -right-1 animate-pulse" />
         </div>
         <h3 className="text-sm font-semibold mb-1">Récolte intelligente</h3>
         <p className="text-xs text-muted-foreground mb-5 max-w-[280px] leading-relaxed">
@@ -163,8 +163,8 @@ export function HarvestInterviewPanel({ workspaceId, autoStart = false }: Harves
     return (
       <div className="flex flex-col items-center justify-center py-10">
         <div className="relative mb-4">
-          <Loader2 className="h-10 w-10 animate-spin text-primary" />
-          <Wheat className="h-4 w-4 text-primary absolute top-3 left-3" />
+          <Loader2 className="h-10 w-10 animate-spin text-foreground" />
+          <Wheat className="h-4 w-4 text-foreground absolute top-3 left-3" />
         </div>
         <p className="text-sm font-medium text-foreground mb-1">Analyse en cours…</p>
         <p className="text-xs text-muted-foreground">Regroupement des tâches par entité</p>
@@ -203,7 +203,7 @@ export function HarvestInterviewPanel({ workspaceId, autoStart = false }: Harves
       <div className="space-y-2">
         <div className="flex items-center justify-between text-xs">
           <span className="font-medium text-foreground flex items-center gap-1.5">
-            <Wheat className="h-3.5 w-3.5 text-primary" />
+            <Wheat className="h-3.5 w-3.5 text-foreground" />
             {total} tâche{total > 1 ? 's' : ''} · {groups.length} entité{groups.length > 1 ? 's' : ''}
           </span>
           <span className="text-muted-foreground">
@@ -215,10 +215,10 @@ export function HarvestInterviewPanel({ workspaceId, autoStart = false }: Harves
 
       {/* Current entity interview */}
       {interview && (
-        <Card className="border-primary/20 shadow-sm">
+        <Card className="border-secondary/20 shadow-sm">
           <CardContent className="p-0">
             {/* Entity header */}
-            <div className="p-3 bg-primary/5 border-b border-primary/10 rounded-t-lg">
+            <div className="p-3 bg-secondary/5 border-b border-secondary/10 rounded-t-lg">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 min-w-0">
                   <Badge variant="outline" className="text-[10px] font-medium shrink-0 capitalize">
@@ -279,9 +279,9 @@ export function HarvestInterviewPanel({ workspaceId, autoStart = false }: Harves
                     className={cn(
                       "h-1 flex-1 rounded-full transition-colors duration-300",
                       i < currentQuestionIndex || justCompleted === i
-                        ? 'bg-primary'
+                        ? 'bg-secondary'
                         : i === currentQuestionIndex
-                        ? 'bg-primary/40'
+                        ? 'bg-secondary/40'
                         : 'bg-muted'
                     )}
                   />
@@ -303,7 +303,7 @@ export function HarvestInterviewPanel({ workspaceId, autoStart = false }: Harves
                   >
                     {/* Question */}
                     <div className="flex items-start gap-2">
-                      <MessageSquare className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                      <MessageSquare className="h-4 w-4 text-foreground mt-0.5 shrink-0" />
                       <div>
                         <p className="text-sm font-medium leading-snug">{q.question}</p>
                         {q.context && (
@@ -321,8 +321,8 @@ export function HarvestInterviewPanel({ workspaceId, autoStart = false }: Harves
                             className={cn(
                               "px-2.5 py-1 rounded-full text-xs border transition-colors",
                               responses[i] === sa
-                                ? 'bg-primary/10 border-primary/40 text-primary font-medium'
-                                : 'border-border text-muted-foreground hover:border-primary/30 hover:text-foreground'
+                                ? 'bg-secondary/10 border-secondary/40 text-foreground font-medium'
+                                : 'border-border text-muted-foreground hover:border-secondary/30 hover:text-foreground'
                             )}
                             onClick={() => setResponses(prev => ({ ...prev, [i]: sa }))}
                           >
@@ -350,7 +350,7 @@ export function HarvestInterviewPanel({ workspaceId, autoStart = false }: Harves
                             key={key}
                             className={cn(
                               "flex items-center gap-2 p-2 rounded-lg border text-left text-xs transition-all duration-200",
-                              isSelected ? config.color + ' shadow-sm' : 'border-border text-muted-foreground hover:border-primary/20'
+                              isSelected ? config.color + ' shadow-sm' : 'border-border text-muted-foreground hover:border-secondary/20'
                             )}
                             onClick={() => setSelectedActions(prev => ({ ...prev, [i]: key }))}
                           >
@@ -398,7 +398,7 @@ export function HarvestInterviewPanel({ workspaceId, autoStart = false }: Harves
           <span className="text-[10px] text-muted-foreground shrink-0">Actions rapides :</span>
           <div className="flex gap-1.5 flex-wrap">
             <button
-              className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] border border-border text-muted-foreground hover:text-foreground hover:border-primary/20 transition-colors"
+              className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] border border-border text-muted-foreground hover:text-foreground hover:border-secondary/20 transition-colors"
               onClick={() => handleBulkAction('harvested')}
               disabled={harvestRespond.isPending}
             >
@@ -406,7 +406,7 @@ export function HarvestInterviewPanel({ workspaceId, autoStart = false }: Harves
               Tout archiver
             </button>
             <button
-              className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] border border-border text-muted-foreground hover:text-foreground hover:border-primary/20 transition-colors"
+              className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] border border-border text-muted-foreground hover:text-foreground hover:border-secondary/20 transition-colors"
               onClick={() => handleBulkAction('keep_update')}
               disabled={harvestRespond.isPending}
             >
@@ -414,7 +414,7 @@ export function HarvestInterviewPanel({ workspaceId, autoStart = false }: Harves
               Tout reporter +7j
             </button>
             <button
-              className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] border border-border text-muted-foreground hover:text-foreground hover:border-primary/20 transition-colors"
+              className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] border border-border text-muted-foreground hover:text-foreground hover:border-secondary/20 transition-colors"
               onClick={() => handleBulkAction('done_offplatform')}
               disabled={harvestRespond.isPending}
             >

@@ -445,7 +445,7 @@ export default function ViviersLeads() {
           <CollapsibleTrigger asChild>
             <Button variant="ghost" className="w-full justify-between mb-2">
               <span className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-primary" />
+                <Sparkles className="w-4 h-4 text-foreground" />
                 Outils IA
               </span>
               {showAITools ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}

@@ -225,7 +225,7 @@ export function ImportRecipientsDialog({
             <div className="border-2 border-dashed rounded-lg p-6 text-center">
               <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
               <Label htmlFor="file-upload" className="cursor-pointer">
-                <span className="text-primary font-medium">Cliquez pour sélectionner</span>
+                <span className="text-foreground font-medium">Cliquez pour sélectionner</span>
                 {' '}ou glissez un fichier ici
               </Label>
               <Input

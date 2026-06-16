@@ -338,7 +338,7 @@ const AdminRendezVous = () => {
                 <div className="text-sm text-muted-foreground">En attente</div>
               </div>
               <div className="bg-card rounded-lg p-4 border border-border">
-                <div className="text-2xl font-bold text-primary">{stats.upcoming}</div>
+                <div className="text-2xl font-bold text-foreground">{stats.upcoming}</div>
                 <div className="text-sm text-muted-foreground">À venir</div>
               </div>
             </div>
@@ -379,7 +379,7 @@ const AdminRendezVous = () => {
             {/* Bookings Table */}
             {isLoading ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                <Loader2 className="w-8 h-8 animate-spin text-foreground" />
               </div>
             ) : (
               <div className="bg-card rounded-lg border border-border overflow-hidden">
@@ -445,10 +445,10 @@ const AdminRendezVous = () => {
                                   href={booking.zoom_join_url || booking.google_meet_link || ''}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="p-1 hover:bg-secondary rounded"
+                                  className="p-1 hover:bg-muted rounded"
                                   title={booking.zoom_join_url ? 'Ouvrir Zoom' : 'Ouvrir Meet'}
                                 >
-                                  <Video className="w-4 h-4 text-primary" />
+                                  <Video className="w-4 h-4 text-foreground" />
                                 </a>
                               )}
                               <Button
@@ -512,7 +512,7 @@ const AdminRendezVous = () => {
                         <div 
                           key={dayNum} 
                           className={`flex items-center justify-between p-3 rounded-lg border ${
-                            isActive ? 'border-primary/50 bg-primary/5' : 'border-border'
+                            isActive ? 'border-secondary/50 bg-secondary/5' : 'border-border'
                           }`}
                         >
                           <div className="flex items-center gap-3">
@@ -520,7 +520,7 @@ const AdminRendezVous = () => {
                               onClick={() => toggleAvailability(dayNum)}
                               disabled={isSavingAvail}
                               className={`w-10 h-6 rounded-full transition-colors ${
-                                isActive ? 'bg-primary' : 'bg-muted'
+                                isActive ? 'bg-secondary' : 'bg-muted'
                               }`}
                             >
                               <div className={`w-4 h-4 rounded-full bg-white transition-transform ${
@@ -629,7 +629,7 @@ const AdminRendezVous = () => {
                       href={selectedBooking.zoom_join_url || selectedBooking.google_meet_link || ''}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-primary hover:underline"
+                      className="flex items-center gap-2 text-foreground hover:underline"
                     >
                       <Video className="w-4 h-4" />
                       Rejoindre {selectedBooking.zoom_join_url ? 'Zoom' : 'Google Meet'}

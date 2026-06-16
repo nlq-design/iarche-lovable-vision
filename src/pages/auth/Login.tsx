@@ -94,7 +94,7 @@ const Login = () => {
             <Label htmlFor="password">Mot de passe</Label>
             <Link
               to="/reset-password"
-              className="text-xs text-accent hover:underline"
+              className="text-xs text-primary hover:underline"
             >
               Mot de passe oublié ?
             </Link>
@@ -111,7 +111,7 @@ const Login = () => {
 
         <Button
           type="submit"
-          className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+          className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90"
           disabled={submitting}
         >
           {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -141,7 +141,7 @@ const Login = () => {
 
       <p className="text-sm text-center text-muted-foreground mt-6">
         Pas encore de compte ?{' '}
-        <Link to="/signup" className="text-accent hover:underline">
+        <Link to="/signup" className="text-primary hover:underline">
           Créer un compte
         </Link>
       </p>

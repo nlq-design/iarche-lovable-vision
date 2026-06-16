@@ -85,7 +85,7 @@ export function CreateCampaignDialog({
       <DialogContent className="sm:max-w-[550px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Mail className="w-5 h-5 text-primary" />
+            <Mail className="w-5 h-5 text-foreground" />
             Nouvelle campagne
           </DialogTitle>
           <DialogDescription>

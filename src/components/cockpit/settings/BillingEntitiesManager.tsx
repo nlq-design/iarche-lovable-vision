@@ -185,15 +185,15 @@ export function BillingEntitiesManager() {
                   key={entity.id}
                   className={cn(
                     "flex items-center justify-between p-4 rounded-lg border",
-                    entity.is_default && "border-primary bg-primary/5"
+                    entity.is_default && "border-secondary bg-secondary/5"
                   )}
                 >
                     <div className="flex items-center gap-4">
                     <Avatar className="h-10 w-10 rounded-lg">
                       <AvatarImage src={entity.logo_url || undefined} alt={entity.name} />
                       <AvatarFallback
-                        className="rounded-lg text-primary-foreground font-bold"
-                        style={{ backgroundColor: entity.primary_color || "hsl(var(--primary))" }}
+                        className="rounded-lg text-secondary-foreground font-bold"
+                        style={{ backgroundColor: entity.primary_color || "hsl(var(--secondary))" }}
                       >
                         {getInitials(entity.name)}
                       </AvatarFallback>
@@ -275,8 +275,8 @@ export function BillingEntitiesManager() {
                     <Avatar className="h-20 w-20 rounded-lg">
                       <AvatarImage src={formData.logo_url || undefined} alt={formData.name} />
                       <AvatarFallback
-                        className="rounded-lg text-primary-foreground font-bold text-xl"
-                        style={{ backgroundColor: formData.primary_color || "hsl(var(--primary))" }}
+                        className="rounded-lg text-secondary-foreground font-bold text-xl"
+                        style={{ backgroundColor: formData.primary_color || "hsl(var(--secondary))" }}
                       >
                         {getInitials(formData.name || "?")}
                       </AvatarFallback>

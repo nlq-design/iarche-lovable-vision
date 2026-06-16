@@ -198,12 +198,12 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/cockpit/pricing" element={<CockpitPricing />} />
           <Route path="/onboarding/payment-success" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <PaymentSuccess />
             </Suspense>
           } />
           <Route path="/onboarding/payment-cancelled" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <PaymentCancelled />
             </Suspense>
           } />
@@ -226,17 +226,17 @@ const App = () => (
           <Route path="/actualites" element={<Actualites />} />
           <Route path="/articles" element={<Articles />} />
           <Route path="/cas-clients" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <CasClients />
             </Suspense>
           } />
           <Route path="/livres-blancs" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <LivresBlancs />
             </Suspense>
           } />
           <Route path="/ateliers-webinaires" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <AteliersWebinaires />
             </Suspense>
           } />
@@ -247,64 +247,64 @@ const App = () => (
           <Route path="/ateliers-webinaires/:slug" element={<ArticleDetail />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/iarche-labs" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <IArcheLabs />
             </Suspense>
           } />
           <Route path="/faq" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <FAQ />
             </Suspense>
           } />
           
           {/* Rendez-vous - uniquement avec slug */}
           <Route path="/rendez-vous/:slug" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <RendezVous />
             </Suspense>
           } />
           
           {/* Pages secondaires */}
           <Route path="/newsletter" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <Newsletter />
             </Suspense>
           } />
           <Route path="/livre-or" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <LivreOr />
             </Suspense>
           } />
           <Route path="/status" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <Status />
             </Suspense>
           } />
           
           {/* Unsubscribe page */}
           <Route path="/unsubscribe" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <UnsubscribePage />
             </Suspense>
           } />
           
           {/* Formulaires publics */}
           <Route path="/formulaires/:slug" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <FormPublic />
             </Suspense>
           } />
           
           {/* Brochures publiques */}
           <Route path="/brochure/:slug" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <BrochurePublic />
             </Suspense>
           } />
           
           {/* Landing pages événements publiques */}
           <Route path="/evenements/:slug" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <EventLanding />
             </Suspense>
           } />
@@ -317,27 +317,27 @@ const App = () => (
 
           {/* Auth public (M4) */}
           <Route path="/signup" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <Signup />
             </Suspense>
           } />
           <Route path="/login" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <Login />
             </Suspense>
           } />
           <Route path="/auth/callback" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <AuthCallback />
             </Suspense>
           } />
           <Route path="/reset-password" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ResetPassword />
             </Suspense>
           } />
           <Route path="/onboarding" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <Onboarding />
             </Suspense>
           } />
@@ -345,332 +345,332 @@ const App = () => (
           {/* Admin - Lazy loaded avec Suspense */}
           <Route path="/admin" element={<Admin />} />
           <Route path="/admin/dashboard" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminDashboard /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/advanced-stats" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdvancedStats /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/observability/ai" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AIObservability /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/articles" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminArticles /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/actualites" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminActualites /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/cas-clients" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminCasClients /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/livres-blancs" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminLivresBlancs /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/ateliers-webinaires" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminAteliersWebinaires /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/solutions" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminSolutions /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/solutions/new" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/solutions/:id" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/solutions/:id/history" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><ArticleVersionHistory /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/leads" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminLeads /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/users" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminUsers /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/contacts" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminContacts /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/iarche-labs" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><IArcheLabsAdmin /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/atelier-inscriptions" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminAtelierInscriptions /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/livre-blanc-inscriptions" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminLivreBlancsInscriptions /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/redacia" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><Redacia /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/redacnews" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><RedacNews /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/articles/new" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/actualites/new" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/cas-clients/new" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/livres-blancs/new" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/ateliers-webinaires/new" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/articles/:id" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/actualites/:id" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/cas-clients/:id" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/livres-blancs/:id" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/ateliers-webinaires/:id" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminArticleEditor /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/articles/:id/history" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><ArticleVersionHistory /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/actualites/:id/history" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><ArticleVersionHistory /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/cas-clients/:id/history" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><ArticleVersionHistory /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/livres-blancs/:id/history" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><ArticleVersionHistory /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/ateliers-webinaires/:id/history" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><ArticleVersionHistory /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/invitation/:id" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminInvitationPreview /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/invitation/:id/email-preview" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminInvitationEmailPreview /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/email-assets-generator" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminEmailAssetsGenerator /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/categories" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminCategories /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/tags" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminTags /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/comments" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminComments /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/faqs" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminFAQs /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/rendez-vous" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminRendezVous /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/newsletters" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminNewsletters /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/emails" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminEmails /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/security-dashboard" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><SecurityDashboard /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/audit-logs" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AuditLogs /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/backups" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><BackupManagement /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/settings" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminSettings /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/performance-monitoring" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><PerformanceMonitoring /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/cta-analytics" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><CTAAnalytics /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/medias" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminMedias /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/medias/banner" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><BannerEditor /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/medias/post" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><PostEditor /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/medias/signature" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><SignatureEditor /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/medias/thumbnail" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><ThumbnailEditor /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/medias/story" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><StoryEditor /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/medias/og" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><OpenGraphEditor /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/medias/header-email" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><HeaderEmailEditor /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/medias/generate-assets" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><GenerateAssets /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/medias/logo" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><LogoEditor /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/medias/favicon" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><FaviconEditor /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/medias/charte" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><CharteEditor /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/medias/qrcode" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><QRCodeEditor /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/medias/header-doc" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><HeaderDocEditor /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/medias/footer-email" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><FooterEmailEditor /></ProtectedAdminRoute>
             </Suspense>
           } />
@@ -678,200 +678,200 @@ const App = () => (
           
           {/* Formulaires */}
           <Route path="/admin/formulaires" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminFormulaires /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/formulaires/:id" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><FormEditor /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/formulaires/:id/responses" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><FormResponses /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/form-responses" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminFormResponses /></ProtectedAdminRoute>
             </Suspense>
           } />
           
           {/* Brochures */}
           <Route path="/admin/brochures" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminBrochures /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/brochures/new" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><BrochureEditor /></ProtectedAdminRoute>
             </Suspense>
           } />
           <Route path="/admin/brochures/:id" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><BrochureEditor /></ProtectedAdminRoute>
             </Suspense>
           } />
           
           {/* Prompts IA */}
           <Route path="/admin/ai-prompts" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminAIPrompts /></ProtectedAdminRoute>
             </Suspense>
           } />
           
           {/* Bibliothèque API */}
           <Route path="/admin/api-library" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedAdminRoute><AdminAPILibrary /></ProtectedAdminRoute>
             </Suspense>
           } />
           
 {/* Cockpit Commercial */}
           <Route path="/cockpit" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedCockpitRoute><CockpitDashboard /></ProtectedCockpitRoute>
             </Suspense>
           } />
           <Route path="/cockpit/pipeline" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedCockpitRoute><CockpitPipeline /></ProtectedCockpitRoute>
             </Suspense>
           } />
           <Route path="/cockpit/leads" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedCockpitRoute><CockpitLeads /></ProtectedCockpitRoute>
             </Suspense>
           } />
           <Route path="/cockpit/leads/:slug" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedCockpitRoute><CockpitLeadDetail /></ProtectedCockpitRoute>
             </Suspense>
           } />
           <Route path="/cockpit/agenda" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedCockpitRoute><CockpitAgenda /></ProtectedCockpitRoute>
             </Suspense>
           } />
           <Route path="/cockpit/projects" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedCockpitRoute><CockpitProjects /></ProtectedCockpitRoute>
             </Suspense>
           } />
           <Route path="/cockpit/projects/:id" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedCockpitRoute><CockpitProjectDetail /></ProtectedCockpitRoute>
             </Suspense>
           } />
 <Route path="/cockpit/solutions" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedCockpitRoute><ProtectedSuperAdminRoute><CockpitSolutions /></ProtectedSuperAdminRoute></ProtectedCockpitRoute>
             </Suspense>
           } />
           <Route path="/cockpit/solutions/:id" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedCockpitRoute><ProtectedSuperAdminRoute><CockpitSolutionDetail /></ProtectedSuperAdminRoute></ProtectedCockpitRoute>
             </Suspense>
           } />
           <Route path="/cockpit/analytics" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedCockpitRoute><CockpitAnalytics /></ProtectedCockpitRoute>
             </Suspense>
           } />
           <Route path="/cockpit/transcriptions" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedCockpitRoute><CockpitTranscriptions /></ProtectedCockpitRoute>
             </Suspense>
           } />
           <Route path="/cockpit/transcriptions/:slug" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedCockpitRoute><CockpitTranscriptionDetail /></ProtectedCockpitRoute>
             </Suspense>
           } />
           <Route path="/cockpit/documents" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedCockpitRoute><CockpitDocuments /></ProtectedCockpitRoute>
             </Suspense>
           } />
           <Route path="/cockpit/documents/settings" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedCockpitRoute><CockpitDocumentSettings /></ProtectedCockpitRoute>
             </Suspense>
           } />
           <Route path="/cockpit/documents/:slug" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedCockpitRoute><CockpitDocumentDetail /></ProtectedCockpitRoute>
             </Suspense>
           } />
           <Route path="/cockpit/upload" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedCockpitRoute><CockpitUploads /></ProtectedCockpitRoute>
             </Suspense>
           } />
           <Route path="/cockpit/chatbot" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedCockpitRoute><CockpitChatbot /></ProtectedCockpitRoute>
             </Suspense>
           } />
           <Route path="/cockpit/partenaires" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedCockpitRoute><CockpitPartenaires /></ProtectedCockpitRoute>
             </Suspense>
           } />
           <Route path="/cockpit/partenaires/:slug" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedCockpitRoute><CockpitPartenaireDetail /></ProtectedCockpitRoute>
             </Suspense>
           } />
           <Route path="/cockpit/imports" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedCockpitRoute><CockpitImports /></ProtectedCockpitRoute>
             </Suspense>
           } />
           <Route path="/cockpit/settings" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedCockpitRoute><CockpitSettings /></ProtectedCockpitRoute>
             </Suspense>
           } />
           <Route path="/cockpit/account" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedCockpitRoute><CockpitAccount /></ProtectedCockpitRoute>
             </Suspense>
           } />
           <Route path="/cockpit/onboarding" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <CockpitOnboarding />
             </Suspense>
           } />
           <Route path="/cockpit/settings/mcp" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedCockpitRoute><CockpitMCPSettings /></ProtectedCockpitRoute>
             </Suspense>
           } />
           <Route path="/cockpit/settings/billing" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedCockpitRoute><SettingsBilling /></ProtectedCockpitRoute>
             </Suspense>
           } />
           <Route path="/cockpit/settings/team" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedCockpitRoute><SettingsTeam /></ProtectedCockpitRoute>
             </Suspense>
           } />
           <Route path="/cockpit/settings/partners" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedCockpitRoute><SettingsPartners /></ProtectedCockpitRoute>
             </Suspense>
           } />
           <Route path="/cockpit/settings/branding" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedCockpitRoute><SettingsBranding /></ProtectedCockpitRoute>
             </Suspense>
           } />
           <Route path="/cockpit/invitation/accepter/:token" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <AcceptTeamInvitation />
             </Suspense>
           } />
@@ -930,62 +930,62 @@ const App = () => (
           
           {/* Espace Partenaire (External Partner Portal) */}
           <Route path="/espace-partenaire" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedPartnerRoute><PartnerDashboard /></ProtectedPartnerRoute>
             </Suspense>
           } />
           <Route path="/espace-partenaire/missions" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedPartnerRoute><PartnerMissions /></ProtectedPartnerRoute>
             </Suspense>
           } />
           <Route path="/espace-partenaire/documents" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedPartnerRoute><PartnerDocuments /></ProtectedPartnerRoute>
             </Suspense>
           } />
           <Route path="/espace-partenaire/leads" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedPartnerRoute><PartnerLeads /></ProtectedPartnerRoute>
             </Suspense>
           } />
           <Route path="/espace-partenaire/solutions" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedPartnerRoute><PartnerSolutions /></ProtectedPartnerRoute>
             </Suspense>
           } />
           <Route path="/espace-partenaire/transcriptions" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedPartnerRoute><PartnerTranscriptions /></ProtectedPartnerRoute>
             </Suspense>
           } />
           <Route path="/espace-partenaire/annonces" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedPartnerRoute><PartnerAnnouncements /></ProtectedPartnerRoute>
             </Suspense>
           } />
           <Route path="/espace-partenaire/profil" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedPartnerRoute><PartnerProfile /></ProtectedPartnerRoute>
             </Suspense>
           } />
           <Route path="/espace-partenaire/temps" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedPartnerRoute><PartnerTimeTracking /></ProtectedPartnerRoute>
             </Suspense>
           } />
           <Route path="/espace-partenaire/notifications" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedPartnerRoute><PartnerNotifications /></ProtectedPartnerRoute>
             </Suspense>
           } />
           <Route path="/espace-partenaire/activite" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <ProtectedPartnerRoute><PartnerActivity /></ProtectedPartnerRoute>
             </Suspense>
           } />
           <Route path="/espace-partenaire/accepter/:token" element={
-            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <PartnerAcceptInvitation />
             </Suspense>
           } />

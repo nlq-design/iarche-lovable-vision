@@ -152,7 +152,7 @@ const SolutionContactForm = ({ solutionName }: SolutionContactFormProps) => {
   };
 
   return (
-    <div className="bg-secondary/30 rounded-lg p-8 border border-border animate-fadeIn [animation-delay:0.5s]">
+    <div className="bg-muted/30 rounded-lg p-8 border border-border animate-fadeIn [animation-delay:0.5s]">
       <h2 className="text-2xl font-bold text-foreground mb-6">
         Essayer {solutionName}
       </h2>

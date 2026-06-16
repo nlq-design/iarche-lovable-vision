@@ -17,8 +17,8 @@ export const LighthouseChart = ({ data }: PerformanceChartProps) => (
       <YAxis domain={[0, 100]} />
       <Tooltip />
       <Legend />
-      <Line type="monotone" dataKey="Performance" stroke="hsl(var(--primary))" strokeWidth={2} />
-      <Line type="monotone" dataKey="Accessibilité" stroke="hsl(var(--accent))" strokeWidth={2} />
+      <Line type="monotone" dataKey="Performance" stroke="hsl(var(--secondary))" strokeWidth={2} />
+      <Line type="monotone" dataKey="Accessibilité" stroke="hsl(var(--primary))" strokeWidth={2} />
       <Line type="monotone" dataKey="Best Practices" stroke="#4A90E2" strokeWidth={2} />
       <Line type="monotone" dataKey="SEO" stroke="#50C878" strokeWidth={2} />
     </LineChart>
@@ -33,8 +33,8 @@ export const CoreWebVitalsChart = ({ data }: PerformanceChartProps) => (
       <YAxis />
       <Tooltip />
       <Legend />
-      <Line type="monotone" dataKey="FCP" stroke="hsl(var(--primary))" strokeWidth={2} />
-      <Line type="monotone" dataKey="LCP" stroke="hsl(var(--accent))" strokeWidth={2} />
+      <Line type="monotone" dataKey="FCP" stroke="hsl(var(--secondary))" strokeWidth={2} />
+      <Line type="monotone" dataKey="LCP" stroke="hsl(var(--primary))" strokeWidth={2} />
       <Line type="monotone" dataKey="TTI" stroke="#4A90E2" strokeWidth={2} />
     </LineChart>
   </ResponsiveContainer>
@@ -48,8 +48,8 @@ export const BundleSizeChart = ({ data }: PerformanceChartProps) => (
       <YAxis />
       <Tooltip />
       <Legend />
-      <Bar dataKey="JS" fill="hsl(var(--primary))" />
-      <Bar dataKey="CSS" fill="hsl(var(--accent))" />
+      <Bar dataKey="JS" fill="hsl(var(--secondary))" />
+      <Bar dataKey="CSS" fill="hsl(var(--primary))" />
       <Bar dataKey="Total" fill="#4A90E2" />
     </BarChart>
   </ResponsiveContainer>

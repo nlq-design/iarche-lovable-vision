@@ -101,7 +101,7 @@ export function CockpitSidebar() {
                 end={item.exact ? true : undefined}
                 className={`flex items-center gap-2.5 px-2.5 py-2 rounded-md transition-colors text-sm ${
                   active 
-                    ? 'bg-primary text-primary-foreground font-medium' 
+                    ? 'bg-secondary text-secondary-foreground font-medium' 
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
                 }`}
                 activeClassName=""

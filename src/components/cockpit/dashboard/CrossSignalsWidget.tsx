@@ -113,7 +113,7 @@ export function CrossSignalsWidget({ signals, embeddingSignals, isLoading, navig
                             return (
                               <button
                                 key={j}
-                                className="text-[9px] bg-background/80 border rounded px-1 py-0 hover:bg-primary/10 hover:border-primary/40 transition-colors inline-flex items-center gap-0.5"
+                                className="text-[9px] bg-background/80 border rounded px-1 py-0 hover:bg-secondary/10 hover:border-secondary/40 transition-colors inline-flex items-center gap-0.5"
                                 onClick={(ev) => {
                                   ev.stopPropagation();
                                   safeNavigateToEntity(navigate, e.type, e.id, e.name);

@@ -95,7 +95,7 @@ export function CgvTemplatesManager() {
                     key={template.id}
                     className={cn(
                       "flex items-center justify-between p-4 rounded-lg border",
-                      template.is_default && "border-primary bg-primary/5"
+                      template.is_default && "border-secondary bg-secondary/5"
                     )}
                   >
                     <div>

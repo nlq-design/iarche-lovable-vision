@@ -18,7 +18,7 @@ export const PublicationTrendChart = ({ data }: AnalyticsChartProps) => (
       <YAxis />
       <Tooltip />
       <Legend />
-      <Line type="monotone" dataKey="articles" stroke="hsl(var(--primary))" strokeWidth={2} />
+      <Line type="monotone" dataKey="articles" stroke="hsl(var(--secondary))" strokeWidth={2} />
     </LineChart>
   </ResponsiveContainer>
 );
@@ -53,7 +53,7 @@ export const TopArticlesBarChart = ({ data }: AnalyticsChartProps) => (
       <XAxis type="number" />
       <YAxis dataKey="title" type="category" width={150} />
       <Tooltip />
-      <Bar dataKey="views" fill="hsl(var(--primary))" />
+      <Bar dataKey="views" fill="hsl(var(--secondary))" />
     </BarChart>
   </ResponsiveContainer>
 );

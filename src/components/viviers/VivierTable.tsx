@@ -86,10 +86,10 @@ function FilterableHeader({
         <Button 
           variant="ghost" 
           size="sm" 
-          className={`h-auto p-0 font-medium hover:bg-transparent gap-1 ${hasFilter ? 'text-primary' : ''}`}
+          className={`h-auto p-0 font-medium hover:bg-transparent gap-1 ${hasFilter ? 'text-foreground' : ''}`}
         >
           {label}
-          <Filter className={`h-3 w-3 ${hasFilter ? 'text-primary fill-primary/20' : 'text-muted-foreground'}`} />
+          <Filter className={`h-3 w-3 ${hasFilter ? 'text-foreground fill-foreground/20' : 'text-muted-foreground'}`} />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-48 p-2" align="start">
@@ -246,7 +246,7 @@ export function VivierTable({
                     checked={allSelected}
                     onCheckedChange={(checked) => onSelectAll(!!checked)}
                     aria-label="Sélectionner tout"
-                    className={someSelected ? 'data-[state=checked]:bg-primary' : ''}
+                    className={someSelected ? 'data-[state=checked]:bg-secondary' : ''}
                   />
                 </TableHead>
                 <TableHead className="min-w-[180px]">
@@ -340,7 +340,7 @@ export function VivierTable({
                     {/* Entreprise (NOM) */}
                     <TableCell className="py-2.5">
                       <div className="max-w-[180px]">
-                        <p className="font-medium text-sm truncate text-foreground group-hover:text-primary transition-colors">
+                        <p className="font-medium text-sm truncate text-foreground group-hover:text-foreground transition-colors">
                           {vivier.company_name || <span className="text-muted-foreground italic">Sans nom</span>}
                         </p>
                         {vivier.legal_form && (
@@ -420,7 +420,7 @@ export function VivierTable({
 
                     {/* Action indicator */}
                     <TableCell className="py-2.5 pr-3">
-                      <ExternalLink className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary transition-colors" />
+                      <ExternalLink className="h-4 w-4 text-muted-foreground/30 group-hover:text-foreground transition-colors" />
                     </TableCell>
                   </TableRow>
                 );

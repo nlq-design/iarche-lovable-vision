@@ -324,11 +324,11 @@ export function VivierAISearch({ onFiltersApply, onResultsFound, onSaveList, cur
   const previewResults = result?.results.slice(0, 5) || [];
 
   return (
-    <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+    <Card className="border-secondary/20 bg-gradient-to-br from-secondary/5 to-transparent">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-lg">
-            <Sparkles className="w-5 h-5 text-primary" />
+            <Sparkles className="w-5 h-5 text-foreground" />
             Recherche IA
           </div>
           {history.length > 0 && (
@@ -413,10 +413,10 @@ export function VivierAISearch({ onFiltersApply, onResultsFound, onSaveList, cur
                   onClick={() => handleSuggestionClick(suggestion)}
                   className={`text-xs px-2 py-1 rounded-full border transition-colors ${
                     suggestion.type === 'refine' 
-                      ? 'border-primary/30 text-primary hover:bg-primary/10' 
+                      ? 'border-secondary/30 text-foreground hover:bg-secondary/10' 
                       : suggestion.type === 'history'
                       ? 'border-muted text-muted-foreground hover:bg-muted'
-                      : 'border-secondary text-secondary-foreground hover:bg-secondary'
+                      : 'border-muted text-foreground hover:bg-muted'
                   }`}
                 >
                   {suggestion.type === 'history' && <History className="w-3 h-3 inline mr-1" />}
@@ -435,7 +435,7 @@ export function VivierAISearch({ onFiltersApply, onResultsFound, onSaveList, cur
               <button
                 key={i}
                 onClick={() => setQuery(example)}
-                className="text-xs text-primary hover:underline"
+                className="text-xs text-foreground hover:underline"
               >
                 {example.length > 40 ? example.slice(0, 40) + '...' : example}
               </button>
@@ -463,7 +463,7 @@ export function VivierAISearch({ onFiltersApply, onResultsFound, onSaveList, cur
             {/* Stats and actions */}
             <div className="flex items-center justify-between bg-muted/50 rounded-lg p-3">
               <div className="text-sm">
-                <span className="font-semibold text-primary">{result.totalCount.toLocaleString('fr-FR')}</span>
+                <span className="font-semibold text-foreground">{result.totalCount.toLocaleString('fr-FR')}</span>
                 <span className="text-muted-foreground"> leads</span>
               </div>
               <div className="flex gap-1.5">

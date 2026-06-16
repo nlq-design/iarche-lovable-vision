@@ -3,7 +3,7 @@ import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import BreadcrumbNav from '@/components/ui/BreadcrumbNav';
-import LogoArc from '@/components/ui/LogoArc';
+import { Eyebrow, AnimatedArc } from '@/components/brand';
 
 const Confidentialite = () => {
   return (
@@ -46,11 +46,12 @@ const Confidentialite = () => {
       <main className="min-h-screen pt-4">
         <section className="max-w-4xl mx-auto px-6 py-4">
           {/* En-tête */}
-          <div className="mb-8">
-            <h1 className="text-3xl md:text-5xl font-bold hero-gradient-text mb-2 animate-fadeIn [animation-delay:0.1s]">
+          <div className="mb-8 animate-fadeIn [animation-delay:0.1s]">
+            <Eyebrow>Informations légales</Eyebrow>
+            <h1 className="section-title font-semibold tracking-[-0.025em] leading-[1.04] text-[clamp(34px,5vw,60px)] mt-2">
               Politique de confidentialité
             </h1>
-            <LogoArc size="md" className="mb-6 animate-fadeIn [animation-delay:0.15s]" />
+            <AnimatedArc />
           </div>
 
           {/* Contenu */}
@@ -158,7 +159,7 @@ const Confidentialite = () => {
                   <strong>Anonymisation des données :</strong> Les adresses IP sont automatiquement anonymisées, conformément au RGPD.
                 </p>
                 <p>
-                  Pour en savoir plus ou vous opposer au tracking Google Analytics, consultez : <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Extension de navigateur Google Analytics Opt-out</a>
+                  Pour en savoir plus ou vous opposer au tracking Google Analytics, consultez : <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Extension de navigateur Google Analytics Opt-out</a>
                 </p>
               </div>
 
@@ -168,7 +169,7 @@ const Confidentialite = () => {
                   Pour toute question relative à la protection de vos données personnelles, vous pouvez contacter notre délégué à la protection des données à l'adresse : nlq@iarche.fr
                 </p>
                 <p className="mt-4">
-                  Vous avez également le droit d'introduire une réclamation auprès de la CNIL (Commission Nationale de l'Informatique et des Libertés) : <a href="https://www.cnil.fr" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">www.cnil.fr</a>
+                  Vous avez également le droit d'introduire une réclamation auprès de la CNIL (Commission Nationale de l'Informatique et des Libertés) : <a href="https://www.cnil.fr" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">www.cnil.fr</a>
                 </p>
               </div>
             </div>

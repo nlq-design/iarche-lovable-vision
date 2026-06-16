@@ -333,7 +333,7 @@ export default function QRCodeEditor() {
                         <button
                           key={color.value}
                           className={`w-10 h-10 rounded-lg border-2 transition-all ${
-                            qrColor === color.value ? 'border-primary scale-110' : 'border-transparent'
+                            qrColor === color.value ? 'border-secondary scale-110' : 'border-transparent'
                           }`}
                           style={{ backgroundColor: color.value }}
                           onClick={() => setQrColor(color.value)}
@@ -357,7 +357,7 @@ export default function QRCodeEditor() {
                         <button
                           key={color.value}
                           className={`w-10 h-10 rounded-lg border-2 transition-all ${
-                            bgColor === color.value ? 'border-primary scale-110' : 'border-border'
+                            bgColor === color.value ? 'border-secondary scale-110' : 'border-border'
                           } ${color.value === 'transparent' ? 'bg-[url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjZjBmMGYwIi8+PHJlY3QgeD0iMTAiIHk9IjEwIiB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIGZpbGw9IiNmMGYwZjAiLz48L3N2Zz4=")]' : ''}`}
                           style={{ backgroundColor: color.value === 'transparent' ? undefined : color.value }}
                           onClick={() => setBgColor(color.value)}
@@ -466,7 +466,7 @@ export default function QRCodeEditor() {
                     {savedQRCodes.map((qr) => (
                       <div 
                         key={qr.name} 
-                        className="border rounded-lg p-3 space-y-2 hover:border-primary transition-colors"
+                        className="border rounded-lg p-3 space-y-2 hover:border-secondary transition-colors"
                       >
                         <img 
                           src={qr.url} 

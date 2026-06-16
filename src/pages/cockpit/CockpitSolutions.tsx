@@ -93,7 +93,7 @@ export default function CockpitSolutions() {
           <div className="h-4 w-px bg-border hidden sm:block" />
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground">Leads</span>
-            <span className="font-semibold text-primary">{totalLeads}</span>
+            <span className="font-semibold text-foreground">{totalLeads}</span>
           </div>
         </div>
 
@@ -158,7 +158,7 @@ export default function CockpitSolutions() {
                             <span>{format(new Date(solution.created_at), "dd MMM yyyy", { locale: fr })}</span>
                           )}
                           {leadCount > 0 && (
-                            <span className="flex items-center gap-1 text-primary">
+                            <span className="flex items-center gap-1 text-foreground">
                               <Users className="h-3 w-3" />
                               {leadCount}
                             </span>

@@ -84,7 +84,7 @@ export default function SettingsBranding() {
     <CockpitLayout>
       <div className="space-y-6 max-w-4xl">
         <div className="flex items-center gap-3">
-          <Palette className="h-6 w-6 text-primary" />
+          <Palette className="h-6 w-6 text-foreground" />
           <div>
             <h1 className="text-2xl font-bold text-foreground">Identité visuelle</h1>
             <p className="text-muted-foreground">L’essentiel pour personnaliser vos documents et exports IA.</p>

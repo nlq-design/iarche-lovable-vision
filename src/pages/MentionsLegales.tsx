@@ -3,7 +3,7 @@ import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import BreadcrumbNav from '@/components/ui/BreadcrumbNav';
-import LogoArc from '@/components/ui/LogoArc';
+import { Eyebrow, AnimatedArc } from '@/components/brand';
 
 const MentionsLegales = () => {
   return (
@@ -46,11 +46,12 @@ const MentionsLegales = () => {
       <main className="min-h-screen pt-4">
         <section className="max-w-4xl mx-auto px-6 py-4">
           {/* En-tête */}
-          <div className="mb-8">
-            <h1 className="text-3xl md:text-5xl font-bold hero-gradient-text mb-2 animate-fadeIn [animation-delay:0.1s]">
+          <div className="mb-8 animate-fadeIn [animation-delay:0.1s]">
+            <Eyebrow>Informations légales</Eyebrow>
+            <h1 className="section-title font-semibold tracking-[-0.025em] leading-[1.04] text-[clamp(34px,5vw,60px)] mt-2">
               Mentions légales
             </h1>
-            <LogoArc size="md" className="mb-6 animate-fadeIn [animation-delay:0.15s]" />
+            <AnimatedArc />
           </div>
 
           {/* Contenu */}

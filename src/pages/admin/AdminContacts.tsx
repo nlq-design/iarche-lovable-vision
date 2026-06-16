@@ -182,7 +182,7 @@ const AdminContacts = () => {
     return (
       <AdminLayout>
         <div className="min-h-screen flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <Loader2 className="h-8 w-8 animate-spin text-foreground" />
         </div>
       </AdminLayout>
     );
@@ -345,7 +345,7 @@ const AdminContacts = () => {
                           <td className="px-4 py-3">
                             <a
                               href={`mailto:${contact.email}`}
-                              className="flex items-center gap-2 text-sm text-primary hover:underline"
+                              className="flex items-center gap-2 text-sm text-foreground hover:underline"
                             >
                               <Mail className="h-4 w-4" />
                               {contact.email}

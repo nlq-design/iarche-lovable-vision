@@ -1,75 +1,66 @@
 import React from 'react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowRight } from 'lucide-react';
+import { Section, SectionTitle, SolidCard, Reveal } from '@/components/brand';
 
-const services = [
+const steps = [
   {
     title: "Audit & Conseil",
-    description: "Comprendre où vous en êtes et définir par où commencer."
+    description: "Comprendre où vous en êtes et définir par où commencer.",
   },
   {
     title: "Développement & Intégration",
-    description: "Des solutions sur-mesure qui s'intègrent à vos outils existants."
+    description: "Des solutions sur-mesure qui s'intègrent à vos outils existants.",
   },
   {
     title: "Accompagnement & Autonomie",
-    description: "On rend vos équipes autonomes. L'IA évolue, votre entreprise aussi."
+    description: "On rend vos équipes autonomes. L'IA évolue, votre entreprise aussi.",
   },
   {
     title: "Conformité & Réglementation",
-    description: "AI Act, RGPD : intégrer l'IA en restant conforme."
-  }
+    description: "AI Act, RGPD : intégrer l'IA en restant conforme.",
+  },
 ];
 
+/**
+ * 03 — De l'audit à l'autonomie : les 4 services présentés en PARCOURS
+ * (étapes numérotées reliées), pas en grille plate.
+ */
 const ServicesSection = () => {
   return (
-    <section id="services" className="pb-12 md:pb-16 bg-background">
-      <div className="container mx-auto px-6 lg:px-16">
-        <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide text-center mb-8">Nos services</h2>
-        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8 max-w-7xl mx-auto">
-          {services.map((service, index) => (
-            <Card 
-              key={index}
-              className="relative grid grid-rows-[auto_1fr_auto] bg-card border border-border rounded-lg shadow-sm hover:shadow-lg transition-all duration-300 invisible animate-fadeIn overflow-hidden"
-              style={{ animationDelay: `${0.2 + index * 0.1}s` }}
-            >
-              {/* Bordure gradient à gauche */}
-              <div 
-                className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg"
-                style={{ background: 'linear-gradient(180deg, #1A2B4A 0%, #B04A32 100%)' }}
-              />
-              
-              <CardHeader className="pl-5">
-                <div className="flex items-center gap-2">
-                  {/* Badge gradient */}
-                  <div 
-                    className="w-2 h-2 rounded-full flex-shrink-0"
-                    style={{ background: 'linear-gradient(135deg, #1A2B4A 0%, #B04A32 100%)' }}
-                  />
-                  <CardTitle className="text-lg font-semibold leading-none tracking-tight md:text-xl hero-gradient-text">
-                    {service.title}
-                  </CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="pl-5">
-                <p className="text-muted-foreground">
-                  {service.description}
-                </p>
-              </CardContent>
-              <CardFooter className="pl-5">
-                <a
-                  href="/services"
-                  className="flex items-center text-sm text-accent hover:text-accent/80 focus:text-accent/80 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 rounded transition-colors group"
-                >
-                  En savoir plus
-                  <ArrowRight className="ml-2 size-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
-                </a>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
+    <Section tone="light" id="services">
+      <div className="flex flex-col items-center text-center">
+        <SectionTitle
+          center
+          eyebrow="03 — Notre approche"
+          lede="On ne vend pas une techno, on construit un chemin : de l'audit jusqu'à votre autonomie."
+        >
+          De l'audit à <em>l'autonomie.</em>
+        </SectionTitle>
       </div>
-    </section>
+
+      <div className="relative mt-14 grid gap-[18px] grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Fil conducteur (parcours) — desktop */}
+        <div
+          aria-hidden="true"
+          className="hidden lg:block absolute top-[34px] left-[12%] right-[12%] h-px bg-gradient-to-r from-transparent via-[hsl(var(--accent)/0.45)] to-transparent"
+        />
+        {steps.map((step, index) => (
+          <Reveal key={index} delay={index * 90}>
+            <SolidCard num={String(index + 1).padStart(2, '0')} className="h-full grid grid-rows-[auto_auto_1fr_auto]">
+              <h3>{step.title}</h3>
+              <p>{step.description}</p>
+              <a
+                href="/services"
+                className="mt-5 inline-flex items-center text-sm font-medium text-primary hover:text-[hsl(var(--accent-deep))] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded transition-colors group"
+              >
+                En savoir plus
+                <ArrowRight className="ml-2 size-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+              </a>
+            </SolidCard>
+          </Reveal>
+        ))}
+      </div>
+    </Section>
   );
 };
 

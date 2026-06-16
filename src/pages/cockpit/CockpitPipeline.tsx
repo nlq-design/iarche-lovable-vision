@@ -181,8 +181,8 @@ const CockpitPipeline = () => {
         <CreateOpportunityDialog open={showCreateDialog} onOpenChange={setShowCreateDialog} />
 
         {focusId && opportunities?.some((o) => o.id === focusId) && (
-          <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-md bg-primary/10 border border-primary/30 text-sm">
-            <span className="text-primary font-medium">
+          <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-md bg-secondary/10 border border-secondary/30 text-sm">
+            <span className="text-foreground font-medium">
               Mode focus : {opportunities.find((o) => o.id === focusId)?.title}
             </span>
             <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={clearFocus}>
@@ -250,7 +250,7 @@ const CockpitPipeline = () => {
                             className={`p-2.5 rounded-md border bg-background hover:bg-muted/50 cursor-pointer active:cursor-grabbing transition-all ${
                               isStagnant ? 'border-amber-400 bg-amber-50/30 dark:bg-amber-950/20' : ''
                             } ${
-                              focusId === opp.id ? 'ring-2 ring-primary ring-offset-2 shadow-lg scale-[1.02]' : ''
+                              focusId === opp.id ? 'ring-2 ring-secondary ring-offset-2 shadow-lg scale-[1.02]' : ''
                             }`}
                           >
                             <div className="flex items-start gap-2">
@@ -304,7 +304,7 @@ const CockpitPipeline = () => {
                                   </div>
                                 )}
                                 {linkedLead && !isStagnant && (
-                                  <div className="flex items-center gap-1 mt-1.5 text-xs text-primary">
+                                  <div className="flex items-center gap-1 mt-1.5 text-xs text-foreground">
                                     <User className="h-3 w-3" />
                                     <span>Voir fiche</span>
                                   </div>

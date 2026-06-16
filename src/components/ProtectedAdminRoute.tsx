@@ -48,7 +48,7 @@ const ProtectedAdminRoute = ({ children }: ProtectedAdminRouteProps) => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted/30">
         <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
+          <Loader2 className="w-8 h-8 animate-spin text-foreground mx-auto mb-4" />
           <p className="text-sm text-muted-foreground">Vérification des accès...</p>
         </div>
       </div>
@@ -65,7 +65,7 @@ const ProtectedAdminRoute = ({ children }: ProtectedAdminRouteProps) => {
       <div className="min-h-screen bg-muted/30 flex items-center justify-center px-6">
         <Card className="max-w-md bg-background/95 border-border">
           <CardHeader className="text-center">
-            <Users className="h-12 w-12 text-primary mx-auto mb-2" />
+            <Users className="h-12 w-12 text-foreground mx-auto mb-2" />
             <CardTitle>Espace Partenaire</CardTitle>
             <CardDescription>
               Vous êtes connecté en tant que partenaire. Accédez à votre espace dédié pour consulter vos missions et documents.

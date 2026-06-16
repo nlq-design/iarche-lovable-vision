@@ -94,7 +94,7 @@ const FieldLibrary = ({ onAddField }: { onAddField: (type: FieldType) => void })
                 <button
                   key={field.type}
                   onClick={() => onAddField(field.type)}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-lg hover:bg-primary/10 hover:text-primary transition-colors"
+                  className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-lg hover:bg-secondary/10 hover:text-foreground transition-colors"
                 >
                   <IconComponent className="h-4 w-4" />
                   {field.label}
@@ -143,7 +143,7 @@ const SortableFieldItem = ({
       ref={setNodeRef}
       style={style}
       className={`group relative bg-card border rounded-lg p-4 cursor-pointer transition-all ${
-        isSelected ? 'ring-2 ring-primary border-primary' : 'hover:border-primary/50'
+        isSelected ? 'ring-2 ring-secondary border-secondary' : 'hover:border-secondary/50'
       }`}
       onClick={onSelect}
     >
@@ -158,7 +158,7 @@ const SortableFieldItem = ({
         
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <IconComponent className="h-4 w-4 text-primary" />
+            <IconComponent className="h-4 w-4 text-foreground" />
             <span className="text-sm font-medium truncate">
               {field.label || `Champ ${fieldInfo?.label}`}
             </span>
@@ -624,7 +624,7 @@ const FormEditor = () => {
     return (
       <AdminLayout>
         <div className="flex items-center justify-center h-screen">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-secondary" />
         </div>
       </AdminLayout>
     );

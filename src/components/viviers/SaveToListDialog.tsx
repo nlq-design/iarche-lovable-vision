@@ -97,7 +97,7 @@ export function SaveToListDialog({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <ListPlus className="w-5 h-5 text-primary" />
+            <ListPlus className="w-5 h-5 text-foreground" />
             Sauvegarder en liste
           </DialogTitle>
           <DialogDescription>
@@ -138,11 +138,11 @@ export function SaveToListDialog({
               onValueChange={(v) => setListType(v as 'dynamic' | 'static')}
               className="grid grid-cols-2 gap-3"
             >
-              <div className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${listType === 'dynamic' ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'}`}>
+              <div className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${listType === 'dynamic' ? 'border-secondary bg-secondary/5' : 'hover:bg-muted/50'}`}>
                 <RadioGroupItem value="dynamic" id="type-dynamic" className="mt-0.5" />
                 <label htmlFor="type-dynamic" className="cursor-pointer flex-1">
                   <div className="flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-primary" />
+                    <Zap className="w-4 h-4 text-foreground" />
                     <span className="font-medium">Dynamique</span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -151,7 +151,7 @@ export function SaveToListDialog({
                 </label>
               </div>
 
-              <div className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${listType === 'static' ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'}`}>
+              <div className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${listType === 'static' ? 'border-secondary bg-secondary/5' : 'hover:bg-muted/50'}`}>
                 <RadioGroupItem value="static" id="type-static" className="mt-0.5" />
                 <label htmlFor="type-static" className="cursor-pointer flex-1">
                   <div className="flex items-center gap-2">

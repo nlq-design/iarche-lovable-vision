@@ -163,7 +163,7 @@ export function SolutionRoadmapTab({ solutionId }: Props) {
                       </div>
                       <button
                         onClick={() => upvote.mutate(f.id)}
-                        className="flex items-center gap-1 text-muted-foreground hover:text-primary transition-colors"
+                        className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
                       >
                         <ThumbsUp className="h-3 w-3" />
                         {f.vote_score}

@@ -73,7 +73,7 @@ export function SolutionOnboardingTab({ solutionId }: Props) {
                   <span className="text-muted-foreground">{step.count} ({conversionRate}%)</span>
                 </div>
                 <div className="h-6 bg-muted rounded overflow-hidden">
-                  <div className="h-full bg-primary/70 transition-all" style={{ width: `${pct}%` }} />
+                  <div className="h-full bg-secondary/70 transition-all" style={{ width: `${pct}%` }} />
                 </div>
               </div>
             );

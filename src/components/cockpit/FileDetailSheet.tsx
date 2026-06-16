@@ -247,7 +247,7 @@ export function FileDetailSheet({ file, open, onOpenChange }: FileDetailSheetPro
         <SheetHeader className="flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-muted rounded-lg">
-              <FileIcon className="h-5 w-5 text-primary" />
+              <FileIcon className="h-5 w-5 text-foreground" />
             </div>
             <div className="flex-1 min-w-0">
               <SheetTitle className="truncate text-left">{file.original_filename}</SheetTitle>
@@ -290,7 +290,7 @@ export function FileDetailSheet({ file, open, onOpenChange }: FileDetailSheetPro
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-primary" />
+                    <Sparkles className="h-4 w-4 text-foreground" />
                     Résumé IA
                   </CardTitle>
                 </CardHeader>
@@ -310,7 +310,7 @@ export function FileDetailSheet({ file, open, onOpenChange }: FileDetailSheetPro
                   <ul className="space-y-1.5">
                     {aiMetadata.key_points.map((point, i) => (
                       <li key={i} className="flex items-start gap-2 text-sm">
-                        <span className="text-primary mt-1">•</span>
+                        <span className="text-foreground mt-1">•</span>
                         <span className="text-muted-foreground">{point}</span>
                       </li>
                     ))}

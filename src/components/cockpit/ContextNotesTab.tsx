@@ -82,10 +82,10 @@ export function ContextNotesTab({ entityType, entityId }: ContextNotesTabProps) 
   return (
     <div className="space-y-4">
       {/* Info banner */}
-      <Card className="border-primary/20 bg-primary/5">
+      <Card className="border-secondary/20 bg-secondary/5">
         <CardContent className="py-3">
           <div className="flex items-start gap-2">
-            <Sparkles className="h-4 w-4 text-primary mt-0.5" />
+            <Sparkles className="h-4 w-4 text-foreground mt-0.5" />
             <div className="text-sm">
               <p className="font-medium text-foreground">Contexte pour la synthèse IA</p>
               <p className="text-muted-foreground">

@@ -45,12 +45,12 @@ export function VivierHeader() {
           </Tooltip>
           
           <Link to="/viviers" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
-              <Fish className="w-4 h-4 text-primary-foreground" />
+            <div className="w-8 h-8 bg-secondary rounded-md flex items-center justify-center">
+              <Fish className="w-4 h-4 text-secondary-foreground" />
             </div>
             <div className="hidden sm:block">
               <span className="font-semibold text-base text-foreground">Viviers</span>
-              <span className="ml-2 text-xs text-accent font-medium">Cold Leads</span>
+              <span className="ml-2 text-xs text-primary font-medium">Cold Leads</span>
             </div>
           </Link>
         </div>

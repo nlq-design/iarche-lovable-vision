@@ -393,7 +393,7 @@ export const SpecificationEditor = ({ projectId, specifications }: Specification
       
       {(file || existingFileUrl) ? (
         <div className="flex items-center gap-3 p-3 border rounded-lg bg-muted/50">
-          <FileText className="h-8 w-8 text-primary shrink-0" />
+          <FileText className="h-8 w-8 text-foreground shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="font-medium text-sm truncate">
               {file ? file.name : existingFileName}
@@ -441,7 +441,7 @@ export const SpecificationEditor = ({ projectId, specifications }: Specification
         </div>
       ) : (
         <div 
-          className="border-2 border-dashed rounded-lg p-6 text-center hover:border-primary/50 transition-colors cursor-pointer"
+          className="border-2 border-dashed rounded-lg p-6 text-center hover:border-secondary/50 transition-colors cursor-pointer"
           onClick={() => inputRef.current?.click()}
         >
           <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
@@ -556,7 +556,7 @@ export const SpecificationEditor = ({ projectId, specifications }: Specification
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        {hasFile && <FileTypeIcon className="h-4 w-4 text-primary shrink-0" />}
+                        {hasFile && <FileTypeIcon className="h-4 w-4 text-foreground shrink-0" />}
                         <h4 className="font-medium truncate">{spec.title}</h4>
                         <Badge variant="outline" className="text-xs shrink-0">v{spec.version}</Badge>
                       </div>
@@ -567,7 +567,7 @@ export const SpecificationEditor = ({ projectId, specifications }: Specification
                           {statusConfig.label}
                         </Badge>
                         {hasFile && (
-                          <span className="text-primary">
+                          <span className="text-foreground">
                             {(spec as any).file_name} ({formatFileSize((spec as any).file_size_bytes || 0)})
                           </span>
                         )}

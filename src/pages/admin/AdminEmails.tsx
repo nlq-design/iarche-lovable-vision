@@ -374,7 +374,7 @@ const AdminEmails = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-2">
-                      <Megaphone className="w-5 h-5 text-primary" />
+                      <Megaphone className="w-5 h-5 text-foreground" />
                       Nouvelle Campagne Brevo
                     </CardTitle>
                     <CardDescription>
@@ -515,7 +515,7 @@ const AdminEmails = () => {
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg flex items-center gap-2">
-                      <Mail className="w-5 h-5 text-primary" />
+                      <Mail className="w-5 h-5 text-foreground" />
                       {SOURCE_LABELS[config.source_type] || config.source_type}
                     </CardTitle>
                     <Badge variant={config.is_active ? 'default' : 'secondary'}>
@@ -610,7 +610,7 @@ const AdminEmails = () => {
               .filter(c => TEMPLATE_SOURCES.includes(c.source_type))
               .map(config => (
                 <div key={config.id} className="space-y-4">
-                  <h3 className="text-lg font-semibold text-primary border-b pb-2">
+                  <h3 className="text-lg font-semibold text-foreground border-b pb-2">
                     {SOURCE_LABELS[config.source_type] || config.source_type}
                   </h3>
                   

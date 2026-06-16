@@ -9,71 +9,96 @@ All colors MUST be HSL.
 @layer base {
   :root {
     color-scheme: only light;
-    
-    /* IArche Color Palette - Light Mode (Default) */
-    
-    /* Primary: Bleu Nuit #1A2B4A */
-    --primary: 218 47% 20%;
-    --primary-foreground: 30 14% 98%;
-    
-    /* Accent/CTA: Terracotta #B04A32 (darkened for WCAG AA contrast) */
-    --accent: 12 60% 44%;
-    --accent-foreground: 30 14% 98%;
-    
+
+    /* ════════════════════════════════════════════════════════════
+       CHARTE IARCHE v4.0 — Tokens sémantiques (mode clair)
+       Convention shadcn : primary = couleur d'action (Terracotta),
+       accent = hover subtil (Sable), secondary = Bleu Nuit.
+       ════════════════════════════════════════════════════════════ */
+
     /* Background: Blanc Cassé #FAF9F7 */
-    --background: 30 14% 98%;
-    --foreground: 0 0% 18%;
-    
+    --background: 40 23% 97%;
+    --foreground: 219 48% 20%;            /* Bleu Nuit #1A2B4A */
+
     /* Card surfaces */
-    --card: 30 14% 98%;
-    --card-foreground: 0 0% 18%;
-    
+    --card: 40 23% 97%;
+    --card-foreground: 219 48% 20%;
+
     /* Popover */
-    --popover: 30 14% 98%;
-    --popover-foreground: 0 0% 18%;
-    
-    /* Secondary: Gris Sable #F0EDE8 */
-    --secondary: 30 20% 93%;
-    --secondary-foreground: 218 47% 20%;
-    
-    /* Muted: Gris #666666 */
-    --muted: 30 20% 93%;
-    --muted-foreground: 0 0% 40%;
-    
-    /* Text subtle: Gris bleuté harmonisé avec Bleu Nuit (#4A5568) */
-    --text-subtle: 215 14% 35%;
-    
-    /* Destructive: Terracotta doux #C4553D */
-    --destructive: 12 55% 50%;
-    --destructive-foreground: 30 14% 98%;
-    
-    /* Borders: Gris chaud #E5E0DA */
-    --border: 30 16% 88%;
-    --input: 30 16% 88%;
-    --ring: 12 60% 53%;
-    
-    /* Success: Vert sauge #3D7A5C */
-    --success: 153 34% 36%;
-    --success-foreground: 30 14% 98%;
-    
-    /* Radius scale (xs → 2xl) */
+    --popover: 40 23% 97%;
+    --popover-foreground: 219 48% 20%;
+
+    /* Primary / CTA : Terracotta #B04A32 */
+    --primary: 11 56% 44%;
+    --primary-foreground: 0 0% 100%;      /* #FFFFFF */
+
+    /* Secondary : Bleu Nuit #1A2B4A (surfaces navy) */
+    --secondary: 219 48% 20%;
+    --secondary-foreground: 37 27% 94%;   /* Crème #F4F1EC */
+
+    /* Muted : Gris Sable #F0EDE8 */
+    --muted: 38 21% 93%;
+    --muted-foreground: 30 9% 38%;        /* #6B6259 */
+
+    /* Accent : hover subtil = Gris Sable #F0EDE8 (PAS une couleur vive) */
+    --accent: 38 21% 93%;
+    --accent-foreground: 219 48% 20%;     /* Bleu Nuit */
+
+    /* Text subtle : Gris bleuté #4A5568 */
+    --text-subtle: 218 17% 35%;
+
+    /* Destructive : Rouge soutenu #C8431D */
+    --destructive: 13 75% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Borders : Gris chaud #E5E0DA */
+    --border: 33 17% 88%;
+    --input: 33 17% 88%;
+    --ring: 11 56% 44%;                   /* Terracotta */
+
+    /* Success : Vert olive #3D7A5C */
+    --success: 150 33% 36%;
+    --success-foreground: 0 0% 100%;
+
+    /* ── Couleurs de marque additionnelles (signatures v4.0) ── */
+    --accent-vivid: 13 75% 45%;           /* Rouge soutenu #C8431D */
+    --accent-rose:  7 65% 53%;            /* Rouge rosé #D54B3A (em titres) */
+    --accent-deep:  12 58% 35%;           /* Terracotta foncé #8E3A26 */
+    --accent-soft:  19 47% 66%;           /* Terra soft #D4937D (accents sombre) */
+    --accent-flame: 12 71% 59%;           /* Terra flame #E0654A (em titres sombres) */
+    --accent-pop:   15 79% 53%;           /* Rouge POP #E55A2B */
+    --olive:        150 33% 36%;          /* Vert olive #3D7A5C */
+    --cream:        37 27% 94%;           /* #F4F1EC */
+    --cream-soft:   rgba(244,241,236,0.72);
+    --cream-mute:   rgba(244,241,236,0.46);
+    --glass:        rgba(255,255,255,0.05);
+    --glass-brd:    rgba(255,255,255,0.12);
+    --night-base:   219 55% 12%;          /* #0E1A30 */
+    --night-surface:217 49% 15%;          /* #14233B */
+
+    /* Typographie */
+    --font-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace;
+
+    /* Radius : base 1rem (16px), variantes 8/24/32 px dispo en classes */
     --radius-xs: 0.25rem;
     --radius-sm: 0.5rem;
     --radius-md: 0.75rem;
     --radius-lg: 1rem;
     --radius-xl: 1.5rem;
     --radius-2xl: 2rem;
-    --radius: 0.75rem;
+    --radius-pill: 100px;
+    --radius: 1rem;
 
     /* Surfaces (élévation tonale sur fond Blanc Cassé) */
-    --surface-1: 30 14% 98%;
-    --surface-2: 30 18% 96%;
-    --surface-3: 30 20% 93%;
-    --surface-4: 218 30% 16%;
+    --surface-1: 40 23% 97%;
+    --surface-2: 38 21% 95%;
+    --surface-3: 38 21% 93%;
+    --surface-4: 219 48% 20%;
 
     /* Bordures hairline */
-    --border-subtle: 30 16% 92%;
-    --border-strong: 218 30% 22%;
+    --border-subtle: 33 17% 92%;
+    --border-strong: 219 48% 22%;
 
     /* Ombres soft elevation */
     --shadow-xs: 0 1px 2px -1px hsla(218, 47%, 12%, 0.06);
@@ -122,7 +147,51 @@ All colors MUST be HSL.
     --footer-border: 45 20% 85%;
   }
 
-  /* Dark mode disabled - IArche uses light mode only */
+  /* ────────────────────────────────────────────────────────────
+     Mode sombre (.dark) — tokens charte v4.0 prêts.
+     NB : le site est verrouillé en clair (color-scheme: only light
+     sur html/body) ; ces tokens servent de base si le dark est activé.
+     ──────────────────────────────────────────────────────────── */
+  .dark {
+    --background: 219 55% 12%;            /* Bleu Nuit base #0E1A30 */
+    --foreground: 37 27% 94%;            /* Crème #F4F1EC */
+
+    --card: 217 49% 15%;                 /* Surface #14233B */
+    --card-foreground: 37 27% 94%;
+    --popover: 217 49% 15%;
+    --popover-foreground: 37 27% 94%;
+
+    --primary: 11 56% 44%;               /* Terracotta (inchangé) */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 217 49% 15%;            /* Surface navy */
+    --secondary-foreground: 37 27% 94%;
+
+    --muted: 217 40% 18%;
+    --muted-foreground: 37 18% 72%;
+
+    --accent: 217 40% 18%;               /* hover subtil sombre */
+    --accent-foreground: 37 27% 94%;
+
+    --text-subtle: 37 18% 72%;
+
+    --destructive: 13 75% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 217 35% 22%;
+    --input: 217 35% 22%;
+    --ring: 11 56% 50%;
+
+    --success: 150 33% 42%;
+    --success-foreground: 0 0% 100%;
+
+    --surface-1: 219 55% 12%;
+    --surface-2: 217 49% 15%;
+    --surface-3: 217 40% 18%;
+    --surface-4: 219 55% 10%;
+    --border-subtle: 217 35% 18%;
+    --border-strong: 37 27% 94%;
+  }
 }
 
 @layer base {
@@ -176,7 +245,7 @@ All colors MUST be HSL.
   /* Strong tags dans le contenu des articles utilisent le bleu IArche avec surlignage subtil */
   article strong,
   .prose strong {
-    color: hsl(var(--primary));
+    color: hsl(var(--secondary));
     font-weight: 600;
     background: linear-gradient(
       to bottom,
@@ -202,9 +271,20 @@ All colors MUST be HSL.
     );
   }
 
+  /* Titres — charte v4.0 : Manrope 600, letter-spacing serré */
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    letter-spacing: -0.022em;
+  }
+
+  /* Code / mono — JetBrains Mono */
+  code, pre, kbd, samp {
+    font-family: var(--font-mono, 'JetBrains Mono', ui-monospace, monospace);
+  }
+
   /* Focus global IArche - utilise la charte graphique */
   *:focus-visible {
-    outline: 2px solid hsl(var(--accent));
+    outline: 2px solid hsl(var(--primary));
     outline-offset: 2px;
     border-radius: 0.25rem;
   }
@@ -229,7 +309,7 @@ All colors MUST be HSL.
 }
 
 .hero-gradient-text {
-  background: linear-gradient(270deg, hsl(var(--primary)), hsl(var(--accent)), hsl(var(--primary)), hsl(var(--accent)));
+  background: linear-gradient(270deg, hsl(var(--secondary)), hsl(var(--primary)), hsl(var(--secondary)), hsl(var(--primary)));
   background-size: 600% 600%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -302,3 +382,207 @@ main {
 .bg-gradient-night { background-image: var(--gradient-night); }
 .bg-gradient-mesh-hero { background-image: var(--gradient-mesh-hero); }
 .bg-terracotta-glow { background-image: var(--gradient-terracotta-glow); }
+
+/* ════════════════════════════════════════════════════════════════
+   CHARTE IARCHE v4.0 — Signatures de marque (ÉTAPE 4)
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── em dans les titres → rouge rosé (clair) / flame (sombre) ───── */
+h1 em, h2 em, h3 em, h4 em,
+.section-title em,
+.text-display em, .text-h1 em, .text-h2 em, .text-h3 em {
+  font-style: italic;
+  font-weight: 400;
+  color: hsl(var(--accent-rose));
+}
+.sec-dark h1 em, .sec-dark h2 em, .sec-dark h3 em,
+.sec-dark .section-title em {
+  color: hsl(var(--accent-flame));
+  font-weight: 500;
+}
+
+/* ── Eyebrow / kicker : label mono ✦ (signature) ───────────────── */
+.ds-eyebrow {
+  display: inline-flex; align-items: center; gap: 11px;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: clamp(11px, 1vw, 13px); font-weight: 500;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: hsl(var(--accent-vivid));
+  margin-bottom: clamp(14px, 1.9vw, 24px);
+}
+.ds-eyebrow::before { content: "\2726"; font-size: 0.95em; }
+.sec-dark .ds-eyebrow { color: hsl(var(--accent-soft)); }
+.sec-dark .ds-eyebrow::before { color: hsl(var(--accent-vivid)); }
+.ds-eyebrow--center { justify-content: center; }
+
+/* Hero eyebrow : pilule bordée sur fond sombre */
+.ds-hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 13px; font-weight: 500; text-transform: uppercase;
+  letter-spacing: 0.22em; color: hsl(var(--accent-soft));
+  padding: 9px 17px; border-radius: var(--radius-pill);
+  border: 1px solid hsl(var(--accent-soft) / 0.45);
+  background: hsl(var(--primary) / 0.14);
+}
+.ds-hero-eyebrow .star { color: hsl(var(--accent-vivid)); }
+
+/* ── Bouton primaire « charte » (hors shadcn Button) ───────────── */
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 11px;
+  background: linear-gradient(100deg, hsl(var(--accent-vivid)), hsl(var(--primary)));
+  color: hsl(var(--primary-foreground)); text-decoration: none;
+  padding: 17px 30px; border-radius: var(--radius-pill);
+  font-size: 15px; font-weight: 700; letter-spacing: 0.01em; min-height: 54px;
+  box-shadow: var(--shadow-terracotta);
+  transition: transform .25s ease, box-shadow .25s ease, filter .25s ease;
+}
+.btn-primary:hover {
+  transform: translateY(-2px); filter: brightness(1.05);
+  box-shadow: 0 18px 42px -12px hsl(var(--primary) / 0.8);
+}
+.btn-primary .arrow { transition: transform .25s ease; }
+.btn-primary:hover .arrow { transform: translateX(3px); }
+.ds-btn-note { display: block; margin-top: 14px; font-size: 13px; color: hsl(var(--text-subtle)); }
+.sec-dark .ds-btn-note { color: hsl(var(--cream) / 0.46); }
+
+/* ── Grain SVG en overlay sur fonds sombres ────────────────────── */
+/* isolation + grain en z-index:-1 : le grain reste DERRIÈRE le contenu
+   sans forcer le position des enfants (sinon casse les absolute). */
+.sec-dark, .grain { position: relative; isolation: isolate; }
+.sec-dark::before,
+.grain::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  opacity: 0.4; mix-blend-mode: overlay; z-index: -1;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.12'/%3E%3C/svg%3E");
+}
+
+/* ── Sections claires / sombres (alternance signature) ─────────── */
+.sec-light { background: hsl(var(--background)); color: hsl(var(--foreground)); }
+.sec-light--warm { background: hsl(var(--muted)); }
+.sec-dark {
+  color: hsl(var(--cream)); overflow: hidden;
+  background:
+    radial-gradient(55% 45% at 86% 8%, hsl(var(--primary) / 0.22), transparent 60%),
+    radial-gradient(50% 45% at 6% 82%, hsl(var(--accent-rose) / 0.15), transparent 62%),
+    linear-gradient(180deg, hsl(var(--night-base)) 0%, hsl(var(--night-surface)) 55%, hsl(var(--night-base)) 100%);
+}
+.sec-dark .ds-lede { color: hsl(var(--cream) / 0.74); }
+.ds-lede { font-size: clamp(17px, 2.1vw, 20px); line-height: 1.55; }
+
+/* ── Particules flottantes (hero sombre) ───────────────────────── */
+.ds-particles { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.ds-particle {
+  position: absolute; border-radius: 50%;
+  background: radial-gradient(circle, rgba(244,225,215,0.9), rgba(176,74,50,0));
+  animation: dsFloaty 9s ease-in-out infinite;
+}
+@keyframes dsFloaty {
+  0%, 100% { transform: translateY(0); opacity: .45; }
+  50%      { transform: translateY(-22px); opacity: .9; }
+}
+
+/* ── Arc animé (signature) ─────────────────────────────────────── */
+.ds-arc { display: block; width: 210px; height: 32px; margin: 12px 0 4px; overflow: visible; }
+.ds-arc--center { margin-left: auto; margin-right: auto; }
+.sec-dark .ds-arc { filter: drop-shadow(0 0 5px hsl(var(--accent-rose) / 0.5)); }
+
+/* ── Cartes ────────────────────────────────────────────────────── */
+.ds-card {
+  border-radius: var(--radius-lg); padding: 30px 26px;
+  position: relative; overflow: hidden;
+  transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease;
+}
+.ds-card h3 { font-size: 21px; line-height: 1.2; margin-bottom: 12px; font-weight: 600; }
+.ds-card p { font-size: 15.5px; line-height: 1.6; }
+.ds-card-num {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 13px; margin-bottom: 16px; color: hsl(var(--accent-vivid));
+}
+/* claire (sable, liseré terracotta au survol) */
+.ds-card-solid { background: hsl(var(--muted)); border: 1px solid hsl(var(--border)); }
+.ds-card-solid::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+  background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--accent-rose)));
+  opacity: 0; transition: opacity .25s ease;
+}
+.ds-card-solid:hover {
+  transform: translateY(-3px); border-color: hsl(var(--accent-soft));
+  box-shadow: 0 18px 40px -22px hsl(var(--secondary) / 0.28);
+}
+.ds-card-solid:hover::before { opacity: 1; }
+.ds-card-solid h3 { color: hsl(var(--foreground)); }
+.ds-card-solid p { color: hsl(var(--text-subtle)); }
+/* verre (sur fond sombre) */
+.ds-card-glass {
+  background: var(--glass); border: 1px solid var(--glass-brd);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 20px 50px -34px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+.ds-card-glass:hover {
+  transform: translateY(-4px); border-color: hsl(var(--accent-rose) / 0.45);
+  box-shadow: 0 26px 60px -30px hsl(var(--primary) / 0.4), inset 0 1px 0 rgba(255,255,255,0.14);
+}
+.ds-card-glass h3 { color: hsl(var(--cream)); }
+.ds-card-glass p { color: hsl(var(--cream) / 0.72); }
+
+/* ── Chips d'icône ─────────────────────────────────────────────── */
+.ds-chip {
+  display: inline-flex; width: 56px; height: 56px; align-items: center;
+  justify-content: center; border-radius: 15px; margin-bottom: 18px;
+}
+.ds-chip--terra-l { background: linear-gradient(135deg, hsl(var(--primary) / 0.16), hsl(var(--accent-rose) / 0.10)); }
+.ds-chip--navy-l  { background: linear-gradient(135deg, hsl(var(--secondary) / 0.14), hsl(var(--secondary) / 0.07)); }
+.ds-chip--olive-l { background: linear-gradient(135deg, hsl(var(--olive) / 0.18), hsl(var(--olive) / 0.09)); }
+.ds-chip--d { border: 1px solid var(--glass-brd); }
+.ds-chip--terra-d { background: radial-gradient(circle at 30% 30%, hsl(var(--accent-rose) / 0.4), hsl(var(--primary) / 0.12)); box-shadow: 0 0 22px -6px hsl(var(--primary) / 0.55); }
+.ds-chip--soft-d  { background: radial-gradient(circle at 30% 30%, hsl(var(--accent-soft) / 0.42), hsl(var(--accent-soft) / 0.10)); box-shadow: 0 0 22px -6px hsl(var(--accent-soft) / 0.5); }
+.ds-chip--olive-d { background: radial-gradient(circle at 30% 30%, hsl(var(--olive) / 0.42), hsl(var(--olive) / 0.10)); box-shadow: 0 0 22px -6px hsl(var(--olive) / 0.5); }
+
+/* ── Principles (liste numérotée mono) ─────────────────────────── */
+.ds-principle {
+  display: flex; gap: 16px; align-items: baseline; padding: 18px 22px;
+  border-radius: var(--radius); background: hsl(var(--background)); border: 1px solid hsl(var(--border));
+}
+.sec-light--warm .ds-principle { background: hsl(var(--background)); }
+.ds-principle .mark { font-family: var(--font-mono, monospace); font-size: 14px; color: hsl(var(--accent-vivid)); flex-shrink: 0; width: 26px; }
+.ds-principle .body { font-size: clamp(15.5px, 2vw, 17.5px); color: hsl(var(--text-subtle)); }
+.ds-principle .body strong { color: hsl(var(--foreground)); font-weight: 600; }
+
+/* ── Panneau CTA final glow (sur sombre) ───────────────────────── */
+.ds-final-glow {
+  max-width: 860px; margin: 0 auto; padding: 56px 32px; text-align: center;
+  background: radial-gradient(120% 120% at 50% 0%, hsl(var(--primary) / 0.18), transparent 60%), var(--glass);
+  border: 1px solid var(--glass-brd); border-radius: var(--radius-xl);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 40px 90px -50px hsl(var(--primary) / 0.5), inset 0 1px 0 rgba(255,255,255,0.1);
+}
+.ds-final-info { display: inline-flex; align-items: center; gap: 16px; flex-wrap: wrap; justify-content: center; color: hsl(var(--cream) / 0.72); font-size: 14px; }
+.ds-final-info .dot { width: 5px; height: 5px; border-radius: 50%; background: hsl(var(--accent-vivid)); box-shadow: 0 0 10px hsl(var(--accent-vivid) / 0.8); }
+
+/* ── Signoff (clair, centré) ───────────────────────────────────── */
+.ds-signoff { text-align: center; }
+.ds-signoff-slogan { font-size: clamp(22px, 3.4vw, 32px); font-weight: 600; color: hsl(var(--foreground)); letter-spacing: -0.02em; }
+.ds-signoff-slogan em { font-style: italic; font-weight: 400; color: hsl(var(--accent-rose)); }
+.ds-signoff-baseline { font-size: 14px; color: hsl(var(--text-subtle)); margin-top: 12px; }
+
+/* ── Champs de formulaire sur fond sombre (lisibilité) ─────────── */
+.sec-dark input:not([type="checkbox"]):not([type="radio"]),
+.sec-dark textarea,
+.sec-dark select,
+.sec-dark [role="combobox"] {
+  background-color: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.26);
+  color: hsl(var(--cream));
+}
+.sec-dark input::placeholder,
+.sec-dark textarea::placeholder { color: hsl(var(--cream) / 0.4); }
+.sec-dark label { color: hsl(var(--cream) / 0.85); }
+
+/* ── Reveal au scroll ──────────────────────────────────────────── */
+.ds-reveal { opacity: 0; transform: translateY(22px); transition: opacity .7s ease, transform .7s ease; }
+.ds-reveal.is-visible { opacity: 1; transform: translateY(0); }
+@media (prefers-reduced-motion: reduce) {
+  .ds-reveal { opacity: 1; transform: none; transition: none; }
+  .ds-particle { animation: none; }
+}

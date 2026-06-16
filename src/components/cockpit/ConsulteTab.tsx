@@ -181,7 +181,7 @@ export function ConsulteTab({
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary" />
+            <Sparkles className="h-4 w-4 text-foreground" />
             Consulte
             <Badge variant="secondary" className="text-xs">
               {totalCount} liaison{totalCount > 1 ? 's' : ''}
@@ -247,7 +247,7 @@ export function ConsulteTab({
                       th: ({ children }) => <th className="border border-border px-2 py-1 bg-muted text-left font-medium">{children}</th>,
                       td: ({ children }) => <td className="border border-border px-2 py-1">{children}</td>,
                       hr: () => <hr className="my-3 border-border" />,
-                      blockquote: ({ children }) => <blockquote className="border-l-2 border-primary/30 pl-3 my-2 italic text-muted-foreground">{children}</blockquote>,
+                      blockquote: ({ children }) => <blockquote className="border-l-2 border-secondary/30 pl-3 my-2 italic text-muted-foreground">{children}</blockquote>,
                     }}
                   >
                     {summary}

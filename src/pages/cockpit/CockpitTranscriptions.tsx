@@ -395,9 +395,9 @@ export default function CockpitTranscriptions() {
       >
         {/* Drag & Drop Overlay */}
         {isDragging && (
-          <div className="absolute inset-0 z-50 bg-primary/5 border-2 border-dashed border-primary rounded-lg flex flex-col items-center justify-center pointer-events-none backdrop-blur-sm">
-            <Upload className="h-12 w-12 text-primary mb-3 animate-bounce" />
-            <p className="text-lg font-semibold text-primary">Déposez vos fichiers audio ici</p>
+          <div className="absolute inset-0 z-50 bg-secondary/5 border-2 border-dashed border-secondary rounded-lg flex flex-col items-center justify-center pointer-events-none backdrop-blur-sm">
+            <Upload className="h-12 w-12 text-foreground mb-3 animate-bounce" />
+            <p className="text-lg font-semibold text-foreground">Déposez vos fichiers audio ici</p>
             <p className="text-sm text-muted-foreground mt-1">MP3, WAV, M4A, OGG, FLAC, AAC</p>
           </div>
         )}
@@ -445,7 +445,7 @@ export default function CockpitTranscriptions() {
           const remaining = Math.ceil((batchProgress.total - batchProgress.current) * avgPerJob / 60);
           const pct = Math.round((batchProgress.current / batchProgress.total) * 100);
           return (
-            <div className="space-y-2 p-4 bg-primary/5 rounded-lg border border-primary/20">
+            <div className="space-y-2 p-4 bg-secondary/5 rounded-lg border border-secondary/20">
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2">
                   <ShieldAlert className="h-4 w-4 text-amber-500" />
@@ -641,10 +641,10 @@ export default function CockpitTranscriptions() {
                   key={transcription.id}
                   className={`cursor-pointer transition-all ${
                     isCurrentlyProcessing
-                      ? 'border-primary ring-2 ring-primary/30 bg-primary/5'
+                      ? 'border-secondary ring-2 ring-secondary/30 bg-secondary/5'
                       : isSelected
-                        ? 'border-primary/50 bg-primary/5'
-                        : 'hover:border-primary/50'
+                        ? 'border-secondary/50 bg-secondary/5'
+                        : 'hover:border-secondary/50'
                   }`}
                   onClick={() => navigate(`/cockpit/transcriptions/${transcription.slug || transcription.id}`)}
                 >
@@ -666,7 +666,7 @@ export default function CockpitTranscriptions() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           {isCurrentlyProcessing && (
-                            <Badge variant="default" className="flex items-center gap-1 bg-primary animate-pulse">
+                            <Badge variant="default" className="flex items-center gap-1 bg-secondary animate-pulse">
                               <Loader2 className="h-3 w-3 animate-spin" />
                               En cours
                             </Badge>
@@ -718,7 +718,7 @@ export default function CockpitTranscriptions() {
                            {transcription.lead && (
                              <Badge 
                                variant="secondary" 
-                               className="text-xs h-5 cursor-pointer hover:bg-primary/20"
+                               className="text-xs h-5 cursor-pointer hover:bg-secondary/20"
                                onClick={(e) => {
                                  e.stopPropagation();
                                  navigate(`/cockpit/leads/${transcription.lead!.id}`);
@@ -739,7 +739,7 @@ export default function CockpitTranscriptions() {
                            {transcription.project && (
                              <Badge 
                                variant="secondary" 
-                               className="text-xs h-5 cursor-pointer hover:bg-primary/20"
+                               className="text-xs h-5 cursor-pointer hover:bg-secondary/20"
                                onClick={(e) => {
                                  e.stopPropagation();
                                  navigate(`/cockpit/projects/${transcription.project!.id}`);
@@ -753,7 +753,7 @@ export default function CockpitTranscriptions() {
                            {transcription.solution && (
                              <Badge 
                                variant="outline" 
-                               className="text-xs h-5 cursor-pointer hover:bg-primary/20"
+                               className="text-xs h-5 cursor-pointer hover:bg-secondary/20"
                                onClick={(e) => {
                                  e.stopPropagation();
                                  navigate(`/cockpit/solutions/${transcription.solution_id}`);
@@ -770,7 +770,7 @@ export default function CockpitTranscriptions() {
                                  <Badge 
                                    key={p.partner.id}
                                    variant="outline" 
-                                   className="text-xs h-5 cursor-pointer hover:bg-primary/20 border-amber-500/50 text-amber-700 dark:text-amber-400"
+                                   className="text-xs h-5 cursor-pointer hover:bg-secondary/20 border-amber-500/50 text-amber-700 dark:text-amber-400"
                                    onClick={(e) => {
                                      e.stopPropagation();
                                      navigate(`/cockpit/partenaires/${p.partner.slug || p.partner.id}`);
@@ -803,7 +803,7 @@ export default function CockpitTranscriptions() {
                          <div className="flex items-center gap-3 mt-3">
                            <Badge 
                              variant={transcription.summary?.action_items && transcription.summary.action_items.length > 0 ? "default" : "outline"} 
-                             className={`text-xs h-5 ${transcription.summary?.action_items && transcription.summary.action_items.length > 0 ? 'bg-primary/80' : 'text-muted-foreground border-dashed'}`}
+                             className={`text-xs h-5 ${transcription.summary?.action_items && transcription.summary.action_items.length > 0 ? 'bg-secondary/80' : 'text-muted-foreground border-dashed'}`}
                            >
                              <ListTodo className="h-3 w-3 mr-1" />
                              {transcription.summary?.action_items?.length || 0} action{(transcription.summary?.action_items?.length || 0) !== 1 ? 's' : ''}
@@ -829,7 +829,7 @@ export default function CockpitTranscriptions() {
         {/* Floating selection toolbar - rendered via portal to escape overflow:auto */}
         {someSelected && !isProcessingBatch && createPortal(
           <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-5 py-3 bg-card border rounded-xl shadow-xl">
-            <CheckSquare className="h-4 w-4 text-primary" />
+            <CheckSquare className="h-4 w-4 text-foreground" />
             <span className="text-sm font-medium">{selectedIds.size} sélectionnée{selectedIds.size > 1 ? 's' : ''}</span>
             <div className="h-4 w-px bg-border" />
             <Button size="sm" className="h-7 text-xs" onClick={() => handleBatchProcess()}>

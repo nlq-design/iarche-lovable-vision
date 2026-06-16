@@ -167,7 +167,7 @@ export default function FaviconEditor() {
               <CardDescription>Image carrée 512×512px minimum</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors">
+              <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-secondary/50 transition-colors">
                 <input
                   type="file"
                   accept="image/*"
@@ -184,7 +184,7 @@ export default function FaviconEditor() {
                         className="w-32 h-32 mx-auto object-contain rounded-lg border"
                       />
                       <p className="text-sm text-muted-foreground">{sourceFileName}</p>
-                      <p className="text-xs text-primary">Cliquer pour changer</p>
+                      <p className="text-xs text-foreground">Cliquer pour changer</p>
                     </div>
                   ) : (
                     <div className="space-y-3">
@@ -278,8 +278,8 @@ export default function FaviconEditor() {
                 ))}
                 <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-primary/10 rounded flex items-center justify-center">
-                      <span className="text-xs font-mono text-primary">{'{}'}</span>
+                    <div className="w-8 h-8 bg-secondary/10 rounded flex items-center justify-center">
+                      <span className="text-xs font-mono text-foreground">{'{}'}</span>
                     </div>
                     <div>
                       <p className="text-sm font-medium">site.webmanifest</p>

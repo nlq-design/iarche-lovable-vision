@@ -86,7 +86,7 @@ export default function SettingsTeam() {
         <div className="space-y-6">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-3">
-              <Users className="h-6 w-6 text-primary" />
+              <Users className="h-6 w-6 text-foreground" />
               <div>
                 <h1 className="text-2xl font-bold text-foreground">Membres de votre espace</h1>
                 <p className="text-muted-foreground text-sm">
@@ -177,7 +177,7 @@ export default function SettingsTeam() {
                           </TableCell>
                           <TableCell>
                             {m.status === 'active' ? (
-                              <Badge variant="outline" className="border-primary/30 text-primary">Actif</Badge>
+                              <Badge variant="outline" className="border-secondary/30 text-foreground">Actif</Badge>
                             ) : (
                               <Badge variant="destructive">Suspendu</Badge>
                             )}

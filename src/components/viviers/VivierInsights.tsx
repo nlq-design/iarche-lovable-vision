@@ -77,10 +77,10 @@ export function VivierInsights({ onQuerySuggest }: VivierInsightsProps) {
 
   if (isLoading) {
     return (
-      <Card className="border-primary/20 bg-gradient-to-br from-accent/5 to-transparent">
+      <Card className="border-secondary/20 bg-gradient-to-br from-primary/5 to-transparent">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg">
-            <Sparkles className="w-5 h-5 text-primary" />
+            <Sparkles className="w-5 h-5 text-foreground" />
             Opportunités du jour
           </CardTitle>
         </CardHeader>
@@ -96,13 +96,13 @@ export function VivierInsights({ onQuerySuggest }: VivierInsightsProps) {
 
   return (
     <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
-      <Card className="border-primary/20 bg-gradient-to-br from-accent/5 to-transparent">
+      <Card className="border-secondary/20 bg-gradient-to-br from-primary/5 to-transparent">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <CollapsibleTrigger asChild>
               <Button variant="ghost" className="p-0 h-auto hover:bg-transparent">
                 <CardTitle className="flex items-center gap-2 text-lg cursor-pointer">
-                  <Sparkles className="w-5 h-5 text-primary" />
+                  <Sparkles className="w-5 h-5 text-foreground" />
                   Opportunités
                   {highPriorityCount > 0 && (
                     <Badge className="ml-1 bg-orange-500 text-white text-xs">
@@ -142,21 +142,21 @@ export function VivierInsights({ onQuerySuggest }: VivierInsightsProps) {
             {stats && (
               <div className="grid grid-cols-3 gap-2 p-2 bg-muted/30 rounded-lg text-center">
                 <div>
-                  <div className="text-lg font-bold text-primary flex items-center justify-center gap-1">
+                  <div className="text-lg font-bold text-foreground flex items-center justify-center gap-1">
                     <Flame className="w-4 h-4 text-orange-500" />
                     {stats.hot_leads_count}
                   </div>
                   <div className="text-xs text-muted-foreground">Leads chauds</div>
                 </div>
                 <div>
-                  <div className="text-lg font-bold text-primary flex items-center justify-center gap-1">
+                  <div className="text-lg font-bold text-foreground flex items-center justify-center gap-1">
                     <TrendingUp className="w-4 h-4 text-green-500" />
                     {stats.high_score_count}
                   </div>
                   <div className="text-xs text-muted-foreground">Score ≥70</div>
                 </div>
                 <div>
-                  <div className="text-lg font-bold text-primary flex items-center justify-center gap-1">
+                  <div className="text-lg font-bold text-foreground flex items-center justify-center gap-1">
                     <Users className="w-4 h-4 text-blue-500" />
                     {stats.complete_data_count}
                   </div>
@@ -198,7 +198,7 @@ export function VivierInsights({ onQuerySuggest }: VivierInsightsProps) {
                             <Button 
                               size="sm" 
                               variant="secondary"
-                              className="h-7 text-xs group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                              className="h-7 text-xs group-hover:bg-secondary group-hover:text-secondary-foreground transition-colors"
                             >
                               {opp.action.label}
                               <ArrowRight className="w-3 h-3 ml-1" />

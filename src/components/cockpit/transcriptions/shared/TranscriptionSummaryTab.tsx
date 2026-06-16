@@ -87,7 +87,7 @@ export function TranscriptionSummaryTab({ summary, persistedParticipants }: Tran
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary" />
+            <Sparkles className="h-4 w-4 text-foreground" />
             Résumé exécutif
           </CardTitle>
         </CardHeader>
@@ -117,7 +117,7 @@ export function TranscriptionSummaryTab({ summary, persistedParticipants }: Tran
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
-              <Users className="h-4 w-4 text-primary" />
+              <Users className="h-4 w-4 text-foreground" />
               Participants ({displayParticipants.length})
             </CardTitle>
           </CardHeader>
@@ -167,7 +167,7 @@ export function TranscriptionSummaryTab({ summary, persistedParticipants }: Tran
             <ul className="space-y-1">
               {summary.decisions.map((decision, i) => (
                 <li key={i} className="text-sm flex items-start gap-2">
-                  <ArrowRight className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  <ArrowRight className="h-4 w-4 text-foreground mt-0.5 shrink-0" />
                   {safeStr(decision)}
                 </li>
               ))}

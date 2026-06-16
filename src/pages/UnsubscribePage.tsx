@@ -64,11 +64,11 @@ export default function UnsubscribePage() {
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 p-3 rounded-full bg-primary/10 w-fit">
+          <div className="mx-auto mb-4 p-3 rounded-full bg-secondary/10 w-fit">
             {status === 'success' || status === 'already' ? (
-              <MailX className="w-8 h-8 text-primary" />
+              <MailX className="w-8 h-8 text-foreground" />
             ) : (
-              <Mail className="w-8 h-8 text-primary" />
+              <Mail className="w-8 h-8 text-foreground" />
             )}
           </div>
           <CardTitle>Désinscription</CardTitle>
@@ -106,7 +106,7 @@ export default function UnsubscribePage() {
 
           {status === 'confirming' && (
             <div className="flex flex-col items-center py-8 gap-4">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              <Loader2 className="w-8 h-8 animate-spin text-foreground" />
               <p className="text-muted-foreground">Traitement en cours...</p>
             </div>
           )}
@@ -142,7 +142,7 @@ export default function UnsubscribePage() {
             <div className="text-center pt-4">
               <a 
                 href="https://iarche.fr" 
-                className="text-sm text-primary hover:underline"
+                className="text-sm text-foreground hover:underline"
               >
                 Retour au site IArche
               </a>

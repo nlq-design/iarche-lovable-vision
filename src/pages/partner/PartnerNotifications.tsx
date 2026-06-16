@@ -103,7 +103,7 @@ export default function PartnerNotifications() {
                   <div 
                     key={notification.id}
                     className={`flex items-start gap-4 py-4 ${
-                      !notification.is_read ? 'bg-primary/5 -mx-4 px-4 rounded-lg' : ''
+                      !notification.is_read ? 'bg-secondary/5 -mx-4 px-4 rounded-lg' : ''
                     }`}
                   >
                     <span className="text-2xl mt-1">{typeIcons[notification.type] || '📌'}</span>

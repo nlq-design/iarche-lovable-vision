@@ -128,7 +128,7 @@ const AdminInvitationEmailPreview = () => {
         {/* États */}
         {loading && (
           <div className="flex items-center justify-center py-20 bg-card border border-border rounded-lg">
-            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            <Loader2 className="w-6 h-6 animate-spin text-foreground" />
           </div>
         )}
 

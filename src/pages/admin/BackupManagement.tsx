@@ -267,7 +267,7 @@ const BackupManagement = () => {
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-2">
-                <Database className="h-5 w-5 text-primary" />
+                <Database className="h-5 w-5 text-foreground" />
                 <span className="text-2xl font-bold">{backups.length}</span>
               </div>
             </CardContent>
@@ -316,7 +316,7 @@ const BackupManagement = () => {
           <CardContent>
             {loading ? (
               <div className="flex justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <Loader2 className="h-8 w-8 animate-spin text-foreground" />
               </div>
             ) : backups.length === 0 ? (
               <div className="text-center py-12">
@@ -332,7 +332,7 @@ const BackupManagement = () => {
                 {backups.map((backup) => (
                   <div
                     key={backup.id}
-                    className="flex items-start justify-between p-4 border border-border rounded-lg hover:border-primary/50 transition-colors"
+                    className="flex items-start justify-between p-4 border border-border rounded-lg hover:border-secondary/50 transition-colors"
                   >
                     <div className="flex gap-4 flex-1">
                       <div className="text-muted-foreground mt-1">
@@ -390,7 +390,7 @@ const BackupManagement = () => {
                             </div>
                             <div className="w-full bg-muted rounded-full h-2">
                               <div 
-                                className="bg-primary h-2 rounded-full transition-all"
+                                className="bg-secondary h-2 rounded-full transition-all"
                                 style={{ width: `${backup.progress_percentage}%` }}
                               />
                             </div>

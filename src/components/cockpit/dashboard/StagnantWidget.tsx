@@ -63,7 +63,7 @@ export function StagnantWidget({ onSuggestFollowUp, suggestNextStep }: StagnantW
                     <Button variant="ghost" size="sm" className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                       onClick={(e) => { e.stopPropagation(); onSuggestFollowUp(opp.id); }}
                       disabled={suggestNextStep.isPending}>
-                      {suggestNextStep.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Zap className="h-3 w-3 text-primary" />}
+                      {suggestNextStep.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Zap className="h-3 w-3 text-foreground" />}
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Suggestion IA</TooltipContent>

@@ -1,14 +1,10 @@
 import { Helmet } from 'react-helmet-async';
-import { Link } from 'react-router-dom';
 import BackgroundLayout from '@/components/layouts/BackgroundLayout';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import BreadcrumbNav from '@/components/ui/BreadcrumbNav';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle } from 'lucide-react';
-import GradientLink from '@/components/ui/GradientLink';
-import GradientTitle from '@/components/ui/GradientTitle';
-import IArcheLink from '@/components/ui/IArcheLink';
+import { Section, SectionTitle, Reveal, SolidCard, GlassCard, BtnPrimary } from '@/components/brand';
 import { useCTATracking } from '@/hooks/useCTATracking';
 
 const Services = () => {
@@ -87,7 +83,7 @@ const Services = () => {
         <meta name="author" content="IArche" />
         <meta name="keywords" content="services IA, audit IA, développement IA, accompagnement IA, conformité RGPD, PME, Bayonne" />
         <link rel="canonical" href="https://iarche.fr/services" />
-        
+
         {/* Open Graph */}
         <meta property="og:title" content="Nos services · IArche · Architecte IA Bayonne" />
         <meta property="og:description" content="Audit IA, développement, accompagnement et conformité. Services adaptés aux PME." />
@@ -98,7 +94,7 @@ const Services = () => {
         <meta property="og:image:height" content="630" />
         <meta property="og:locale" content="fr_FR" />
         <meta property="og:site_name" content="IArche" />
-        
+
         {/* Twitter Card */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Nos services · IArche" />
@@ -165,105 +161,129 @@ const Services = () => {
           })}
         </script>
       </Helmet>
-      
+
       <Header />
       <BreadcrumbNav />
-      
-      <main className="min-h-screen pt-4">
-        <section className="max-w-6xl mx-auto px-6 py-4">
-          {/* En-tête */}
-          <div className="text-center mb-8">
-            <GradientTitle size="lg" as="h1" className="mb-6 animate-fadeIn [animation-delay:0.1s]">
-              Nos services
-            </GradientTitle>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto animate-fadeIn [animation-delay:0.2s]">
-              Audit, développement, accompagnement, conformité.
-            </p>
-          </div>
 
-          {/* Liste des services */}
-          <div className="space-y-12">
-            {services.map((service, index) => (
-              <Card 
-                key={service.id}
-                className="relative animate-fadeIn hover:shadow-lg transition-shadow duration-300 overflow-hidden"
-                style={{ animationDelay: `${0.3 + index * 0.1}s` }}
+      <main>
+        {/* Hero */}
+        <Section tone="dark" spacing="hero">
+          <SectionTitle
+            as="h1"
+            center
+            eyebrow="Ce qu'on fait"
+            lede="Audit, développement, accompagnement, conformité."
+          >
+            Nos <em>services.</em>
+          </SectionTitle>
+        </Section>
+
+        {/* Liste des services — rythme de tons : light → warm → dark → light */}
+        {services.map((service, index) => {
+          const tones = ['light', 'warm', 'dark', 'light'] as const;
+          const tone = tones[index % tones.length];
+          const isDark = tone === 'dark';
+          const num = String(index + 1).padStart(2, '0');
+          const CardComp = isDark ? GlassCard : SolidCard;
+
+          return (
+            <Section key={service.id} tone={tone} container="narrow" id={service.id}>
+              <Reveal>
+                <CardComp num={num}>
+                  <h3>{service.title}</h3>
+                  <p>{service.description}</p>
+
+                  <div className="mt-6 space-y-6">
+                    {/* Livrables */}
+                    <div>
+                      <h4
+                        className={
+                          isDark
+                            ? 'text-sm font-semibold uppercase tracking-wide text-[hsl(var(--cream)/0.72)] mb-3'
+                            : 'text-sm font-semibold uppercase tracking-wide text-foreground mb-3'
+                        }
+                      >
+                        Livrables
+                      </h4>
+                      <ul className="space-y-2">
+                        {service.livrables.map((livrable, idx) => (
+                          <li
+                            key={idx}
+                            className={
+                              isDark
+                                ? 'flex items-start gap-2 text-[hsl(var(--cream)/0.72)]'
+                                : 'flex items-start gap-2 text-muted-foreground'
+                            }
+                          >
+                            <CheckCircle
+                              className={
+                                isDark
+                                  ? 'w-5 h-5 text-[hsl(var(--accent-soft))] shrink-0 mt-0.5'
+                                  : 'w-5 h-5 text-primary shrink-0 mt-0.5'
+                              }
+                              aria-hidden="true"
+                            />
+                            <span>{livrable}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Pour qui */}
+                    <div>
+                      <h4
+                        className={
+                          isDark
+                            ? 'text-sm font-semibold uppercase tracking-wide text-[hsl(var(--cream)/0.72)] mb-2'
+                            : 'text-sm font-semibold uppercase tracking-wide text-foreground mb-2'
+                        }
+                      >
+                        Pour qui ?
+                      </h4>
+                      <p className={isDark ? 'text-[hsl(var(--cream)/0.72)]' : 'text-muted-foreground'}>
+                        {service.pourQui}
+                      </p>
+                    </div>
+
+                    {/* CTA */}
+                    <div className="pt-2">
+                      <a
+                        href={`/services/${service.id}`}
+                        onClick={() => trackCTAClick('en_savoir_plus_service', 'services_page', service.id)}
+                        className={
+                          isDark
+                            ? 'inline-flex items-center text-sm font-medium text-[hsl(var(--accent-soft))] hover:text-[hsl(var(--cream))] transition-colors'
+                            : 'inline-flex items-center text-sm font-medium text-primary hover:opacity-80 transition-opacity'
+                        }
+                      >
+                        {service.ctaDetail}
+                      </a>
+                    </div>
+                  </div>
+                </CardComp>
+              </Reveal>
+            </Section>
+          );
+        })}
+
+        {/* CTA final */}
+        <Section tone="warm" spacing="compact">
+          <div className="text-center flex flex-col items-center">
+            <Reveal>
+              <p className="text-lg text-foreground mb-6">
+                Prêt à démarrer ?
+              </p>
+              <BtnPrimary
+                href="/contact"
+                onClick={() => trackCTAClick('premier_echange', 'services_page_bottom')}
               >
-                {/* Bordure gradient à gauche */}
-                <div 
-                  className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg"
-                  style={{ background: 'linear-gradient(180deg, #1A2B4A 0%, #B04A32 100%)' }}
-                />
-                <CardHeader className="pl-5">
-                  <div className="flex items-center gap-2">
-                    {/* Badge gradient */}
-                    <div 
-                      className="w-2 h-2 rounded-full flex-shrink-0"
-                      style={{ background: 'linear-gradient(135deg, #1A2B4A 0%, #B04A32 100%)' }}
-                    />
-                    <CardTitle className="text-2xl md:text-3xl text-primary">
-                      {service.title}
-                    </CardTitle>
-                  </div>
-                  <CardDescription className="text-base md:text-lg mt-2">
-                    {service.description}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* Livrables */}
-                  <div>
-                    <h3 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wide">
-                      Livrables
-                    </h3>
-                    <ul className="space-y-2">
-                      {service.livrables.map((livrable, idx) => (
-                        <li key={idx} className="flex items-start gap-2 text-muted-foreground">
-                          <CheckCircle className="w-5 h-5 text-accent shrink-0 mt-0.5" aria-hidden="true" />
-                          <span>{livrable}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  {/* Pour qui */}
-                  <div>
-                    <h3 className="text-sm font-semibold text-foreground mb-2 uppercase tracking-wide">
-                      Pour qui ?
-                    </h3>
-                    <p className="text-muted-foreground">
-                      {service.pourQui}
-                    </p>
-                  </div>
-
-                  {/* CTA */}
-                  <div className="pt-4">
-                    <IArcheLink 
-                      href={`/services/${service.id}`}
-                      onClick={() => trackCTAClick('en_savoir_plus_service', 'services_page', service.id)}
-                    >
-                      {service.ctaDetail}
-                    </IArcheLink>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                Premier échange
+              </BtnPrimary>
+            </Reveal>
           </div>
-
-          <div className="text-center mt-16 animate-fadeIn [animation-delay:0.9s]">
-            <p className="text-lg text-foreground mb-6">
-              Prêt à démarrer ?
-            </p>
-            <GradientLink 
-              href="/contact" 
-              className="text-lg"
-              onClick={() => trackCTAClick('premier_echange', 'services_page_bottom')}
-            >
-              Premier échange
-            </GradientLink>
-          </div>
-        </section>
+        </Section>
       </main>
-      
+
       <Footer />
     </BackgroundLayout>
   );

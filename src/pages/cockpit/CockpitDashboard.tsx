@@ -153,17 +153,17 @@ export default function CockpitDashboard() {
                   intelLoading ? "bg-muted animate-pulse" :
                   globalScore !== null && globalScore >= 70 ? "bg-emerald-500/10" :
                   globalScore !== null && globalScore >= 40 ? "bg-amber-500/10" :
-                  globalScore !== null ? "bg-destructive/10" : "bg-primary/10"
+                  globalScore !== null ? "bg-destructive/10" : "bg-secondary/10"
                 )}>
                   {intelLoading ? (
-                    <Loader2 className="h-4 w-4 text-primary animate-spin" />
+                    <Loader2 className="h-4 w-4 text-foreground animate-spin" />
                   ) : globalScore !== null ? (
                     <span className={cn("text-sm font-bold",
                       globalScore >= 70 ? "text-emerald-600" :
                       globalScore >= 40 ? "text-amber-600" : "text-destructive"
                     )}>{globalScore}</span>
                   ) : (
-                    <Brain className={cn("h-4 w-4", hasUrgentContext ? "text-destructive" : "text-primary")} />
+                    <Brain className={cn("h-4 w-4", hasUrgentContext ? "text-destructive" : "text-foreground")} />
                   )}
                 </div>
 
@@ -247,7 +247,7 @@ export default function CockpitDashboard() {
                     <SheetTrigger asChild>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button variant="outline" size="sm" className="h-8 gap-1 border-primary/30 text-primary hover:bg-primary/10">
+                          <Button variant="outline" size="sm" className="h-8 gap-1 border-secondary/30 text-foreground hover:bg-secondary/10">
                             <Wheat className="h-3.5 w-3.5" />
                             <span className="text-xs font-semibold">{overdueAiCount}</span>
                           </Button>
@@ -276,7 +276,7 @@ export default function CockpitDashboard() {
             <div className="border-t bg-card/30 px-4 py-1.5 cursor-pointer hover:bg-card/50 transition-colors"
               onClick={() => setBriefExpanded(true)}>
               <div className="max-w-[1600px] mx-auto flex items-center gap-2">
-                <Sparkles className="h-3 w-3 text-primary flex-shrink-0" />
+                <Sparkles className="h-3 w-3 text-foreground flex-shrink-0" />
                 <p className="text-xs text-muted-foreground truncate">
                   {intelligence.narrative_brief.split('\n').filter(l => l.trim()).slice(0, 2).join(' · ').slice(0, 150)}...
                 </p>
@@ -383,7 +383,7 @@ export default function CockpitDashboard() {
                     <div className="py-3 text-center">
                       <p className="text-xs text-muted-foreground mb-1.5">Aucun RDV aujourd'hui</p>
                       {upcomingBookings && upcomingBookings.length > 0 && (
-                        <p className="text-[10px] text-primary cursor-pointer hover:underline" onClick={() => navigate('/cockpit/agenda')}>
+                        <p className="text-[10px] text-foreground cursor-pointer hover:underline" onClick={() => navigate('/cockpit/agenda')}>
                           → {upcomingBookings.length} RDV à venir
                         </p>
                       )}
@@ -429,7 +429,7 @@ export default function CockpitDashboard() {
               <CrossSignalsWidget signals={intelligence?.cross_signals} embeddingSignals={crossSignalsDb ?? raw?.cross_signals_db} isLoading={intelLoading && crossSignalsLoading} navigate={navigate} />
 
               {/* Pipeline */}
-              <Card className="cursor-pointer hover:border-primary/30 transition-colors" onClick={() => navigate('/cockpit/pipeline')}>
+              <Card className="cursor-pointer hover:border-secondary/30 transition-colors" onClick={() => navigate('/cockpit/pipeline')}>
                 <CardHeader className="pb-1.5 pt-3 px-3">
                   <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                     <TrendingUp className="h-3.5 w-3.5" /> Pipeline
@@ -599,7 +599,7 @@ export default function CockpitDashboard() {
                             className="flex items-start gap-2 py-1.5 px-1.5 rounded hover:bg-muted/50 transition-colors cursor-pointer"
                             onClick={() => navigate(`/cockpit/transcriptions/${t.id}`)}>
                             <Mic className={cn("h-3.5 w-3.5 mt-0.5 flex-shrink-0",
-                              t.status === 'done' ? 'text-emerald-500' : t.status === 'error' ? 'text-destructive' : 'text-primary'
+                              t.status === 'done' ? 'text-emerald-500' : t.status === 'error' ? 'text-destructive' : 'text-foreground'
                             )} />
                             <div className="flex-1 min-w-0">
                               <p className="text-xs font-medium truncate">{t.title || t.summary?.title || t.original_filename || 'Sans titre'}</p>
@@ -681,7 +681,7 @@ export default function CockpitDashboard() {
                           <div key={a.id}
                             className={cn(
                               "flex items-start gap-2 py-1.5 px-1.5 rounded hover:bg-muted/50 transition-colors cursor-pointer",
-                              a.is_ai_generated && "border-l-2 border-primary/30 pl-2.5"
+                              a.is_ai_generated && "border-l-2 border-secondary/30 pl-2.5"
                             )}
                             onClick={() => {
                               const entityRoutes: Record<string, string> = {
@@ -701,7 +701,7 @@ export default function CockpitDashboard() {
                                 <p className="text-xs font-medium truncate">{a.title}</p>
                               </div>
                               <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                                {a.is_ai_generated && <span className="text-primary">🤖</span>}
+                                {a.is_ai_generated && <span className="text-foreground">🤖</span>}
                                 <span className="capitalize">{a.entity_type}</span>
                                 <span>·</span>
                                 <span>{formatDistanceToNow(new Date(a.created_at!), { addSuffix: true, locale: fr })}</span>

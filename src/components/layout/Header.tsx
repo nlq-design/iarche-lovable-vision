@@ -28,7 +28,7 @@ const Header = () => {
     <>
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[60] focus:bg-primary focus:text-primary-foreground focus:px-4 focus:py-2 focus:rounded-md focus:text-sm"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[60] focus:bg-secondary focus:text-secondary-foreground focus:px-4 focus:py-2 focus:rounded-md focus:text-sm"
       >
         Aller au contenu
       </a>
@@ -38,7 +38,7 @@ const Header = () => {
           {/* Logo IArche v4.0 */}
           <button 
             onClick={() => navigate('/')}
-            className="cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded"
+            className="cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded"
           >
             <Logo variant="main" size="md" />
           </button>
@@ -48,7 +48,7 @@ const Header = () => {
             <NavLink 
               to="/services"
               className={({ isActive }) => 
-                `text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 rounded px-2 py-1 ${
+                `text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-1 rounded px-2 py-1 ${
                   isActive 
                     ? 'hero-gradient-text font-semibold' 
                     : 'hero-gradient-text'
@@ -60,7 +60,7 @@ const Header = () => {
             <NavLink 
               to="/solutions"
               className={({ isActive }) => 
-                `text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 rounded px-2 py-1 ${
+                `text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-1 rounded px-2 py-1 ${
                   isActive 
                     ? 'hero-gradient-text font-semibold' 
                     : 'hero-gradient-text'
@@ -72,7 +72,7 @@ const Header = () => {
             <NavLink 
               to="/iarche-labs"
               className={({ isActive }) => 
-                `text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 rounded px-2 py-1 flex items-center gap-1.5 ${
+                `text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-1 rounded px-2 py-1 flex items-center gap-1.5 ${
                   isActive 
                     ? 'hero-gradient-text font-semibold' 
                     : 'hero-gradient-text'
@@ -94,7 +94,7 @@ const Header = () => {
                   navigate('/actualites');
                   setResourcesOpen(false);
                 }}
-                className="flex items-center gap-1 text-sm hero-gradient-text transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 rounded px-2 py-1"
+                className="flex items-center gap-1 text-sm hero-gradient-text transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 rounded px-2 py-1"
               >
                 Ressources
                 <ChevronDown 
@@ -161,7 +161,7 @@ const Header = () => {
 
           {/* Bouton Hamburger Mobile */}
           <button 
-            className="md:hidden p-2 text-foreground hover:text-primary focus:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded transition-colors"
+            className="md:hidden p-2 text-foreground hover:text-foreground focus:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-secondary rounded transition-colors"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label={mobileMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
           >
@@ -183,7 +183,7 @@ const Header = () => {
                 to="/services"
                 onClick={() => setMobileMenuOpen(false)}
                 className={({ isActive }) => 
-                  `text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 rounded px-2 py-1 ${
+                  `text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-1 rounded px-2 py-1 ${
                     isActive 
                       ? 'hero-gradient-text font-semibold' 
                       : 'hero-gradient-text'
@@ -196,7 +196,7 @@ const Header = () => {
                 to="/solutions"
                 onClick={() => setMobileMenuOpen(false)}
                 className={({ isActive }) => 
-                  `text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 rounded px-2 py-1 ${
+                  `text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-1 rounded px-2 py-1 ${
                     isActive 
                       ? 'hero-gradient-text font-semibold' 
                       : 'hero-gradient-text'
@@ -209,7 +209,7 @@ const Header = () => {
                 to="/iarche-labs"
                 onClick={() => setMobileMenuOpen(false)}
                 className={({ isActive }) => 
-                  `text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 rounded px-2 py-1 flex items-center gap-1.5 ${
+                  `text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-1 rounded px-2 py-1 flex items-center gap-1.5 ${
                     isActive 
                       ? 'hero-gradient-text font-semibold' 
                       : 'hero-gradient-text'
@@ -228,7 +228,7 @@ const Header = () => {
                 >
                   Ressources
                 </NavLink>
-                <div className="pl-4 flex flex-col gap-2 border-l-2 border-accent/30">
+                <div className="pl-4 flex flex-col gap-2 border-l-2 border-primary/30">
                   <NavLink 
                     to="/actualites"
                     onClick={() => setMobileMenuOpen(false)}

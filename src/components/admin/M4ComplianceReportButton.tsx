@@ -25,7 +25,7 @@ const M4ComplianceReportButton = () => {
     <Card className="bg-background/95 border-border">
       <CardHeader>
         <div className="flex items-start gap-3">
-          <FileCheck2 className="h-6 w-6 text-accent mt-0.5 shrink-0" />
+          <FileCheck2 className="h-6 w-6 text-primary mt-0.5 shrink-0" />
           <div className="flex-1">
             <CardTitle className="text-lg text-foreground">Rapport de conformité M4</CardTitle>
             <CardDescription>
@@ -39,7 +39,7 @@ const M4ComplianceReportButton = () => {
         <Button
           onClick={handleDownload}
           disabled={generating}
-          className="bg-primary text-primary-foreground hover:bg-primary/90"
+          className="bg-secondary text-secondary-foreground hover:bg-secondary/90"
         >
           {generating ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

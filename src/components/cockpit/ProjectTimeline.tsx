@@ -73,7 +73,7 @@ export function ProjectTimeline({
     if (timeline.isOverdue) return 'bg-red-500';
     if (healthStatus === 'at_risk') return 'bg-yellow-500';
     if (healthStatus === 'critical') return 'bg-red-500';
-    return 'bg-primary';
+    return 'bg-secondary';
   };
 
   if (!startDate || !targetEndDate) {
@@ -96,13 +96,13 @@ export function ProjectTimeline({
         </div>
         
         {/* Markers */}
-        <div className="absolute -top-1 left-0 w-3 h-3 rounded-full bg-primary border-2 border-background" title="Début" />
+        <div className="absolute -top-1 left-0 w-3 h-3 rounded-full bg-secondary border-2 border-background" title="Début" />
         <div className="absolute -top-1 right-0 w-3 h-3 rounded-full bg-muted border-2 border-background" title="Objectif" />
         
         {/* Current position marker */}
         {!timeline.isCompleted && timeline.progress > 0 && timeline.progress < 100 && (
           <div 
-            className="absolute -top-1.5 w-4 h-4 rounded-full bg-background border-2 border-primary shadow-sm flex items-center justify-center"
+            className="absolute -top-1.5 w-4 h-4 rounded-full bg-background border-2 border-secondary shadow-sm flex items-center justify-center"
             style={{ left: `calc(${timeline.progress}% - 8px)` }}
           >
             <div className={cn("w-2 h-2 rounded-full", getHealthColor())} />

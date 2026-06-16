@@ -3,7 +3,7 @@ import { NavLink } from '@/components/NavLink';
 import { Linkedin, Instagram, Facebook } from 'lucide-react';
 
 const Footer = () => {
-  const linkClass = "text-sm text-[hsl(var(--footer-text-muted))] hover:text-accent focus:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-[hsl(var(--footer-bg-from))] rounded transition-colors duration-200";
+  const linkClass = "text-sm text-[hsl(var(--footer-text-muted))] hover:text-primary focus:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-[hsl(var(--footer-bg-from))] rounded transition-colors duration-200";
 
   return (
     <footer className="bg-gradient-to-br from-[hsl(var(--footer-bg-from))] via-[hsl(var(--footer-bg-via))] to-[hsl(var(--footer-bg-to))] text-[hsl(var(--footer-text))]">

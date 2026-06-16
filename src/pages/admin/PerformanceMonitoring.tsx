@@ -263,7 +263,7 @@ const PerformanceMonitoring = () => {
       </div>
 
       {/* Seuils d'alerte */}
-      <Card className="border-accent/20 bg-accent/5">
+      <Card className="border-primary/20 bg-primary/5">
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <Activity className="w-4 h-4" />

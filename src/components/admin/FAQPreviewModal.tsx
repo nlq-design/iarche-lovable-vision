@@ -48,14 +48,14 @@ export const FAQPreviewModal = ({
         <div className="py-4">
           {isGenerating ? (
             <div className="flex flex-col items-center justify-center py-12 gap-4">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <Loader2 className="h-8 w-8 animate-spin text-foreground" />
               <p className="text-sm text-muted-foreground">
                 Génération de la FAQ en cours...
               </p>
             </div>
           ) : faqData && faqData.length > 0 ? (
             <div>
-              <div className="mb-4 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+              <div className="mb-4 p-3 bg-secondary/5 border border-secondary/20 rounded-lg">
                 <p className="text-sm text-muted-foreground">
                   <strong className="text-foreground">{faqData.length} questions</strong> générées automatiquement par IA
                 </p>

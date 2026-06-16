@@ -44,7 +44,7 @@ export default function PartnerProfile() {
               <div className="flex flex-col items-center text-center">
                 <Avatar className="h-24 w-24 mb-4">
                   <AvatarImage src={partnerData?.avatar_url || undefined} />
-                  <AvatarFallback className="text-2xl bg-primary/10 text-primary">
+                  <AvatarFallback className="text-2xl bg-secondary/10 text-foreground">
                     {partnerData?.name?.charAt(0) || 'P'}
                   </AvatarFallback>
                 </Avatar>

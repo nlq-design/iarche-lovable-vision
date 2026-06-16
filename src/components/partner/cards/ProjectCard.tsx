@@ -85,7 +85,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
 
               <div className="flex items-center gap-2">
                 {isCreator ? (
-                  <Badge className="bg-primary/10 text-primary border-primary/20">
+                  <Badge className="bg-secondary/10 text-foreground border-secondary/20">
                     Créé par vous
                   </Badge>
                 ) : project.role && (

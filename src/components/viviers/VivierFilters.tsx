@@ -281,7 +281,7 @@ export function VivierFilters({
               <SlidersHorizontal className="h-3.5 w-3.5" />
               Score
               {(minScore !== undefined || maxScore !== undefined) && (
-                <span className="text-xs bg-primary text-primary-foreground px-1.5 rounded-sm">
+                <span className="text-xs bg-secondary text-secondary-foreground px-1.5 rounded-sm">
                   {minScore || 0}-{maxScore || 100}
                 </span>
               )}
@@ -385,7 +385,7 @@ export function VivierFilters({
               <Button variant="outline" size="sm" className="gap-2 h-9">
                 Qualité
                 {(hasEmail !== undefined || hasPhone !== undefined) && (
-                  <span className="text-xs bg-primary text-primary-foreground px-1.5 rounded-sm">
+                  <span className="text-xs bg-secondary text-secondary-foreground px-1.5 rounded-sm">
                     {[hasEmail !== undefined, hasPhone !== undefined].filter(Boolean).length}
                   </span>
                 )}

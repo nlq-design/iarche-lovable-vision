@@ -12,7 +12,7 @@ import { ArrowLeft, CheckCircle } from 'lucide-react';
 import { getServiceBySlug } from '@/data/servicesData';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import GradientLink from '@/components/ui/GradientLink';
-import GradientTitle from '@/components/ui/GradientTitle';
+import { Section, SectionTitle } from '@/components/brand';
 import { useCTATracking } from '@/hooks/useCTATracking';
 
 const ServiceDetail = () => {
@@ -145,8 +145,22 @@ const ServiceDetail = () => {
       <Header />
       <BreadcrumbNav />
 
-      <main className="min-h-screen pt-4">
-        <article className="max-w-4xl mx-auto px-6 py-4">
+      <main className="min-h-screen">
+        {/* Hero — fond sombre charte v4.0 */}
+        <Section tone="dark" spacing="hero">
+          <SectionTitle
+            as="h1"
+            center
+            arc
+            eyebrow="Service"
+            lede={service.descriptionLongue}
+          >
+            {service.title}
+          </SectionTitle>
+        </Section>
+
+        {/* Corps — fond clair, lisible */}
+        <Section tone="light" container="narrow">
           {/* Bouton retour */}
           <div className="mb-8">
             <NavLink to="/services">
@@ -157,26 +171,16 @@ const ServiceDetail = () => {
             </NavLink>
           </div>
 
-          {/* En-tête */}
-          <header className="mb-12">
-            <GradientTitle size="lg" as="h1" centered={false} className="mb-6 animate-fadeIn [animation-delay:0.1s]">
-              {service.title}
-            </GradientTitle>
-            <p className="text-lg md:text-xl text-muted-foreground animate-fadeIn [animation-delay:0.2s]">
-              {service.descriptionLongue}
-            </p>
-          </header>
-
           {/* Livrables */}
           <section className="mb-12 animate-fadeIn [animation-delay:0.3s]">
             <h2 className="text-2xl font-bold text-foreground mb-6">Livrables</h2>
             <ul className="space-y-3">
               {service.livrables.map((livrable, idx) => (
                 <li key={idx} className="flex items-start gap-3 text-muted-foreground">
-                  <CheckCircle className="w-5 h-5 text-accent shrink-0 mt-0.5" aria-hidden="true" />
+                  <CheckCircle className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
                   <span 
                     className="prose prose-lg max-w-none
-                      prose-strong:font-semibold prose-strong:text-[hsl(var(--primary))] prose-strong:px-1 prose-strong:py-0.5 prose-strong:rounded prose-strong:bg-gradient-to-r prose-strong:from-primary/8 prose-strong:via-primary/12 prose-strong:to-primary/8"
+                      prose-strong:font-semibold prose-strong:text-[hsl(var(--secondary))] prose-strong:px-1 prose-strong:py-0.5 prose-strong:rounded prose-strong:bg-gradient-to-r prose-strong:from-secondary/8 prose-strong:via-secondary/12 prose-strong:to-secondary/8"
                     dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(livrable) }}
                   />
                 </li>
@@ -189,7 +193,7 @@ const ServiceDetail = () => {
             <h2 className="text-2xl font-bold text-foreground mb-6">Pour qui ?</h2>
             <p 
               className="text-lg text-muted-foreground prose prose-lg max-w-none
-                prose-strong:font-semibold prose-strong:text-[hsl(var(--primary))] prose-strong:px-1 prose-strong:py-0.5 prose-strong:rounded prose-strong:bg-gradient-to-r prose-strong:from-primary/8 prose-strong:via-primary/12 prose-strong:to-primary/8"
+                prose-strong:font-semibold prose-strong:text-[hsl(var(--secondary))] prose-strong:px-1 prose-strong:py-0.5 prose-strong:rounded prose-strong:bg-gradient-to-r prose-strong:from-secondary/8 prose-strong:via-secondary/12 prose-strong:to-secondary/8"
             >
               {service.pourQui}
             </p>
@@ -211,13 +215,13 @@ const ServiceDetail = () => {
             <h2 className="text-2xl font-bold text-foreground mb-6">Méthodologie</h2>
             <div className="space-y-6">
               {service.methodologie.map((etape, idx) => (
-                <div key={idx} className="border-l-2 border-accent pl-6">
+                <div key={idx} className="border-l-2 border-primary pl-6">
                   <h3 className="text-lg font-semibold text-foreground mb-2">
                     {etape.etape}
                   </h3>
                   <p 
                     className="text-muted-foreground prose prose-lg max-w-none
-                      prose-strong:font-semibold prose-strong:text-[hsl(var(--primary))] prose-strong:px-1 prose-strong:py-0.5 prose-strong:rounded prose-strong:bg-gradient-to-r prose-strong:from-primary/8 prose-strong:via-primary/12 prose-strong:to-primary/8"
+                      prose-strong:font-semibold prose-strong:text-[hsl(var(--secondary))] prose-strong:px-1 prose-strong:py-0.5 prose-strong:rounded prose-strong:bg-gradient-to-r prose-strong:from-secondary/8 prose-strong:via-secondary/12 prose-strong:to-secondary/8"
                   >
                     {etape.description}
                   </p>
@@ -231,13 +235,13 @@ const ServiceDetail = () => {
             <h2 className="text-2xl font-bold text-foreground mb-6">Cas d'usage concrets</h2>
             <div className="space-y-6">
               {service.casUsage.map((cas, idx) => (
-                <div key={idx} className="bg-secondary/50 rounded-lg p-6 border border-border">
+                <div key={idx} className="bg-muted/50 rounded-lg p-6 border border-border">
                   <h3 className="text-lg font-semibold text-foreground mb-2">
                     {cas.titre}
                   </h3>
                   <p 
                     className="text-muted-foreground prose prose-lg max-w-none
-                      prose-strong:font-semibold prose-strong:text-[hsl(var(--primary))] prose-strong:px-1 prose-strong:py-0.5 prose-strong:rounded prose-strong:bg-gradient-to-r prose-strong:from-primary/8 prose-strong:via-primary/12 prose-strong:to-primary/8"
+                      prose-strong:font-semibold prose-strong:text-[hsl(var(--secondary))] prose-strong:px-1 prose-strong:py-0.5 prose-strong:rounded prose-strong:bg-gradient-to-r prose-strong:from-secondary/8 prose-strong:via-secondary/12 prose-strong:to-secondary/8"
                   >
                     {cas.description}
                   </p>
@@ -253,7 +257,7 @@ const ServiceDetail = () => {
               <Accordion type="single" collapsible className="w-full">
                 {service.faq.map((item, idx) => (
                   <AccordionItem key={idx} value={`faq-${idx}`}>
-                    <AccordionTrigger className="text-left text-foreground hover:text-accent">
+                    <AccordionTrigger className="text-left text-foreground hover:text-primary">
                       {item.question}
                     </AccordionTrigger>
                     <AccordionContent className="text-muted-foreground">
@@ -278,7 +282,7 @@ const ServiceDetail = () => {
               Premier échange
             </GradientLink>
           </div>
-        </article>
+        </Section>
       </main>
 
       <Footer />

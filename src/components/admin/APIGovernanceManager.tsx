@@ -395,7 +395,7 @@ export default function APIGovernanceManager() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold flex items-center gap-2">
-            <Gauge className="h-5 w-5 text-primary" />
+            <Gauge className="h-5 w-5 text-foreground" />
             Gouvernance API
           </h2>
           <p className="text-sm text-muted-foreground">
@@ -438,8 +438,8 @@ export default function APIGovernanceManager() {
             <Card>
               <CardContent className="pt-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-primary/10">
-                    <Activity className="h-5 w-5 text-primary" />
+                  <div className="p-2 rounded-lg bg-secondary/10">
+                    <Activity className="h-5 w-5 text-foreground" />
                   </div>
                   <div>
                     <p className="text-2xl font-bold">{stats?.totalRequests.toLocaleString() || 0}</p>
@@ -723,7 +723,7 @@ export default function APIGovernanceManager() {
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <Bell className="h-5 w-5 text-primary" />
+                <Bell className="h-5 w-5 text-foreground" />
                 Historique des alertes
               </CardTitle>
               <CardDescription>
@@ -815,7 +815,7 @@ export default function APIGovernanceManager() {
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <DollarSign className="h-5 w-5 text-primary" />
+                <DollarSign className="h-5 w-5 text-foreground" />
                 Grille tarifaire
               </CardTitle>
               <CardDescription>

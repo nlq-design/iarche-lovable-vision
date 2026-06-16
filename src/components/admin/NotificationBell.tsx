@@ -76,7 +76,7 @@ export const NotificationBell = () => {
                 <div
                   key={notification.id}
                   className={`p-4 hover:bg-muted/50 transition-colors cursor-pointer ${
-                    !notification.read ? 'bg-primary/5' : ''
+                    !notification.read ? 'bg-secondary/5' : ''
                   }`}
                   onClick={() => markAsRead(notification.id)}
                 >

@@ -274,7 +274,7 @@ const AdminFormResponses = () => {
     return (
       <AdminLayout>
         <div className="flex items-center justify-center h-screen">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-secondary" />
         </div>
       </AdminLayout>
     );
@@ -285,7 +285,7 @@ const AdminFormResponses = () => {
       <div className="p-6 max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-xl font-bold text-primary">Toutes les réponses</h1>
+          <h1 className="text-xl font-bold text-foreground">Toutes les réponses</h1>
           <p className="text-sm text-muted-foreground">Vue consolidée de tous les formulaires</p>
         </div>
 
@@ -293,15 +293,15 @@ const AdminFormResponses = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="bg-card border rounded-lg p-4">
             <p className="text-sm text-muted-foreground">Total réponses</p>
-            <p className="text-2xl font-bold text-primary">{totalResponses}</p>
+            <p className="text-2xl font-bold text-foreground">{totalResponses}</p>
           </div>
           <div className="bg-card border rounded-lg p-4">
             <p className="text-sm text-muted-foreground">Aujourd'hui</p>
-            <p className="text-2xl font-bold text-primary">{todayResponses}</p>
+            <p className="text-2xl font-bold text-foreground">{todayResponses}</p>
           </div>
           <div className="bg-card border rounded-lg p-4">
             <p className="text-sm text-muted-foreground">Formulaires actifs</p>
-            <p className="text-2xl font-bold text-primary">{forms.length}</p>
+            <p className="text-2xl font-bold text-foreground">{forms.length}</p>
           </div>
         </div>
 
@@ -435,7 +435,7 @@ const AdminFormResponses = () => {
                       <TableCell>
                         <Badge 
                           variant="outline" 
-                          className="cursor-pointer hover:bg-primary/10"
+                          className="cursor-pointer hover:bg-secondary/10"
                           onClick={() => response.form_slug && navigate(`/admin/formulaires/${response.form_id}/responses`)}
                         >
                           {response.form_title}

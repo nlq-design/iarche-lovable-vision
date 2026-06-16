@@ -73,8 +73,8 @@ export function CockpitHeader() {
         <div className="flex items-center gap-4">
           <SidebarTrigger className="lg:hidden" />
           <Link to="/cockpit" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
-              <Briefcase className="w-4 h-4 text-primary-foreground" />
+            <div className="w-8 h-8 bg-secondary rounded-md flex items-center justify-center">
+              <Briefcase className="w-4 h-4 text-secondary-foreground" />
             </div>
             <div className="hidden sm:block">
               <span className="font-semibold text-base text-foreground">Cockpit</span>
@@ -119,7 +119,7 @@ export function CockpitHeader() {
                 variant="outline" 
                 size="sm" 
                 onClick={() => setEmailDraftsOpen(true)}
-                className="h-8 px-3 border-primary/50 text-primary hover:bg-primary/10 hover:text-primary relative"
+                className="h-8 px-3 border-secondary/50 text-foreground hover:bg-secondary/10 hover:text-foreground relative"
               >
                 <Mail className="w-4 h-4 mr-1.5" />
                 <span className="hidden sm:inline">Brouillons</span>
@@ -145,7 +145,7 @@ export function CockpitHeader() {
                 variant="outline" 
                 size="sm" 
                 onClick={() => navigate('/viviers')}
-                className="h-8 px-3 border-accent/50 text-accent hover:bg-accent/10 hover:text-accent"
+                className="h-8 px-3 border-primary/50 text-primary hover:bg-accent/10 hover:text-primary"
               >
                 <Fish className="w-4 h-4 mr-1.5" />
                 <span className="hidden sm:inline">Viviers</span>

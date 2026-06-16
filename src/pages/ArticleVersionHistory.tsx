@@ -176,7 +176,7 @@ const ArticleVersionHistory = () => {
     return (
       <AdminLayout>
         <div className="min-h-screen flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <Loader2 className="h-8 w-8 animate-spin text-foreground" />
         </div>
       </AdminLayout>
     );
@@ -237,7 +237,7 @@ const ArticleVersionHistory = () => {
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary font-semibold">
+                          <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-secondary/10 text-foreground font-semibold">
                             v{version.version_number}
                           </span>
                           <div>
@@ -311,7 +311,7 @@ const ArticleVersionHistory = () => {
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4 pb-4 border-b border-border">
                 <div>
-                  <p className="text-sm font-semibold text-primary">
+                  <p className="text-sm font-semibold text-foreground">
                     Version {compareVersions[0].version_number}
                   </p>
                   <p className="text-xs text-muted-foreground">
@@ -319,7 +319,7 @@ const ArticleVersionHistory = () => {
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-accent">
+                  <p className="text-sm font-semibold text-primary">
                     Version {compareVersions[1].version_number}
                   </p>
                   <p className="text-xs text-muted-foreground">

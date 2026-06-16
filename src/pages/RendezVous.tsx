@@ -16,7 +16,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import GradientLink from '@/components/ui/GradientLink';
-import LogoArc from '@/components/ui/LogoArc';
+import { Section, SectionTitle } from '@/components/brand';
 
 interface BookingType {
   id: string;
@@ -210,7 +210,7 @@ const RendezVous = () => {
       <BackgroundLayout>
         <Header />
         <main className="min-h-screen pt-20 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <Loader2 className="w-8 h-8 animate-spin text-foreground" />
         </main>
         <Footer />
       </BackgroundLayout>
@@ -229,29 +229,32 @@ const RendezVous = () => {
         <Header />
         <BreadcrumbNav />
         
-        <main className="min-h-screen pt-4">
-          <section className="max-w-4xl mx-auto px-6 py-8">
-            <div className="text-center mb-12">
-              <h1 className="text-3xl md:text-4xl font-bold hero-gradient-text mb-2 animate-fadeIn">
-                Prendre rendez-vous
-              </h1>
-              <LogoArc size="md" className="mx-auto mb-4 animate-fadeIn [animation-delay:0.1s]" />
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto animate-fadeIn [animation-delay:0.2s]">
-                Choisissez le type de rendez-vous qui correspond à votre besoin
-              </p>
-            </div>
+        <main className="min-h-screen">
+          {/* Hero */}
+          <Section tone="dark" spacing="hero">
+            <SectionTitle
+              as="h1"
+              center
+              arc
+              eyebrow="Prenons rendez-vous"
+              lede="Choisissez le type de rendez-vous qui correspond à votre besoin"
+            >
+              Prendre <em>rendez-vous</em>
+            </SectionTitle>
+          </Section>
 
+          <Section tone="light" spacing="section">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {bookingTypes.map((type, index) => (
                 <Link
                   key={type.id}
                   to={`/rendez-vous/${type.slug}`}
-                  className="group bg-secondary/30 rounded-lg p-6 border border-border hover:border-primary/50 transition-all duration-300 animate-fadeIn"
+                  className="group bg-muted/30 rounded-lg p-6 border border-border hover:border-secondary/50 transition-all duration-300 animate-fadeIn"
                   style={{ animationDelay: `${0.3 + index * 0.1}s` }}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h2 className="text-xl font-semibold text-foreground group-hover:text-primary transition-colors mb-2">
+                      <h2 className="text-xl font-semibold text-foreground group-hover:text-foreground transition-colors mb-2">
                         {type.name}
                       </h2>
                       {type.description && (
@@ -270,7 +273,7 @@ const RendezVous = () => {
                         </span>
                       </div>
                     </div>
-                    <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                    <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all" />
                   </div>
                 </Link>
               ))}
@@ -281,9 +284,9 @@ const RendezVous = () => {
                 <p className="text-muted-foreground">Aucun type de rendez-vous disponible pour le moment.</p>
               </div>
             )}
-          </section>
+          </Section>
         </main>
-        
+
         <Footer />
       </BackgroundLayout>
     );
@@ -315,8 +318,8 @@ const RendezVous = () => {
         <BreadcrumbNav />
         <main className="min-h-screen pt-4">
           <section className="max-w-2xl mx-auto px-6 py-12">
-            <div className="bg-primary/5 rounded-lg p-8 border-2 border-primary/20 text-center animate-fadeIn">
-              <CheckCircle className="w-16 h-16 text-primary mx-auto mb-4" />
+            <div className="bg-secondary/5 rounded-lg p-8 border-2 border-secondary/20 text-center animate-fadeIn">
+              <CheckCircle className="w-16 h-16 text-foreground mx-auto mb-4" />
               <h1 className="text-2xl font-bold text-foreground mb-2">Rendez-vous confirmé !</h1>
               <p className="text-muted-foreground mb-6">
                 Votre rendez-vous <strong>{bookingType.name}</strong> est confirmé pour le{' '}
@@ -325,8 +328,8 @@ const RendezVous = () => {
               
               {/* Meeting link section based on type */}
               {meetLink && meetingType === 'visio' && (
-                <div className="bg-secondary/50 rounded-lg p-4 mb-6">
-                  <div className="flex items-center justify-center gap-2 text-primary mb-2">
+                <div className="bg-muted/50 rounded-lg p-4 mb-6">
+                  <div className="flex items-center justify-center gap-2 text-foreground mb-2">
                     <Video className="w-5 h-5" />
                     <span className="font-semibold">Lien Visio</span>
                   </div>
@@ -334,7 +337,7 @@ const RendezVous = () => {
                     href={meetLink} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="text-accent hover:underline break-all"
+                    className="text-primary hover:underline break-all"
                   >
                     {meetLink}
                   </a>
@@ -347,8 +350,8 @@ const RendezVous = () => {
               )}
               
               {meetingType === 'telephone' && (
-                <div className="bg-secondary/50 rounded-lg p-4 mb-6">
-                  <div className="flex items-center justify-center gap-2 text-primary mb-2">
+                <div className="bg-muted/50 rounded-lg p-4 mb-6">
+                  <div className="flex items-center justify-center gap-2 text-foreground mb-2">
                     <Phone className="w-5 h-5" />
                     <span className="font-semibold">Appel téléphonique</span>
                   </div>
@@ -359,8 +362,8 @@ const RendezVous = () => {
               )}
               
               {meetingType === 'presentiel' && (
-                <div className="bg-secondary/50 rounded-lg p-4 mb-6">
-                  <div className="flex items-center justify-center gap-2 text-primary mb-2">
+                <div className="bg-muted/50 rounded-lg p-4 mb-6">
+                  <div className="flex items-center justify-center gap-2 text-foreground mb-2">
                     <MapPin className="w-5 h-5" />
                     <span className="font-semibold">Rendez-vous en présentiel</span>
                   </div>
@@ -452,8 +455,8 @@ const RendezVous = () => {
 
                 return (
                   <div className="mb-6">
-                    <details className="mb-4 rounded-md border border-border bg-secondary/30 text-left">
-                      <summary className="cursor-pointer select-none px-4 py-2 text-sm font-medium text-foreground hover:bg-secondary/50 rounded-md">
+                    <details className="mb-4 rounded-md border border-border bg-muted/30 text-left">
+                      <summary className="cursor-pointer select-none px-4 py-2 text-sm font-medium text-foreground hover:bg-muted/50 rounded-md">
                         Aperçu de l'événement envoyé à votre agenda
                       </summary>
                       <div className="px-4 py-3 border-t border-border space-y-2 text-sm">
@@ -483,7 +486,7 @@ const RendezVous = () => {
                         href={googleUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-border bg-background hover:bg-secondary/50 text-sm font-medium transition-colors"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-border bg-background hover:bg-muted/50 text-sm font-medium transition-colors"
                       >
                         <Calendar className="w-4 h-4" />
                         Google Agenda
@@ -492,7 +495,7 @@ const RendezVous = () => {
                         href={outlookBase('office')}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-border bg-background hover:bg-secondary/50 text-sm font-medium transition-colors"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-border bg-background hover:bg-muted/50 text-sm font-medium transition-colors"
                       >
                         <Calendar className="w-4 h-4" />
                         Outlook 365
@@ -501,7 +504,7 @@ const RendezVous = () => {
                         href={outlookBase('live')}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-border bg-background hover:bg-secondary/50 text-sm font-medium transition-colors"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-border bg-background hover:bg-muted/50 text-sm font-medium transition-colors"
                       >
                         <Calendar className="w-4 h-4" />
                         Outlook.com
@@ -509,7 +512,7 @@ const RendezVous = () => {
                       <button
                         type="button"
                         onClick={downloadIcs}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-border bg-background hover:bg-secondary/50 text-sm font-medium transition-colors"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-border bg-background hover:bg-muted/50 text-sm font-medium transition-colors"
                       >
                         <Calendar className="w-4 h-4" />
                         Télécharger le .ics
@@ -546,25 +549,26 @@ const RendezVous = () => {
       <Header />
       <BreadcrumbNav />
       
-      <main className="min-h-screen pt-4">
-        <section className="max-w-5xl mx-auto px-6 py-4">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl md:text-4xl font-bold hero-gradient-text mb-2 animate-fadeIn">
-              {bookingType.name}
-            </h1>
-            <LogoArc size="md" className="mx-auto mb-4 animate-fadeIn [animation-delay:0.1s]" />
-            {bookingType.description && (
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto animate-fadeIn [animation-delay:0.2s]">
-                {bookingType.description}
-              </p>
-            )}
-            <div className="flex items-center justify-center gap-2 mt-4 text-sm text-muted-foreground animate-fadeIn [animation-delay:0.3s]">
-              <Clock className="w-4 h-4" />
-              <span>{bookingType.duration_minutes} minutes</span>
-            </div>
+      <main className="min-h-screen">
+        {/* Hero */}
+        <Section tone="dark" spacing="hero">
+          <SectionTitle
+            as="h1"
+            center
+            arc
+            eyebrow="Prenons rendez-vous"
+            lede={bookingType.description || undefined}
+          >
+            {bookingType.name}
+          </SectionTitle>
+          <div className="flex items-center justify-center gap-2 mt-6 text-sm text-[hsl(var(--cream))]/70 animate-fadeIn [animation-delay:0.3s]">
+            <Clock className="w-4 h-4" />
+            <span>{bookingType.duration_minutes} minutes</span>
           </div>
+        </Section>
 
+        {/* Widget de réservation (fond clair pour la lisibilité) */}
+        <Section tone="light" spacing="section">
           {/* Meeting Type Selection */}
           {(() => {
             const availableOptions = SLUGS_WITHOUT_TELEPHONE.includes(slug || '')
@@ -586,12 +590,12 @@ const RendezVous = () => {
                     onClick={() => setMeetingType(option.value)}
                     className={`p-4 rounded-lg border-2 text-center transition-all ${
                       isSelected
-                        ? 'border-primary bg-primary/10'
-                        : 'border-border hover:border-primary/50 hover:bg-secondary/50'
+                        ? 'border-secondary bg-secondary/10'
+                        : 'border-border hover:border-secondary/50 hover:bg-muted/50'
                     }`}
                   >
-                    <IconComponent className={`w-6 h-6 mx-auto mb-2 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
-                    <div className={`font-medium ${isSelected ? 'text-primary' : 'text-foreground'}`}>
+                    <IconComponent className={`w-6 h-6 mx-auto mb-2 ${isSelected ? 'text-foreground' : 'text-muted-foreground'}`} />
+                    <div className={`font-medium ${isSelected ? 'text-foreground' : 'text-foreground'}`}>
                       {option.label}
                     </div>
                     <div className="text-xs text-muted-foreground mt-1">
@@ -609,12 +613,12 @@ const RendezVous = () => {
             {/* Date & Time Selection */}
             <div className="animate-fadeIn [animation-delay:0.4s]">
               <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-primary" />
+                <Calendar className="w-5 h-5 text-foreground" />
                 Choisissez une date
               </h2>
               
               {/* Date Picker */}
-              <div className="bg-secondary/30 rounded-lg p-4 border border-border mb-6">
+              <div className="bg-muted/30 rounded-lg p-4 border border-border mb-6">
                 <div className="grid grid-cols-7 gap-2">
                   {availableDates.map((date) => {
                     const isSelected = isSameDay(date, selectedDate);
@@ -627,8 +631,8 @@ const RendezVous = () => {
                         onClick={() => setSelectedDate(date)}
                         className={`p-2 rounded-lg text-center transition-all ${
                           isSelected 
-                            ? 'bg-primary text-white' 
-                            : 'hover:bg-secondary'
+                            ? 'bg-secondary text-white' 
+                            : 'hover:bg-muted'
                         }`}
                       >
                         <div className="text-xs uppercase">{dayName}</div>
@@ -641,16 +645,16 @@ const RendezVous = () => {
 
               {/* Time Slots */}
               <h3 className="text-lg font-medium text-foreground mb-3 flex items-center gap-2">
-                <Clock className="w-4 h-4 text-primary" />
+                <Clock className="w-4 h-4 text-foreground" />
                 Créneaux disponibles le {format(selectedDate, 'EEEE d MMMM', { locale: fr })}
               </h3>
               
               {isLoadingSlots ? (
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                  <Loader2 className="w-6 h-6 animate-spin text-foreground" />
                 </div>
               ) : slots.length === 0 ? (
-                <div className="bg-secondary/30 rounded-lg p-6 text-center border border-border">
+                <div className="bg-muted/30 rounded-lg p-6 text-center border border-border">
                   <p className="text-muted-foreground">Aucun créneau disponible ce jour.</p>
                   <p className="text-sm text-muted-foreground mt-2">Essayez une autre date.</p>
                 </div>
@@ -664,8 +668,8 @@ const RendezVous = () => {
                         onClick={() => setSelectedSlot(slot)}
                         className={`py-2 px-3 rounded-lg border text-sm font-medium transition-all ${
                           isSelected
-                            ? 'bg-primary text-white border-primary'
-                            : 'border-border hover:border-primary hover:bg-primary/5'
+                            ? 'bg-secondary text-white border-secondary'
+                            : 'border-border hover:border-secondary hover:bg-secondary/5'
                         }`}
                       >
                         {format(new Date(slot), 'HH:mm')}
@@ -682,7 +686,7 @@ const RendezVous = () => {
                 Vos informations
               </h2>
               
-              <form onSubmit={handleSubmit} className="bg-secondary/30 rounded-lg p-6 border border-border space-y-4">
+              <form onSubmit={handleSubmit} className="bg-muted/30 rounded-lg p-6 border border-border space-y-4">
                 <div>
                   <Label htmlFor="name">Nom *</Label>
                   <Input
@@ -710,7 +714,7 @@ const RendezVous = () => {
 
                 <div>
                   <Label htmlFor="phone">
-                    Téléphone {meetingType === 'telephone' && <span className="text-accent">*</span>}
+                    Téléphone {meetingType === 'telephone' && <span className="text-primary">*</span>}
                   </Label>
                   <Input
                     id="phone"
@@ -785,13 +789,13 @@ const RendezVous = () => {
                         {additionalGuests.map((email) => (
                           <span
                             key={email}
-                            className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary text-sm rounded-md"
+                            className="inline-flex items-center gap-1 px-2 py-1 bg-secondary/10 text-foreground text-sm rounded-md"
                           >
                             {email}
                             <button
                               type="button"
                               onClick={() => removeGuest(email)}
-                              className="hover:text-accent"
+                              className="hover:text-primary"
                             >
                               <X className="w-3 h-3" />
                             </button>
@@ -806,7 +810,7 @@ const RendezVous = () => {
                 )}
 
                 {selectedSlot && (
-                  <div className="bg-primary/5 rounded-lg p-4 border border-primary/20">
+                  <div className="bg-secondary/5 rounded-lg p-4 border border-secondary/20">
                     <p className="text-sm text-foreground">
                       <strong>Créneau sélectionné :</strong><br />
                       {format(new Date(selectedSlot), "EEEE d MMMM 'à' HH:mm", { locale: fr })}
@@ -817,7 +821,7 @@ const RendezVous = () => {
                 <Button
                   type="submit"
                   disabled={!selectedSlot || isSubmitting}
-                  className="w-full bg-primary hover:bg-primary/90"
+                  className="w-full bg-secondary hover:bg-secondary/90"
                 >
                   {isSubmitting ? (
                     <>
@@ -831,9 +835,9 @@ const RendezVous = () => {
               </form>
             </div>
           </div>
-        </section>
+        </Section>
       </main>
-      
+
       <Footer />
     </BackgroundLayout>
   );

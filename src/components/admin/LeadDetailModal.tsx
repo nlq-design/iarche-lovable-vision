@@ -77,7 +77,7 @@ export function LeadDetailModal({ lead, open, onOpenChange }: LeadDetailModalPro
                 <h3 className="text-sm font-semibold text-muted-foreground mb-2">Email</h3>
                 <a
                   href={`mailto:${lead.email}`}
-                  className="flex items-center gap-2 text-primary hover:underline"
+                  className="flex items-center gap-2 text-foreground hover:underline"
                 >
                   <Mail className="h-4 w-4" />
                   {lead.email}
@@ -89,7 +89,7 @@ export function LeadDetailModal({ lead, open, onOpenChange }: LeadDetailModalPro
                   <h3 className="text-sm font-semibold text-muted-foreground mb-2">Téléphone</h3>
                   <a
                     href={`tel:${lead.phone}`}
-                    className="flex items-center gap-2 text-primary hover:underline"
+                    className="flex items-center gap-2 text-foreground hover:underline"
                   >
                     <Phone className="h-4 w-4" />
                     {lead.phone}

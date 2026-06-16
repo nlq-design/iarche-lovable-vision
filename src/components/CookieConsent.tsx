@@ -99,7 +99,7 @@ export const CookieConsent = () => {
                   Nous utilisons des cookies pour améliorer votre expérience. 
                   <a
                     href="/confidentialite"
-                    className="text-accent hover:underline ml-1"
+                    className="text-primary hover:underline ml-1"
                   >
                     En savoir plus
                   </a>
@@ -118,7 +118,7 @@ export const CookieConsent = () => {
               <Button
                 onClick={acceptAll}
                 size="sm"
-                className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90"
               >
                 Accepter
               </Button>

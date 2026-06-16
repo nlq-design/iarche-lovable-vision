@@ -22,7 +22,7 @@ import AtelierInscriptionForm from '@/components/AtelierInscriptionForm';
 import AuthorCard from '@/components/ui/AuthorCard';
 import RelatedArticles from '@/components/ui/RelatedArticles';
 import RelatedSolutions from '@/components/ui/RelatedSolutions';
-import GradientTitle from '@/components/ui/GradientTitle';
+import { Eyebrow, AnimatedArc } from '@/components/brand';
 import { useCTATracking } from '@/hooks/useCTATracking';
 import { TableOfContents } from '@/components/ui/TableOfContents';
 import { RessourcesComplementaires } from '@/components/ui/RessourcesComplementaires';
@@ -219,6 +219,19 @@ const ArticleDetail = () => {
     return `https://iarche.fr${location.pathname}`;
   };
 
+  // Libellé d'eyebrow selon le type de ressource (en-tête éditorial v4.0)
+  const getResourceLabel = (resourceType: string): string => {
+    const labels: { [key: string]: string } = {
+      article: 'Article',
+      actualite: 'Actualité',
+      'cas-client': 'Cas client',
+      'livre-blanc': 'Livre blanc',
+      'atelier-webinaire': 'Atelier & Webinaire',
+      solution: 'Solution',
+    };
+    return labels[resourceType] || 'Ressource';
+  };
+
   /**
    * Mapping maillage interne : articles/actualités → solutions liées
    * Permet d'afficher des solutions pertinentes en bas des articles
@@ -253,7 +266,7 @@ const ArticleDetail = () => {
       <BackgroundLayout>
         <Header />
         <div className="min-h-screen flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <Loader2 className="h-8 w-8 animate-spin text-foreground" />
         </div>
         <Footer />
       </BackgroundLayout>
@@ -596,10 +609,10 @@ const ArticleDetail = () => {
               </div>
             )}
 
-            
+
             {article.resource_type === 'solution' && article.tags && article.tags.length > 0 && (
               <div className="mb-4 animate-fadeIn">
-                <Badge 
+                <Badge
                   variant={article.tags[0] === 'Disponible' ? 'default' : 'secondary'}
                   className="text-sm"
                 >
@@ -607,11 +620,13 @@ const ArticleDetail = () => {
                 </Badge>
               </div>
             )}
-            
+
             <div className="animate-fadeIn [animation-delay:0.1s] mb-6">
-              <GradientTitle size="lg" as="h1">
+              <Eyebrow>{getResourceLabel(article.resource_type)}</Eyebrow>
+              <h1 className="mt-3 text-3xl md:text-5xl font-bold text-foreground leading-tight">
                 {article.title}
-              </GradientTitle>
+              </h1>
+              <AnimatedArc className="mt-4" />
             </div>
             {article.excerpt && (
               <p className="text-lg text-muted-foreground mb-4 animate-fadeIn [animation-delay:0.2s]">
@@ -662,7 +677,7 @@ const ArticleDetail = () => {
             
             {/* Date de l'événement si type événement */}
             {article.resource_type === 'actualite' && article.actualite_type === 'evenement' && article.event_date && (
-              <div className="flex items-center gap-2 text-sm text-accent mt-2 animate-fadeIn [animation-delay:0.35s]">
+              <div className="flex items-center gap-2 text-sm text-primary mt-2 animate-fadeIn [animation-delay:0.35s]">
                 <Calendar className="h-4 w-4" aria-hidden="true" />
                 <strong>Date de l'événement :</strong> {formatDate(article.event_date)}
               </div>
@@ -733,8 +748,8 @@ const ArticleDetail = () => {
                     prose-h1:text-[32px] prose-h1:font-bold
                     prose-h2:text-[24px] prose-h2:font-semibold
                     prose-p:text-[#374151] prose-p:leading-[1.75] prose-p:text-left
-                    prose-a:text-accent hover:prose-a:text-accent/80
-                    prose-strong:font-semibold prose-strong:text-[hsl(var(--primary))] prose-strong:px-1 prose-strong:py-0.5 prose-strong:rounded prose-strong:bg-gradient-to-r prose-strong:from-primary/8 prose-strong:via-primary/12 prose-strong:to-primary/8
+                    prose-a:text-primary hover:prose-a:text-primary/80
+                    prose-strong:font-semibold prose-strong:text-[hsl(var(--secondary))] prose-strong:px-1 prose-strong:py-0.5 prose-strong:rounded prose-strong:bg-gradient-to-r prose-strong:from-secondary/8 prose-strong:via-secondary/12 prose-strong:to-secondary/8
                     prose-ul:text-[#374151]
                     prose-ol:text-[#374151]
                     prose-blockquote:border-l-accent
@@ -758,7 +773,7 @@ const ArticleDetail = () => {
                     href={article.source_externe.url} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="text-primary hover:text-accent font-medium flex items-center gap-2 transition-colors"
+                    className="text-foreground hover:text-primary font-medium flex items-center gap-2 transition-colors"
                   >
                     {article.source_externe.nom}
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -838,7 +853,7 @@ const ArticleDetail = () => {
                       <div className="space-y-3">
                         {article.programme_detaille.map((item: any, index: number) => (
                           <div key={index} className="flex gap-4 items-start">
-                            <span className="text-sm font-medium text-accent min-w-[60px]">{item.heure}</span>
+                            <span className="text-sm font-medium text-primary min-w-[60px]">{item.heure}</span>
                             <span className="text-sm text-foreground">{item.sujet}</span>
                           </div>
                         ))}
@@ -872,7 +887,7 @@ const ArticleDetail = () => {
                       <h4 className="text-sm font-semibold text-foreground mb-4">Documents à télécharger</h4>
                       <div className="space-y-2">
                         {article.documents_telechargeables.map((doc: any, index: number) => (
-                          <a key={index} href={doc.file_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-primary hover:text-accent transition-colors">
+                          <a key={index} href={doc.file_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-foreground hover:text-primary transition-colors">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                             <span className="text-sm font-medium">{doc.nom}</span>
                           </a>
@@ -964,7 +979,7 @@ const ArticleDetail = () => {
                 </div>
               ) : article.replay_url ? (
                 /* Si replay disponible */
-                <div className="text-center p-8 bg-primary/5 border-2 border-primary/20 rounded-xl">
+                <div className="text-center p-8 bg-secondary/5 border-2 border-secondary/20 rounded-xl">
                   <p className="text-lg font-semibold text-foreground mb-2">
                     📺 Replay disponible
                   </p>
@@ -974,7 +989,7 @@ const ArticleDetail = () => {
                   <a href={article.replay_url} target="_blank" rel="noopener noreferrer" className="group inline-flex items-center gap-2 text-base font-medium transition-opacity">
                     <span className="hero-gradient-text relative">
                       Voir le replay
-                      <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-primary via-accent to-primary transform scale-x-0 origin-left transition-transform duration-300 group-hover:scale-x-100" aria-hidden="true" />
+                      <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-secondary via-primary to-secondary transform scale-x-0 origin-left transition-transform duration-300 group-hover:scale-x-100" aria-hidden="true" />
                     </span>
                     <span className="hero-gradient-text">→</span>
                   </a>

@@ -136,7 +136,7 @@ export const QuoteServicesTable: React.FC<QuoteServicesTableProps> = ({
                 </div>
                 <div className="flex justify-between text-base font-semibold border-t pt-2">
                   <span>Total TTC</span>
-                  <span className="tabular-nums text-primary">{formatCurrency(totalTTC)} {currency}</span>
+                  <span className="tabular-nums text-foreground">{formatCurrency(totalTTC)} {currency}</span>
                 </div>
               </div>
             </div>

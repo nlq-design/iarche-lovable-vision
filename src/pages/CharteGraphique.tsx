@@ -670,7 +670,7 @@ const CharteGraphique = () => {
             </div>
             <p className="text-sm text-[#666666]">
               Texte avec gradient animé (8s). Soulignement animé au hover (scale-x 0 → 1, 300ms).
-              Focus-visible: ring-2 ring-accent.
+              Focus-visible: ring-2 ring-primary.
             </p>
           </div>
 
@@ -684,7 +684,7 @@ const CharteGraphique = () => {
             </div>
             <p className="text-sm text-[#666666]">
               Texte Bleu Nuit + flèche Terracotta. Gap augmente au hover (gap-2 → gap-3).
-              Focus-visible: ring-2 ring-accent.
+              Focus-visible: ring-2 ring-primary.
             </p>
           </div>
         </section>
@@ -855,7 +855,7 @@ animation: gradientText 8s ease infinite;`}
                 <li>• Respecter les zones de protection du logo</li>
                 <li>• Maintenir des contrastes WCAG AA minimum</li>
                 <li>• Utiliser les tokens CSS (--primary, --accent...)</li>
-                <li>• Appliquer focus-visible avec ring-accent</li>
+                <li>• Appliquer focus-visible avec ring-primary</li>
                 <li>• Respecter la hiérarchie typographique</li>
                 <li>• Utiliser l'arc décoratif sous les titres uniquement</li>
                 <li>• Inclure prefers-reduced-motion</li>

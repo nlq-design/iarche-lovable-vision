@@ -63,9 +63,9 @@ function ProcessingTimeline({ currentStep, hasError }: { currentStep: TelegramIm
                 isError
                   ? "bg-destructive text-destructive-foreground"
                   : isPast
-                  ? "bg-primary text-primary-foreground"
+                  ? "bg-secondary text-secondary-foreground"
                   : isActive
-                  ? "bg-primary/80 text-primary-foreground animate-pulse"
+                  ? "bg-secondary/80 text-secondary-foreground animate-pulse"
                   : "bg-muted text-muted-foreground"
               }`}
               title={step.label}
@@ -81,7 +81,7 @@ function ProcessingTimeline({ currentStep, hasError }: { currentStep: TelegramIm
             {idx < PROCESSING_STEPS.length - 1 && (
               <div
                 className={`w-4 h-0.5 ${
-                  isPast ? "bg-primary" : "bg-muted"
+                  isPast ? "bg-secondary" : "bg-muted"
                 }`}
               />
             )}
@@ -104,7 +104,7 @@ function ImportCard({ item }: { item: TelegramImport }) {
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3 flex-1 min-w-0">
           <div className={`p-2 rounded-lg ${
-            item.type === "transcription" ? "bg-primary/10 text-primary" : "bg-blue-500/10 text-blue-500"
+            item.type === "transcription" ? "bg-secondary/10 text-foreground" : "bg-blue-500/10 text-blue-500"
           }`}>
             {getTypeIcon(item.type)}
           </div>
@@ -132,7 +132,7 @@ function ImportCard({ item }: { item: TelegramImport }) {
                 {item.leadName && (
                   <Link 
                     to={`/cockpit/leads/${item.leadId}`}
-                    className="flex items-center gap-1 text-primary hover:underline"
+                    className="flex items-center gap-1 text-foreground hover:underline"
                   >
                     <User className="h-3 w-3" />
                     {item.leadName}
@@ -141,7 +141,7 @@ function ImportCard({ item }: { item: TelegramImport }) {
                 {item.projectName && (
                   <Link 
                     to={`/cockpit/projects/${item.projectId}`}
-                    className="flex items-center gap-1 text-primary hover:underline"
+                    className="flex items-center gap-1 text-foreground hover:underline"
                   >
                     <FolderKanban className="h-3 w-3" />
                     {item.projectName}
@@ -184,7 +184,7 @@ function StatsCards({ stats }: { stats: ReturnType<typeof useTelegramImportStats
       <Card>
         <CardContent className="p-4">
           <div className="flex items-center gap-2">
-            <Send className="h-4 w-4 text-primary" />
+            <Send className="h-4 w-4 text-foreground" />
             <div>
               <p className="text-2xl font-bold">{stats.total}</p>
               <p className="text-xs text-muted-foreground">Total</p>
@@ -274,7 +274,7 @@ export default function CockpitImports() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Send className="h-6 w-6 text-primary" />
+              <Send className="h-6 w-6 text-foreground" />
               Imports Telegram
             </h1>
             <p className="text-muted-foreground text-sm mt-1">

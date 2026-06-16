@@ -321,7 +321,7 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
         {/* HEADER */}
         <SheetHeader className="px-6 pt-6 pb-4 border-b space-y-2 text-left">
           <div className="flex items-center gap-2 flex-wrap">
-            <Sparkles className="h-4 w-4 text-primary shrink-0" />
+            <Sparkles className="h-4 w-4 text-foreground shrink-0" />
             <Badge variant="outline" className="text-[10px] capitalize">
               {snapshot.source.replace('_', ' ')}
             </Badge>
@@ -355,10 +355,10 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
           <div className="px-6 py-5 space-y-5">
             {/* POURQUOI — reasoning IA */}
             {snapshot.reasoning && (
-              <div className="rounded-lg border bg-primary/5 border-primary/20 p-3">
+              <div className="rounded-lg border bg-secondary/5 border-secondary/20 p-3">
                 <div className="flex items-center gap-1.5 mb-1">
-                  <Lightbulb className="h-3.5 w-3.5 text-primary" />
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">
+                  <Lightbulb className="h-3.5 w-3.5 text-foreground" />
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground">
                     Pourquoi cette action
                   </span>
                 </div>
@@ -509,7 +509,7 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
               <div>
                 <Label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 block">
                   Mettre à jour {missingField && (
-                    <span className="text-primary normal-case ml-1">
+                    <span className="text-foreground normal-case ml-1">
                       · le champ "{missingField === 'amount' ? 'montant' : missingField === 'deadline' ? 'échéance' : 'contact'}" est manquant
                     </span>
                   )}
@@ -520,7 +520,7 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
                       <div className="flex items-center gap-2">
                         <Euro className={cn('h-3.5 w-3.5 shrink-0',
                           validationErrors.amount ? 'text-destructive'
-                            : missingField === 'amount' ? 'text-primary' : 'text-muted-foreground')} />
+                            : missingField === 'amount' ? 'text-foreground' : 'text-muted-foreground')} />
                         <Input
                           type="text"
                           inputMode="decimal"
@@ -532,7 +532,7 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
                           className={cn(
                             'h-8 text-xs',
                             validationErrors.amount ? 'border-destructive focus-visible:ring-destructive'
-                              : missingField === 'amount' && 'border-primary',
+                              : missingField === 'amount' && 'border-secondary',
                           )}
                         />
                       </div>
@@ -546,7 +546,7 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
                       <div className="flex items-center gap-2">
                         <Calendar className={cn('h-3.5 w-3.5 shrink-0',
                           validationErrors.deadline ? 'text-destructive'
-                            : missingField === 'deadline' ? 'text-primary' : 'text-muted-foreground')} />
+                            : missingField === 'deadline' ? 'text-foreground' : 'text-muted-foreground')} />
                         <Input
                           type="date"
                           value={newDeadline}
@@ -556,7 +556,7 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
                           className={cn(
                             'h-8 text-xs',
                             validationErrors.deadline ? 'border-destructive focus-visible:ring-destructive'
-                              : missingField === 'deadline' && 'border-primary',
+                              : missingField === 'deadline' && 'border-secondary',
                           )}
                         />
                       </div>
@@ -570,7 +570,7 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
                       <div className="flex items-center gap-2">
                         <User className={cn('h-3.5 w-3.5 shrink-0',
                           validationErrors.contact ? 'text-destructive'
-                            : missingField === 'contact' ? 'text-primary' : 'text-muted-foreground')} />
+                            : missingField === 'contact' ? 'text-foreground' : 'text-muted-foreground')} />
                         <Input
                           value={newContact}
                           onChange={(e) => setNewContact(e.target.value)}
@@ -580,7 +580,7 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
                           className={cn(
                             'h-8 text-xs',
                             validationErrors.contact ? 'border-destructive focus-visible:ring-destructive'
-                              : missingField === 'contact' && 'border-primary',
+                              : missingField === 'contact' && 'border-secondary',
                           )}
                         />
                       </div>
@@ -605,8 +605,8 @@ export function AIActionDrawer({ snapshot, open, onOpenChange }: AIActionDrawerP
         <div className="border-t bg-background px-6 py-3 space-y-2">
           {/* Aperçu des changements à appliquer */}
           {hasUpdates && !hasValidationErrors && (
-            <div className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 space-y-1.5">
-              <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-primary">
+            <div className="rounded-md border border-secondary/30 bg-secondary/5 px-3 py-2 space-y-1.5">
+              <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-foreground">
                 <Pencil className="h-3 w-3" />
                 Aperçu — {changePreview.length} changement{changePreview.length > 1 ? 's' : ''} sur {entityRef}
               </div>
@@ -854,7 +854,7 @@ function ArtifactSection({
       ) : (
         <div className="rounded-md border bg-card p-2.5 space-y-2">
           <div className="flex items-start gap-2">
-            {artifact!.type === 'email' ? <Mail className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" /> : <Pencil className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />}
+            {artifact!.type === 'email' ? <Mail className="h-3.5 w-3.5 text-foreground shrink-0 mt-0.5" /> : <Pencil className="h-3.5 w-3.5 text-foreground shrink-0 mt-0.5" />}
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium truncate">
                 {artifact!.type === 'email' ? (artifact!.subject || 'Sans objet') : (artifact!.title || 'Sans titre')}
@@ -914,7 +914,7 @@ function TimelineEntry({ note }: { note: AIActionNote }) {
   const config = {
     note: { icon: MessageSquare, color: 'text-muted-foreground', bg: 'bg-muted/40', label: 'Note' },
     status: { icon: Activity, color: 'text-blue-500', bg: 'bg-blue-500/5 border-blue-500/20', label: 'Statut' },
-    update: { icon: Pencil, color: 'text-primary', bg: 'bg-primary/5 border-primary/20', label: 'Mise à jour' },
+    update: { icon: Pencil, color: 'text-foreground', bg: 'bg-secondary/5 border-secondary/20', label: 'Mise à jour' },
   }[kind];
 
   const Icon = config.icon;
@@ -924,7 +924,7 @@ function TimelineEntry({ note }: { note: AIActionNote }) {
       className={cn(
         'rounded-md border p-2 text-xs transition-colors',
         config.bg,
-        hasDetails && 'cursor-pointer hover:bg-primary/10',
+        hasDetails && 'cursor-pointer hover:bg-secondary/10',
       )}
       onClick={hasDetails ? () => setExpanded((v) => !v) : undefined}
     >

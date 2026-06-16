@@ -216,7 +216,7 @@ export default function BatchExport({
             key={format.id}
             className={`flex items-center gap-2 p-2 rounded border cursor-pointer transition-colors ${
               selectedFormats.includes(format.id)
-                ? 'bg-primary/10 border-primary'
+                ? 'bg-secondary/10 border-secondary'
                 : 'hover:bg-muted'
             }`}
           >

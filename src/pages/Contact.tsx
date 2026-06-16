@@ -13,9 +13,8 @@ import { MapPin, Mail, Phone, Linkedin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { contactSchema, type ContactFormData } from '@/schemas/contact';
-import GradientLink from '@/components/ui/GradientLink';
-import LogoArc from '@/components/ui/LogoArc';
 import { useCTATracking } from '@/hooks/useCTATracking';
+import { Section, Eyebrow, SectionTitle, IconChip } from '@/components/brand';
 
 const Contact = () => {
   const { toast } = useToast();
@@ -268,32 +267,36 @@ const Contact = () => {
       <Header />
       <BreadcrumbNav />
       
-      <main className="min-h-screen pt-4">
-        <section className="max-w-6xl mx-auto px-6 py-4">
-          {/* En-tête */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl md:text-5xl font-bold hero-gradient-text mb-2 animate-fadeIn [animation-delay:0.1s]">
-              Contact
-            </h1>
-            <LogoArc size="md" className="mx-auto mb-6 animate-fadeIn [animation-delay:0.15s]" />
-            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto animate-fadeIn [animation-delay:0.2s]">
-              Une question ? Un projet ? Parlons-en.
-            </p>
-          </div>
+      <main className="min-h-screen">
+        {/* Hero */}
+        <Section tone="dark" spacing="hero">
+          <SectionTitle
+            as="h1"
+            center
+            arc
+            eyebrow="Parlons-en"
+            lede="Une question ? Un projet ? Parlons-en."
+          >
+            Contact<em>.</em>
+          </SectionTitle>
+        </Section>
 
+        {/* Formulaire + Coordonnées (fond clair pour la lisibilité) */}
+        <Section tone="light" spacing="section">
           {/* 2 colonnes : Formulaire + Coordonnées */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {/* Formulaire */}
             <div className="animate-fadeIn [animation-delay:0.3s]">
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <Eyebrow>Votre message</Eyebrow>
+              <form onSubmit={handleSubmit} className="space-y-6 mt-6">
                 <div>
                   <Label htmlFor="nom">Nom *</Label>
-                  <Input 
-                    id="nom" 
-                    type="text" 
-                    placeholder="Votre nom" 
-                    required 
-                    className="mt-2"
+                  <Input
+                    id="nom"
+                    type="text"
+                    placeholder="Votre nom"
+                    required
+                    className="mt-2 rounded-xl focus-visible:ring-primary/40 focus-visible:border-primary"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   />
@@ -302,12 +305,12 @@ const Contact = () => {
 
                 <div>
                   <Label htmlFor="email">Email *</Label>
-                  <Input 
-                    id="email" 
-                    type="email" 
-                    placeholder="votre@email.com" 
-                    required 
-                    className="mt-2"
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="votre@email.com"
+                    required
+                    className="mt-2 rounded-xl focus-visible:ring-primary/40 focus-visible:border-primary"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   />
@@ -316,11 +319,11 @@ const Contact = () => {
 
                 <div>
                   <Label htmlFor="entreprise">Entreprise (optionnel)</Label>
-                  <Input 
-                    id="entreprise" 
-                    type="text" 
-                    placeholder="Nom de votre entreprise" 
-                    className="mt-2"
+                  <Input
+                    id="entreprise"
+                    type="text"
+                    placeholder="Nom de votre entreprise"
+                    className="mt-2 rounded-xl focus-visible:ring-primary/40 focus-visible:border-primary"
                     value={formData.company || ''}
                     onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                   />
@@ -334,7 +337,7 @@ const Contact = () => {
                     value={formData.subject}
                     onValueChange={(value) => setFormData({ ...formData, subject: value as ContactFormData['subject'] })}
                   >
-                    <SelectTrigger className="mt-2">
+                    <SelectTrigger className="mt-2 rounded-xl focus:ring-primary/40 focus:border-primary">
                       <SelectValue placeholder="Sélectionnez un sujet" />
                     </SelectTrigger>
                     <SelectContent>
@@ -350,42 +353,46 @@ const Contact = () => {
 
                 <div>
                   <Label htmlFor="message">Message *</Label>
-                  <Textarea 
-                    id="message" 
-                    placeholder="Décrivez votre projet ou votre question..." 
-                    required 
-                    className="mt-2 min-h-[150px]"
+                  <Textarea
+                    id="message"
+                    placeholder="Décrivez votre projet ou votre question..."
+                    required
+                    className="mt-2 min-h-[150px] rounded-xl focus-visible:ring-primary/40 focus-visible:border-primary"
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                   />
                   {errors.message && <p className="text-sm text-destructive mt-1">{errors.message}</p>}
                 </div>
 
-                <GradientLink 
-                  type="submit" 
+                <button
+                  type="submit"
                   disabled={isSubmitting}
-                  className="w-full justify-center text-lg py-3"
+                  className="btn-primary w-full justify-center disabled:opacity-60"
                 >
-                  {isSubmitting ? 'Envoi en cours...' : 'Envoyer'}
-                </GradientLink>
+                  {isSubmitting ? 'Envoi en cours…' : 'Envoyer'}
+                  <span className="arrow" aria-hidden="true">→</span>
+                </button>
               </form>
             </div>
 
             {/* Coordonnées */}
             <div className="animate-fadeIn [animation-delay:0.4s] space-y-8">
               <div>
-                <h2 className="text-2xl font-bold text-foreground mb-6">
-                  Nos coordonnées
+                <Eyebrow>Nos coordonnées</Eyebrow>
+                <h2 className="section-title text-2xl md:text-3xl font-semibold tracking-[-0.025em] text-foreground mt-3 mb-6">
+                  Échangeons directement
                 </h2>
-                
+
                 <div className="space-y-6">
                   <div className="flex items-start gap-4">
-                    <Mail className="w-6 h-6 text-accent shrink-0 mt-1" aria-hidden="true" />
+                    <IconChip variant="terra">
+                      <Mail className="w-5 h-5" aria-hidden="true" />
+                    </IconChip>
                     <div>
                       <p className="font-semibold text-foreground mb-1">Email</p>
-                      <a 
-                        href="mailto:nlq@iarche.fr" 
-                        className="text-muted-foreground hover:text-accent transition-colors"
+                      <a
+                        href="mailto:nlq@iarche.fr"
+                        className="text-muted-foreground hover:text-primary transition-colors"
                       >
                         nlq@iarche.fr
                       </a>
@@ -393,12 +400,14 @@ const Contact = () => {
                   </div>
 
                   <div className="flex items-start gap-4">
-                    <Phone className="w-6 h-6 text-accent shrink-0 mt-1" aria-hidden="true" />
+                    <IconChip variant="terra">
+                      <Phone className="w-5 h-5" aria-hidden="true" />
+                    </IconChip>
                     <div>
                       <p className="font-semibold text-foreground mb-1">Téléphone</p>
-                      <a 
-                        href="tel:+33661741381" 
-                        className="text-muted-foreground hover:text-accent transition-colors"
+                      <a
+                        href="tel:+33661741381"
+                        className="text-muted-foreground hover:text-primary transition-colors"
                       >
                         06 61 74 13 81
                       </a>
@@ -406,7 +415,9 @@ const Contact = () => {
                   </div>
 
                   <div className="flex items-start gap-4">
-                    <MapPin className="w-6 h-6 text-accent shrink-0 mt-1" aria-hidden="true" />
+                    <IconChip variant="terra">
+                      <MapPin className="w-5 h-5" aria-hidden="true" />
+                    </IconChip>
                     <div>
                       <p className="font-semibold text-foreground mb-1">Localisation</p>
                       <p className="text-muted-foreground">
@@ -416,14 +427,16 @@ const Contact = () => {
                   </div>
 
                   <div className="flex items-start gap-4">
-                    <Linkedin className="w-6 h-6 text-accent shrink-0 mt-1" aria-hidden="true" />
+                    <IconChip variant="terra">
+                      <Linkedin className="w-5 h-5" aria-hidden="true" />
+                    </IconChip>
                     <div>
                       <p className="font-semibold text-foreground mb-1">LinkedIn</p>
-                      <a 
-                        href="https://linkedin.com" 
+                      <a
+                        href="https://linkedin.com"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-muted-foreground hover:text-accent transition-colors"
+                        className="text-muted-foreground hover:text-primary transition-colors"
                       >
                         Suivez-nous sur LinkedIn
                       </a>
@@ -433,7 +446,7 @@ const Contact = () => {
               </div>
             </div>
           </div>
-        </section>
+        </Section>
       </main>
       
       <Footer />

@@ -223,7 +223,7 @@ const AdminEmailAssetsGenerator = () => {
     return (
       <div className="bg-card border border-border rounded-lg p-5 space-y-4">
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded bg-muted flex items-center justify-center text-primary">
+          <div className="w-10 h-10 rounded bg-muted flex items-center justify-center text-foreground">
             {icon}
           </div>
           <div className="flex-1">

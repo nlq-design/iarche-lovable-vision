@@ -116,8 +116,8 @@ export const FileUploader = ({
       {label && <p className="text-sm font-medium mb-2">{label}</p>}
       <div
         className={cn(
-          "border-2 border-dashed rounded-lg p-4 text-center transition-colors cursor-pointer focus-within:ring-2 focus-within:ring-primary/20",
-          dragOver ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
+          "border-2 border-dashed rounded-lg p-4 text-center transition-colors cursor-pointer focus-within:ring-2 focus-within:ring-secondary/20",
+          dragOver ? 'border-secondary bg-secondary/5' : 'border-border hover:border-secondary/50'
         )}
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
@@ -141,11 +141,11 @@ export const FileUploader = ({
           <div className="py-4">
             <Upload className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
             <p className="text-sm text-muted-foreground">
-              Glissez-déposez ou <span className="text-primary font-medium">parcourez</span>
+              Glissez-déposez ou <span className="text-foreground font-medium">parcourez</span>
             </p>
             <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground mt-1">
               <span>PDF, Word, Excel... • Max {maxSize} MB</span>
-              <span className="text-primary/60 flex items-center gap-1">
+              <span className="text-foreground/60 flex items-center gap-1">
                 <Clipboard className="h-3 w-3" />
                 Ctrl+V
               </span>
@@ -161,7 +161,7 @@ export const FileUploader = ({
                   className="flex items-center justify-between p-2 bg-muted/50 rounded-lg"
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <IconComponent className="h-4 w-4 text-primary shrink-0" />
+                    <IconComponent className="h-4 w-4 text-foreground shrink-0" />
                     <span className="text-sm truncate">{file.name}</span>
                     <span className="text-xs text-muted-foreground shrink-0">
                       ({formatFileSize(file.size)})

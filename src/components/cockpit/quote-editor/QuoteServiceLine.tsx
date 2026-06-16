@@ -37,7 +37,7 @@ export const QuoteServiceLine: React.FC<QuoteServiceLineProps> = ({
 
   if (line.isPhase) {
     return (
-      <tr className="bg-muted/50 border-t-2 border-primary/20">
+      <tr className="bg-muted/50 border-t-2 border-secondary/20">
         <td className="p-2">
           <div className="flex items-center gap-2">
             <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab" />

@@ -300,7 +300,7 @@ const IArcheLabsAdmin = () => {
     return (
       <AdminLayout>
         <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <Loader2 className="h-8 w-8 animate-spin text-foreground" />
         </div>
       </AdminLayout>
     );
@@ -315,7 +315,7 @@ const IArcheLabsAdmin = () => {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <Rocket className="h-6 w-6 text-accent" />
+            <Rocket className="h-6 w-6 text-primary" />
             <h1 className="text-2xl font-bold text-foreground">IArche Labs</h1>
             <Badge variant="secondary">{contacts.length} candidature{contacts.length > 1 ? 's' : ''}</Badge>
           </div>

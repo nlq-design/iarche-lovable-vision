@@ -120,7 +120,7 @@ const AdminFormulaires = () => {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-primary">Formulaires</h1>
+            <h1 className="text-2xl font-bold text-foreground">Formulaires</h1>
             <p className="text-muted-foreground text-sm mt-1">
               Créez et gérez vos formulaires personnalisés
             </p>
@@ -188,10 +188,10 @@ const AdminFormulaires = () => {
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-primary truncate">{form.title}</h3>
+                    <h3 className="font-semibold text-foreground truncate">{form.title}</h3>
                     <button
                       onClick={() => copyLink(form.slug)}
-                      className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 mt-1"
+                      className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 mt-1"
                     >
                       <span className="truncate">/f/{form.slug}</span>
                       <Copy className="h-3 w-3 flex-shrink-0" />

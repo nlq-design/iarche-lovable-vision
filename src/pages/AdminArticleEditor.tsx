@@ -1081,7 +1081,7 @@ const AdminArticleEditor = () => {
     return (
       <AdminLayout>
         <div className="min-h-screen flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <Loader2 className="h-8 w-8 animate-spin text-foreground" />
         </div>
       </AdminLayout>
     );
@@ -1115,7 +1115,7 @@ const AdminArticleEditor = () => {
                 </span>
               )}
               {id && hasChanges && !autoSaving && (
-                <span className="text-sm text-accent">
+                <span className="text-sm text-primary">
                   Modifications non sauvegardées
                 </span>
               )}
@@ -1376,7 +1376,7 @@ const AdminArticleEditor = () => {
                         <div className="space-y-2">
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <FileText className="h-4 w-4" />
-                            <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="hover:underline text-primary">
+                            <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="hover:underline text-foreground">
                               Voir le fichier
                             </a>
                             {tailleFichierBytes > 0 && (
@@ -1523,7 +1523,7 @@ const AdminArticleEditor = () => {
                     {id && (
                       <div className="p-3 bg-muted/30 rounded-lg border border-border">
                         <p className="text-sm font-medium text-foreground">
-                          📊 Téléchargements : <span className="text-primary">{compteurTelechargements}</span>
+                          📊 Téléchargements : <span className="text-foreground">{compteurTelechargements}</span>
                         </p>
                       </div>
                     )}
@@ -1693,14 +1693,14 @@ const AdminArticleEditor = () => {
                     
                     {/* Compteur inscrits temps réel (admin only) */}
                     {id && (
-                      <div className="p-4 bg-accent/10 rounded-lg border-2 border-accent/30">
+                      <div className="p-4 bg-primary/10 rounded-lg border-2 border-primary/30">
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="text-sm font-medium text-foreground">Inscriptions en temps réel</p>
                             <p className="text-xs text-muted-foreground mt-1">Mis à jour toutes les 5 secondes</p>
                           </div>
                           <div className="text-right">
-                            <p className="text-3xl font-bold text-accent">{compteurInscrits}</p>
+                            <p className="text-3xl font-bold text-primary">{compteurInscrits}</p>
                             <p className="text-xs text-muted-foreground">/ {maxParticipants} places</p>
                           </div>
                         </div>
@@ -1849,7 +1849,7 @@ const AdminArticleEditor = () => {
                   {availableCategories.length === 0 ? (
                     <p className="text-sm text-muted-foreground">
                       Aucune catégorie disponible.{' '}
-                      <NavLink to="/admin/categories" className="text-primary hover:underline">
+                      <NavLink to="/admin/categories" className="text-foreground hover:underline">
                         Créer une catégorie
                       </NavLink>
                     </p>
@@ -1914,7 +1914,7 @@ const AdminArticleEditor = () => {
                             key={index}
                             type="button"
                             onClick={() => handleAddSuggestedTag(tag)}
-                            className="text-xs bg-primary/10 text-primary px-2 py-1 rounded hover:bg-primary hover:text-primary-foreground transition-colors"
+                            className="text-xs bg-secondary/10 text-foreground px-2 py-1 rounded hover:bg-secondary hover:text-secondary-foreground transition-colors"
                           >
                             + {tag}
                           </button>
@@ -1926,7 +1926,7 @@ const AdminArticleEditor = () => {
                   {availableTags.length === 0 ? (
                     <p className="text-sm text-muted-foreground">
                       Aucun tag disponible.{' '}
-                      <NavLink to="/admin/tags" className="text-primary hover:underline">
+                      <NavLink to="/admin/tags" className="text-foreground hover:underline">
                         Créer un tag
                       </NavLink>
                     </p>

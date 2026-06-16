@@ -27,7 +27,7 @@ export function OwnerBadge({ userId, size = 'md' }: OwnerBadgeProps) {
         <TooltipTrigger asChild>
           <Avatar className="h-5 w-5">
             <AvatarImage src={owner.avatar_url || undefined} alt={owner.display_name} />
-            <AvatarFallback className="text-[9px] bg-primary/10 text-primary font-medium">
+            <AvatarFallback className="text-[9px] bg-secondary/10 text-foreground font-medium">
               {initials}
             </AvatarFallback>
           </Avatar>
@@ -44,7 +44,7 @@ export function OwnerBadge({ userId, size = 'md' }: OwnerBadgeProps) {
     <div className="flex items-center gap-2">
       <Avatar className="h-7 w-7">
         <AvatarImage src={owner.avatar_url || undefined} alt={owner.display_name} />
-        <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-medium">
+        <AvatarFallback className="text-[10px] bg-secondary/10 text-foreground font-medium">
           {initials}
         </AvatarFallback>
       </Avatar>

@@ -169,7 +169,7 @@ export default function VivierLeadDetail() {
     return (
       <VivierLayout>
         <div className="flex items-center justify-center h-96">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <Loader2 className="h-8 w-8 animate-spin text-foreground" />
         </div>
       </VivierLayout>
     );

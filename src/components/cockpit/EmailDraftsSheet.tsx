@@ -218,7 +218,7 @@ export function EmailDraftsSheet({ open, onOpenChange, leadId }: EmailDraftsShee
         <ScrollArea className="h-[calc(100vh-180px)] mt-4">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
-              <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
+              <div className="animate-spin h-6 w-6 border-2 border-secondary border-t-transparent rounded-full" />
             </div>
           ) : drafts && drafts.length > 0 ? (
             <div className="space-y-4">
@@ -254,7 +254,7 @@ export function EmailDraftsSheet({ open, onOpenChange, leadId }: EmailDraftsShee
                       <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(selectedDraft.ai_metadata?.email_data?.body || "", { ADD_TAGS: ['p', 'br', 'strong', 'em', 'ul', 'ol', 'li'] }) }} />
                       {selectedDraft.ai_metadata?.email_data?.cta && (
                         <p>
-                          <a href={selectedDraft.ai_metadata?.email_data?.cta_url} className="text-primary font-medium">
+                          <a href={selectedDraft.ai_metadata?.email_data?.cta_url} className="text-foreground font-medium">
                             {selectedDraft.ai_metadata?.email_data?.cta}
                           </a>
                         </p>

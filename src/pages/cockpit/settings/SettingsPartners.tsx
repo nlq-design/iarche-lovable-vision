@@ -79,7 +79,7 @@ export default function SettingsPartners() {
       <div className="space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-3">
-            <Handshake className="h-6 w-6 text-primary" />
+            <Handshake className="h-6 w-6 text-foreground" />
             <div>
               <h1 className="text-2xl font-bold text-foreground">Partenaires de votre espace</h1>
               <p className="text-muted-foreground text-sm">
@@ -183,7 +183,7 @@ export default function SettingsPartners() {
                         <TableCell className="text-muted-foreground">{p.email ?? '—'}</TableCell>
                         <TableCell>
                           {p.status === 'active' ? (
-                            <Badge variant="outline" className="border-primary/30 text-primary">Actif</Badge>
+                            <Badge variant="outline" className="border-secondary/30 text-foreground">Actif</Badge>
                           ) : (
                             <Badge variant="destructive">Suspendu</Badge>
                           )}

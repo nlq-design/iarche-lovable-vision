@@ -200,9 +200,9 @@ const Admin = () => {
   const getActivityIcon = (type: string) => {
     switch (type) {
       case 'lead':
-        return <Users className="h-4 w-4 text-accent" />;
+        return <Users className="h-4 w-4 text-primary" />;
       case 'article':
-        return <FileText className="h-4 w-4 text-primary" />;
+        return <FileText className="h-4 w-4 text-foreground" />;
       case 'comment':
         return <MessageCircle className="h-4 w-4 text-muted-foreground" />;
     }
@@ -294,7 +294,7 @@ const Admin = () => {
     return (
       <div className="min-h-screen bg-muted/30 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+          <Loader2 className="h-8 w-8 animate-spin text-foreground mx-auto mb-4" />
           <p className="text-sm text-muted-foreground">Chargement...</p>
         </div>
       </div>
@@ -363,7 +363,7 @@ const Admin = () => {
       <div className="min-h-screen bg-muted/30 flex items-center justify-center px-6">
         <Card className="max-w-md bg-background/95 border-border">
           <CardHeader className="text-center">
-            <Users className="h-12 w-12 text-primary mx-auto mb-2" />
+            <Users className="h-12 w-12 text-foreground mx-auto mb-2" />
             <CardTitle>Espace Partenaire</CardTitle>
             <CardDescription>
               Vous êtes connecté en tant que partenaire. Accédez à votre espace dédié pour consulter vos missions et documents.
@@ -421,7 +421,7 @@ const Admin = () => {
 
           {dashboardLoading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <Loader2 className="h-8 w-8 animate-spin text-foreground" />
             </div>
           ) : (
             <>
@@ -437,7 +437,7 @@ const Admin = () => {
                           {stats.publishedArticles} publiés
                         </p>
                       </div>
-                      <FileText className="h-10 w-10 text-primary opacity-40" />
+                      <FileText className="h-10 w-10 text-foreground opacity-40" />
                     </div>
                   </CardContent>
                 </Card>
@@ -452,7 +452,7 @@ const Admin = () => {
                           Toutes sources
                         </p>
                       </div>
-                      <Users className="h-10 w-10 text-accent opacity-40" />
+                      <Users className="h-10 w-10 text-primary opacity-40" />
                     </div>
                   </CardContent>
                 </Card>
@@ -467,7 +467,7 @@ const Admin = () => {
                           Depuis le début
                         </p>
                       </div>
-                      <Eye className="h-10 w-10 text-primary opacity-40" />
+                      <Eye className="h-10 w-10 text-foreground opacity-40" />
                     </div>
                   </CardContent>
                 </Card>
@@ -482,7 +482,7 @@ const Admin = () => {
                           Leads / Vues
                         </p>
                       </div>
-                      <TrendingUp className="h-10 w-10 text-accent opacity-40" />
+                      <TrendingUp className="h-10 w-10 text-primary opacity-40" />
                     </div>
                   </CardContent>
                 </Card>
@@ -520,7 +520,7 @@ const Admin = () => {
                   <CardTitle className="text-lg text-foreground">Activité récente</CardTitle>
                   <CardDescription>
                     {stats.pendingComments > 0 && (
-                      <span className="text-accent font-medium">
+                      <span className="text-primary font-medium">
                         {stats.pendingComments} commentaire{stats.pendingComments > 1 ? 's' : ''} en attente
                       </span>
                     )}

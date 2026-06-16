@@ -55,7 +55,7 @@ export function ContactDetailModal({ contact, open, onOpenChange }: ContactDetai
               <h3 className="text-sm font-semibold text-muted-foreground mb-2">Email</h3>
               <a
                 href={`mailto:${contact.email}`}
-                className="flex items-center gap-2 text-primary hover:underline"
+                className="flex items-center gap-2 text-foreground hover:underline"
               >
                 <Mail className="h-4 w-4" />
                 {contact.email}

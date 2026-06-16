@@ -217,7 +217,7 @@ export default function CockpitChatbot() {
 
   const getTokenColor = (percentage: number): string => {
     if (percentage < 50) return 'bg-success'; // Vert
-    if (percentage < 80) return 'bg-accent';  // Orange/Terracotta
+    if (percentage < 80) return 'bg-primary';  // Orange/Terracotta
     return 'bg-destructive';                  // Rouge
   };
 
@@ -239,9 +239,9 @@ export default function CockpitChatbot() {
     <CockpitLayout>
       <div className="h-[calc(100vh-4rem)] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b bg-gradient-to-r from-primary/5 to-accent/5">
+        <div className="flex items-center justify-between px-6 py-4 border-b bg-gradient-to-r from-secondary/5 to-primary/5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-secondary to-primary flex items-center justify-center">
               <Sparkles className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -295,8 +295,8 @@ export default function CockpitChatbot() {
         <ScrollArea className="flex-1 px-6 py-4">
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center py-12">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mb-6">
-                <MessageSquare className="w-10 h-10 text-primary" />
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-secondary/20 to-primary/20 flex items-center justify-center mb-6">
+                <MessageSquare className="w-10 h-10 text-foreground" />
               </div>
               <h3 className="text-xl font-medium mb-2">Bonjour !</h3>
               <p className="text-muted-foreground max-w-md mb-8">
@@ -312,7 +312,7 @@ export default function CockpitChatbot() {
                 ].map(({ label, prompt }) => (
                   <Card 
                     key={label}
-                    className="cursor-pointer hover:border-primary/50 transition-colors"
+                    className="cursor-pointer hover:border-secondary/50 transition-colors"
                     onClick={() => setInputValue(prompt)}
                   >
                     <CardContent className="p-4 text-center">
@@ -333,7 +333,7 @@ export default function CockpitChatbot() {
                   )}
                 >
                   {message.role === 'assistant' && (
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-secondary to-primary flex items-center justify-center shrink-0">
                       <Bot className="w-4 h-4 text-white" />
                     </div>
                   )}
@@ -342,7 +342,7 @@ export default function CockpitChatbot() {
                     className={cn(
                       "rounded-2xl px-4 py-3 max-w-[75%] relative group",
                       message.role === 'user'
-                        ? "bg-primary text-primary-foreground"
+                        ? "bg-secondary text-secondary-foreground"
                         : "bg-muted border"
                     )}
                   >
@@ -402,7 +402,7 @@ export default function CockpitChatbot() {
                   </div>
                   
                   {message.role === 'user' && (
-                    <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
                       <User className="w-4 h-4" />
                     </div>
                   )}
@@ -411,12 +411,12 @@ export default function CockpitChatbot() {
               
               {isLoading && (
                 <div className="flex gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-secondary to-primary flex items-center justify-center">
                     <Bot className="w-4 h-4 text-white" />
                   </div>
                   <div className="bg-muted border rounded-2xl px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                      <Loader2 className="w-4 h-4 animate-spin text-foreground" />
                       <span className="text-sm text-muted-foreground">Réflexion en cours...</span>
                     </div>
                   </div>
@@ -457,7 +457,7 @@ export default function CockpitChatbot() {
               onClick={sendMessage}
               disabled={!inputValue.trim() || isLoading}
               size="icon"
-              className="shrink-0 h-12 w-12 bg-gradient-to-br from-primary to-accent hover:from-primary/90 hover:to-accent/90"
+              className="shrink-0 h-12 w-12 bg-gradient-to-br from-secondary to-primary hover:from-secondary/90 hover:to-primary/90"
             >
               {isLoading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />

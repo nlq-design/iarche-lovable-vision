@@ -66,7 +66,7 @@ export default function AcceptTeamInvitation() {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        <Loader2 className="h-6 w-6 animate-spin text-foreground" />
       </div>
     );
   }
@@ -86,7 +86,7 @@ export default function AcceptTeamInvitation() {
         </CardHeader>
         <CardContent className="space-y-4">
           {error ? (
-            <Link to="/" className="text-sm text-primary hover:underline">
+            <Link to="/" className="text-sm text-foreground hover:underline">
               Retour à l'accueil
             </Link>
           ) : !invitationEmail ? (

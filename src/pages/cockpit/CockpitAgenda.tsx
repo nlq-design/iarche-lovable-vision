@@ -317,9 +317,9 @@ const CockpitAgenda = () => {
                       onClick={() => setCurrentDate(day)}
                       className={`p-2 rounded-lg text-center transition-colors ${
                         isSameDay(day, currentDate) 
-                          ? "bg-primary text-primary-foreground" 
+                          ? "bg-secondary text-secondary-foreground" 
                           : isToday 
-                            ? "bg-primary/10 border border-primary"
+                            ? "bg-secondary/10 border border-secondary"
                             : "hover:bg-accent"
                       }`}
                     >
@@ -487,7 +487,7 @@ const CockpitAgenda = () => {
                 {upcomingBookings.map((booking) => (
                   <div key={booking.id} className="p-3 rounded-lg border bg-card">
                     <div className="flex items-center gap-2 mb-2">
-                      <Calendar className="h-4 w-4 text-primary" />
+                      <Calendar className="h-4 w-4 text-foreground" />
                       <span className="text-sm font-medium">
                         {format(new Date(booking.start_time), "EEE d MMM", { locale: fr })}
                       </span>

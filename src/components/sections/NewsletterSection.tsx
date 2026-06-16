@@ -3,9 +3,8 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { newsletterSchema } from '@/schemas/contact';
-import GradientLink from '@/components/ui/GradientLink';
-import GradientTitle from '@/components/ui/GradientTitle';
 import { useCTATracking } from '@/hooks/useCTATracking';
+import { Section, FinalCtaPanel, Eyebrow } from '@/components/brand';
 
 const NewsletterSection = () => {
   const { toast } = useToast();
@@ -109,57 +108,53 @@ const NewsletterSection = () => {
   };
 
   return (
-    <section id="newsletter" className="pt-8 md:pt-10 pb-12 md:pb-16 bg-muted">
-      <div className="container mx-auto px-6">
-        <div className="max-w-2xl mx-auto text-center">
-          <GradientTitle size="md" as="h2" className="mb-4 invisible animate-fadeIn [animation-delay:0.2s]">
-            Restez informé
-          </GradientTitle>
-          <p className="text-base md:text-lg text-muted-foreground mb-6 leading-relaxed max-w-xl mx-auto invisible animate-fadeIn [animation-delay:0.4s]">
-            Recevez nos actualités et conseils IA directement dans votre boîte mail.
-          </p>
-
-          <form 
-            onSubmit={handleSubmit} 
-            className="flex flex-col sm:flex-row gap-2 max-w-lg mx-auto mb-4 invisible animate-fadeIn [animation-delay:0.6s]"
-          >
-            <div className="flex-1">
-              <Input 
-                type="email" 
-                name="email"
-                placeholder="votre@email.fr"
-                required
-                className="w-full border-border rounded-lg px-4 py-3 text-base focus-visible:ring-2 focus-visible:ring-accent focus-visible:border-accent transition-all"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-              {error && <p className="text-sm text-destructive mt-1">{error}</p>}
-            </div>
-            <GradientLink 
-              type="submit"
-              disabled={isSubmitting}
-              className="px-6 py-3 whitespace-nowrap"
-            >
-              {isSubmitting ? 'Inscription...' : "S'inscrire"}
-            </GradientLink>
-          </form>
-
-          <p className="text-xs text-muted-foreground text-center mb-8 invisible animate-fadeIn [animation-delay:0.7s]">
-            En vous inscrivant, vous acceptez notre{' '}
-            <a 
-              href="/confidentialite" 
-              className="text-accent underline hover:text-accent/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 rounded"
-            >
-              politique de confidentialité
-            </a>
-          </p>
-        </div>
-        
-        <p className="text-sm text-muted-foreground tracking-widest text-center invisible animate-fadeIn [animation-delay:0.8s]">
-          Architecte IA · Bayonne · Pays Basque · France
+    <Section tone="dark" id="newsletter" container="narrow">
+      <FinalCtaPanel>
+        <Eyebrow center>Newsletter</Eyebrow>
+        <h2 className="mt-2 text-[clamp(28px,4vw,44px)] font-semibold leading-[1.08] tracking-[-0.022em] text-[hsl(var(--cream))]">
+          Restez <em>informé.</em>
+        </h2>
+        <p className="mt-4 text-base md:text-lg text-[hsl(var(--cream)/0.72)] leading-relaxed max-w-xl mx-auto">
+          Recevez nos actualités et conseils IA directement dans votre boîte mail.
         </p>
-      </div>
-    </section>
+
+        <form
+          onSubmit={handleSubmit}
+          className="mt-7 flex flex-col sm:flex-row gap-3 max-w-lg mx-auto"
+        >
+          <div className="flex-1 text-left">
+            <Input
+              type="email"
+              name="email"
+              placeholder="votre@email.fr"
+              required
+              className="w-full rounded-full px-5 py-3 text-base bg-white/5 border-white/15 text-[hsl(var(--cream))] placeholder:text-[hsl(var(--cream)/0.4)] focus-visible:ring-2 focus-visible:ring-[hsl(var(--accent-vivid))] focus-visible:border-[hsl(var(--accent-soft))] transition-all"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            {error && <p className="text-sm text-[hsl(var(--accent-soft))] mt-1.5 px-2">{error}</p>}
+          </div>
+          <button type="submit" disabled={isSubmitting} className="btn-primary justify-center disabled:opacity-60">
+            {isSubmitting ? 'Inscription…' : "S'inscrire"}
+            <span className="arrow" aria-hidden="true">→</span>
+          </button>
+        </form>
+
+        <p className="mt-5 text-xs text-[hsl(var(--cream)/0.46)] text-center">
+          En vous inscrivant, vous acceptez notre{' '}
+          <a
+            href="/confidentialite"
+            className="underline text-[hsl(var(--accent-soft))] hover:text-[hsl(var(--cream))] focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--accent-vivid))] rounded"
+          >
+            politique de confidentialité
+          </a>
+        </p>
+      </FinalCtaPanel>
+
+      <p className="mt-10 text-sm text-[hsl(var(--cream)/0.46)] tracking-widest text-center font-mono uppercase">
+        Architecte IA · Bayonne · Pays Basque · France
+      </p>
+    </Section>
   );
 };
 

@@ -471,7 +471,7 @@ export function CreateTranscriptionModal({
 
           <TabsContent value="upload" className="space-y-4 pt-4">
             <div 
-              className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
+              className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-secondary/50 transition-colors"
               onClick={() => fileInputRef.current?.click()}
             >
               <input
@@ -484,8 +484,8 @@ export function CreateTranscriptionModal({
               />
               {selectedFiles.length > 0 ? (
                 <div className="space-y-3">
-                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                    <Check className="h-5 w-5 text-primary" />
+                  <div className="h-10 w-10 rounded-full bg-secondary/10 flex items-center justify-center mx-auto">
+                    <Check className="h-5 w-5 text-foreground" />
                   </div>
                   <p className="font-medium">{selectedFiles.length} fichier{selectedFiles.length > 1 ? 's' : ''} sélectionné{selectedFiles.length > 1 ? 's' : ''}</p>
                   <p className="text-xs text-muted-foreground">Cliquez pour modifier la sélection</p>
@@ -547,7 +547,7 @@ export function CreateTranscriptionModal({
                       "h-20 w-20 rounded-full flex items-center justify-center mx-auto transition-all",
                       isRecording 
                         ? "bg-destructive animate-pulse" 
-                        : "bg-primary hover:bg-primary/90"
+                        : "bg-secondary hover:bg-secondary/90"
                     )}
                   >
                     {isRecording ? (
@@ -587,7 +587,7 @@ export function CreateTranscriptionModal({
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>{pastedText.trim().length.toLocaleString('fr-FR')} caractères</span>
                 <span className="flex items-center gap-1">
-                  <Zap className="h-3 w-3 text-primary" />
+                  <Zap className="h-3 w-3 text-foreground" />
                   Zéro coût AssemblyAI — analyse IA uniquement
                 </span>
               </div>
@@ -648,8 +648,8 @@ export function CreateTranscriptionModal({
 
           {/* Suggestions de contacts du Lead */}
           {suggestedContacts.length > 0 && (
-            <div className="rounded-md border border-primary/20 bg-primary/5 p-3 space-y-2">
-              <p className="text-xs font-medium text-primary flex items-center gap-1.5">
+            <div className="rounded-md border border-secondary/20 bg-secondary/5 p-3 space-y-2">
+              <p className="text-xs font-medium text-foreground flex items-center gap-1.5">
                 <Sparkles className="h-3.5 w-3.5" />
                 Contacts liés au Lead sélectionné
               </p>
@@ -660,7 +660,7 @@ export function CreateTranscriptionModal({
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="h-7 text-xs gap-1 border-primary/30 hover:bg-primary/10"
+                    className="h-7 text-xs gap-1 border-secondary/30 hover:bg-secondary/10"
                     onClick={() => {
                       setExpectedParticipants(prev => [...prev, c]);
                       setSuggestedContacts(prev => prev.filter(s => s.entity_id !== c.entity_id));
@@ -699,7 +699,7 @@ export function CreateTranscriptionModal({
                 {qualityMode === 'high' ? (
                   <Sparkles className="h-4 w-4 text-amber-500" />
                 ) : (
-                  <Zap className="h-4 w-4 text-primary" />
+                  <Zap className="h-4 w-4 text-foreground" />
                 )}
                 {qualityMode === 'high' ? 'Haute précision (best)' : 'Standard (nano)'}
               </Label>
@@ -734,9 +734,9 @@ export function CreateTranscriptionModal({
 
         {/* Extraction audio (vidéo → MP3 client-side) */}
         {extractStatus && (
-          <div className="rounded-md border border-primary/20 bg-primary/5 p-3 space-y-2">
+          <div className="rounded-md border border-secondary/20 bg-secondary/5 p-3 space-y-2">
             <div className="flex items-center gap-2 text-xs text-foreground">
-              <Film className="h-3.5 w-3.5 text-primary" />
+              <Film className="h-3.5 w-3.5 text-foreground" />
               <span className="truncate flex-1">Extraction audio : {extractStatus.name}</span>
               <span className="text-muted-foreground">{Math.round(extractStatus.ratio * 100)}%</span>
             </div>

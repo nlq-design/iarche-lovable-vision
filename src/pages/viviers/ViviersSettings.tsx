@@ -31,7 +31,7 @@ export default function ViviersSettings() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Key className="h-5 w-5 text-primary" />
+              <Key className="h-5 w-5 text-foreground" />
               Clés API
             </CardTitle>
             <CardDescription>
@@ -79,7 +79,7 @@ export default function ViviersSettings() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Mail className="h-5 w-5 text-primary" />
+              <Mail className="h-5 w-5 text-foreground" />
               Domaines email
             </CardTitle>
             <CardDescription>
@@ -122,7 +122,7 @@ export default function ViviersSettings() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5 text-primary" />
+              <Settings className="h-5 w-5 text-foreground" />
               Options
             </CardTitle>
           </CardHeader>

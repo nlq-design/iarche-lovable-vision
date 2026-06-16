@@ -180,7 +180,7 @@ const CockpitPricing = () => {
                 onClick={() => setPeriod('monthly')}
                 className={`px-5 py-2 text-sm font-medium rounded-full transition-colors ${
                   period === 'monthly'
-                    ? 'bg-primary text-primary-foreground'
+                    ? 'bg-secondary text-secondary-foreground'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
                 aria-pressed={period === 'monthly'}
@@ -192,7 +192,7 @@ const CockpitPricing = () => {
                 onClick={() => setPeriod('yearly')}
                 className={`px-5 py-2 text-sm font-medium rounded-full transition-colors flex items-center gap-2 ${
                   period === 'yearly'
-                    ? 'bg-primary text-primary-foreground'
+                    ? 'bg-secondary text-secondary-foreground'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
                 aria-pressed={period === 'yearly'}
@@ -201,8 +201,8 @@ const CockpitPricing = () => {
                 <span
                   className={`text-xs px-2 py-0.5 rounded-full ${
                     period === 'yearly'
-                      ? 'bg-primary-foreground/20 text-primary-foreground'
-                      : 'bg-primary/10 text-primary'
+                      ? 'bg-secondary-foreground/20 text-secondary-foreground'
+                      : 'bg-secondary/10 text-foreground'
                   }`}
                 >
                   -20%
@@ -249,13 +249,13 @@ const CockpitPricing = () => {
                     key={plan.id}
                     className={
                       isHighlighted
-                        ? 'border-primary shadow-lg relative'
+                        ? 'border-secondary shadow-lg relative'
                         : 'border-border'
                     }
                   >
                     {isHighlighted && (
                       <Badge
-                        className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground"
+                        className="absolute -top-3 left-1/2 -translate-x-1/2 bg-secondary text-secondary-foreground"
                       >
                         Recommandé
                       </Badge>
@@ -285,7 +285,7 @@ const CockpitPricing = () => {
                         ) : (
                           features.map((f) => (
                             <li key={f} className="flex items-start gap-2 text-sm">
-                              <Check className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                              <Check className="h-4 w-4 text-foreground mt-0.5 flex-shrink-0" />
                               <span className="text-foreground">{f}</span>
                             </li>
                           ))
@@ -350,7 +350,7 @@ const CockpitPricing = () => {
             Besoin d'accompagnement sur-mesure, formation ou intégration spécifique ?{' '}
             <button
               onClick={() => navigate('/contact')}
-              className="text-primary hover:underline font-medium"
+              className="text-foreground hover:underline font-medium"
             >
               Parlons-en
             </button>

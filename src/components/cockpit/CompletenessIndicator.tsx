@@ -14,13 +14,13 @@ interface CompletenessIndicatorProps {
 const SEVERITY_COLORS = {
   critical: 'text-destructive',
   warning: 'text-amber-600 dark:text-amber-400',
-  good: 'text-primary',
+  good: 'text-foreground',
 } as const;
 
 const PROGRESS_COLORS = {
   critical: '[&>div]:bg-destructive',
   warning: '[&>div]:bg-amber-500',
-  good: '[&>div]:bg-primary',
+  good: '[&>div]:bg-secondary',
 } as const;
 
 export function CompletenessIndicator({ completeness, onEnrich, compact = false }: CompletenessIndicatorProps) {
@@ -36,7 +36,7 @@ export function CompletenessIndicator({ completeness, onEnrich, compact = false 
               'cursor-pointer gap-1 text-xs',
               severity === 'critical' && 'border-destructive/50 text-destructive',
               severity === 'warning' && 'border-amber-500/50 text-amber-600 dark:text-amber-400',
-              severity === 'good' && 'border-primary/50 text-primary',
+              severity === 'good' && 'border-secondary/50 text-foreground',
             )}
             onClick={onEnrich}
           >
@@ -54,7 +54,7 @@ export function CompletenessIndicator({ completeness, onEnrich, compact = false 
             </ul>
           )}
           {onEnrich && severity !== 'good' && (
-            <p className="text-xs text-primary mt-1">Cliquer pour enrichir</p>
+            <p className="text-xs text-foreground mt-1">Cliquer pour enrichir</p>
           )}
         </TooltipContent>
       </Tooltip>

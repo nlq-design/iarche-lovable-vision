@@ -62,7 +62,7 @@ export default function TypographyControls({
           onPressedChange={onBoldChange}
           size="sm"
           aria-label="Gras"
-          className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+          className="data-[state=on]:bg-secondary data-[state=on]:text-secondary-foreground"
         >
           <Bold className="h-4 w-4" />
         </Toggle>
@@ -71,7 +71,7 @@ export default function TypographyControls({
           onPressedChange={onItalicChange}
           size="sm"
           aria-label="Italique"
-          className="data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+          className="data-[state=on]:bg-secondary data-[state=on]:text-secondary-foreground"
         >
           <Italic className="h-4 w-4" />
         </Toggle>

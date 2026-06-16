@@ -210,7 +210,7 @@ const SecurityDashboard = () => {
     return (
       <AdminLayout>
         <div className="flex items-center justify-center h-screen">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <Loader2 className="h-8 w-8 animate-spin text-foreground" />
         </div>
       </AdminLayout>
     );
@@ -400,7 +400,7 @@ const SecurityDashboard = () => {
                       <div className="flex items-center gap-2">
                         <div className="w-32 bg-muted rounded-full h-2">
                           <div 
-                            className="bg-primary h-2 rounded-full transition-all"
+                            className="bg-secondary h-2 rounded-full transition-all"
                             style={{ 
                               width: `${(count / (metrics?.totalActions || 1)) * 100}%` 
                             }}
@@ -437,7 +437,7 @@ const SecurityDashboard = () => {
                       <div className="flex items-center gap-2">
                         <div className="w-32 bg-muted rounded-full h-2">
                           <div 
-                            className="bg-accent h-2 rounded-full transition-all"
+                            className="bg-primary h-2 rounded-full transition-all"
                             style={{ 
                               width: `${(count / (metrics?.totalActions || 1)) * 100}%` 
                             }}

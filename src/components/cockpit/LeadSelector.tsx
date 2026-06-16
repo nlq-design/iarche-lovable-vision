@@ -105,11 +105,11 @@ export const LeadSelector = ({ value, onChange, className }: LeadSelectorProps) 
       </Popover>
       
       {selectedLead && (
-        <div className="mt-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
+        <div className="mt-2 p-3 rounded-lg bg-secondary/5 border border-secondary/20">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-full bg-primary/20 flex items-center justify-center">
-                <User className="h-4 w-4 text-primary" />
+              <div className="h-9 w-9 rounded-full bg-secondary/20 flex items-center justify-center">
+                <User className="h-4 w-4 text-foreground" />
               </div>
               <div>
                 <p className="font-medium text-sm">{selectedLead.name}</p>

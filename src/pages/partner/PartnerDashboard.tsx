@@ -222,12 +222,12 @@ export default function PartnerDashboard() {
                     <div 
                       key={announcement.id}
                       className={`p-3 rounded-lg transition-colors ${
-                        announcement.is_pinned ? 'bg-primary/5 border border-primary/20' : 'bg-muted/50 hover:bg-muted'
+                        announcement.is_pinned ? 'bg-secondary/5 border border-secondary/20' : 'bg-muted/50 hover:bg-muted'
                       }`}
                     >
                       <div className="flex items-start gap-2">
                         {announcement.is_pinned && (
-                          <Pin className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                          <Pin className="h-4 w-4 text-foreground shrink-0 mt-0.5" />
                         )}
                         <div className="flex-1 min-w-0">
                           <p className="font-medium truncate">{announcement.title}</p>

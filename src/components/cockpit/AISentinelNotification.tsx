@@ -131,7 +131,7 @@ export function AISentinelNotification() {
       <PopoverContent className="w-96 p-0" align="end" sideOffset={8}>
         <div className="flex items-center justify-between px-4 py-3 border-b bg-muted/30">
           <div className="flex items-center gap-2">
-            <Radar className="w-4 h-4 text-primary" />
+            <Radar className="w-4 h-4 text-foreground" />
             <span className="font-semibold text-sm">IA Sentinelle</span>
             {total > 0 && (
               <Badge variant="secondary" className="text-[10px]">

@@ -365,7 +365,7 @@ const BrochureEditor = () => {
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-primary">
+              <h1 className="text-2xl font-bold text-foreground">
                 {isNew ? 'Nouvelle brochure' : 'Modifier la brochure'}
               </h1>
               <p className="text-muted-foreground">{formData.title || 'Sans titre'}</p>
@@ -402,7 +402,7 @@ const BrochureEditor = () => {
                     <DropdownMenuSeparator />
                     
                     <DropdownMenuItem onClick={handleExportPdfHd} className="gap-2">
-                      <FileImage className="h-4 w-4 text-accent" />
+                      <FileImage className="h-4 w-4 text-primary" />
                       <div>
                         <div className="font-medium">PDF Haute-Fidélité</div>
                         <div className="text-xs text-muted-foreground">Export direct 1 clic</div>
@@ -523,7 +523,7 @@ const BrochureEditor = () => {
                         </div>
                       ) : (
                         <div 
-                          className="mt-2 border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-accent transition-colors"
+                          className="mt-2 border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-primary transition-colors"
                           onClick={() => fileInputRef.current?.click()}
                         >
                           {isUploading ? (

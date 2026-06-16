@@ -51,7 +51,7 @@ export function SpeakerMappingChips({
           size="sm"
           className={cn(
             'h-6 gap-1 text-[10px] px-1.5',
-            assignedSpeakers.length > 0 ? 'text-primary' : 'text-muted-foreground'
+            assignedSpeakers.length > 0 ? 'text-foreground' : 'text-muted-foreground'
           )}
           title="Associer aux intervenants détectés par l'IA"
         >
@@ -85,7 +85,7 @@ export function SpeakerMappingChips({
                 className={cn(
                   'w-full flex items-center gap-2 px-2 py-1.5 rounded text-left text-sm transition-colors',
                   isAssigned
-                    ? 'bg-primary/10 text-primary'
+                    ? 'bg-secondary/10 text-foreground'
                     : ownedByOther
                       ? 'opacity-50 hover:opacity-75 hover:bg-accent'
                       : 'hover:bg-accent'
@@ -103,7 +103,7 @@ export function SpeakerMappingChips({
                     </span>
                   )}
                 </div>
-                {isAssigned && <Check className="h-3.5 w-3.5 text-primary shrink-0" />}
+                {isAssigned && <Check className="h-3.5 w-3.5 text-foreground shrink-0" />}
               </button>
             );
           })}

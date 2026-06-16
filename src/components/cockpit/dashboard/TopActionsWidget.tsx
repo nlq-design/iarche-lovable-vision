@@ -26,7 +26,7 @@ export function TopActionsWidget({ actions, isLoading }: TopActionsWidgetProps) 
   const [selected, setSelected] = useState<AIActionSnapshot | null>(null);
 
   if (isLoading) return (
-    <Card className="border-primary/20">
+    <Card className="border-secondary/20">
       <CardContent className="pt-3 px-3 pb-2">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" /> Calcul des priorités...
@@ -38,9 +38,9 @@ export function TopActionsWidget({ actions, isLoading }: TopActionsWidgetProps) 
 
   return (
     <>
-      <Card className="border-primary/20">
+      <Card className="border-secondary/20">
         <CardHeader className="pb-1 pt-3 px-3">
-          <CardTitle className="text-xs font-semibold uppercase tracking-wider text-primary flex items-center gap-1.5">
+          <CardTitle className="text-xs font-semibold uppercase tracking-wider text-foreground flex items-center gap-1.5">
             <Zap className="h-3.5 w-3.5" /> Actions Prioritaires
             <Badge variant="outline" className="text-[9px] px-1 py-0 ml-auto">{actions.length}</Badge>
           </CardTitle>
@@ -79,7 +79,7 @@ export function TopActionsWidget({ actions, isLoading }: TopActionsWidgetProps) 
                         <Badge variant="outline" className="text-[9px] px-1 py-0 capitalize">{action.entity_type}</Badge>
                         <span className="text-[9px] text-muted-foreground">{action.entity_name}</span>
                         {action.impact_value && action.impact_value > 0 && (
-                          <span className="text-[9px] font-semibold text-primary">{formatCurrency(action.impact_value)}</span>
+                          <span className="text-[9px] font-semibold text-foreground">{formatCurrency(action.impact_value)}</span>
                         )}
                       </div>
                     </div>

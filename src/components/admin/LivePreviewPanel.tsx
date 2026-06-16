@@ -57,7 +57,7 @@ export const LivePreviewPanel = ({
         )}
 
         {/* Title */}
-        <h1 className="text-4xl font-bold mb-4 text-primary">
+        <h1 className="text-4xl font-bold mb-4 text-foreground">
           {title || 'Titre de l\'article'}
         </h1>
 
@@ -85,7 +85,7 @@ export const LivePreviewPanel = ({
 
         {/* Excerpt */}
         {excerpt && (
-          <p className="text-lg text-muted-foreground mb-8 italic border-l-4 border-accent pl-4">
+          <p className="text-lg text-muted-foreground mb-8 italic border-l-4 border-primary pl-4">
             {excerpt}
           </p>
         )}

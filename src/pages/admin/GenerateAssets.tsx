@@ -215,10 +215,10 @@ const GenerateAssets = () => {
         </Card>
 
         {/* INSTRUCTIONS */}
-        <Card className="border-accent/50 bg-accent/5">
+        <Card className="border-primary/50 bg-primary/5">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Check className="h-5 w-5 text-accent" />
+              <Check className="h-5 w-5 text-primary" />
               Instructions
             </CardTitle>
           </CardHeader>

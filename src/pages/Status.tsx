@@ -88,7 +88,7 @@ const Status = () => {
       <div className="container mx-auto px-4 py-16 md:py-24 max-w-6xl">
         {/* Header */}
         <div className="text-center mb-12 invisible animate-fadeIn" style={{ animationDelay: '0.1s' }}>
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-primary">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
             Status
           </h1>
           <p className="text-lg text-muted-foreground">
@@ -104,7 +104,7 @@ const Status = () => {
                 <StatusIcon className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-primary mb-1">
+                <h2 className="text-2xl font-bold text-foreground mb-1">
                   {overallStatus.label}
                 </h2>
                 {overallStatus.issues && overallStatus.issues.length > 0 && (
@@ -127,7 +127,7 @@ const Status = () => {
 
         {isLoading ? (
           <div className="text-center py-12">
-            <Activity className="w-12 h-12 animate-spin mx-auto mb-4 text-primary" />
+            <Activity className="w-12 h-12 animate-spin mx-auto mb-4 text-foreground" />
             <p className="text-muted-foreground">Chargement des métriques...</p>
           </div>
         ) : latestMetrics ? (
@@ -136,52 +136,52 @@ const Status = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               <Card className="p-6 invisible animate-fadeIn" style={{ animationDelay: '0.3s' }}>
                 <div className="flex items-center justify-between mb-4">
-                  <Gauge className="w-6 h-6 text-primary" />
+                  <Gauge className="w-6 h-6 text-foreground" />
                   <span className={`text-3xl font-bold ${getScoreColor(latestMetrics.performance_score, 85)}`}>
                     {latestMetrics.performance_score}
                   </span>
                 </div>
-                <h3 className="font-semibold text-primary">Performance</h3>
+                <h3 className="font-semibold text-foreground">Performance</h3>
                 <p className="text-xs text-muted-foreground mt-1">Vitesse & réactivité</p>
               </Card>
 
               <Card className="p-6 invisible animate-fadeIn" style={{ animationDelay: '0.4s' }}>
                 <div className="flex items-center justify-between mb-4">
-                  <Accessibility className="w-6 h-6 text-primary" />
+                  <Accessibility className="w-6 h-6 text-foreground" />
                   <span className={`text-3xl font-bold ${getScoreColor(latestMetrics.accessibility_score, 90)}`}>
                     {latestMetrics.accessibility_score}
                   </span>
                 </div>
-                <h3 className="font-semibold text-primary">Accessibilité</h3>
+                <h3 className="font-semibold text-foreground">Accessibilité</h3>
                 <p className="text-xs text-muted-foreground mt-1">WCAG compliance</p>
               </Card>
 
               <Card className="p-6 invisible animate-fadeIn" style={{ animationDelay: '0.5s' }}>
                 <div className="flex items-center justify-between mb-4">
-                  <CheckSquare className="w-6 h-6 text-primary" />
+                  <CheckSquare className="w-6 h-6 text-foreground" />
                   <span className={`text-3xl font-bold ${getScoreColor(latestMetrics.best_practices_score, 85)}`}>
                     {latestMetrics.best_practices_score}
                   </span>
                 </div>
-                <h3 className="font-semibold text-primary">Best Practices</h3>
+                <h3 className="font-semibold text-foreground">Best Practices</h3>
                 <p className="text-xs text-muted-foreground mt-1">Standards web</p>
               </Card>
 
               <Card className="p-6 invisible animate-fadeIn" style={{ animationDelay: '0.6s' }}>
                 <div className="flex items-center justify-between mb-4">
-                  <Search className="w-6 h-6 text-primary" />
+                  <Search className="w-6 h-6 text-foreground" />
                   <span className={`text-3xl font-bold ${getScoreColor(latestMetrics.seo_score, 90)}`}>
                     {latestMetrics.seo_score}
                   </span>
                 </div>
-                <h3 className="font-semibold text-primary">SEO</h3>
+                <h3 className="font-semibold text-foreground">SEO</h3>
                 <p className="text-xs text-muted-foreground mt-1">Référencement</p>
               </Card>
             </div>
 
             {/* Core Web Vitals */}
             <Card className="p-6 mb-8 invisible animate-fadeIn" style={{ animationDelay: '0.7s' }}>
-              <h3 className="text-xl font-bold text-primary mb-6">Core Web Vitals</h3>
+              <h3 className="text-xl font-bold text-foreground mb-6">Core Web Vitals</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
                 <div className="text-center">
                   <p className="text-xs text-muted-foreground mb-2">FCP</p>
@@ -227,18 +227,18 @@ const Status = () => {
 
             {/* Bundle Size */}
             <Card className="p-6 invisible animate-fadeIn" style={{ animationDelay: '0.8s' }}>
-              <h3 className="text-xl font-bold text-primary mb-6">Taille des ressources</h3>
+              <h3 className="text-xl font-bold text-foreground mb-6">Taille des ressources</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="text-center">
                   <p className="text-xs text-muted-foreground mb-2">JavaScript</p>
-                  <p className="text-2xl font-bold text-primary">
+                  <p className="text-2xl font-bold text-foreground">
                     {(latestMetrics.bundle_size_js / 1024).toFixed(0)} KB
                   </p>
                 </div>
 
                 <div className="text-center">
                   <p className="text-xs text-muted-foreground mb-2">CSS</p>
-                  <p className="text-2xl font-bold text-primary">
+                  <p className="text-2xl font-bold text-foreground">
                     {(latestMetrics.bundle_size_css / 1024).toFixed(0)} KB
                   </p>
                 </div>

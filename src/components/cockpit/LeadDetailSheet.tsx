@@ -862,10 +862,10 @@ export function LeadDetailSheet({ lead, open, onOpenChange }: LeadDetailSheetPro
             <Button
               variant="outline"
               size="sm"
-              className="w-full bg-primary/5 border-primary/20 hover:bg-primary/10"
+              className="w-full bg-secondary/5 border-secondary/20 hover:bg-secondary/10"
               onClick={() => setShowEmailDialog(true)}
             >
-              <Sparkles className="h-4 w-4 mr-1.5 text-primary" />
+              <Sparkles className="h-4 w-4 mr-1.5 text-foreground" />
               Générer email de suivi
             </Button>
             
@@ -1021,7 +1021,7 @@ export function LeadDetailSheet({ lead, open, onOpenChange }: LeadDetailSheetPro
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" />
+              <Sparkles className="h-5 w-5 text-foreground" />
               Générer un email de suivi
             </DialogTitle>
             <DialogDescription>

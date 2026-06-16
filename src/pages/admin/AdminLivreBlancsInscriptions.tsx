@@ -212,7 +212,7 @@ const AdminLivreBlancsInscriptions = () => {
     return (
       <AdminLayout>
         <div className="min-h-screen flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <Loader2 className="h-8 w-8 animate-spin text-foreground" />
         </div>
       </AdminLayout>
     );
@@ -266,7 +266,7 @@ const AdminLivreBlancsInscriptions = () => {
                 <CardTitle className="text-sm font-medium text-muted-foreground">Livres blancs actifs</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-bold text-primary">{stats.uniqueLivresBlancs}</p>
+                <p className="text-2xl font-bold text-foreground">{stats.uniqueLivresBlancs}</p>
               </CardContent>
             </Card>
             <Card>
@@ -274,7 +274,7 @@ const AdminLivreBlancsInscriptions = () => {
                 <CardTitle className="text-sm font-medium text-muted-foreground">Dernières 7 jours</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-bold text-accent">{stats.last7Days}</p>
+                <p className="text-2xl font-bold text-primary">{stats.last7Days}</p>
               </CardContent>
             </Card>
           </div>
@@ -367,7 +367,7 @@ const AdminLivreBlancsInscriptions = () => {
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2">
-                              <BookOpen className="h-4 w-4 text-primary" />
+                              <BookOpen className="h-4 w-4 text-foreground" />
                               <span className="font-medium text-foreground">
                                 {inscription.article?.title || 'Livre blanc supprimé'}
                               </span>
@@ -379,7 +379,7 @@ const AdminLivreBlancsInscriptions = () => {
                           <td className="px-4 py-3">
                             <a
                               href={`mailto:${inscription.email}`}
-                              className="flex items-center gap-2 text-sm text-primary hover:underline"
+                              className="flex items-center gap-2 text-sm text-foreground hover:underline"
                             >
                               <Mail className="h-4 w-4" />
                               {inscription.email}

@@ -65,6 +65,7 @@ export default {
       },
       fontFamily: {
         sans: ['Manrope', 'system-ui', 'sans-serif'],
+        mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
       },
       borderRadius: {
         xs: "var(--radius-xs)",
@@ -73,6 +74,7 @@ export default {
         lg: "var(--radius-lg)",
         xl: "var(--radius-xl)",
         "2xl": "var(--radius-2xl)",
+        pill: "var(--radius-pill)",
       },
       boxShadow: {
         "soft-xs": "var(--shadow-xs)",

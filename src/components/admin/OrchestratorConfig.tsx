@@ -130,7 +130,7 @@ function ToolCard({ tool }: { tool: { name: string; description: string; icon: R
     <div className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
       <Icon className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
       <div className="min-w-0">
-        <code className="text-sm font-mono text-primary">{tool.name}</code>
+        <code className="text-sm font-mono text-foreground">{tool.name}</code>
         <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{tool.description}</p>
       </div>
     </div>
@@ -237,7 +237,7 @@ export function OrchestratorConfig() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-2">
-              <Wrench className="h-5 w-5 text-primary" />
+              <Wrench className="h-5 w-5 text-foreground" />
               <div>
                 <p className="text-2xl font-bold">{totalTools}</p>
                 <p className="text-xs text-muted-foreground">Outils disponibles</p>
@@ -462,10 +462,10 @@ export function OrchestratorConfig() {
                 };
                 return (
                 <Collapsible key={prompt.id} defaultOpen={isGovernor}>
-                  <CollapsibleTrigger className={`flex items-center justify-between w-full p-4 rounded-lg border hover:bg-muted/50 transition-colors ${isGovernor ? 'border-primary bg-primary/5' : ''}`}>
+                  <CollapsibleTrigger className={`flex items-center justify-between w-full p-4 rounded-lg border hover:bg-muted/50 transition-colors ${isGovernor ? 'border-secondary bg-secondary/5' : ''}`}>
                     <div className="flex items-center gap-3">
                       {isGovernor ? (
-                        <Shield className="h-5 w-5 text-primary" />
+                        <Shield className="h-5 w-5 text-foreground" />
                       ) : (
                         <Bot className="h-5 w-5 text-muted-foreground" />
                       )}
@@ -473,7 +473,7 @@ export function OrchestratorConfig() {
                         <div className="flex items-center gap-2">
                           <p className="font-medium">{prompt.name}</p>
                           {isGovernor && (
-                            <Badge className="bg-primary/10 text-primary border-primary/20 text-xs">
+                            <Badge className="bg-secondary/10 text-foreground border-secondary/20 text-xs">
                               Hiérarchie Supérieure
                             </Badge>
                           )}

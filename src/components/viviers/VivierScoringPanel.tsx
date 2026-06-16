@@ -139,7 +139,7 @@ export function VivierScoringPanel({ pendingCount: pendingCountProp = 0, onCompl
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-primary" />
+          <Sparkles className="w-5 h-5 text-foreground" />
           Scoring IA
         </CardTitle>
         <CardDescription>
@@ -155,13 +155,13 @@ export function VivierScoringPanel({ pendingCount: pendingCountProp = 0, onCompl
           </div>
           <div className="p-3 bg-muted/50 rounded-lg">
             <p className="text-xs text-muted-foreground">Déjà scorés</p>
-            <p className="text-xl font-bold text-primary">{scoredCount.toLocaleString('fr-FR')}</p>
+            <p className="text-xl font-bold text-foreground">{scoredCount.toLocaleString('fr-FR')}</p>
           </div>
         </div>
 
         {/* Session Progress */}
         {showProgress && (
-          <div className="space-y-2 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+          <div className="space-y-2 p-3 bg-secondary/5 border border-secondary/20 rounded-lg">
             <div className="flex justify-between text-sm">
               <span className="font-medium">
                 Session: {sessionScored.toLocaleString('fr-FR')} scorés
@@ -169,12 +169,12 @@ export function VivierScoringPanel({ pendingCount: pendingCountProp = 0, onCompl
                   <span className="text-destructive ml-2">({sessionErrors} erreurs)</span>
                 )}
               </span>
-              <span className="font-bold text-primary">{progress}%</span>
+              <span className="font-bold text-foreground">{progress}%</span>
             </div>
             <Progress value={progress} className="h-3" />
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>Batch #{currentBatch} • {batchSize} leads/batch</span>
-              {autoContinue && <span className="text-primary animate-pulse">En cours...</span>}
+              {autoContinue && <span className="text-foreground animate-pulse">En cours...</span>}
             </div>
           </div>
         )}
@@ -239,7 +239,7 @@ export function VivierScoringPanel({ pendingCount: pendingCountProp = 0, onCompl
               onClick={() => setBatchSize(size)}
               className={`px-2 py-1 rounded ${
                 batchSize === size
-                  ? 'bg-primary text-primary-foreground'
+                  ? 'bg-secondary text-secondary-foreground'
                   : 'bg-muted hover:bg-muted/80'
               }`}
               disabled={isScoring || autoContinue}

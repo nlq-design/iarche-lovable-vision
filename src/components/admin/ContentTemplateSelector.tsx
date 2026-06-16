@@ -101,7 +101,7 @@ export const ContentTemplateSelector = ({ resourceType, onSelectTemplate, onClos
   }
 
   return (
-    <Card className="mb-6 border-2 border-accent/20 bg-accent/5">
+    <Card className="mb-6 border-2 border-primary/20 bg-primary/5">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <FileText className="w-5 h-5" />
@@ -118,13 +118,13 @@ export const ContentTemplateSelector = ({ resourceType, onSelectTemplate, onClos
             return (
               <Card
                 key={template.id}
-                className="cursor-pointer hover:border-accent hover:shadow-md transition-all"
+                className="cursor-pointer hover:border-primary hover:shadow-md transition-all"
                 onClick={() => onSelectTemplate(template)}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start gap-3">
-                    <div className="p-2 bg-accent/10 rounded-lg">
-                      <Icon className="w-5 h-5 text-accent" />
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                      <Icon className="w-5 h-5 text-primary" />
                     </div>
                     <div className="flex-1">
                       <CardTitle className="text-sm font-semibold">

@@ -56,7 +56,7 @@ export function ActionProposalsList({ workspaceId, compact = false }: ActionProp
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
-            <Zap className="h-4 w-4 text-primary" />
+            <Zap className="h-4 w-4 text-foreground" />
             Actions proposées
           </CardTitle>
         </CardHeader>
@@ -87,7 +87,7 @@ export function ActionProposalsList({ workspaceId, compact = false }: ActionProp
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
-          <Zap className="h-4 w-4 text-primary" />
+          <Zap className="h-4 w-4 text-foreground" />
           Actions proposées
           {pendingProposals.length > 0 && (
             <Badge variant="secondary" className="ml-auto text-xs">
@@ -108,8 +108,8 @@ export function ActionProposalsList({ workspaceId, compact = false }: ActionProp
               className="border rounded-lg p-3 space-y-2 transition-colors hover:bg-accent/30"
             >
               <div className="flex items-start gap-3">
-                <div className="rounded-md bg-primary/10 p-1.5 mt-0.5">
-                  <Icon className="h-3.5 w-3.5 text-primary" />
+                <div className="rounded-md bg-secondary/10 p-1.5 mt-0.5">
+                  <Icon className="h-3.5 w-3.5 text-foreground" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -134,7 +134,7 @@ export function ActionProposalsList({ workspaceId, compact = false }: ActionProp
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-7 w-7 text-primary hover:bg-primary/10"
+                        className="h-7 w-7 text-foreground hover:bg-secondary/10"
                         onClick={() => handleValidate(proposal)}
                         disabled={validateAction.isPending}
                       >
@@ -208,8 +208,8 @@ export function ActionProposalsList({ workspaceId, compact = false }: ActionProp
 
               {/* AI Reasoning */}
               {isExpanded && proposal.ai_reasoning && (
-                <div className="ml-9 p-2 rounded bg-accent/50 text-xs text-muted-foreground flex items-start gap-1.5">
-                  <Brain className="h-3 w-3 mt-0.5 shrink-0 text-primary" />
+                <div className="ml-9 p-2 rounded bg-primary/50 text-xs text-muted-foreground flex items-start gap-1.5">
+                  <Brain className="h-3 w-3 mt-0.5 shrink-0 text-foreground" />
                   <span>{proposal.ai_reasoning}</span>
                 </div>
               )}
@@ -263,7 +263,7 @@ export function ActionProposalsList({ workspaceId, compact = false }: ActionProp
             <p className="text-xs text-muted-foreground mb-2 font-medium">Récemment exécutées</p>
             {executedProposals.slice(0, 3).map((p) => (
               <div key={p.id} className="flex items-center gap-2 py-1 text-xs text-muted-foreground">
-                <CheckCircle2 className="h-3 w-3 text-primary" />
+                <CheckCircle2 className="h-3 w-3 text-foreground" />
                 <span className="truncate">{p.action_label}</span>
                 {(p as any).auto_execute && (
                   <Badge variant="outline" className="text-[10px] bg-green-50 text-green-700 border-green-200 shrink-0">

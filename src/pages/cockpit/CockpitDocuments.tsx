@@ -277,7 +277,7 @@ const CockpitDocuments = () => {
                                   </Badge>
                                 )}
                                 {doc.ai_documents_summary && (
-                                  <Badge variant="outline" className="text-xs gap-1 bg-primary/5 text-primary border-primary/20">
+                                  <Badge variant="outline" className="text-xs gap-1 bg-secondary/5 text-foreground border-secondary/20">
                                     <Brain className="h-3 w-3" />
                                     Synthèse
                                   </Badge>
@@ -293,7 +293,7 @@ const CockpitDocuments = () => {
                                 )}
                                 {linkedEntity && (
                                   <span 
-                                    className="flex items-center gap-1 cursor-pointer hover:text-primary transition-colors"
+                                    className="flex items-center gap-1 cursor-pointer hover:text-foreground transition-colors"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       if (linkedEntity.type === 'project' && doc.project_id) {
@@ -363,7 +363,7 @@ const CockpitDocuments = () => {
                                 <Button 
                                   variant="ghost" 
                                   size="sm" 
-                                  className="h-6 px-2 text-xs gap-1 text-primary hover:text-primary"
+                                  className="h-6 px-2 text-xs gap-1 text-foreground hover:text-foreground"
                                 >
                                   <Brain className="h-3 w-3" />
                                   Voir la synthèse IA
@@ -375,7 +375,7 @@ const CockpitDocuments = () => {
                                 </Button>
                               </CollapsibleTrigger>
                               <CollapsibleContent className="mt-2">
-                                <div className="p-3 rounded-md bg-primary/5 border border-primary/10">
+                                <div className="p-3 rounded-md bg-secondary/5 border border-secondary/10">
                                   <p className="text-xs text-foreground whitespace-pre-wrap leading-relaxed">
                                     {doc.ai_documents_summary}
                                   </p>

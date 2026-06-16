@@ -204,7 +204,7 @@ const AdminDashboard = () => {
     return (
       <AdminLayout>
         <div className="min-h-screen flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <Loader2 className="h-8 w-8 animate-spin text-foreground" />
         </div>
       </AdminLayout>
     );
@@ -213,9 +213,9 @@ const AdminDashboard = () => {
   const getActivityIcon = (type: RecentActivity['type']) => {
     switch (type) {
       case 'lead':
-        return <Users className="h-4 w-4 text-accent" />;
+        return <Users className="h-4 w-4 text-primary" />;
       case 'article':
-        return <FileText className="h-4 w-4 text-primary" />;
+        return <FileText className="h-4 w-4 text-foreground" />;
       case 'comment':
         return <MessageCircle className="h-4 w-4 text-muted-foreground" />;
     }
@@ -261,7 +261,7 @@ const AdminDashboard = () => {
                       {stats.publishedArticles} publiés
                     </p>
                   </div>
-                  <FileText className="h-10 w-10 text-primary opacity-40" />
+                  <FileText className="h-10 w-10 text-foreground opacity-40" />
                 </div>
               </CardContent>
             </Card>
@@ -276,7 +276,7 @@ const AdminDashboard = () => {
                       Toutes sources
                     </p>
                   </div>
-                  <Users className="h-10 w-10 text-accent opacity-40" />
+                  <Users className="h-10 w-10 text-primary opacity-40" />
                 </div>
               </CardContent>
             </Card>
@@ -291,7 +291,7 @@ const AdminDashboard = () => {
                       Depuis le début
                     </p>
                   </div>
-                  <Eye className="h-10 w-10 text-primary opacity-40" />
+                  <Eye className="h-10 w-10 text-foreground opacity-40" />
                 </div>
               </CardContent>
             </Card>
@@ -306,7 +306,7 @@ const AdminDashboard = () => {
                       Leads / Vues
                     </p>
                   </div>
-                  <TrendingUp className="h-10 w-10 text-accent opacity-40" />
+                  <TrendingUp className="h-10 w-10 text-primary opacity-40" />
                 </div>
               </CardContent>
             </Card>
@@ -382,7 +382,7 @@ const AdminDashboard = () => {
                 <CardTitle className="text-lg text-foreground">Activité récente</CardTitle>
                 <CardDescription>
                   {stats.pendingComments > 0 && (
-                    <span className="text-accent font-medium">
+                    <span className="text-primary font-medium">
                       {stats.pendingComments} commentaire{stats.pendingComments > 1 ? 's' : ''} en attente
                     </span>
                   )}

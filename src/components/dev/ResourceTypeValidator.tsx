@@ -67,7 +67,7 @@ export function ResourceTypeValidator() {
       <div className="fixed bottom-4 right-4 z-50">
         <button
           onClick={() => setShowValidator(true)}
-          className="bg-primary text-primary-foreground px-3 py-2 rounded-md text-xs font-mono hover:bg-primary/90 transition-colors"
+          className="bg-secondary text-secondary-foreground px-3 py-2 rounded-md text-xs font-mono hover:bg-secondary/90 transition-colors"
           title="Afficher le validateur de resource_type (Ctrl+Shift+V)"
         >
           🔍 Dev: Resource Types

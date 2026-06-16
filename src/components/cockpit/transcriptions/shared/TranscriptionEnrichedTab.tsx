@@ -133,19 +133,19 @@ export function TranscriptionEnrichedTab({ segments, languageDetected, onSeekTo 
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
-              <BookOpen className="h-4 w-4 text-primary" />
+              <BookOpen className="h-4 w-4 text-foreground" />
               Chapitres automatiques ({chapters.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {chapters.map((chapter, i) => (
-                <div key={i} className="border-l-2 border-primary/30 pl-3">
+                <div key={i} className="border-l-2 border-secondary/30 pl-3">
                   <div className="flex items-center justify-between">
                     <h4 className="text-sm font-medium">{chapter.headline}</h4>
                     <button
                       onClick={() => onSeekTo?.(chapter.start)}
-                      className="text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                      className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                     >
                       {formatTime(chapter.start)}
                     </button>
@@ -214,7 +214,7 @@ function SentimentCard({ sentiments, onSeekTo }: { sentiments: SentimentResult[]
                   <span className="flex-1 line-clamp-2">{s.text}</span>
                   <button
                     onClick={() => onSeekTo?.(s.start)}
-                    className="text-[10px] text-muted-foreground hover:text-primary shrink-0"
+                    className="text-[10px] text-muted-foreground hover:text-foreground shrink-0"
                   >
                     {formatTime(s.start)}
                   </button>
@@ -279,7 +279,7 @@ function EntityCard({ entities, onSeekTo }: { entities: DetectedEntity[]; onSeek
                     <button
                       key={i}
                       onClick={() => onSeekTo?.(entity.start)}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary text-xs hover:bg-primary/10 transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted text-xs hover:bg-secondary/10 transition-colors cursor-pointer"
                     >
                       <Icon className="h-3 w-3" />
                       {entity.text}

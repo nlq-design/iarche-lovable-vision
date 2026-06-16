@@ -1,20 +1,22 @@
 import React from 'react';
+import { Section, Eyebrow, AnimatedArc, Reveal } from '@/components/brand';
 
 const PresentationSection = () => {
   return (
-    <section className="pt-8 pb-12 md:pt-12 md:pb-16">
-      <div className="container mx-auto px-6">
-        <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide text-center mb-8">À propos</h2>
-      <div className="max-w-3xl mx-auto text-center space-y-4 invisible animate-fadeIn [animation-delay:0.2s]">
-          <p className="text-lg md:text-xl text-primary leading-relaxed">
-            <span className="hero-gradient-text font-bold">IArche</span> est votre Architecte IA, basé à Bayonne. On accompagne les dirigeants de PME dans l'intégration concrète de l'intelligence artificielle : audit, développement, accompagnement, conformité.
+    <Section tone="warm" container="narrow">
+      <div className="flex flex-col items-center text-center">
+        <Eyebrow center>À propos</Eyebrow>
+        <AnimatedArc center />
+        <Reveal delay={120} className="mt-6 max-w-3xl space-y-4">
+          <p className="text-xl md:text-2xl text-foreground leading-relaxed font-medium">
+            <span className="hero-gradient-text font-bold">IArche</span> est votre Architecte IA, basé à Bayonne. On accompagne les dirigeants de PME dans l'intégration concrète de l'intelligence artificielle : <em>audit, développement, accompagnement, conformité.</em>
           </p>
-          <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
+          <p className="text-base md:text-lg text-text-subtle leading-relaxed">
             Engagés localement, nous intervenons aussi partout en France.
           </p>
-        </div>
+        </Reveal>
       </div>
-    </section>
+    </Section>
   );
 };
 

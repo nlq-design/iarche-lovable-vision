@@ -577,7 +577,7 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                 <DropdownMenuLabel>Mode d'export PDF</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleExportPdfHd} className="gap-2">
-                  <FileImage className="h-4 w-4 text-accent" />
+                  <FileImage className="h-4 w-4 text-primary" />
                   <div>
                     <div className="font-medium">PDF Haute-Fidélité</div>
                     <div className="text-xs text-muted-foreground">Capture web exacte</div>
@@ -936,7 +936,7 @@ export const CarouselEditor = ({ templateId, onBack }: CarouselEditorProps) => {
                     key={slide.id}
                     onClick={() => setCurrentSlide(idx)}
                     className={`flex-shrink-0 w-16 h-20 rounded border-2 transition-all flex items-center justify-center ${
-                      idx === currentSlide ? 'border-primary' : 'border-border hover:border-primary/50'
+                      idx === currentSlide ? 'border-secondary' : 'border-border hover:border-secondary/50'
                     }`}
                     style={{ background: PREVIEW_THEMES[thumbTheme].bg }}
                   >

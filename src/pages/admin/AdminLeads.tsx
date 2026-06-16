@@ -236,7 +236,7 @@ const AdminLeads = () => {
     return (
       <AdminLayout>
         <div className="min-h-screen flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <Loader2 className="h-8 w-8 animate-spin text-foreground" />
         </div>
       </AdminLayout>
     );
@@ -395,7 +395,7 @@ const AdminLeads = () => {
                         <th className="px-4 py-3 text-left">
                           <button
                             onClick={() => handleSort('name')}
-                            className="flex items-center gap-2 font-semibold text-sm text-foreground hover:text-primary"
+                            className="flex items-center gap-2 font-semibold text-sm text-foreground hover:text-foreground"
                           >
                             Nom
                             <ArrowUpDown className="h-4 w-4" />
@@ -404,7 +404,7 @@ const AdminLeads = () => {
                         <th className="px-4 py-3 text-left">
                           <button
                             onClick={() => handleSort('email')}
-                            className="flex items-center gap-2 font-semibold text-sm text-foreground hover:text-primary"
+                            className="flex items-center gap-2 font-semibold text-sm text-foreground hover:text-foreground"
                           >
                             Email
                             <ArrowUpDown className="h-4 w-4" />
@@ -428,7 +428,7 @@ const AdminLeads = () => {
                         <th className="px-4 py-3 text-left">
                           <button
                             onClick={() => handleSort('created_at')}
-                            className="flex items-center gap-2 font-semibold text-sm text-foreground hover:text-primary"
+                            className="flex items-center gap-2 font-semibold text-sm text-foreground hover:text-foreground"
                           >
                             Date
                             <ArrowUpDown className="h-4 w-4" />
@@ -459,7 +459,7 @@ const AdminLeads = () => {
                           <td className="px-4 py-3">
                             <a
                               href={`mailto:${lead.email}`}
-                              className="flex items-center gap-2 text-sm text-primary hover:underline"
+                              className="flex items-center gap-2 text-sm text-foreground hover:underline"
                             >
                               <Mail className="h-4 w-4" />
                               {lead.email}
@@ -479,7 +479,7 @@ const AdminLeads = () => {
                             {lead.phone ? (
                               <a
                                 href={`tel:${lead.phone}`}
-                                className="flex items-center gap-2 text-sm text-primary hover:underline"
+                                className="flex items-center gap-2 text-sm text-foreground hover:underline"
                               >
                                 <Phone className="h-4 w-4" />
                                 {lead.phone}

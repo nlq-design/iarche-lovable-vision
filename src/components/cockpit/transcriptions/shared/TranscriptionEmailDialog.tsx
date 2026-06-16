@@ -110,7 +110,7 @@ export function TranscriptionEmailDialog({
       <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
+            <Sparkles className="h-5 w-5 text-foreground" />
             Rédiger un email de suivi
           </DialogTitle>
           <DialogDescription>

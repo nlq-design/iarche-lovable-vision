@@ -199,7 +199,7 @@ const Signup = () => {
 
         <Button
           type="submit"
-          className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+          className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90"
           disabled={submitting}
         >
           {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -229,7 +229,7 @@ const Signup = () => {
 
       <p className="text-sm text-center text-muted-foreground mt-6">
         Déjà un compte ?{' '}
-        <Link to="/login" className="text-accent hover:underline">
+        <Link to="/login" className="text-primary hover:underline">
           Se connecter
         </Link>
       </p>

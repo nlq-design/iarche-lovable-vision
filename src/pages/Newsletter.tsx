@@ -11,7 +11,7 @@ import { CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { newsletterSchema } from '@/schemas/contact';
-import LogoArc from '@/components/ui/LogoArc';
+import { Section, SectionTitle } from '@/components/brand';
 import { useCTATracking } from '@/hooks/useCTATracking';
 
 const Newsletter = () => {
@@ -144,41 +144,44 @@ const Newsletter = () => {
       <Header />
       <BreadcrumbNav />
       
-      <main className="min-h-screen pt-4">
-        <section className="max-w-4xl mx-auto px-6 py-4">
-          {/* En-tête */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl md:text-5xl font-bold hero-gradient-text mb-2 animate-fadeIn [animation-delay:0.1s]">
-              Newsletter
-            </h1>
-            <LogoArc size="md" className="mx-auto mb-6 animate-fadeIn [animation-delay:0.15s]" />
-            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto animate-fadeIn [animation-delay:0.2s]">
-              Actualités et conseils IA, sans spam
-            </p>
-          </div>
+      <main className="min-h-screen">
+        {/* Hero */}
+        <Section tone="dark" spacing="hero">
+          <SectionTitle
+            as="h1"
+            center
+            arc
+            eyebrow="Newsletter"
+            lede="Actualités et conseils IA, sans spam"
+          >
+            News<em>letter</em>
+          </SectionTitle>
+        </Section>
 
+        {/* Formulaire + dernières éditions (fond clair pour la lisibilité) */}
+        <Section tone="light" spacing="section">
           {/* Formulaire d'inscription */}
           <div className="max-w-2xl mx-auto animate-fadeIn [animation-delay:0.3s]">
-            <div className="bg-secondary/50 rounded-lg p-8 md:p-12 border border-border">
+            <div className="bg-muted/50 rounded-lg p-8 md:p-12 border border-border">
               <h2 className="text-2xl font-bold text-foreground mb-6">
                 Restez informé
               </h2>
               
               <ul className="space-y-3 mb-8">
                 <li className="flex items-start gap-2 text-muted-foreground">
-                  <CheckCircle className="w-5 h-5 text-accent shrink-0 mt-0.5" aria-hidden="true" />
+                  <CheckCircle className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
                   <span>Veille technologique et actualités IA</span>
                 </li>
                 <li className="flex items-start gap-2 text-muted-foreground">
-                  <CheckCircle className="w-5 h-5 text-accent shrink-0 mt-0.5" aria-hidden="true" />
+                  <CheckCircle className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
                   <span>Conseils pratiques pour dirigeants</span>
                 </li>
                 <li className="flex items-start gap-2 text-muted-foreground">
-                  <CheckCircle className="w-5 h-5 text-accent shrink-0 mt-0.5" aria-hidden="true" />
+                  <CheckCircle className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
                   <span>Retours d'expérience et cas d'usage</span>
                 </li>
                 <li className="flex items-start gap-2 text-muted-foreground">
-                  <CheckCircle className="w-5 h-5 text-accent shrink-0 mt-0.5" aria-hidden="true" />
+                  <CheckCircle className="w-5 h-5 text-primary shrink-0 mt-0.5" aria-hidden="true" />
                   <span>Envoi mensuel, désinscription en un clic</span>
                 </li>
               </ul>
@@ -201,7 +204,7 @@ const Newsletter = () => {
                 <Button 
                   type="submit" 
                   size="lg"
-                  className="w-full bg-primary hover:bg-primary/90 text-white"
+                  className="w-full bg-secondary hover:bg-secondary/90 text-white"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? 'Inscription...' : "S'inscrire"}
@@ -225,7 +228,7 @@ const Newsletter = () => {
               </p>
             </div>
           </div>
-        </section>
+        </Section>
       </main>
       
       <Footer />

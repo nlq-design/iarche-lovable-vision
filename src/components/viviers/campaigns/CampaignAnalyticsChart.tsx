@@ -112,7 +112,7 @@ export function CampaignAnalyticsChart({
       {/* Header with Export */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-primary" />
+          <TrendingUp className="w-5 h-5 text-foreground" />
           <h3 className="font-semibold">Performance de la campagne</h3>
         </div>
         {onExport && (

@@ -74,7 +74,7 @@ export default function CockpitAccount() {
       <Helmet><title>Mon compte | Cockpit IArche</title></Helmet>
       <div className="space-y-6 p-6 max-w-4xl">
         <div className="flex items-center gap-3">
-          <UserCircle className="h-6 w-6 text-primary" />
+          <UserCircle className="h-6 w-6 text-foreground" />
           <div>
             <h1 className="text-2xl font-bold text-foreground">Mon compte</h1>
             <p className="text-muted-foreground text-sm">Profil personnel, sécurité et préférences IA.</p>

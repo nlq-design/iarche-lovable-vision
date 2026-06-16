@@ -37,9 +37,9 @@ export function SectionShell({
 
   const toneClass =
     tone === "night"
-      ? "bg-gradient-night text-primary-foreground"
+      ? "bg-gradient-night text-secondary-foreground"
       : tone === "muted"
-        ? "bg-secondary text-foreground"
+        ? "bg-muted text-foreground"
         : "bg-background text-foreground";
 
   const containerClass =
@@ -76,7 +76,7 @@ export function SectionShell({
                 <h2
                   className={cn(
                     "text-h2 max-w-3xl text-balance",
-                    tone === "night" ? "text-primary-foreground" : "text-primary",
+                    tone === "night" ? "text-secondary-foreground" : "text-foreground",
                   )}
                 >
                   {title}
@@ -86,7 +86,7 @@ export function SectionShell({
                 <p
                   className={cn(
                     "text-lead max-w-2xl",
-                    tone === "night" ? "text-primary-foreground/80" : "text-text-subtle",
+                    tone === "night" ? "text-secondary-foreground/80" : "text-text-subtle",
                   )}
                 >
                   {subtitle}

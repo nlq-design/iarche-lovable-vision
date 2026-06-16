@@ -11,7 +11,7 @@ import { NavLink } from '@/components/NavLink';
 import { Loader2, Calendar } from 'lucide-react';
 import ArticlePlaceholder from '@/components/ui/ArticlePlaceholder';
 import GradientTitle from '@/components/ui/GradientTitle';
-import LogoArc from '@/components/ui/LogoArc';
+import { Section, SectionTitle } from '@/components/brand';
 import { usePagination } from '@/hooks/usePagination';
 import {
   Pagination,
@@ -187,22 +187,26 @@ const AteliersWebinaires = () => {
       <Header />
       <BreadcrumbNav />
 
-      <main className="min-h-screen pt-4">
-        <section className="max-w-6xl mx-auto px-6 py-4">
-          {/* En-tête */}
-          <div className="text-center mb-8">
-            <GradientTitle size="lg" className="mb-6 animate-fadeIn [animation-delay:0.1s]">
-              Ateliers & Webinaires
-            </GradientTitle>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto animate-fadeIn [animation-delay:0.2s]">
-              Formations pratiques, démonstrations et sessions Q&A sur l'IA
-            </p>
-          </div>
+      <main className="min-h-screen">
+        {/* Hero sombre - charte v4.0 */}
+        <Section tone="dark" spacing="hero">
+          <SectionTitle
+            as="h1"
+            center
+            arc
+            eyebrow="Événements"
+            lede="Formations pratiques, démonstrations et sessions Q&A sur l'IA"
+          >
+            Ateliers &amp; <em>Webinaires</em>
+          </SectionTitle>
+        </Section>
 
+        {/* Corps clair */}
+        <Section tone="light">
           {/* Liste des ateliers et webinaires */}
           {loading ? (
             <div className="flex justify-center items-center py-20">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              <Loader2 className="w-8 h-8 animate-spin text-foreground" />
             </div>
           ) : ateliersWebinaires.length === 0 ? (
             <div className="text-center py-20">
@@ -253,7 +257,7 @@ const AteliersWebinaires = () => {
                       
                       {/* Date de l'événement */}
                       {item.event_date && (
-                        <div className="flex items-center gap-1.5 text-sm font-medium text-primary">
+                        <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
                           <Calendar className="h-4 w-4" aria-hidden="true" />
                           {new Date(item.event_date).toLocaleDateString('fr-FR', {
                             day: 'numeric',
@@ -340,7 +344,7 @@ const AteliersWebinaires = () => {
               )}
             </>
           )}
-        </section>
+        </Section>
       </main>
 
       <Footer />

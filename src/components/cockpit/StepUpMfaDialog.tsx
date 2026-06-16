@@ -126,7 +126,7 @@ export const StepUpMfaDialog = ({ open, onSuccess, onCancel }: StepUpMfaDialogPr
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <ShieldCheck className="h-5 w-5 text-primary" />
+            <ShieldCheck className="h-5 w-5 text-foreground" />
             Vérification de sécurité
           </DialogTitle>
           <DialogDescription>
@@ -137,7 +137,7 @@ export const StepUpMfaDialog = ({ open, onSuccess, onCancel }: StepUpMfaDialogPr
         <div className="space-y-6 py-4">
           {initializing ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <Loader2 className="h-8 w-8 animate-spin text-foreground" />
             </div>
           ) : error && !challengeId ? (
             <Alert variant="destructive">

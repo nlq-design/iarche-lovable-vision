@@ -759,12 +759,12 @@ export function DevisCDCEditor({ documentId, documentType, onBack, onSave }: Dev
                     <Label>Couleur primaire</Label>
                     <div className="flex gap-2 mt-1">
                       <div 
-                        className={`w-8 h-8 rounded border-2 cursor-pointer transition-all ${theme.primaryColor === COLORS.bleuNuit ? 'ring-2 ring-offset-2 ring-primary' : ''}`}
+                        className={`w-8 h-8 rounded border-2 cursor-pointer transition-all ${theme.primaryColor === COLORS.bleuNuit ? 'ring-2 ring-offset-2 ring-secondary' : ''}`}
                         style={{ backgroundColor: COLORS.bleuNuit }}
                         onClick={() => setTheme({ ...theme, primaryColor: COLORS.bleuNuit })}
                       />
                       <div 
-                        className={`w-8 h-8 rounded border-2 cursor-pointer transition-all ${theme.primaryColor === COLORS.terracotta ? 'ring-2 ring-offset-2 ring-primary' : ''}`}
+                        className={`w-8 h-8 rounded border-2 cursor-pointer transition-all ${theme.primaryColor === COLORS.terracotta ? 'ring-2 ring-offset-2 ring-secondary' : ''}`}
                         style={{ backgroundColor: COLORS.terracotta }}
                         onClick={() => setTheme({ ...theme, primaryColor: COLORS.terracotta })}
                       />
