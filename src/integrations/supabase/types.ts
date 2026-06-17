@@ -8061,6 +8061,7 @@ export type Database = {
           created_by: string | null
           description: string | null
           id: string
+          is_owner: boolean
           name: string
           owner_id: string | null
           settings: Json | null
@@ -8078,6 +8079,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           id?: string
+          is_owner?: boolean
           name: string
           owner_id?: string | null
           settings?: Json | null
@@ -8095,6 +8097,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           id?: string
+          is_owner?: boolean
           name?: string
           owner_id?: string | null
           settings?: Json | null
