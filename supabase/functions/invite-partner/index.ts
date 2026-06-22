@@ -189,7 +189,7 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     // Build invitation URL
-    const baseUrl = Deno.env.get("SITE_URL") || "https://iarche-lovable-vision.lovable.app";
+    const baseUrl = Deno.env.get("SITE_URL") || "https://iarche.fr";
     const inviteUrl = `${baseUrl}/espace-partenaire/accepter/${token}`;
 
     // Build email content using shared templates (charte graphique v4.0)

@@ -360,27 +360,28 @@ async function performOCR(supabase: any, file: any): Promise<{ success: boolean;
       }
     }
 
-    // Fallback to Anthropic
-    const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY');
-    if (anthropicKey) {
+    // Fallback to Claude via OpenRouter (plus de clé Anthropic directe — migration autonome)
+    const openrouterKey = Deno.env.get('OPENROUTER_API_KEY');
+    if (openrouterKey) {
       try {
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
           method: 'POST',
           headers: {
-            'x-api-key': anthropicKey,
-            'anthropic-version': '2023-06-01',
+            'Authorization': `Bearer ${openrouterKey}`,
             'Content-Type': 'application/json',
+            'HTTP-Referer': 'https://iarche.fr',
+            'X-Title': 'IArche Cockpit',
           },
           body: JSON.stringify({
-            model: 'claude-sonnet-4-20250514',
+            model: 'anthropic/claude-sonnet-4',
             max_tokens: 4096,
             messages: [
               {
                 role: 'user',
                 content: [
                   {
-                    type: 'image',
-                    source: { type: 'base64', media_type: mimeType, data: base64 }
+                    type: 'image_url',
+                    image_url: { url: `data:${mimeType};base64,${base64}` }
                   },
                   {
                     type: 'text',
@@ -394,11 +395,11 @@ async function performOCR(supabase: any, file: any): Promise<{ success: boolean;
 
         if (response.ok) {
           const result = await response.json();
-          const text = result.content?.[0]?.text || '';
-          return { success: true, text, provider: 'anthropic-claude', confidence: 0.93 };
+          const text = result.choices?.[0]?.message?.content || '';
+          return { success: true, text, provider: 'openrouter-claude', confidence: 0.93 };
         }
       } catch (e) {
-        console.warn('[OCR] Anthropic failed:', e);
+        console.warn('[OCR] OpenRouter (claude) failed:', e);
       }
     }
 
@@ -412,7 +413,7 @@ async function performOCR(supabase: any, file: any): Promise<{ success: boolean;
 async function analyzeContent(content: string, filename: string): Promise<{ success: boolean; summary?: string; tags?: string[]; keyPoints?: object[]; error?: string }> {
   try {
     const openaiKey = Deno.env.get('OPENAI_API_KEY');
-    const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY');
+    const openrouterKey = Deno.env.get('OPENROUTER_API_KEY');
 
     const prompt = `Analyse ce document (${filename}) et fournis:
 1. Un résumé concis (2-3 phrases)
@@ -459,24 +460,26 @@ Réponds en JSON:
       }
     }
 
-    if (anthropicKey) {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+    if (openrouterKey) {
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'x-api-key': anthropicKey,
-          'anthropic-version': '2023-06-01',
+          'Authorization': `Bearer ${openrouterKey}`,
           'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://iarche.fr',
+          'X-Title': 'IArche Cockpit',
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'anthropic/claude-sonnet-4',
           max_tokens: 1024,
           messages: [{ role: 'user', content: prompt }],
+          response_format: { type: 'json_object' },
         }),
       });
 
       if (response.ok) {
         const result = await response.json();
-        const text = result.content?.[0]?.text || '{}';
+        const text = result.choices?.[0]?.message?.content || '{}';
         const jsonMatch = text.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           const parsed = JSON.parse(jsonMatch[0]);

@@ -11,12 +11,10 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 // API Keys for different providers
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
-const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
 
 // API Endpoints
 const OPENAI_ENDPOINT = "https://api.openai.com/v1/chat/completions";
-const ANTHROPIC_ENDPOINT = "https://api.anthropic.com/v1/messages";
 const OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
 
 type DocumentType = "quote" | "spec" | "proposal" | "invitation" | "training_program";
@@ -200,30 +198,41 @@ async function callAI(
       };
     }
     
+    // Migration Supabase autonome : plus de clé Anthropic directe.
+    // Toute config 'anthropic' route les modèles Claude via la passerelle OpenRouter.
     case "anthropic": {
-      if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY not configured");
-      const response = await fetch(ANTHROPIC_ENDPOINT, {
+      if (!OPENROUTER_API_KEY) throw new Error("OPENROUTER_API_KEY not configured");
+      // Normalise un id de modèle Claude nu vers le slug OpenRouter
+      // (ex: "claude-sonnet-4-20250514" -> "anthropic/claude-sonnet-4").
+      const orModel = model.includes("/") ? model : `anthropic/${model.replace(/-\d{8}$/, "")}`;
+      const response = await fetch(OPENROUTER_ENDPOINT, {
         method: "POST",
         headers: {
-          "x-api-key": ANTHROPIC_API_KEY,
-          "anthropic-version": "2023-06-01",
+          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
           "Content-Type": "application/json",
+          "HTTP-Referer": "https://iarche.fr",
+          "X-Title": "IArche Cockpit",
         },
         body: JSON.stringify({
-          model,
+          model: orModel,
           max_tokens: 4096,
-          system: systemPrompt,
-          messages: [{ role: "user", content: userPrompt }],
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+          temperature,
         }),
       });
-      
-      if (!response.ok) throw new Error(`Anthropic error: ${await response.text()}`);
-      
+
+      if (response.status === 429) throw new Error("rate_limited");
+      if (response.status === 402) throw new Error("credits_exhausted");
+      if (!response.ok) throw new Error(`OpenRouter (anthropic route) error: ${await response.text()}`);
+
       const result = await response.json();
       return {
-        content: result.content?.[0]?.text || "",
-        model,
-        provider: "anthropic"
+        content: result.choices?.[0]?.message?.content || "",
+        model: orModel,
+        provider: "openrouter"
       };
     }
     
