@@ -77,32 +77,49 @@ const EDGE_FUNCTIONS = [
   "verify-backup-integrity",
 ];
 
-// Known secrets (from Supabase config)
+// Secrets attendus — réalignés sur la stack autonome (migration Supabase 2026-06).
+// Déchets Lovable retirés : LOVABLE_API_KEY (LLM unifié via OpenRouter), FLY_API_TOKEN
+// (infra Lovable), GMAIL_* (emails 100% Resend), ANTHROPIC_API_KEY (Claude via OpenRouter).
+// Source : Deno.env.get consommés par les edge functions + bloc Supabase auto.
 const SECRETS = [
-  "TELEGRAM_BOT_TOKEN",
-  "ELEVENLABS_API_KEY",
-  "OPENAI_API_KEY",
-  "OPENROUTER_API_KEY",
-  "SUPABASE_SERVICE_ROLE_KEY",
-  "ZOOM_ACCOUNT_ID",
-  "RESEND_API_KEY",
-  "FLY_API_TOKEN",
-  "GMAIL_CLIENT_ID",
-  "ZOOM_CLIENT_ID",
+  // Supabase (auto)
   "SUPABASE_URL",
-  "ANTHROPIC_API_KEY",
-  "BREVO_API_KEY",
-  "GMAIL_SENDER_EMAIL",
-  "PAPPERS_API_KEY",
-  "GOOGLE_CALENDAR_ID",
-  "ZOOM_CLIENT_SECRET",
+  "SUPABASE_ANON_KEY",
+  "SUPABASE_SERVICE_ROLE_KEY",
   "SUPABASE_DB_URL",
   "SUPABASE_PUBLISHABLE_KEY",
-  "GMAIL_REFRESH_TOKEN",
-  "GMAIL_CLIENT_SECRET",
-  "LOVABLE_API_KEY",
-  "SUPABASE_ANON_KEY",
+  // IA — passerelle unifiée (chat) + OpenAI (embeddings)
+  "OPENROUTER_API_KEY",
+  "OPENAI_API_KEY",
+  // Email
+  "RESEND_API_KEY",
+  "BREVO_API_KEY",
+  "INSTANTLY_API_KEY",
+  "SEND_EMAIL_HOOK_SECRET",
+  // Config
+  "SITE_URL",
+  // Enrichissement CRM
+  "PAPPERS_API_KEY",
+  // Paiements
+  "STRIPE_SECRET_KEY",
+  "STRIPE_WEBHOOK_SECRET",
+  // Transcription / TTS
+  "ASSEMBLYAI_API_KEY",
+  "ELEVENLABS_API_KEY",
+  // Telegram
+  "TELEGRAM_BOT_TOKEN",
+  "TELEGRAM_ADMIN_CHAT_ID",
+  // Zoom
+  "ZOOM_ACCOUNT_ID",
+  "ZOOM_CLIENT_ID",
+  "ZOOM_CLIENT_SECRET",
+  "ZOOM_WEBHOOK_SECRET_TOKEN",
+  // Google
   "GOOGLE_SERVICE_ACCOUNT_KEY",
+  "GOOGLE_CALENDAR_ID",
+  // PDF
+  "ILOVEPDF_PUBLIC_KEY",
+  "ILOVEPDF_SECRET_KEY",
 ];
 
 // Known buckets
