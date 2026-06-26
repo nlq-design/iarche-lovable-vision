@@ -269,7 +269,7 @@ const CockpitSolution = () => {
         {/* ── 5. Final CTA ─────────────────────────────────────────── */}
         <Section tone="dark" spacing="section">
           <FinalCtaPanel
-            info={['Essai sans carte bancaire', 'Hébergé en France', 'Support inclus']}
+            info={['À partir de 49€/mois', 'Hébergé en France', 'Support inclus']}
           >
             <Eyebrow center className="mb-0">Prêt à démarrer</Eyebrow>
             <h2 className="section-title font-semibold tracking-[-0.025em] leading-[1.04] text-[clamp(28px,4vw,48px)] text-[hsl(var(--cream))] mt-4 mb-5 mx-auto max-w-[22ch]">
@@ -280,7 +280,7 @@ const CockpitSolution = () => {
               Créez votre espace de travail, importez vos premiers contacts et laissez l'IA
               enrichir votre pipeline dès aujourd'hui.
             </p>
-            <BtnPrimary to="/login">Essayer gratuitement</BtnPrimary>
+            <BtnPrimary to="/login">Créer mon espace</BtnPrimary>
           </FinalCtaPanel>
         </Section>
 
