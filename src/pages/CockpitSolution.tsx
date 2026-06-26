@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { LayoutGrid, Users, Briefcase, Share2 } from 'lucide-react';
@@ -51,7 +52,7 @@ const MODULES = [
 ];
 
 /* ── Convictions ──────────────────────────────────────────────────── */
-const CONVICTIONS: Array<{ mark: string; body: React.ReactNode }> = [
+const CONVICTIONS: Array<{ mark: string; body: ReactNode }> = [
   {
     mark: '01',
     body: (
@@ -102,6 +103,7 @@ const CockpitSolution = () => {
         />
         <meta property="og:url" content="https://iarche.fr/cockpit-solution" />
         <meta property="og:image" content="https://iarche.fr/og/solutions.png" />
+        <meta property="og:image:alt" content="Cockpit by IArche — CRM commercial augmenté à l'IA" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
         <meta name="twitter:card" content="summary_large_image" />
@@ -168,16 +170,52 @@ const CockpitSolution = () => {
             Quatre modules, <em>un seul cockpit</em>
           </SectionTitle>
 
-          <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-            {MODULES.map((mod, i) => (
-              <Reveal key={mod.num} delay={i * 90}>
-                <SolidCard num={mod.num} className="h-full">
-                  <IconChip variant={mod.variant}>{mod.icon}</IconChip>
-                  <h3>{mod.title}</h3>
-                  <p>{mod.desc}</p>
-                </SolidCard>
-              </Reveal>
-            ))}
+          <div className="mt-12 space-y-6">
+            {/* Module vedette : Leads — le plus riche (enrichissement Pappers + scoring IA) */}
+            <Reveal delay={90}>
+              <SolidCard className="md:flex md:flex-row md:items-start md:gap-10">
+                <div className="shrink-0 md:w-52">
+                  <div className="ds-card-num">02</div>
+                  <IconChip variant="navy">
+                    <Users className="w-6 h-6" aria-hidden="true" />
+                  </IconChip>
+                  <h3 className="mt-3">Leads</h3>
+                </div>
+                <div className="mt-5 md:mt-0">
+                  <p>
+                    Enrichissement automatique Pappers, scoring IA, qualification des contacts.
+                    Chaque lead arrive contextualisé avant le premier échange.
+                  </p>
+                  <ul className="mt-4 space-y-2 text-[15px] leading-relaxed text-[hsl(var(--text-subtle))]">
+                    <li className="flex items-baseline gap-2">
+                      <span className="shrink-0 font-semibold text-[hsl(var(--accent-vivid))]" aria-hidden="true">—</span>
+                      Enrichissement Pappers automatique (SIREN, dirigeants, effectifs)
+                    </li>
+                    <li className="flex items-baseline gap-2">
+                      <span className="shrink-0 font-semibold text-[hsl(var(--accent-vivid))]" aria-hidden="true">—</span>
+                      Scoring IA configurable par secteur d'activité
+                    </li>
+                    <li className="flex items-baseline gap-2">
+                      <span className="shrink-0 font-semibold text-[hsl(var(--accent-vivid))]" aria-hidden="true">—</span>
+                      Qualification et déduplication des contacts
+                    </li>
+                  </ul>
+                </div>
+              </SolidCard>
+            </Reveal>
+
+            {/* Modules secondaires : Pipeline, Projets, Partenaires */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              {[MODULES[0], MODULES[2], MODULES[3]].map((mod, i) => (
+                <Reveal key={mod.num} delay={(i + 1) * 90}>
+                  <SolidCard num={mod.num} className="h-full">
+                    <IconChip variant={mod.variant}>{mod.icon}</IconChip>
+                    <h3>{mod.title}</h3>
+                    <p>{mod.desc}</p>
+                  </SolidCard>
+                </Reveal>
+              ))}
+            </div>
           </div>
         </Section>
 
