@@ -131,6 +131,7 @@ const CockpitAccount = lazy(() => import("./pages/cockpit/CockpitAccount"));
 const CockpitOnboarding = lazy(() => import("./pages/cockpit/CockpitOnboarding"));
 const CockpitMCPSettings = lazy(() => import("./pages/cockpit/CockpitMCPSettings"));
 const CockpitPricing = lazy(() => import("./pages/CockpitPricing"));
+const CockpitSolution = lazy(() => import("./pages/CockpitSolution"));
 const SettingsBilling = lazy(() => import("./pages/cockpit/SettingsBilling"));
 const SettingsTeam = lazy(() => import("./pages/cockpit/settings/SettingsTeam"));
 const SettingsPartners = lazy(() => import("./pages/cockpit/settings/SettingsPartners"));
@@ -198,6 +199,7 @@ const App = () => (
           {/* Homepage */}
           <Route path="/" element={<Index />} />
           <Route path="/cockpit/pricing" element={<CockpitPricing />} />
+          <Route path="/cockpit-solution" element={<CockpitSolution />} />
           <Route path="/onboarding/payment-success" element={
             <Suspense fallback={<div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-8 w-8 animate-spin text-foreground" /></div>}>
               <PaymentSuccess />
