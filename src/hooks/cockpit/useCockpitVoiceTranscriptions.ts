@@ -119,7 +119,7 @@ export interface TranscriptionSummary {
 
 export interface ExpectedParticipant {
   name: string;
-  type: 'partner' | 'lead_contact' | 'manual' | 'owner';
+  type: 'partner' | 'lead_contact' | 'lead' | 'manual' | 'owner';
   entity_id?: string;
   company?: string;
 }

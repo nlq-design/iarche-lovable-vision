@@ -28,7 +28,7 @@ interface ParticipantPickerProps {
 }
 
 interface SearchResult {
-  type: 'partner' | 'lead_contact' | 'owner';
+  type: 'partner' | 'lead_contact' | 'lead' | 'owner';
   id: string;
   name: string;
   company?: string;
@@ -47,9 +47,10 @@ export function ParticipantPicker({ value, onChange }: ParticipantPickerProps) {
     setLoading(true);
     try {
       const pattern = `%${q}%`;
-      const [partners, contacts] = await Promise.all([
-        supabase.from('partners').select('id, name, company').ilike('name', pattern).is('deleted_at', null).limit(5),
-        supabase.from('lead_contacts').select('id, name, email').ilike('name', pattern).limit(5),
+      const [leads, partners, contacts] = await Promise.all([
+        supabase.from('leads').select('id, name, company').or(`name.ilike.${pattern},company.ilike.${pattern}`).limit(5),
+        supabase.from('partners').select('id, name, company').or(`name.ilike.${pattern},company.ilike.${pattern}`).is('deleted_at', null).limit(5),
+        supabase.from('lead_contacts').select('id, name, email').or(`name.ilike.${pattern},email.ilike.${pattern}`).limit(5),
       ]);
 
       const r: SearchResult[] = [];
@@ -57,8 +58,9 @@ export function ParticipantPicker({ value, onChange }: ParticipantPickerProps) {
       if (ownerProfile && ownerProfile.display_name.toLowerCase().includes(q.toLowerCase())) {
         r.push({ type: 'owner', id: ownerProfile.id, name: ownerProfile.display_name, company: ownerProfile.role_label ?? 'Propriétaire' });
       }
+      leads.data?.forEach(l => r.push({ type: 'lead', id: l.id, name: l.name, company: l.company ?? undefined }));
       partners.data?.forEach(p => r.push({ type: 'partner', id: p.id, name: p.name, company: p.company ?? undefined }));
-      contacts.data?.forEach(c => r.push({ type: 'lead_contact', id: c.id, name: c.name }));
+      contacts.data?.forEach(c => r.push({ type: 'lead_contact', id: c.id, name: c.name, company: c.email ?? undefined }));
       setResults(r);
     } finally {
       setLoading(false);
