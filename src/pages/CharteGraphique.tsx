@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { Printer } from 'lucide-react';
 import GradientButton from '@/components/ui/GradientButton';
 import LogoArc from '@/components/ui/LogoArc';
+import { SectionTitle, HeroEyebrow, BtnPrimary, SolidCard } from '@/components/brand';
 const arcImage = '/logos/iarche-arc.svg';
 
 const CharteGraphique = () => {
@@ -393,6 +394,51 @@ const CharteGraphique = () => {
                 </div>
               </div>
             ))}
+          </div>
+        </section>
+
+        {/* ========== Composants Charte v4.0 ========== */}
+        <section className="min-h-screen p-12 bg-white print:break-after-page">
+          <h2 className="text-3xl font-semibold text-[#1A2B4A] mb-2">
+            Composants Charte v4.0 — « récit d'architecte »
+          </h2>
+          <LogoArc size="md" className="mb-8" />
+
+          <div className="space-y-12">
+            {/* Eyebrow + titre + arc animé */}
+            <div>
+              <p className="text-sm text-[#666666] mb-4 font-mono">SectionTitle — eyebrow mono ✦ + titre clamp (mot en &lt;em&gt; rosé) + arc animé</p>
+              <SectionTitle
+                as="h3"
+                eyebrow="Récit d'architecte"
+                lede="Le kicker mono, le titre serré et l'arc lumineux animé forment la signature visuelle de la v4."
+              >
+                Un titre avec un <em>accent</em>
+              </SectionTitle>
+            </div>
+
+            {/* CTA + pilule hero */}
+            <div>
+              <p className="text-sm text-[#666666] mb-4 font-mono">BtnPrimary (pilule dégradé + flèche) &amp; HeroEyebrow (pilule bordée)</p>
+              <div className="flex flex-wrap items-center gap-6">
+                <BtnPrimary href="#composants" note="30 min, sans engagement">CTA primaire</BtnPrimary>
+                <HeroEyebrow>Pilule hero</HeroEyebrow>
+              </div>
+            </div>
+
+            {/* Cartes */}
+            <div>
+              <p className="text-sm text-[#666666] mb-4 font-mono">SolidCard — sable, numéro mono, liseré terracotta au survol</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <SolidCard num="01"><h3>Carte sable</h3><p>Surface claire sur sections light, liseré terracotta au survol.</p></SolidCard>
+                <SolidCard num="02"><h3>Reveal au scroll</h3><p>Apparition opacity + translateY (composant Reveal, staggered).</p></SolidCard>
+                <SolidCard num="03"><h3>Tons de section</h3><p>sec-light / sec-light--warm / sec-dark (halos + grain).</p></SolidCard>
+              </div>
+            </div>
+
+            <p className="text-sm text-[#666666]">
+              Source : <code className="font-mono text-[#1A2B4A]">src/components/brand/</code> — Section, SectionTitle, Eyebrow/HeroEyebrow, AnimatedArc, Particles, SolidCard/GlassCard, IconChip, BtnPrimary, Reveal, FinalCtaPanel, Signoff. Tokens d'accents : <code className="font-mono text-[#1A2B4A]">--accent-vivid/-rose/-pop/-flame/-deep/-soft</code>.
+            </p>
           </div>
         </section>
 
