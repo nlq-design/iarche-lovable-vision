@@ -2,7 +2,8 @@ import { useLocation, Link } from "react-router-dom";
 import { useEffect } from "react";
 import { Helmet } from "react-helmet-async";
 import Logo from "@/components/ui/Logo";
-import { ArrowLeft, Home, Briefcase, Lightbulb, Calendar } from "lucide-react";
+import { BtnPrimary } from "@/components/brand";
+import { Home, Briefcase, Lightbulb, Calendar } from "lucide-react";
 
 const suggestions = [
   { to: "/", label: "Accueil", icon: Home },
@@ -26,7 +27,7 @@ const NotFound = () => {
         <meta name="robots" content="noindex, follow" />
       </Helmet>
 
-      <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
+      <div className="sec-light flex min-h-screen flex-col items-center justify-center px-4">
         {/* Logo */}
         <Link to="/" aria-label="Retour à l'accueil">
           <Logo variant="main" size="lg" className="mb-10" />
@@ -39,7 +40,7 @@ const NotFound = () => {
         <h1 className="text-2xl font-semibold text-foreground mb-2">
           Cette page n'existe pas
         </h1>
-        <p className="text-muted-foreground mb-8">
+        <p className="text-text-subtle mb-8">
           Vous cherchez peut-être l'une de ces pages :
         </p>
 
@@ -57,17 +58,8 @@ const NotFound = () => {
           ))}
         </nav>
 
-        {/* CTA principal */}
-        <Link
-          to="/"
-          className="inline-flex items-center gap-2 rounded-md px-6 py-3 text-sm font-medium text-secondary-foreground transition-colors"
-          style={{ backgroundColor: '#D15A3E' }}
-          onMouseEnter={e => (e.currentTarget.style.opacity = '0.9')}
-          onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Retour à l'accueil
-        </Link>
+        {/* CTA principal (charte v4) */}
+        <BtnPrimary to="/">Retour à l'accueil</BtnPrimary>
       </div>
     </>
   );

@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import BackgroundLayout from "@/components/layouts/BackgroundLayout";
+import { SectionTitle } from "@/components/brand";
 import { Helmet } from "react-helmet-async";
 import { Activity, CheckCircle2, AlertTriangle, Gauge, Accessibility, CheckSquare, Search } from "lucide-react";
 
@@ -87,13 +88,15 @@ const Status = () => {
 
       <div className="container mx-auto px-4 py-16 md:py-24 max-w-6xl">
         {/* Header */}
-        <div className="text-center mb-12 invisible animate-fadeIn" style={{ animationDelay: '0.1s' }}>
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
-            Status
-          </h1>
-          <p className="text-lg text-muted-foreground">
-            Transparence totale sur les performances de notre plateforme
-          </p>
+        <div className="mb-12 invisible animate-fadeIn" style={{ animationDelay: '0.1s' }}>
+          <SectionTitle
+            as="h1"
+            center
+            eyebrow="Statut plateforme"
+            lede="Transparence totale sur les performances de notre plateforme"
+          >
+            État du <em>service</em>
+          </SectionTitle>
         </div>
 
         {/* Overall Status Card */}

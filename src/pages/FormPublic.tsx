@@ -280,7 +280,7 @@ const FormPublic = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="sec-light min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-foreground" />
       </div>
     );
@@ -288,13 +288,13 @@ const FormPublic = () => {
 
   if (error || !form) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="sec-light min-h-screen flex items-center justify-center px-4">
         <div className="text-center">
           <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-          <h1 className="text-xl font-semibold text-foreground mb-2">
+          <h1 className="section-title text-xl font-semibold mb-2">
             {error || 'Formulaire non trouvé'}
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-text-subtle">
             Ce formulaire n'existe pas ou n'est plus disponible.
           </p>
         </div>

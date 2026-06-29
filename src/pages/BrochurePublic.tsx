@@ -9,23 +9,20 @@ const BrochurePublic = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Chargement...</p>
+      <div className="sec-light min-h-screen flex items-center justify-center">
+        <p className="text-text-subtle">Chargement…</p>
       </div>
     );
   }
 
   if (error || !brochure) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
-        <h1 className="text-4xl font-bold text-foreground mb-4">Brochure introuvable</h1>
-        <p className="text-muted-foreground mb-8">
+      <div className="sec-light min-h-screen flex flex-col items-center justify-center px-6 text-center">
+        <h1 className="section-title text-3xl md:text-4xl font-semibold mb-4">Brochure introuvable</h1>
+        <p className="text-text-subtle mb-8">
           Cette brochure n'existe pas ou n'est pas publiée.
         </p>
-        <a 
-          href="/"
-          className="text-primary hover:underline"
-        >
+        <a href="/" className="text-primary hover:underline">
           Retour à l'accueil
         </a>
       </div>

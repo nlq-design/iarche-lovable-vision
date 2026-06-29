@@ -15,6 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
+import { SectionTitle } from '@/components/brand';
 
 interface Plan {
   id: string;
@@ -165,13 +166,14 @@ const CockpitPricing = () => {
         {/* Hero */}
         <section className="border-b border-border">
           <div className="mx-auto max-w-6xl px-6 py-20 text-center">
-            <h1 className="text-4xl md:text-5xl font-semibold tracking-tight text-foreground">
-              Choisissez votre plan IArche
-            </h1>
-            <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground">
-              Une plateforme commerciale augmentée par l'IA, pensée pour les indépendants
-              et les équipes ambitieuses. L'IA se construit avec vous.
-            </p>
+            <SectionTitle
+              as="h1"
+              center
+              eyebrow="Tarifs"
+              lede="Une plateforme commerciale augmentée par l'IA, pensée pour les indépendants et les équipes ambitieuses. L'IA se construit avec vous."
+            >
+              Choisissez votre <em>plan</em>
+            </SectionTitle>
 
             {/* Toggle Mensuel / Annuel */}
             <div className="mt-10 inline-flex items-center gap-1 rounded-full border border-border bg-card p-1">
@@ -314,22 +316,24 @@ const CockpitPricing = () => {
         {/* Comparatif rapide */}
         <section className="border-t border-border bg-muted/30">
           <div className="mx-auto max-w-4xl px-6 py-16 text-center">
-            <h2 className="text-2xl md:text-3xl font-semibold text-foreground">
-              Une stack IA complète, sans friction
-            </h2>
-            <p className="mt-4 text-muted-foreground">
-              Pipeline commercial, CRM enrichi, transcriptions intelligentes, intégration
-              calendrier et email, copilote IA contextualisé. Une seule plateforme,
-              hébergée en France, conçue à Bayonne.
-            </p>
+            <SectionTitle
+              as="h2"
+              center
+              eyebrow="La plateforme"
+              lede="Pipeline commercial, CRM enrichi, transcriptions intelligentes, intégration calendrier et email, copilote IA contextualisé. Une seule plateforme, hébergée en France, conçue à Bayonne."
+            >
+              Une stack IA <em>complète</em>, sans friction
+            </SectionTitle>
           </div>
         </section>
 
         {/* FAQ */}
         <section className="mx-auto max-w-3xl px-6 py-16">
-          <h2 className="text-2xl md:text-3xl font-semibold text-foreground text-center mb-8">
-            Questions fréquentes
-          </h2>
+          <div className="mb-8">
+            <SectionTitle as="h2" center arc={false} eyebrow="FAQ">
+              Questions <em>fréquentes</em>
+            </SectionTitle>
+          </div>
           <Accordion type="single" collapsible className="w-full">
             {FAQ_ITEMS.map((item, idx) => (
               <AccordionItem key={idx} value={`item-${idx}`}>
