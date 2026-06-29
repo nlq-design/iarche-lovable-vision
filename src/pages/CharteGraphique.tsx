@@ -14,7 +14,13 @@ const CharteGraphique = () => {
 
   const colors = [
     { name: 'Bleu Nuit', variable: '--primary', hsl: '218 47% 20%', hex: '#1A2B4A', rgb: '26, 43, 74', usage: 'Titres, texte principal, CTA primaire' },
-    { name: 'Terracotta', variable: '--accent', hsl: '12 60% 44%', hex: '#B04A32', rgb: '176, 74, 50', usage: 'Accents, CTA secondaire, focus, liens' },
+    { name: 'Terracotta', variable: '--primary', hsl: '11 56% 44%', hex: '#B04A32', rgb: '176, 74, 50', usage: 'Couleur primaire, CTA, focus, liens' },
+    { name: 'Rouge soutenu', variable: '--accent-vivid', hsl: '13 75% 45%', hex: '#C8431D', rgb: '200, 67, 29', usage: 'v4 — arc animé, numéros mono, liens vifs' },
+    { name: 'Rouge rosé', variable: '--accent-rose', hsl: '7 65% 53%', hex: '#D54B3A', rgb: '213, 75, 58', usage: 'v4 — mots <em> dans les titres (fond clair)' },
+    { name: 'Rouge POP', variable: '--accent-pop', hsl: '15 79% 53%', hex: '#E55A2B', rgb: '229, 90, 43', usage: 'v4 — CTA / éléments pop' },
+    { name: 'Terra flame', variable: '--accent-flame', hsl: '12 71% 59%', hex: '#E0654A', rgb: '224, 101, 74', usage: 'v4 — mots <em> dans les titres (fond sombre)' },
+    { name: 'Terracotta foncé', variable: '--accent-deep', hsl: '12 58% 35%', hex: '#8E3A26', rgb: '142, 58, 38', usage: 'v4 — terracotta profond' },
+    { name: 'Terra soft', variable: '--accent-soft', hsl: '19 47% 66%', hex: '#D4937D', rgb: '212, 147, 125', usage: 'v4 — accents sur fond sombre' },
     { name: 'Blanc Cassé', variable: '--background', hsl: '30 14% 98%', hex: '#FAF9F7', rgb: '250, 249, 247', usage: 'Fond principal' },
     { name: 'Gris Sable', variable: '--secondary', hsl: '30 20% 93%', hex: '#F0EDE8', rgb: '240, 237, 232', usage: 'Surfaces secondaires, cartes' },
     { name: 'Bordure', variable: '--border', hsl: '30 16% 88%', hex: '#E5E0DA', rgb: '229, 224, 218', usage: 'Bordures, séparateurs' },
