@@ -148,10 +148,15 @@ export async function startTranscription(
   apiKey: string,
   options?: AssemblyAITranscriptionOptions,
 ): Promise<string> {
+  // AssemblyAI replaced the singular "speech_model" string with "speech_models",
+  // an ordered fallback array; the legacy "best"/"nano" values were also removed.
+  const primaryModel = options?.speech_model ?? "universal-3-pro";
+  const speechModels = primaryModel === "universal-2"
+    ? ["universal-2"]
+    : [primaryModel, "universal-2"]; // premium first, fall back to universal-2
   const body: Record<string, unknown> = {
     audio_url: audioUrl,
-    // Use "best" speech model by default for highest accuracy
-    speech_model: options?.speech_model ?? "best",
+    speech_models: speechModels,
   };
 
   // Language: null/undefined = auto-detect, string = specific language
@@ -391,7 +396,7 @@ export function getDefaultTranscriptionOptions(
   const { quality: _q, ...rest } = overrides ?? {};
 
   return {
-    speech_model: isHigh ? "best" : "nano",
+    speech_model: isHigh ? "universal-3-pro" : "universal-2",
     language_code: null, // auto-detect
     language_detection: true,
     speaker_labels: true,
