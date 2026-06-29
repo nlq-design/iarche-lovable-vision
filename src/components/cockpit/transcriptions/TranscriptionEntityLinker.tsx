@@ -18,6 +18,10 @@ import { Label } from '@/components/ui/label';
 import { User, FolderOpen, Package, FileText, UserCircle, Plus, X, Check, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+/** Normalise pour une recherche insensible aux accents et à la casse. */
+const normalizeSearch = (s: string) =>
+  s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
 export interface EntitySelection {
   leadId: string | null;
   leadContactId: string | null;
@@ -88,7 +92,11 @@ function EntityCombobox({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-64 p-0" align="start">
-        <Command>
+        <Command
+          filter={(value, search) =>
+            normalizeSearch(value).includes(normalizeSearch(search)) ? 1 : 0
+          }
+        >
           <CommandInput placeholder="Rechercher..." className="h-8" />
           <CommandList>
             <CommandEmpty>Aucun résultat</CommandEmpty>
@@ -96,7 +104,7 @@ function EntityCombobox({
               {config.options.map(option => (
                 <CommandItem
                   key={option.id}
-                  value={option.label}
+                  value={`${option.label} ${option.subtitle ?? ''}`}
                   onSelect={() => {
                     onSelect(option.id);
                     setOpen(false);
