@@ -4871,6 +4871,7 @@ export type Database = {
           partner_type: string
           phone: string | null
           scope: Json
+          slug: string | null
           specialties: string[] | null
           status: string
           suspended_at: string | null
@@ -4900,6 +4901,7 @@ export type Database = {
           partner_type: string
           phone?: string | null
           scope?: Json
+          slug?: string | null
           specialties?: string[] | null
           status?: string
           suspended_at?: string | null
@@ -4929,6 +4931,7 @@ export type Database = {
           partner_type?: string
           phone?: string | null
           scope?: Json
+          slug?: string | null
           specialties?: string[] | null
           status?: string
           suspended_at?: string | null
