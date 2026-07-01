@@ -62,6 +62,32 @@ serve(async (req) => {
       .maybeSingle();
     if (pending) return json({ error: "Une invitation est déjà en attente pour cet email" }, 400);
 
+    // 🔒 Quota du plan : ne pas dépasser max_users (workspace fondateur IArche = illimité)
+    if (workspace_id !== "00000000-0000-0000-0000-000000000001") {
+      const { data: sub } = await supabase
+        .from("subscriptions")
+        .select("plan_id")
+        .eq("workspace_id", workspace_id)
+        .in("status", ["trialing", "active", "past_due"])
+        .maybeSingle();
+      let maxUsers: number | null = null;
+      if (sub?.plan_id) {
+        const { data: planRow } = await supabase
+          .from("plans").select("limits").eq("id", sub.plan_id).maybeSingle();
+        maxUsers = (planRow?.limits as { max_users?: number | null } | null)?.max_users ?? null;
+      }
+      if (maxUsers != null) {
+        const [{ count: memberCount }, { count: pendingCount }] = await Promise.all([
+          supabase.from("workspace_members").select("id", { count: "exact", head: true }).eq("workspace_id", workspace_id),
+          supabase.from("team_invitations").select("id", { count: "exact", head: true })
+            .eq("workspace_id", workspace_id).is("accepted_at", null).gt("expires_at", new Date().toISOString()),
+        ]);
+        if ((memberCount ?? 0) + (pendingCount ?? 0) >= maxUsers) {
+          return json({ error: `Limite du plan atteinte (${maxUsers} membre(s) max). Passez à un plan supérieur pour inviter davantage.` }, 402);
+        }
+      }
+    }
+
     // Insert invitation (token + expires_at via DEFAULT)
     const { data: invitation, error: insertErr } = await supabase
       .from("team_invitations")
