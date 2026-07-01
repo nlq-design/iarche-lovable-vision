@@ -1052,7 +1052,7 @@ serve(async (req) => {
     // API key validation is now handled by centralized ai-client
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const { entity_type, entity_id, cascade = false, use_consulte_prompt = false }: SynthesizeRequest & { use_consulte_prompt?: boolean } = await req.json();
+    const { entity_type, entity_id, cascade = false, use_consulte_prompt = false, workspace_id: reqWorkspaceId }: SynthesizeRequest & { use_consulte_prompt?: boolean; workspace_id?: string } = await req.json();
 
     console.log(`[synthesize-v2] Starting for ${entity_type}:${entity_id} (cascade=${cascade}, consulte=${use_consulte_prompt})`);
 
@@ -1089,7 +1089,7 @@ serve(async (req) => {
     // ====== Owner Context Injection ======
     let ownerContextBlock = '';
     try {
-      const workspaceId = '00000000-0000-0000-0000-000000000001';
+      const workspaceId = reqWorkspaceId ?? '00000000-0000-0000-0000-000000000001';
       const { data: ownerProfile } = await supabase
         .from('owner_profile')
         .select('id, user_id, display_name, role_label, avatar_url, primary_company_id')

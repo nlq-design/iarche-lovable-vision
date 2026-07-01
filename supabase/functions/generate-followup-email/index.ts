@@ -45,6 +45,8 @@ serve(async (req) => {
     
     const body: GenerateEmailRequest = await req.json();
     const { transcription_id, lead_id, email_type, context: transcriptionContext, custom_context } = body;
+    // 🔒 SYS-1 : workspace paramétrable (défaut = IArche …001, comportement inchangé)
+    const workspaceId = (body as { workspace_id?: string }).workspace_id ?? "00000000-0000-0000-0000-000000000001";
 
     if (!email_type) {
       return new Response(JSON.stringify({ error: "email_type required" }), {
@@ -139,7 +141,7 @@ FORMAT DE SORTIE (JSON strict) :
         ai_metadata: { autonomy_level: "N1", confidence: 0.85, email_type, transcription_id: transcription_id || null, email_data: emailData, recipient_email: lead?.email },
         metadata: { draft_status: "pending_review", can_send: true, email_subject: emailData.subject },
         visibility: "internal",
-        workspace_id: "00000000-0000-0000-0000-000000000001",
+        workspace_id: workspaceId,
       });
     }
 
