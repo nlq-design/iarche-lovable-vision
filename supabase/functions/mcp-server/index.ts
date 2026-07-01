@@ -787,7 +787,7 @@ mcpServer.registerTool(
       opportunity_id: z.string().optional().describe("UUID opportunité liée"),
       project_id: z.string().optional().describe("UUID projet lié"),
       task_id: z.string().optional().describe("UUID tâche liée"),
-      visibility: z.string().optional().describe("Visibilité: internal, team, public (défaut: internal)"),
+      visibility: z.string().optional().describe("Visibilité: internal, team, partner, client (défaut: internal)"),
       is_ai_generated: z.boolean().optional().describe("True si auto-générée par un workflow IA (non supprimable). Défaut: false = note manuelle."),
     },
   },
@@ -4082,7 +4082,7 @@ mcpServer.registerTool(
             data: {
               entity_type: "opportunity",
               entity_id: opp.id,
-              activity_type: "deal_won",
+              activity_type: "stage_change",
               title: `Deal gagné — ${opp.title}`,
               content: `Valeur : ${opp.value_amount}€. Onboarding initié.`,
               opportunity_id: opp.id,
@@ -4179,7 +4179,7 @@ mcpServer.registerTool(
             data: {
               entity_type: "opportunity",
               entity_id: opp.id,
-              activity_type: "deal_lost",
+              activity_type: "stage_change",
               title: `Deal perdu — ${opp.title}`,
               content: `Raison : ${wfParams?.reason || "Non renseignée"}`,
               opportunity_id: opp.id,
