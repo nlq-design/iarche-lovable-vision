@@ -34,6 +34,50 @@ export async function resolveUserIdFromRequest(req: Request): Promise<string> {
   return user.id;
 }
 
+export const IARCHE_FOUNDER_WORKSPACE = '00000000-0000-0000-0000-000000000001';
+
+/**
+ * Résout le workspace effectif de l'appelant authentifié (isolation multi-tenant).
+ *
+ * - Staff HQ IArche (admin / cockpit_admin / super_admin) → workspace fondateur IArche (…001).
+ * - Locataire standard → son workspace via `workspace_members`.
+ *
+ * Remplace le `DEFAULT_WORKSPACE_ID = '…001'` hardcodé (SYS-1) dans les fonctions
+ * DÉCLENCHÉES PAR UN UTILISATEUR. Ne PAS utiliser dans les jobs cron/système
+ * (pas de JWT appelant) — ceux-ci restent sur …001 jusqu'à l'onboarding multi-tenant.
+ *
+ * @param supabaseAdmin client service-role (bypass RLS)
+ * @throws Response 401 (pas d'auth) / 403 (aucun workspace)
+ */
+export async function resolveCallerWorkspace(
+  req: Request,
+  supabaseAdmin: SupabaseClient,
+): Promise<string> {
+  const userId = await resolveUserIdFromRequest(req);
+
+  const { data: hq } = await supabaseAdmin
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', userId)
+    .in('role', ['admin', 'cockpit_admin', 'super_admin'])
+    .limit(1)
+    .maybeSingle();
+  if (hq) return IARCHE_FOUNDER_WORKSPACE;
+
+  const { data: member } = await supabaseAdmin
+    .from('workspace_members')
+    .select('workspace_id')
+    .eq('user_id', userId)
+    .limit(1)
+    .maybeSingle();
+  if (member?.workspace_id) return member.workspace_id as string;
+
+  throw new Response(
+    JSON.stringify({ error: 'Forbidden: no workspace membership for user' }),
+    { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+  );
+}
+
 /**
  * Asserts that the given userId carries the super_admin role in user_roles.
  * Throws a 403 Response otherwise.
