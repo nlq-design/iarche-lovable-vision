@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { callLLM } from "../_shared/ai-client.ts";
+import { resolveCallerWorkspace } from "../_shared/auth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -64,6 +65,15 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // 🔒 Isolation tenant : insights scopés au workspace de l'appelant
+    let callerWorkspaceId: string;
+    try {
+      callerWorkspaceId = await resolveCallerWorkspace(req, supabase);
+    } catch (guardResponse) {
+      if (guardResponse instanceof Response) return guardResponse;
+      throw guardResponse;
+    }
+
     // ============================================
     // FETCH STATS FOR OPPORTUNITIES DETECTION
     // ============================================
@@ -82,34 +92,40 @@ serve(async (req) => {
       scoreResult,
     ] = await Promise.all([
       // Core counts
-      supabase.from('viviers').select('id', { count: 'exact', head: true }),
-      supabase.from('viviers').select('id', { count: 'exact', head: true }).gte('cold_score', 70),
+      supabase.from('viviers').select('id', { count: 'exact', head: true }).eq('workspace_id', callerWorkspaceId),
+      supabase.from('viviers').select('id', { count: 'exact', head: true }).eq('workspace_id', callerWorkspaceId).gte('cold_score', 70),
       // Recent imports (7 days)
-      supabase.from('viviers').select('id', { count: 'exact', head: true }).gte('created_at', sevenDaysAgo),
+      supabase.from('viviers').select('id', { count: 'exact', head: true }).eq('workspace_id', callerWorkspaceId).gte('created_at', sevenDaysAgo),
       // Hot leads: recent + high score
       supabase.from('viviers').select('id', { count: 'exact', head: true })
+        .eq('workspace_id', callerWorkspaceId)
         .gte('created_at', sevenDaysAgo)
         .gte('cold_score', 60),
       // Complete data: has email + phone + siret
       supabase.from('viviers').select('id', { count: 'exact', head: true })
+        .eq('workspace_id', callerWorkspaceId)
         .not('email', 'is', null)
         .not('phone', 'is', null)
         .not('siret', 'is', null)
         .gte('cold_score', 50),
       // Never contacted with good score
       supabase.from('viviers').select('id', { count: 'exact', head: true })
+        .eq('workspace_id', callerWorkspaceId)
         .gte('cold_score', 60)
         .or('status.eq.new,status.is.null'),
       // Sampling for aggregates
       supabase.from('viviers').select('industry, cold_score, city')
+        .eq('workspace_id', callerWorkspaceId)
         .not('industry', 'is', null)
         .gte('cold_score', 50)
         .limit(2000),
       supabase.from('viviers').select('city, cold_score')
+        .eq('workspace_id', callerWorkspaceId)
         .not('city', 'is', null)
         .gte('cold_score', 50)
         .limit(2000),
       supabase.from('viviers').select('cold_score')
+        .eq('workspace_id', callerWorkspaceId)
         .not('cold_score', 'is', null)
         .limit(500),
     ]);

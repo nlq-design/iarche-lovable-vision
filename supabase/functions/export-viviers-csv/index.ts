@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.49.1';
+import { resolveCallerWorkspace } from "../_shared/auth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -50,6 +51,15 @@ Deno.serve(async (req) => {
       });
     }
 
+    // 🔒 Isolation tenant : n'exporter que les viviers du workspace de l'appelant
+    let callerWorkspaceId: string;
+    try {
+      callerWorkspaceId = await resolveCallerWorkspace(req, supabase);
+    } catch (guardResponse) {
+      if (guardResponse instanceof Response) return guardResponse;
+      throw guardResponse;
+    }
+
     // Fetch ALL viviers in batches of 1000 (PostgREST default max)
     const PAGE_SIZE = 1000;
     let allRows: any[] = [];
@@ -60,6 +70,7 @@ Deno.serve(async (req) => {
       const { data, error } = await supabase
         .from('viviers')
         .select('company_name, contact_name, contact_first_name, contact_last_name, email, phone, phone2, city, postal_code, region, country, industry, siret, siren, naf_code, legal_form, contact_position, website, linkedin_url, address, company_size, revenue_range, employee_count, cold_score, status, tags, notes, created_at, updated_at')
+        .eq('workspace_id', callerWorkspaceId)
         .order('created_at', { ascending: false })
         .range(offset, offset + PAGE_SIZE - 1);
 

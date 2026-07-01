@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { resolveCallerWorkspace } from "../_shared/auth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -25,6 +26,15 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    // 🔒 Isolation tenant : ne promouvoir que les viviers du workspace de l'appelant
+    let callerWorkspaceId: string;
+    try {
+      callerWorkspaceId = await resolveCallerWorkspace(req, supabase);
+    } catch (guardResponse) {
+      if (guardResponse instanceof Response) return guardResponse;
+      throw guardResponse;
+    }
+
     const { vivier_ids, enrich = true } = await req.json();
 
     if (!vivier_ids || !Array.isArray(vivier_ids) || vivier_ids.length === 0) {
@@ -40,6 +50,7 @@ serve(async (req) => {
     const { data: viviers, error: fetchError } = await supabase
       .from('viviers')
       .select('*')
+      .eq('workspace_id', callerWorkspaceId)
       .in('id', vivier_ids)
       .is('promoted_at', null);
 

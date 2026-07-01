@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { extractStructured } from "../_shared/ai-client.ts";
+import { resolveCallerWorkspace } from "../_shared/auth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -157,6 +158,15 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    // 🔒 Isolation tenant : scoper la recherche viviers au workspace de l'appelant
+    let callerWorkspaceId: string;
+    try {
+      callerWorkspaceId = await resolveCallerWorkspace(req, supabase);
+    } catch (guardResponse) {
+      if (guardResponse instanceof Response) return guardResponse;
+      throw guardResponse;
+    }
+
     const { query: userQuery, limit = 100, existingFilters } = await req.json();
 
     if (!userQuery || typeof userQuery !== 'string') {
@@ -208,6 +218,7 @@ serve(async (req) => {
         siret, website, linkedin_url, tags, source, consent_marketing, unsubscribed_at,
         creation_date, created_at
       `, { count: 'exact' })
+      .eq('workspace_id', callerWorkspaceId)
       .or('status.neq.promoted,status.is.null')
       .order('cold_score', { ascending: false, nullsFirst: false })
       .limit(limit);

@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { extractStructured } from "../_shared/ai-client.ts";
+import { resolveCallerWorkspace } from "../_shared/auth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -100,6 +101,15 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    // 🔒 Isolation tenant : ne scorer que les viviers du workspace de l'appelant
+    let callerWorkspaceId: string;
+    try {
+      callerWorkspaceId = await resolveCallerWorkspace(req, supabase);
+    } catch (guardResponse) {
+      if (guardResponse instanceof Response) return guardResponse;
+      throw guardResponse;
+    }
+
     const { batch_size = BATCH_SIZE, vivier_ids, min_score, max_score, rescore = false } = await req.json();
 
     // Fetch the scoring prompt
@@ -120,6 +130,7 @@ serve(async (req) => {
     let query = supabase
       .from('viviers')
       .select('id, company_name, email, phone, siret, industry, employee_count, company_size, city, region, website, linkedin_url, revenue_range, creation_date')
+      .eq('workspace_id', callerWorkspaceId)
       .neq('status', 'promoted')
       .order('created_at', { ascending: false })
       .limit(batch_size);
