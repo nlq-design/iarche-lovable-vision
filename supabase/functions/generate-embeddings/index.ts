@@ -67,7 +67,7 @@ async function generateEmbedding(text: string, workspaceId: string = DEFAULT_WOR
         
         // Track failed call
         await trackAPIUsage({
-          workspaceId: DEFAULT_WORKSPACE_ID,
+          workspaceId: workspaceId,
           apiName: 'openai-embeddings',
           apiCategory: 'ai',
           operationType: 'embedding',
