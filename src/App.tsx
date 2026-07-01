@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { WorkspaceProvider } from "@/contexts/WorkspaceContext";
+import { BrandingProvider } from "@/contexts/BrandingContext";
 import ScrollToTop from "./components/utils/ScrollToTop";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -190,6 +191,7 @@ const queryClient = new QueryClient({
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <WorkspaceProvider>
+      <BrandingProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -1001,6 +1003,7 @@ const App = () => (
         <ResourceTypeValidator />
       </BrowserRouter>
     </TooltipProvider>
+      </BrandingProvider>
     </WorkspaceProvider>
   </QueryClientProvider>
 
