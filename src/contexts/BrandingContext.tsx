@@ -81,10 +81,26 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
         const link = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
         if (link) link.href = branding.favicon_url;
       }
+      // Police du locataire (Google Font chargée dynamiquement, fallback Manrope)
+      const font = branding.body_font?.trim();
+      if (font) {
+        const id = 'wl-tenant-font';
+        let fontLink = document.getElementById(id) as HTMLLinkElement | null;
+        if (!fontLink) {
+          fontLink = document.createElement('link');
+          fontLink.id = id;
+          fontLink.rel = 'stylesheet';
+          document.head.appendChild(fontLink);
+        }
+        fontLink.href = `https://fonts.googleapis.com/css2?family=${font.replace(/\s+/g, '+')}:wght@300;400;500;600;700&display=swap`;
+        root.style.setProperty('--font-sans', `'${font}', 'Manrope', sans-serif`);
+        applied.push('--font-sans');
+      }
     }
     // Nettoyage : on retire les surcharges quand on quitte / change de tenant.
     return () => {
       for (const v of applied) root.style.removeProperty(v);
+      document.getElementById('wl-tenant-font')?.remove();
     };
   }, [isTenant, branding]);
 
