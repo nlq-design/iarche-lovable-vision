@@ -21,7 +21,7 @@ const EMBEDDING_DIM = 1536;
  * Generate embedding using OpenAI API directly
  * Falls back to deterministic hash-based approach if OpenAI fails
  */
-async function generateEmbedding(text: string): Promise<{ embedding: number[]; usedOpenAI: boolean }> {
+async function generateEmbedding(text: string, workspaceId: string = DEFAULT_WORKSPACE_ID): Promise<{ embedding: number[]; usedOpenAI: boolean }> {
   const startTime = Date.now();
   
   // Try OpenAI embeddings API
@@ -46,7 +46,7 @@ async function generateEmbedding(text: string): Promise<{ embedding: number[]; u
         if (data.data?.[0]?.embedding) {
           // Track successful OpenAI API call
           await trackAPIUsage({
-            workspaceId: DEFAULT_WORKSPACE_ID,
+            workspaceId: workspaceId,
             apiName: 'openai-embeddings',
             apiCategory: 'ai',
             operationType: 'embedding',
@@ -312,7 +312,7 @@ async function indexResource(
     // Generate embeddings for each chunk
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i];
-      const { embedding } = await generateEmbedding(chunk);
+      const { embedding } = await generateEmbedding(chunk, effectiveWorkspaceId ?? DEFAULT_WORKSPACE_ID);
 
       const { error } = await supabase
         .from("resource_embeddings")
