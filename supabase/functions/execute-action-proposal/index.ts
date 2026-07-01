@@ -87,6 +87,24 @@ serve(async (req) => {
       });
     }
 
+    // 🔒 Isolation tenant : l'appelant doit avoir accès au workspace de la proposition
+    if (!userId) {
+      return new Response(JSON.stringify({ error: "Non autorisé" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const { data: canAccessProposal } = await supabase.rpc("can_access_workspace", {
+      p_workspace_id: proposal.workspace_id,
+      p_user_id: userId,
+    });
+    if (canAccessProposal !== true) {
+      return new Response(JSON.stringify({ error: "Accès refusé à cette proposition" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Accept both "pending" (web) and "validated" (Telegram pre-validated) statuses
     const acceptableStatuses = ["pending", "validated"];
     if (!acceptableStatuses.includes(proposal.status)) {
