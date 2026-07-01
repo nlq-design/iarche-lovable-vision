@@ -193,9 +193,16 @@ serve(async (req: Request): Promise<Response> => {
     const inviteUrl = `${baseUrl}/espace-partenaire/accepter/${token}`;
 
     // Build email content using shared templates (charte graphique v4.0)
-    const emailSubject = `Invitation à rejoindre l'Espace Partenaire IArche`;
-    const header = getEmailHeader("🤝 Invitation Partenaire");
-    const footer = getEmailFooter();
+    // White-label : branding du workspace du partenaire (défaut IArche)
+    const { data: wsBranding } = await supabase
+      .from("workspace_branding")
+      .select("brand_name, logo_url, footer_text, email_signature_html, primary_color, secondary_color")
+      .eq("workspace_id", partnerWorkspaceId)
+      .maybeSingle();
+    const brandLabel = wsBranding?.brand_name || "IArche";
+    const emailSubject = `Invitation à rejoindre l'Espace Partenaire ${brandLabel}`;
+    const header = getEmailHeader("🤝 Invitation Partenaire", wsBranding ?? undefined);
+    const footer = getEmailFooter(wsBranding ?? undefined);
     
     const emailContent = `
       <p style="color: ${EMAIL_COLORS.textGray}; font-size: 16px; margin: 0 0 16px 0;">
@@ -225,7 +232,7 @@ serve(async (req: Request): Promise<Response> => {
         ⚠️ Ce lien expire dans <strong>7 jours</strong>. Si vous n'avez pas demandé cette invitation, vous pouvez ignorer cet email.
       </p>
       
-      ${getSignature()}
+      ${getSignature(wsBranding ?? undefined)}
     `;
 
     const emailHtml = wrapEmailContent(header, emailContent, footer);
