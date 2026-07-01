@@ -200,11 +200,21 @@ serve(async (req) => {
             plan_slug = planRow?.slug ?? null;
           }
 
+          // workspaces.billing_status a un CHECK plus étroit (none/trialing/active/past_due/
+          // canceled) que les statuts Stripe → mapping coarse pour éviter l'échec d'upsert.
+          const s = subscription.status;
+          const wsBilling = ["trialing", "active", "past_due", "canceled"].includes(s)
+            ? s
+            : (s === "unpaid" || s === "incomplete")
+              ? "past_due"
+              : (s === "incomplete_expired" || s === "paused")
+                ? "canceled"
+                : "active";
           const { error: wsErr } = await supabase
             .from("workspaces")
             .update({
               subscription_tier: plan_slug,
-              billing_status: subscription.status,
+              billing_status: wsBilling,
             })
             .eq("id", workspace_id);
 
