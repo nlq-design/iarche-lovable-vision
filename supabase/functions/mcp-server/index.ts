@@ -740,7 +740,7 @@ mcpServer.registerTool(
     inputSchema: {
       title: z.string().describe("Titre de la tâche"),
       description: z.string().optional().describe("Description détaillée"),
-      status: z.string().optional().describe("Statut (défaut: todo)"),
+      status: z.string().optional().describe("Statut: pending, in_progress, completed, cancelled, snoozed, harvested (défaut: pending)"),
       priority: z.string().optional().describe("Priorité: low, medium, high, urgent (défaut: medium)"),
       assigned_to: z.string().optional().describe("UUID utilisateur assigné"),
       due_date: z.string().optional().describe("Date d'échéance ISO"),
@@ -756,7 +756,7 @@ mcpServer.registerTool(
       workspace_id: ctx.wsId,
       title: params.title,
       description: params.description || null,
-      status: params.status || "todo",
+      status: params.status || "pending",
       priority: params.priority || "medium",
       assigned_to: params.assigned_to || null,
       due_date: params.due_date || null,
@@ -1089,7 +1089,7 @@ mcpServer.registerTool(
     title: "Get Tasks",
     description: "Liste les tâches CRM. Filtrable par statut, priorité, lead ou projet.",
     inputSchema: {
-      status: z.string().optional().describe("Filtrer par statut (todo, in_progress, done, cancelled)"),
+      status: z.string().optional().describe("Filtrer par statut (pending, in_progress, completed, cancelled, snoozed, harvested)"),
       priority: z.string().optional().describe("Filtrer par priorité (low, medium, high, urgent)"),
       lead_id: z.string().optional().describe("Filtrer par lead"),
       project_id: z.string().optional().describe("Filtrer par projet"),
@@ -1129,7 +1129,7 @@ mcpServer.registerTool(
     inputSchema: {
       task_id: z.string().describe("UUID de la tâche"),
       title: z.string().optional(),
-      status: z.string().optional().describe("todo, in_progress, done, cancelled"),
+      status: z.string().optional().describe("pending, in_progress, completed, cancelled, snoozed, harvested"),
       priority: z.string().optional().describe("low, medium, high, urgent"),
       due_date: z.string().optional().describe("Date d'échéance ISO"),
       assigned_to: z.string().optional().describe("UUID utilisateur assigné"),
@@ -3447,7 +3447,7 @@ mcpServer.registerTool(
         .select("id, title, status, priority, due_date, lead_id, project_id")
         .eq("workspace_id", wsId)
         .lt("due_date", today)
-        .not("status", "in", '("done","cancelled")'),
+        .not("status", "in", '("completed","cancelled")'),
       // 9. Leads qualifiés sans opportunité
       supabaseAdmin
         .from("leads")
@@ -3559,7 +3559,7 @@ mcpServer.registerTool(
 
     // 7. Projets rouges sans tâche active (-5 pts, max -15)
     const redProjects = (projectsRedNoTask.data || []).filter(
-      (p: any) => !p.tasks || p.tasks.filter((t: any) => t.status !== "done" && t.status !== "cancelled").length === 0
+      (p: any) => !p.tasks || p.tasks.filter((t: any) => t.status !== "completed" && t.status !== "cancelled").length === 0
     );
     if (redProjects.length > 0) {
       score -= Math.min(redProjects.length * 5, 15);
@@ -3709,7 +3709,7 @@ mcpServer.registerTool(
         .from("tasks")
         .select("id, title, status, priority, due_date, opportunity_id")
         .eq("workspace_id", wsId)
-        .not("status", "in", '("done","cancelled")')
+        .not("status", "in", '("completed","cancelled")')
         .not("opportunity_id", "is", null),
       supabaseAdmin
         .from("projects")
@@ -4284,7 +4284,7 @@ mcpServer.registerTool(
           { step: 1, action: "audit_crm_quality", description: "Score de qualité CRM de la semaine" },
           { step: 2, action: "analyze_pipeline", description: "État du pipeline et deals à risque" },
           { step: 3, action: "get_forecast", description: "Forecast 3 mois mis à jour" },
-          { step: 4, action: "get_tasks", description: "Tâches en retard et priorités semaine prochaine", data: { status: "todo", limit: 20 } },
+          { step: 4, action: "get_tasks", description: "Tâches en retard et priorités semaine prochaine", data: { status: "pending", limit: 20 } },
           { step: 5, action: "get_sentinel_alerts", description: "Alertes Sentinel non résolues" },
           { step: 6, action: "get_ai_usage", description: "Consommation IA de la semaine", data: { days: 7 } },
         ];
@@ -4959,7 +4959,7 @@ mcpServer.registerTool(
       const allOpps = [...(wonDeals.data || []), ...(activeOpps.data || [])];
       const conversionRate = allOpps.length > 0 ? Math.round((dealCount / allOpps.length) * 100) : 0;
 
-      const taskStats: any = { done: 0, todo: 0, in_progress: 0 };
+      const taskStats: any = { pending: 0, in_progress: 0, completed: 0, cancelled: 0 };
       (tasks.data || []).forEach((t: any) => { if (taskStats[t.status] !== undefined) taskStats[t.status]++; });
 
       const healthScore = Math.min(100, Math.round(
