@@ -1,5 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { useBranding } from '@/contexts/BrandingContext';
 
 interface LogoProps {
   /** Variante du logo */
@@ -39,12 +40,17 @@ const Logo: React.FC<LogoProps> = ({
 
   const { height, width, iconSize } = sizeConfig[size];
 
+  // White-label : logo du locataire si actif, sinon logos IArche (défaut)
+  const { branding, isWhiteLabel } = useBranding();
+  const tenant = isWhiteLabel ? branding : null;
+  const altText = tenant?.brand_name ?? 'IArche · Architecte IA Bayonne';
+
   // Si iconOnly, utiliser l'icône SVG
   if (iconOnly) {
     return (
       <img
-        src="/logos/iarche-icon-512.svg"
-        alt="IArche"
+        src={tenant?.logo_url ?? '/logos/iarche-icon-512.svg'}
+        alt={tenant?.brand_name ?? 'IArche'}
         className={cn('inline-block', className)}
         style={{ height: iconSize, width: iconSize }}
       />
@@ -52,16 +58,22 @@ const Logo: React.FC<LogoProps> = ({
   }
 
   // Variantes du logo complet
-  const logoSrc = {
-    main: '/logos/iarche-main.svg',
-    white: '/logos/iarche-white.svg',
-    dark: '/logos/iarche-dark.svg',
-  };
+  const logoSrc = tenant
+    ? {
+        main: tenant.logo_url ?? '/logos/iarche-main.svg',
+        white: tenant.logo_dark_url ?? tenant.logo_url ?? '/logos/iarche-white.svg',
+        dark: tenant.logo_url ?? '/logos/iarche-dark.svg',
+      }
+    : {
+        main: '/logos/iarche-main.svg',
+        white: '/logos/iarche-white.svg',
+        dark: '/logos/iarche-dark.svg',
+      };
 
   return (
     <img
       src={logoSrc[variant]}
-      alt="IArche · Architecte IA Bayonne"
+      alt={altText}
       className={cn('inline-block', className)}
       width={width}
       height={height}
