@@ -84,8 +84,10 @@ Deno.serve(async (req) => {
         owner_id: userId,
         created_by: userId,
         ai_persona: persona,
-        subscription_tier: 'trial',
-        billing_status: 'trial',
+        // 🐛 fix: 'trial' violait les CHECK (subscription_tier ∈ null/starter/pro/enterprise ;
+        // billing_status ∈ none/trialing/active/…) → création de tenant cassée.
+        subscription_tier: null,          // pas de tier payant pendant l'essai
+        billing_status: 'trialing',       // état d'essai (convention Stripe)
         trial_ends_at: new Date(Date.now() + 14 * 24 * 3600 * 1000).toISOString(),
       })
       .select('id')
