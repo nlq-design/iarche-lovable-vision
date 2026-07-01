@@ -84,6 +84,13 @@ serve(async (req) => {
     const baseUrl = Deno.env.get("SITE_URL") || "https://iarche.fr";
     const inviteUrl = `${baseUrl}/cockpit/invitation/accepter/${invitation.token}`;
 
+    // White-label : branding du workspace invité (défaut IArche si absent)
+    const { data: wsBranding } = await supabase
+      .from("workspace_branding")
+      .select("brand_name, logo_url, footer_text, email_signature_html, primary_color, secondary_color")
+      .eq("workspace_id", workspace_id)
+      .maybeSingle();
+
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
     if (!resendApiKey) {
       return json({ success: true, invitation_id: invitation.id, warning: "Email non envoyé (service indisponible)" }, 207);
@@ -94,8 +101,8 @@ serve(async (req) => {
       await resend.emails.send({
         from: "IArche <contact@iarche.fr>",
         to: [email],
-        subject: `Invitation à rejoindre ${workspaceName} sur IArche`,
-        html: getTeamInvitationEmail(inviteUrl, workspaceName, inviterName, role),
+        subject: `Invitation à rejoindre ${workspaceName} sur ${wsBranding?.brand_name || "IArche"}`,
+        html: getTeamInvitationEmail(inviteUrl, workspaceName, inviterName, role, wsBranding ?? undefined),
       });
     } catch (err) {
       console.error("[invite-team-member] resend failed:", err);

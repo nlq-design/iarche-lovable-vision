@@ -14,14 +14,34 @@ export const EMAIL_COLORS = {
 export const LOGO_URL = 'https://iarche.fr/logos/iarche-main.png';
 export const ARC_URL = 'https://iarche.fr/logos/iarche-arc.svg';
 
+/**
+ * Branding optionnel du locataire (white-label email). Tous les champs sont
+ * facultatifs → sans branding, les emails gardent l'identité IArche (défaut,
+ * non-breaking). Un appelant tenant-aware charge `workspace_branding` et le passe.
+ */
+export interface EmailBranding {
+  brand_name?: string | null;
+  logo_url?: string | null;
+  footer_text?: string | null;
+  email_signature_html?: string | null;
+  primary_color?: string | null;
+  secondary_color?: string | null;
+  website?: string | null;
+  contact_email?: string | null;
+}
+
 // Generate standardized email header with logo and title (v4.0)
 // Note: Arc removed from header per v4.0 guidelines - arc is for section titles only
-export function getEmailHeader(title: string): string {
+export function getEmailHeader(title: string, b?: EmailBranding): string {
+  const c1 = b?.secondary_color || EMAIL_COLORS.nightBlue;
+  const c2 = b?.primary_color || EMAIL_COLORS.terracotta;
+  const logo = b?.logo_url || LOGO_URL;
+  const alt = b?.brand_name || 'IArche';
   return `
     <!-- Header with gradient -->
     <tr>
-      <td style="background: linear-gradient(135deg, ${EMAIL_COLORS.nightBlue} 0%, ${EMAIL_COLORS.terracotta} 100%); padding: 32px 40px; text-align: center; border-radius: 12px 12px 0 0;">
-        <img src="${LOGO_URL}" alt="IArche" style="height: 40px; margin-bottom: 16px;" />
+      <td style="background: linear-gradient(135deg, ${c1} 0%, ${c2} 100%); padding: 32px 40px; text-align: center; border-radius: 12px 12px 0 0;">
+        <img src="${logo}" alt="${alt}" style="height: 40px; margin-bottom: 16px;" />
         <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600;">${title}</h1>
       </td>
     </tr>
@@ -29,19 +49,27 @@ export function getEmailHeader(title: string): string {
 }
 
 // Generate standardized email footer with logo and contact info
-export function getEmailFooter(): string {
+export function getEmailFooter(b?: EmailBranding): string {
+  const logo = b?.logo_url || LOGO_URL;
+  const alt = b?.brand_name || 'IArche';
+  const footerText = b?.footer_text || 'IArche · Architecte IA · Bayonne, France';
+  const site = (b?.website || 'iarche.fr').replace(/^https?:\/\//, '');
+  const siteUrl = b?.website || 'https://iarche.fr';
+  const contact = b?.contact_email || 'nlq@nlq.fr';
+  const accent = b?.primary_color || EMAIL_COLORS.terracotta;
+  const navy = b?.secondary_color || EMAIL_COLORS.nightBlue;
   return `
     <!-- Footer -->
     <tr>
       <td style="padding: 24px 40px; background-color: ${EMAIL_COLORS.offWhite}; border-top: 1px solid ${EMAIL_COLORS.borderGray}; text-align: center; border-radius: 0 0 12px 12px;">
-        <img src="${LOGO_URL}" alt="IArche" style="height: 28px; margin-bottom: 12px; opacity: 0.8;" />
+        <img src="${logo}" alt="${alt}" style="height: 28px; margin-bottom: 12px; opacity: 0.8;" />
         <p style="color: ${EMAIL_COLORS.lightGray}; font-size: 12px; margin: 0 0 8px 0;">
-          IArche · Architecte IA · Bayonne, France
+          ${footerText}
         </p>
         <p style="margin: 0;">
-          <a href="https://iarche.fr" style="color: ${EMAIL_COLORS.terracotta}; text-decoration: none; font-size: 12px; font-weight: 500;">iarche.fr</a>
+          <a href="${siteUrl}" style="color: ${accent}; text-decoration: none; font-size: 12px; font-weight: 500;">${site}</a>
           <span style="color: ${EMAIL_COLORS.lightGray}; margin: 0 8px;">·</span>
-          <a href="mailto:nlq@nlq.fr" style="color: ${EMAIL_COLORS.nightBlue}; text-decoration: none; font-size: 12px;">nlq@nlq.fr</a>
+          <a href="mailto:${contact}" style="color: ${navy}; text-decoration: none; font-size: 12px;">${contact}</a>
         </p>
       </td>
     </tr>
@@ -99,11 +127,15 @@ export function getInfoCard(content: string, accentColor: string = EMAIL_COLORS.
 }
 
 // Generate signature
-export function getSignature(): string {
+export function getSignature(b?: EmailBranding): string {
+  // Signature personnalisée du locataire si fournie (white-label)
+  if (b?.email_signature_html) return b.email_signature_html;
+  const teamName = b?.brand_name ? `L'équipe ${b.brand_name}` : "L'équipe IArche";
+  const navy = b?.secondary_color || EMAIL_COLORS.nightBlue;
   return `
     <p style="color: ${EMAIL_COLORS.mutedGray}; font-size: 14px; margin-top: 24px;">
       À bientôt,<br>
-      <strong style="color: ${EMAIL_COLORS.nightBlue};">L'équipe IArche</strong><br>
+      <strong style="color: ${navy};">${teamName}</strong><br>
       <span style="color: ${EMAIL_COLORS.lightGray}; font-size: 12px; font-style: italic;">L'IA se construit avec vous.</span>
     </p>
   `;
@@ -216,20 +248,22 @@ export function getTeamInvitationEmail(
   inviteUrl: string,
   workspaceName: string,
   inviterName: string,
-  role: string
+  role: string,
+  b?: EmailBranding
 ): string {
   const roleLabel = role === 'owner' ? 'propriétaire' : role === 'editor' ? 'éditeur' : 'lecteur';
+  const platformName = b?.brand_name || 'IArche';
   const content = `
     ${paragraph(`Bonjour,`)}
-    ${paragraph(`<strong>${escapeHtml(inviterName)}</strong> vous invite à rejoindre l'espace de travail <strong>${escapeHtml(workspaceName)}</strong> sur IArche en tant que <strong>${escapeHtml(roleLabel)}</strong>.`)}
+    ${paragraph(`<strong>${escapeHtml(inviterName)}</strong> vous invite à rejoindre l'espace de travail <strong>${escapeHtml(workspaceName)}</strong> sur ${escapeHtml(platformName)} en tant que <strong>${escapeHtml(roleLabel)}</strong>.`)}
     ${ctaWrapper(getCtaButton("Accepter l'invitation", inviteUrl, 'primary'))}
     ${paragraph(`Cette invitation expire dans 7 jours.`)}
-    ${getSignature()}
+    ${getSignature(b)}
     ${fallbackLink(inviteUrl)}
   `;
   return wrapEmailContent(
-    getEmailHeader('Invitation à rejoindre une équipe'),
+    getEmailHeader('Invitation à rejoindre une équipe', b),
     content,
-    getEmailFooter()
+    getEmailFooter(b)
   );
 }
