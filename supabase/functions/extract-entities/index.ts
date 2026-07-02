@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { callLLM } from "../_shared/ai-client.ts";
 import { loadPrompt } from "../_shared/prompt-loader.ts";
+import { resolveUserIdFromRequest } from "../_shared/auth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -32,11 +33,33 @@ serve(async (req) => {
   }
 
   try {
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // 🔒 Isolation : outil NLP HQ cross-corpus (dictionnaire d'entités). Autorisé
+    // uniquement pour un appel interne (pipelines transcription/mcp, Bearer service_role)
+    // OU un admin HQ IArche authentifié (UI KeywordDictionary). Ferme le trou « tout
+    // utilisateur authentifié peut scanner le corpus » (verify_jwt=true sans autorisation).
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const isInternal = authHeader === `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`;
+    if (!isInternal) {
+      try {
+        const userId = await resolveUserIdFromRequest(req);
+        const { data: hq } = await supabase
+          .from("user_roles").select("role").eq("user_id", userId)
+          .in("role", ["admin", "cockpit_admin", "super_admin"]).limit(1).maybeSingle();
+        if (!hq) {
+          return new Response(JSON.stringify({ error: "Forbidden: HQ admin required" }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+      } catch (guardResponse) {
+        if (guardResponse instanceof Response) return guardResponse;
+        throw guardResponse;
+      }
+    }
+
     const body: ExtractRequest = await req.json();
     const { mode = "scan_recent", entity_type, entity_id, days_back = 30 } = body;
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    
     console.log(`[ExtractEntities] mode=${mode}, days_back=${days_back}`);
 
     // Collect text sources for entity extraction
