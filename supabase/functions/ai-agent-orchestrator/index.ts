@@ -9113,6 +9113,35 @@ serve(async (req) => {
       console.warn("[orchestrator] workspace_id fallback to NLQ default (no JWT/membership)");
     }
 
+    // ============================================================
+    // 🔒 ISOLATION MULTI-TENANT (étanchéité du cerveau Cockpit)
+    // Un appelant JWT ne peut cibler QUE un workspace dont il est
+    // membre actif. Sans ce garde, un tenant pouvait passer le
+    // workspace_id d'un autre dans le body et faire répondre l'IA
+    // sur le CRM d'autrui. Le staff HQ IArche (admin/cockpit_admin/
+    // super_admin) garde l'accès transverse (support/fondateur).
+    // Les appelants internes (authMode != "jwt" : service/cron) sont
+    // de confiance et non contraints.
+    // ============================================================
+    if (authMode === "jwt" && authedUserId) {
+      const { data: hqRole } = await supabase
+        .from("user_roles").select("role").eq("user_id", authedUserId)
+        .in("role", ["admin", "cockpit_admin", "super_admin"]).limit(1).maybeSingle();
+      if (!hqRole) {
+        const { data: allowedWs } = await supabase
+          .from("workspace_members").select("workspace_id")
+          .eq("user_id", authedUserId).eq("workspace_id", workspace_id)
+          .eq("status", "active").maybeSingle();
+        if (!allowedWs) {
+          console.warn("[SECURITY] cross-tenant workspace access denied", { authedUserId, workspace_id });
+          return new Response(JSON.stringify({ error: "Forbidden: not a member of the requested workspace" }), {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+    }
+
     // =============================================================================
     // INPUT VALIDATION - Security hardening for prompt injection protection
     // =============================================================================
