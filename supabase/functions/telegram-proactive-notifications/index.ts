@@ -485,9 +485,16 @@ serve(async (req) => {
 
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    
+
     const body = await req.json() as NotificationPayload & { action?: string };
-    const chatId = body.chat_id || DEFAULT_CHAT_ID;
+
+    // 🔒 Anti-exfiltration : cette fonction est verify_jwt=false (déclenchée par
+    // pg_cron via anon key + par des edge fns internes). Un appelant NON interne
+    // pouvait fournir son propre chat_id + un entity_id pour recevoir des données
+    // CRM sur SON Telegram. On force donc DEFAULT_CHAT_ID (le Telegram configuré)
+    // sauf pour un appelant interne authentifié par le service_role.
+    const isInternal = (req.headers.get("Authorization") ?? "") === `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`;
+    const chatId = isInternal ? (body.chat_id || DEFAULT_CHAT_ID) : DEFAULT_CHAT_ID;
 
     if (!chatId) {
       return new Response(
