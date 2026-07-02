@@ -1574,7 +1574,8 @@ mcpServer.registerTool(
     const { data, error } = await supabaseAdmin
       .from("lead_contacts")
       .select("id, name, email, phone, position, is_primary, created_at")
-      .eq("lead_id", params.lead_id);
+      .eq("lead_id", params.lead_id)
+      .eq("workspace_id", ctx.wsId); // 🔒 isolation : contacts du workspace de la clé uniquement
 
     if (error) return { content: [{ type: "text" as const, text: `Erreur: ${error.message}` }] };
     return { content: [{ type: "text" as const, text: JSON.stringify({ lead_contacts: data, count: data?.length || 0 }) }] };
@@ -4014,6 +4015,7 @@ mcpServer.registerTool(
   },
   async (params: any) => {
     const wsId = (globalThis as any).__mcpAuth?.workspace_id;
+    if (!wsId) return authError(); // 🔒 pas de workspace résolu → refus (jamais de fetch non scopé)
 
     const workflows: Record<string, (entityId: string | null, wfParams: any) => Promise<any>> = {
 
@@ -4025,6 +4027,7 @@ mcpServer.registerTool(
           .from("opportunities")
           .select("*, leads(id, name, company, email)")
           .eq("id", entityId)
+          .eq("workspace_id", wsId) // 🔒 isolation : opportunité du workspace de la clé
           .single();
 
         if (!opp) throw new Error("Opportunité introuvable");
@@ -4109,6 +4112,7 @@ mcpServer.registerTool(
           .from("opportunities")
           .select("*, leads(id, name, company, email, lead_score)")
           .eq("id", entityId)
+          .eq("workspace_id", wsId) // 🔒 isolation : opportunité du workspace de la clé
           .single();
 
         if (!opp) throw new Error("Opportunité introuvable");
