@@ -1,0 +1,24 @@
+name: Security — Multi-tenant isolation
+
+# Garde-fou déterministe d'étanchéité multi-tenant (cf. docs/audit-plateforme-complet-2026-07-02.md).
+# Échoue si une edge function service_role lit une table tenant sans filtre workspace_id / gate.
+# Pour le rendre bloquant : Settings → Branches → protéger migration/supabase-autonome + charte-v4
+# et cocher ce check comme "required".
+
+on:
+  push:
+    paths:
+      - 'supabase/functions/**'
+      - 'scripts/isolation-lint.sh'
+  pull_request:
+    paths:
+      - 'supabase/functions/**'
+      - 'scripts/isolation-lint.sh'
+
+jobs:
+  isolation-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint isolation service_role ↔ tables tenant
+        run: bash scripts/isolation-lint.sh
