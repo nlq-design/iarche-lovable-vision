@@ -12,6 +12,9 @@ const json = (b: unknown, s = 200) =>
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  // 🔒 verify_jwt=false → réservé aux appelants internes (pg_cron / edge fns, service_role).
+  const isInternal = (req.headers.get("Authorization") ?? "") === `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`;
+  if (!isInternal) return json({ error: "Forbidden" }, 403);
   try {
     const { workspace_id, partner_id, week_start } = await req.json();
     if (!workspace_id || !week_start) {

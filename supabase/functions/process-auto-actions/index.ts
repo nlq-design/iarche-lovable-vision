@@ -20,6 +20,16 @@ serve(async (req) => {
 
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+  // 🔒 verify_jwt=false + exécute des actions (dont send_email) → réservé aux appelants
+  // internes (pg_cron / edge fns passant le service_role). Ferme le déclenchement anonyme.
+  const isInternal = (req.headers.get("Authorization") ?? "") === `Bearer ${SERVICE_ROLE}`;
+  if (!isInternal) {
+    return new Response(JSON.stringify({ error: "Forbidden" }), {
+      status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
 
   const startedAt = Date.now();
