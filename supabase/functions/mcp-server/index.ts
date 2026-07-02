@@ -4085,7 +4085,7 @@ mcpServer.registerTool(
             data: {
               entity_type: "opportunity",
               entity_id: opp.id,
-              activity_type: "stage_change",
+              activity_type: "deal_won",
               title: `Deal gagné — ${opp.title}`,
               content: `Valeur : ${opp.value_amount}€. Onboarding initié.`,
               opportunity_id: opp.id,
@@ -4183,7 +4183,7 @@ mcpServer.registerTool(
             data: {
               entity_type: "opportunity",
               entity_id: opp.id,
-              activity_type: "stage_change",
+              activity_type: "deal_lost",
               title: `Deal perdu — ${opp.title}`,
               content: `Raison : ${wfParams?.reason || "Non renseignée"}`,
               opportunity_id: opp.id,
